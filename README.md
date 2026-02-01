@@ -5,9 +5,13 @@
 Web RPA - 网页机器人流程自动化工具
 </h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.22.26-blue.svg" alt="版本">
+  <img src="https://img.shields.io/badge/版本-1.23.0-blue.svg" alt="版本">
+  <img src="https://img.shields.io/badge/模块数量-218个-brightgreen.svg" alt="模块数量">
   <img src="https://img.shields.io/badge/协议-CC%20BY--NC--SA%204.0-green.svg" alt="协议">
   <img src="https://img.shields.io/badge/作者-青云制作__彭明航-orange.svg" alt="作者">
+  <img src="https://img.shields.io/badge/Python-3.13-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/React-18-61dafb.svg" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5-3178c6.svg" alt="TypeScript">
 </p>
 
 
@@ -19,142 +23,163 @@ Web RPA - 网页机器人流程自动化工具
 
 ## ✨ 功能特性
 
-### 🌐 浏览器自动化
-- 打开/关闭/刷新/前进/后退网页
-- 切换iframe/返回主页面（支持内嵌网页自动化）
-- 点击、悬停、输入文本
-- 下拉选择、复选框操作
-- 拖拽元素、滚动页面
-- 处理弹窗对话框
-- 可视化元素选择器
-- 等待元素出现/消失
+### 🎯 核心优势
 
-### 📥 数据采集
-- 提取页面元素数据
-- 网页截图/屏幕截图
-- 下载文件/保存图片
-- 支持相似元素批量采集
-- 网络请求抓包
+- **🚀 零代码开发**：可视化拖拽，无需编程基础
+- **📦 开箱即用**：内置Python、Node.js环境，一键启动
+- **🔧 模块丰富**：218个功能模块，覆盖90%自动化场景
+- **🎨 界面美观**：现代化UI设计，操作流畅
+- **⚡ 性能强劲**：基于FastAPI + React，响应迅速
+- **🔌 易于扩展**：模块化架构，支持自定义开发
+- **📚 文档完善**：18个分类的详细教学文档
+- **🆓 完全免费**：非商业使用完全免费，开源透明
 
-### 📊 数据处理
-- 变量管理系统
-- JSON 解析
-- Base64 编解码
-- 正则表达式提取
-- 字符串处理（拼接、替换、分割、截取、大小写转换等）
-- 列表操作（添加、删除、获取、长度等）
-- 字典操作（设置、获取、键列表等）
-- 数据表格操作（添加行/列、设置/读取单元格、导出等）
-- Excel 读取与导出
+### 🌐 浏览器自动化（15个模块）
+- **页面操作**：打开/关闭/刷新/前进/后退网页
+- **iframe支持**：切换iframe/返回主页面（支持内嵌网页自动化）
+- **元素交互**：点击、悬停、输入文本、下拉选择、复选框操作
+- **高级操作**：拖拽元素、滚动页面、处理弹窗对话框
+- **智能选择器**：可视化元素选择器、AI元素定位
+- **等待机制**：等待元素出现/消失、智能超时控制
+- **脚本注入**：自定义JavaScript执行
 
-### 🗄️ 数据库操作
-- MySQL 数据库连接
-- 增删改查操作
-- 自定义 SQL 执行
-- 连接池管理
+### 📥 数据采集（8个模块）
+- **元素数据**：提取页面元素文本、属性、HTML
+- **截图功能**：网页截图、屏幕截图、元素截图
+- **文件下载**：下载文件、保存图片、批量下载
+- **批量采集**：支持相似元素批量提取
+- **网络抓包**：监听HTTP/HTTPS请求，获取接口数据
+- **智能爬虫**：AI驱动的自适应数据提取
 
-### 📁 文件操作
-- 获取文件列表
-- 复制/移动/删除文件
-- 创建文件夹
-- 文件/文件夹重命名
-- 读取/写入文本文件
-- 获取文件信息
-- 检查文件是否存在
+### 📊 数据处理（30个模块）
+- **变量系统**：全局变量、局部变量、变量引用`{变量名}`
+- **数据格式**：JSON解析、Base64编解码、正则表达式提取
+- **字符串处理**：拼接、替换、分割、截取、大小写转换、去空格
+- **列表操作**：添加、删除、获取、长度、遍历、排序
+- **字典操作**：设置、获取、键列表、值列表、合并
+- **数据表格**：添加行/列、设置/读取单元格、导出Excel
+- **Excel处理**：读取xlsx文件、数据提取、格式化导出
 
-### 🎬 媒体处理
-- 格式转换（视频/音频/图片）
-- 视频压缩（支持进度显示）
-- 图片压缩
-- 提取音频
-- 视频裁剪
-- 媒体合并（支持音视频合并）
-- 添加水印
-- M3U8视频下载
-- 视频旋转/翻转
-- 视频倍速播放
-- 视频截取帧
-- 视频添加字幕
-- 音频调节音量
-- 视频分辨率调整
-- 摄像头拍照
-- 摄像头录像（非阻塞式）
+### 🗄️ 数据库操作（7个模块）
+- **连接管理**：MySQL数据库连接、连接池管理
+- **数据查询**：SELECT查询、条件筛选、多表关联
+- **数据操作**：INSERT插入、UPDATE更新、DELETE删除
+- **SQL执行**：自定义SQL语句执行、事务支持
+- **结果处理**：查询结果转换为列表/字典/表格
 
-### 🔀 流程控制
-- 条件判断（支持多种比较运算）
-- 循环（次数循环、条件循环）
-- 列表遍历
-- 跳出/跳过当前循环
-- 子流程复用
-- 定时任务
+### 📁 文件操作（11个模块）
+- **文件管理**：复制、移动、删除、重命名文件
+- **文件夹操作**：创建文件夹、重命名文件夹、获取文件列表
+- **文件读写**：读取文本文件、写入文本文件
+- **文件信息**：获取文件大小、修改时间、扩展名
+- **文件检查**：检查文件/文件夹是否存在
+- **批量操作**：支持通配符匹配、批量处理
 
-### ⚡ 触发器系统
-- **Webhook触发器**：等待HTTP请求触发工作流
-- **热键触发器**：全局热键监听，按下指定组合键触发
-- **文件监控触发器**：监控文件/文件夹变化（创建/修改/删除）
-- **邮件触发器**：监控邮箱，收到符合条件的邮件时触发
-- **API触发器**：轮询API接口，满足条件时触发
-- **定时触发器**：支持间隔触发、指定时间触发、Cron表达式等多种定时模式
-- **鼠标触发器**：监听鼠标点击、滚动、移动等事件
-- **图像触发器**：检测屏幕上出现指定图像时触发
-- **声音触发器**：监听系统音频输出，达到音量阈值时触发
-- **人脸触发器**：实时识别摄像头画面，检测到目标人脸时触发
-- **元素变化触发器**：监控网页元素子元素数量变化，实时检测新增内容
+### 🎬 媒体处理（16个模块，基于FFmpeg）
+- **格式转换**：视频/音频/图片格式互转（支持50+种格式）
+- **视频处理**：压缩、裁剪、旋转、翻转、倍速、分辨率调整
+- **音频处理**：提取音频、调节音量、音频格式转换
+- **高级功能**：添加水印、添加字幕、截取帧、媒体合并
+- **特殊下载**：M3U8视频下载（支持加密视频）
+- **摄像头**：拍照、录像（非阻塞式）
+- **进度显示**：实时显示处理进度
 
-### 🤖 AI 能力
-- AI 对话（支持 OpenAI、智谱、Deepseek、通义千问、Gemini、Azure等）
-- 图像识别/AI视觉
-- AI智能爬虫（自然语言描述提取数据，自适应网页结构变化）
-- AI元素选择器（自然语言描述定位元素）
-- 人脸识别
-- 图片 OCR
+### 📄 PDF处理（16个模块）
+- **格式转换**：PDF转图片、图片转PDF、PDF转Word
+- **文档操作**：合并、拆分、插入页面、重排页面、删除页面、旋转页面
+- **内容提取**：提取文本、提取图片、获取文档信息
+- **安全加密**：PDF加密、PDF解密
+- **文档优化**：添加水印、压缩PDF
+- **批量处理**：支持批量转换和处理
 
-### 🔐 验证码处理
-- OCR 文字识别验证码
-- 滑块验证码自动处理
+### 📝 文档转换（13个模块，基于Pandoc）
+- **Markdown转换**：Markdown → HTML/PDF/Word/EPUB
+- **Word转换**：Word → Markdown/HTML
+- **HTML转换**：HTML → Markdown/Word
+- **学术文档**：LaTeX → PDF、reStructuredText → HTML、Org-mode → HTML
+- **电子书**：Markdown ↔ EPUB
+- **通用转换**：支持30+种文档格式互转（docx、odt、rtf、tex、rst、org等）
+- **样式保留**：支持CSS样式、参考文档模板
+- **批量转换**：支持批量文档格式转换
 
-### 🔔 消息通知与交互
-- 打印日志（多级别）
-- 播放提示音
-- 系统通知（Windows右下角通知）
-- 播放音乐（支持播放器控制）
-- 播放视频（支持播放器控制）
-- 查看图片（支持缩放/旋转/下载）
-- 语音播报（TTS）
-- 用户输入弹窗（支持多种输入模式）
-- 发送邮件
-- 导出日志（支持TXT/JSON/CSV格式）
+### 🖼️ 图像处理（20个模块，基于Pillow）
+- **基础操作**（4个）：图像缩放、图像裁剪、图像旋转、图像翻转
+- **图像增强**（4个）：图像模糊、图像锐化、亮度调整、对比度调整
+- **色彩处理**（3个）：色彩平衡、图片去色、简单去背景
+- **格式转换**（1个）：支持PNG/JPEG/BMP/GIF/TIFF/WEBP/HEIC等格式互转
+- **高级功能**（5个）：图像添加文字、图像拼接、生成缩略图、图片圆角化、图像滤镜
+- **信息获取**（1个）：获取图像尺寸、格式、EXIF元数据等
+- **专业滤镜**：10种内置滤镜效果（浮雕、边缘增强、轮廓、细节、平滑等）
+- **批量处理**：支持批量图像处理和格式转换
 
-### 🖥️ 系统操作
-- 真实鼠标点击/移动/拖拽/滚动
-- 真实键盘输入
-- 宏录制器（录制并回放鼠标键盘操作）
-- 模拟按键组合
-- 剪贴板读写（支持文本和图片）
-- 执行系统命令
-- 点击图像（图像识别点击）
-- 点击文字（OCR文字识别点击）
-- 悬停图像/悬停文字
-- 拖拽图像
-- 获取鼠标位置
-- 窗口聚焦/置顶
-- 关机/重启/锁屏
+### 🔀 流程控制（8个模块）
+- **条件判断**：if-else逻辑、多种比较运算符（等于、大于、小于、包含等）
+- **循环控制**：次数循环、条件循环、列表遍历
+- **循环跳转**：跳出循环（break）、跳过当前循环（continue）
+- **子流程**：工作流复用、模块化设计
+- **定时任务**：定时执行、延迟执行、周期执行
 
-### 🛠️ 辅助功能
-- 自定义 JavaScript 脚本执行
-- HTTP/API 请求
-- 随机数生成
-- 获取当前时间
-- 分组/备注节点
-- 子流程复用（模块化工作流）
-- 智能超时配置（根据模块类型自动设置合理超时）
-- 模块搜索支持拼音和首字母
-- 模块收藏功能（可自定义排序）
-- 网络抓包（监听网络请求）
-- 网络共享（局域网文件/文件夹共享）
-- 屏幕共享（局域网实时屏幕投屏）
-- QQ自动化（发送消息/图片/文件，获取好友/群列表，等待消息触发）
-- 微信自动化（发送消息/文件）
+### ⚡ 触发器系统（10个模块）
+- **网络触发**：Webhook触发器（HTTP请求触发）、API触发器（轮询接口）
+- **时间触发**：定时触发器（支持Cron表达式、间隔触发、指定时间）
+- **文件触发**：文件监控触发器（监控文件/文件夹变化）
+- **邮件触发**：邮件触发器（监控邮箱，收到邮件时触发）
+- **输入触发**：热键触发器（全局热键监听）
+- **鼠标触发**：鼠标触发器（监听点击、滚动、移动事件）
+- **视觉触发**：图像触发器（检测屏幕图像）、人脸触发器（人脸识别）
+- **音频触发**：声音触发器（监听系统音频输出）
+- **网页触发**：元素变化触发器（监控网页元素变化）
+
+### 🤖 AI 能力（11个模块）
+- **AI对话**：支持OpenAI、智谱、Deepseek、通义千问、Gemini、Azure等多家AI服务商
+- **AI视觉**：图像识别、图像理解、视觉问答
+- **AI爬虫**：自然语言描述提取数据、自适应网页结构变化、智能数据清洗
+- **AI定位**：AI元素选择器（自然语言描述定位元素）
+- **人脸识别**：人脸检测、人脸比对、人脸特征提取
+- **OCR识别**：图片文字识别、支持80+语言、手写体识别
+- **验证码破解**：OCR文字验证码、滑块验证码自动处理
+- **语音识别**：音频转文字、支持多语言
+- **语音合成**：文字转语音（TTS）、自定义语速音调
+
+### 🔔 消息通知与交互（9个模块）
+- **日志系统**：多级别日志（DEBUG/INFO/WARNING/ERROR）、日志导出（TXT/JSON/CSV）
+- **系统通知**：Windows右下角通知、自定义通知内容
+- **音频提示**：播放提示音、播放音乐（支持播放器控制）
+- **视频播放**：播放视频（支持播放器控制、暂停/继续/停止）
+- **图片查看**：查看图片（支持缩放/旋转/下载）
+- **语音播报**：TTS文字转语音、自定义语速
+- **用户输入**：弹窗输入（支持文本/数字/密码/多行文本等多种模式）
+- **邮件发送**：发送邮件、支持附件、HTML格式
+
+### 🖥️ 系统操作（20个模块）
+- **真实鼠标**：真实鼠标点击/移动/拖拽/滚动（绕过部分反爬）
+- **真实键盘**：真实键盘输入、模拟按键组合（Ctrl+C、Alt+Tab等）
+- **宏录制器**：录制并回放鼠标键盘操作、支持循环播放
+- **剪贴板**：读写剪贴板（支持文本和图片）
+- **图像识别**：点击图像、悬停图像、拖拽图像（基于图像识别）
+- **文字识别**：点击文字、悬停文字（基于OCR识别）
+- **系统命令**：执行CMD命令、PowerShell脚本
+- **窗口管理**：窗口聚焦、窗口置顶、获取窗口信息
+- **系统控制**：关机、重启、锁屏、注销
+- **鼠标位置**：获取当前鼠标坐标
+
+### 🛠️ 辅助功能（15个模块）
+- **脚本执行**：自定义JavaScript脚本、Python脚本
+- **网络请求**：HTTP/HTTPS请求、支持GET/POST/PUT/DELETE等方法
+- **网络抓包**：监听网络请求、获取请求响应数据
+- **网络共享**：局域网文件/文件夹共享、支持密码保护
+- **屏幕共享**：局域网实时屏幕投屏、支持多设备同时观看
+- **二维码**：二维码生成、二维码解码
+- **随机数**：生成随机数、随机字符串
+- **时间获取**：获取当前时间、时间格式化
+- **模块搜索**：支持拼音、拼音首字母、中英文模糊搜索
+- **模块收藏**：收藏常用模块、自定义排序
+- **分组备注**：工作流分组、添加备注节点
+- **子流程**：工作流模块化、复用工作流片段
+
+### 💬 社交自动化（10个模块）
+- **QQ自动化**：发送消息/图片/文件、获取好友/群列表、等待消息触发
+- **微信自动化**：发送消息/文件（基于企业微信API）
 
 ---
 
@@ -232,26 +257,49 @@ cd frontend
 WebRPA/
 ├── backend/                 # 后端服务 (Python FastAPI)
 │   ├── app/
-│   │   ├── api/            # API 路由
-│   │   ├── executors/      # 模块执行器
-│   │   ├── models/         # 数据模型
-│   │   └── services/       # 核心服务
-│   ├── requirements.txt
-│   └── run.py
-├── frontend/               # 前端界面 (React + TypeScript)
-│   ├── src/
-│   │   ├── components/     # UI 组件
-│   │   ├── store/          # 状态管理
-│   │   └── types/          # 类型定义
-│   └── package.json
-├── frameworkHub/           # 工作流市场服务 (Node.js)
-├── Python313/              # 内置 Python 环境
-├── nodejs/                 # 内置 Node.js 环境
-├── backend/
+│   │   ├── api/            # API 路由（浏览器、系统、触发器等）
+│   │   ├── executors/      # 模块执行器（218个模块的核心逻辑）
+│   │   ├── models/         # 数据模型（工作流、变量、配置等）
+│   │   └── services/       # 核心服务（浏览器管理、任务调度等）
+│   ├── data/               # 数据文件（AI模型、配置等）
+│   ├── uploads/            # 上传文件临时存储
 │   ├── ffmpeg.exe          # 媒体处理工具
 │   ├── ffprobe.exe         # 媒体信息工具
-├── workflows/              # 本地工作流存储
-└── 双击启动WebRPA本地服务.bat
+│   ├── pandoc.exe          # 文档转换工具
+│   ├── m3u8.exe            # M3U8视频下载工具
+│   ├── requirements.txt    # Python依赖列表
+│   └── run.py              # 后端启动入口
+├── frontend/               # 前端界面 (React + TypeScript)
+│   ├── src/
+│   │   ├── components/     # UI 组件（工作流编辑器、配置面板等）
+│   │   ├── store/          # 状态管理（Zustand）
+│   │   ├── services/       # API服务、WebSocket通信
+│   │   ├── types/          # TypeScript类型定义
+│   │   └── lib/            # 工具函数（拼音搜索、工具类等）
+│   ├── public/             # 静态资源
+│   ├── package.json        # 前端依赖配置
+│   └── vite.config.ts      # Vite构建配置
+├── frameworkHub/           # 工作流市场服务 (Node.js + Express)
+│   ├── src/
+│   │   ├── routes/         # API路由（工作流上传、下载、搜索）
+│   │   ├── middleware/     # 中间件（认证、日志等）
+│   │   └── utils/          # 工具函数
+│   ├── data/               # 工作流数据存储（SQLite）
+│   ├── package.json        # Node.js依赖配置
+│   └── ecosystem.config.cjs # PM2进程配置
+├── Python313/              # 内置 Python 3.13 环境
+│   ├── Lib/                # Python标准库
+│   ├── Scripts/            # Python可执行脚本
+│   └── python.exe          # Python解释器
+├── nodejs/                 # 内置 Node.js 20 环境
+│   ├── node_modules/       # 全局npm包
+│   └── node.exe            # Node.js运行时
+├── NapCat/                 # QQ机器人服务（NapCat框架）
+├── workflows/              # 本地工作流存储目录
+├── png/                    # README展示图片
+├── LICENSE                 # 开源协议（CC BY-NC-SA 4.0）
+├── README.md               # 项目说明文档
+└── 双击启动WebRPA本地服务.bat  # 一键启动脚本
 ```
 
 ---
@@ -271,47 +319,95 @@ WebRPA/
 
 ### 文档功能
 
-- 📚 18个分类的详细教学文档
-- 🔍 支持全局模糊搜索
-- 📝 丰富的代码示例
-- 💡 最佳实践指南
+- 📚 **18个分类**的详细教学文档，覆盖所有218个模块
+- 🔍 **全局模糊搜索**：支持中文、英文、拼音、拼音首字母搜索
+- 📝 **丰富示例**：每个模块都有详细的配置说明和代码示例
+- 💡 **最佳实践**：提供工作流设计模式和优化建议
+- 🎯 **快速上手**：从基础到高级，循序渐进的学习路径
+- 📖 **实时更新**：文档随版本更新，始终保持最新
 
 ---
 
 ## 🔧 技术栈
 
-### 前端
+### 前端技术
 
-- **框架**：React 18 + TypeScript
-- **构建工具**：Vite 6
-- **UI 组件**：Radix UI + shadcn/ui
-- **样式**：TailwindCSS 4
-- **流程图**：React Flow
-- **状态管理**：Zustand
-- **图标**：Lucide React
-- **Markdown 渲染**：React Markdown + remark-gfm
+- **核心框架**：React 18 + TypeScript 5
+- **构建工具**：Vite 7（极速开发体验）
+- **UI 组件库**：Radix UI + shadcn/ui（无障碍、可定制）
+- **样式方案**：TailwindCSS 4（原子化CSS）
+- **流程图引擎**：React Flow（可视化工作流编辑）
+- **状态管理**：Zustand（轻量级、高性能）
+- **图标系统**：Lucide React（1000+ 精美图标）
+- **代码编辑器**：Monaco Editor（VS Code 同款）
+- **Markdown 渲染**：React Markdown + remark-gfm（支持GFM语法）
+- **实时通信**：Socket.IO Client（WebSocket）
 
-### 后端
+### 后端技术
 
-- **运行时**：Python 3.13
-- **Web 框架**：FastAPI + Uvicorn
-- **实时通信**：Socket.IO
-- **浏览器自动化**：Playwright (Microsoft Edge)
-- **数据库连接**：PyMySQL
-- **Excel 处理**：openpyxl
-- **邮件发送**：smtplib + email
-- **AI 集成**：OpenAI API 兼容接口
-- **OCR 识别**：ddddocr
-- **图像处理**：Pillow
-- **媒体处理**：FFmpeg
-- **HTTP 客户端**：httpx
+- **运行时环境**：Python 3.13（最新稳定版）
+- **Web 框架**：FastAPI（高性能异步框架）
+- **ASGI 服务器**：Uvicorn（支持HTTP/2、WebSocket）
+- **实时通信**：Socket.IO（双向事件驱动）
+- **数据验证**：Pydantic V2（类型安全）
 
-### 工作流仓库服务
+### 浏览器自动化
 
-- **运行时**：Node.js
-- **Web 框架**：Express
-- **数据存储**：JSON 文件
-- **进程管理**：PM2
+- **核心引擎**：Playwright（Microsoft Edge）
+- **元素定位**：支持CSS选择器、XPath、文本匹配
+- **智能等待**：自动等待元素可见、可点击
+- **多标签页**：支持多标签页、iframe切换
+- **网络拦截**：支持请求拦截、响应修改
+
+### 数据处理
+
+- **数据库**：PyMySQL（MySQL连接）
+- **Excel处理**：openpyxl（读写xlsx文件）
+- **数据分析**：Polars（高性能DataFrame）
+- **HTTP客户端**：httpx（异步HTTP请求）
+- **邮件发送**：smtplib + email（SMTP协议）
+
+### 媒体处理
+
+- **视频音频**：FFmpeg 7.1（全能媒体处理工具）
+- **图像处理**：Pillow 11.0（PIL分支，支持HEIC/WEBP）
+- **计算机视觉**：OpenCV 4（图像识别、人脸检测）
+- **音频处理**：pydub（音频剪辑、格式转换）
+- **PDF处理**：PyMuPDF（高性能PDF库）
+- **文档转换**：Pandoc 3.6（支持30+种文档格式）
+
+### AI与识别
+
+- **AI对话**：OpenAI API兼容接口（支持多家AI服务商）
+- **OCR识别**：EasyOCR（多语言文字识别）
+- **验证码识别**：ddddocr（滑块、文字验证码）
+- **语音识别**：SpeechRecognition（语音转文字）
+- **人脸识别**：face_recognition（基于dlib）
+- **二维码**：qrcode + pyzbar（生成与解码）
+
+### 系统操作
+
+- **键鼠模拟**：PyAutoGUI（跨平台键鼠控制）
+- **键鼠监听**：pynput（全局热键、事件监听）
+- **屏幕截图**：mss（高性能屏幕捕获）
+- **Windows API**：pywin32（系统级操作）
+- **网络抓包**：mitmproxy（HTTP/HTTPS代理）
+
+### 工作流市场服务
+
+- **运行时**：Node.js 20 LTS
+- **Web 框架**：Express 4（轻量级Web服务）
+- **数据存储**：JSON文件（轻量级持久化）
+- **进程管理**：PM2（生产级进程守护）
+- **实时通信**：Socket.IO（工作流同步）
+
+### 开发工具
+
+- **包管理**：npm（前端）、pip（后端）
+- **代码规范**：ESLint + Prettier（前端）
+- **类型检查**：TypeScript（前端）、Pydantic（后端）
+- **版本控制**：Git
+- **构建优化**：代码分割、Tree Shaking、压缩混淆
 
 ---
 
@@ -338,9 +434,10 @@ WebRPA/
 | ⚡ 触发器 | 10 |
 | 📁 文件管理 | 11 |
 | 📄 PDF处理 | 16 |
+| 📝 文档转换 | 13 |
 | 🎬 视频处理 | 10 |
 | 🎵 音频处理 | 3 |
-| 🖼️ 图像处理 | 4 |
+| 🖼️ 图像处理 | 20 |
 | 📱 二维码 | 2 |
 | 🌍 网络请求 | 8 |
 | 💬 QQ自动化 | 8 |
@@ -354,7 +451,7 @@ WebRPA/
 | 📋 日志导出 | 1 |
 | 💬 用户交互 | 1 |
 | 📝 画布工具 | 2 |
-| **总计** | **189 个模块** |
+| **总计** | **218 个模块** |
 
 ---
 
@@ -382,61 +479,91 @@ WebRPA/
 
 ## 🙏 致谢
 
-**感谢以下开源项目：**
+**感谢以下开源项目和技术社区的支持：**
 
-### 前端框架与工具
-- [React](https://react.dev/) - 前端框架
-- [TypeScript](https://www.typescriptlang.org/) - 类型安全的 JavaScript
-- [Vite](https://vitejs.dev/) - 快速的前端构建工具
-- [React Flow](https://reactflow.dev/) - 流程图编辑器
-- [TailwindCSS](https://tailwindcss.com/) - CSS 框架
-- [Zustand](https://zustand-demo.pmnd.rs/) - 轻量级状态管理
-- [Lucide React](https://lucide.dev/) - 图标库
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - 代码编辑器
-- [Radix UI](https://www.radix-ui.com/) - 无样式 UI 组件库
+### 🎨 前端框架与UI
 
-### 后端框架与工具
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代化 Python Web 框架
-- [Uvicorn](https://www.uvicorn.org/) - ASGI 服务器
-- [Pydantic](https://docs.pydantic.dev/) - 数据验证
-- [Socket.IO](https://socket.io/) - 实时双向通信
+- [React](https://react.dev/) - 用户界面构建库
+- [TypeScript](https://www.typescriptlang.org/) - JavaScript的超集，提供类型安全
+- [Vite](https://vitejs.dev/) - 下一代前端构建工具
+- [React Flow](https://reactflow.dev/) - 强大的流程图编辑器
+- [TailwindCSS](https://tailwindcss.com/) - 实用优先的CSS框架
+- [Radix UI](https://www.radix-ui.com/) - 无障碍的无样式UI组件
+- [shadcn/ui](https://ui.shadcn.com/) - 精美的React组件集合
+- [Zustand](https://zustand-demo.pmnd.rs/) - 简单高效的状态管理
+- [Lucide React](https://lucide.dev/) - 精美的开源图标库
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - VS Code同款代码编辑器
+- [React Markdown](https://remarkjs.github.io/react-markdown/) - Markdown渲染组件
 
-### 自动化与浏览器
-- [Playwright](https://playwright.dev/) - 浏览器自动化
-- [PyAutoGUI](https://pyautogui.readthedocs.io/) - 键鼠模拟
-- [pynput](https://pynput.readthedocs.io/) - 键鼠监听
+### ⚙️ 后端框架与服务
 
-### 数据处理
-- [Polars](https://pola.rs/) - 高性能数据处理
-- [openpyxl](https://openpyxl.readthedocs.io/) - Excel 文件处理
-- [PyMySQL](https://pymysql.readthedocs.io/) - MySQL 数据库连接
-- [httpx](https://www.python-httpx.org/) - HTTP 客户端
+- [FastAPI](https://fastapi.tiangolo.com/) - 现代化、高性能的Python Web框架
+- [Uvicorn](https://www.uvicorn.org/) - 闪电般快速的ASGI服务器
+- [Pydantic](https://docs.pydantic.dev/) - 数据验证和设置管理
+- [Socket.IO](https://socket.io/) - 实时双向事件驱动通信
+- [Express](https://expressjs.com/) - 快速、开放、极简的Node.js Web框架
+- [PM2](https://pm2.keymetrics.io/) - Node.js生产级进程管理器
 
-### 媒体处理
-- [FFmpeg](https://ffmpeg.org/) - 音视频处理
-- [Pillow](https://pillow.readthedocs.io/) - 图像处理
-- [OpenCV](https://opencv.org/) - 计算机视觉
-- [pydub](https://github.com/jiaaro/pydub) - 音频处理
-- [PyMuPDF](https://pymupdf.readthedocs.io/) - PDF 处理
+### 🌐 浏览器自动化
 
-### AI 与识别
-- [EasyOCR](https://github.com/JaidedAI/EasyOCR) - OCR 文字识别
-- [ddddocr](https://github.com/sml2h3/ddddocr) - 验证码识别
-- [SpeechRecognition](https://github.com/Uberi/speech_recognition) - 语音识别
-- [qrcode](https://github.com/lincolnloop/python-qrcode) - 二维码生成
-- [pyzbar](https://github.com/NaturalHistoryMuseum/pyzbar) - 二维码解码
+- [Playwright](https://playwright.dev/) - 微软出品的现代化浏览器自动化工具
+- [Playwright for Python](https://playwright.dev/python/) - Playwright的Python绑定
 
-### 其他工具
-- [Express](https://expressjs.com/) - Node.js Web 框架
-- [mitmproxy](https://mitmproxy.org/) - 网络代理抓包
-- [mss](https://python-mss.readthedocs.io/) - 屏幕截图
-- [pywin32](https://github.com/mhammond/pywin32) - Windows API
+### 🖱️ 系统操作与模拟
+
+- [PyAutoGUI](https://pyautogui.readthedocs.io/) - 跨平台的GUI自动化库
+- [pynput](https://pynput.readthedocs.io/) - 监听和控制键盘鼠标
+- [pywin32](https://github.com/mhammond/pywin32) - Windows API的Python扩展
+- [mss](https://python-mss.readthedocs.io/) - 超快的跨平台屏幕截图库
+
+### 📊 数据处理与存储
+
+- [Polars](https://pola.rs/) - 闪电般快速的DataFrame库
+- [openpyxl](https://openpyxl.readthedocs.io/) - 读写Excel 2010文件
+- [PyMySQL](https://pymysql.readthedocs.io/) - 纯Python实现的MySQL客户端
+- [httpx](https://www.python-httpx.org/) - 下一代HTTP客户端
+
+### 🎬 媒体处理
+
+- [FFmpeg](https://ffmpeg.org/) - 完整的跨平台音视频解决方案
+- [Pillow](https://pillow.readthedocs.io/) - Python图像处理库（PIL分支）
+- [OpenCV](https://opencv.org/) - 开源计算机视觉库
+- [pydub](https://github.com/jiaaro/pydub) - 简单易用的音频处理库
+- [PyMuPDF (fitz)](https://pymupdf.readthedocs.io/) - 高性能PDF处理库
+- [Pandoc](https://pandoc.org/) - 通用文档转换工具
+- [pypandoc](https://github.com/JessicaTegner/pypandoc) - Pandoc的Python包装器
+
+### 🤖 AI与识别技术
+
+- [OpenAI](https://openai.com/) - AI对话接口标准
+- [EasyOCR](https://github.com/JaidedAI/EasyOCR) - 即用型OCR，支持80+语言
+- [ddddocr](https://github.com/sml2h3/ddddocr) - 简单易用的验证码识别库
+- [face_recognition](https://github.com/ageitgey/face_recognition) - 世界上最简单的人脸识别库
+- [SpeechRecognition](https://github.com/Uberi/speech_recognition) - 语音识别库
+- [pyttsx3](https://github.com/nateshmbhat/pyttsx3) - 文字转语音库
+- [qrcode](https://github.com/lincolnloop/python-qrcode) - 二维码生成器
+- [pyzbar](https://github.com/NaturalHistoryMuseum/pyzbar) - 二维码和条形码解码器
+
+### 🔧 开发工具与库
+
+- [mitmproxy](https://mitmproxy.org/) - 交互式HTTPS代理
+- [colorama](https://github.com/tartley/colorama) - 跨平台彩色终端输出
+- [python-dotenv](https://github.com/theskumar/python-dotenv) - 从.env文件读取配置
+- [aiofiles](https://github.com/Tinche/aiofiles) - 异步文件操作
+- [watchdog](https://github.com/gorakhargosh/watchdog) - 文件系统事件监控
+
+### 🎯 特别感谢
+
+- **Microsoft** - 提供Playwright、VS Code、TypeScript等优秀工具
+- **Vercel** - 提供优秀的前端开发体验
+- **GitHub** - 提供代码托管和协作平台
+- **开源社区** - 感谢所有为开源事业做出贡献的开发者们
 
 ---
 
 ## ⭐ Star History
 
-这是我开源的第一款产品，如果这个项目对你有帮助，请点一个 Star ⭐ 支持一下！
+**这是我开源的第一款产品，如果这个项目对你有帮助，请点一个 Star ⭐ 支持一下！**
 
 <h4 align="center">☕请作者喝杯奶茶☕</h4>
 
