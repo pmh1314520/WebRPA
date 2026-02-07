@@ -5,7 +5,7 @@
 Web RPA - 网页机器人流程自动化工具
 </h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-1.24.0-blue.svg" alt="版本">
+  <img src="https://img.shields.io/badge/版本-1.24.4-blue.svg" alt="版本">
   <img src="https://img.shields.io/badge/模块数量-218个-brightgreen.svg" alt="模块数量">
   <img src="https://img.shields.io/badge/协议-CC%20BY--NC--SA%204.0-green.svg" alt="协议">
   <img src="https://img.shields.io/badge/作者-青云制作__彭明航-orange.svg" alt="作者">
@@ -128,7 +128,7 @@ Web RPA - 网页机器人流程自动化工具
 - **鼠标触发**：鼠标触发器（监听点击、滚动、移动事件）
 - **视觉触发**：图像触发器（检测屏幕图像）、人脸触发器（人脸识别）
 - **音频触发**：声音触发器（监听系统音频输出）
-- **网页触发**：元素变化触发器（监控网页元素变化）
+- **网页触发**：子元素变化触发器（监控网页元素变化）
 
 ### 🤖 AI 能力（11个模块）
 - **AI对话**：支持OpenAI、智谱、Deepseek、通义千问、Gemini、Azure等多家AI服务商
