@@ -115,8 +115,14 @@ PICKER_SCRIPT = """(function() {
             var tag = el.tagName.toLowerCase();
             var parent = el.parentElement;
             var index = -1;
+            var nthChild = -1;
             if (parent) {
-                var siblings = Array.from(parent.children).filter(function(c) { return c.tagName === el.tagName; });
+                // 计算在所有兄弟元素中的位置（nth-child）
+                var allSiblings = Array.from(parent.children);
+                nthChild = allSiblings.indexOf(el) + 1;
+                
+                // 计算在相同标签名兄弟元素中的位置（nth-of-type）
+                var siblings = allSiblings.filter(function(c) { return c.tagName === el.tagName; });
                 if (siblings.length > 1) {
                     index = siblings.indexOf(el) + 1;
                 }
@@ -127,7 +133,7 @@ PICKER_SCRIPT = """(function() {
                 // 过滤掉动态生成的 class（包含数字或特殊字符）
                 return c && !/[0-9_-]{4,}|^[0-9]/.test(c) && c.length < 30;
             });
-            path.unshift({ tag: tag, index: index, el: el, id: id, classes: classes });
+            path.unshift({ tag: tag, index: index, nthChild: nthChild, el: el, id: id, classes: classes });
             el = parent;
         }
         return path;
@@ -144,7 +150,7 @@ PICKER_SCRIPT = """(function() {
         var diffIndex = -1;
         for (var i = 0; i < path1.length; i++) {
             if (path1[i].tag !== path2[i].tag) return null;
-            if (path1[i].index !== path2[i].index) {
+            if (path1[i].nthChild !== path2[i].nthChild) {
                 if (diffIndex >= 0) return null; // 多个位置不同，无法确定模式
                 diffIndex = i;
             }
@@ -161,16 +167,17 @@ PICKER_SCRIPT = """(function() {
             }
         }
         
-        // 构建选择器模式
+        // 构建选择器模式（使用 nth-child）
         var selectorParts = [];
         for (var i = startIndex; i < path1.length; i++) {
             var part = path1[i];
             if (part.id && i <= diffIndex) {
                 selectorParts.push('#' + part.id);
             } else if (i === diffIndex) {
+                // 使用占位符，后续会被替换
                 selectorParts.push(part.tag + ':nth-child({index})');
-            } else if (part.index > 0) {
-                selectorParts.push(part.tag + ':nth-child(' + part.index + ')');
+            } else if (part.nthChild > 0) {
+                selectorParts.push(part.tag + ':nth-child(' + part.nthChild + ')');
             } else {
                 selectorParts.push(part.tag);
             }
@@ -178,16 +185,22 @@ PICKER_SCRIPT = """(function() {
         
         var pattern = selectorParts.join(' > ');
         
-        // 找出所有匹配的元素
+        // 找出所有匹配的元素（在父元素的所有子元素中查找）
         var parent = path1[diffIndex].el.parentElement;
         var allSiblings = parent ? Array.from(parent.children).filter(function(c) {
             return c.tagName === path1[diffIndex].el.tagName;
         }) : [];
         
+        // 获取每个兄弟元素在所有子元素中的 nth-child 索引
+        var allChildren = parent ? Array.from(parent.children) : [];
+        var indices = allSiblings.map(function(sibling) {
+            return allChildren.indexOf(sibling) + 1;
+        });
+        
         return {
             pattern: pattern,
             elements: allSiblings,
-            indices: allSiblings.map(function(_, i) { return i + 1; })
+            indices: indices
         };
     }
     
@@ -207,7 +220,7 @@ PICKER_SCRIPT = """(function() {
             }
         }
         
-        // 构建选择器
+        // 构建选择器（使用 nth-child）
         var parts = [];
         for (var i = startIndex; i < path.length; i++) {
             var p = path[i];
@@ -216,12 +229,12 @@ PICKER_SCRIPT = """(function() {
             } else if (p.classes.length > 0) {
                 // 使用第一个有意义的 class
                 var selector = p.tag + '.' + p.classes[0];
-                if (p.index > 0) {
-                    selector += ':nth-child(' + p.index + ')';
+                if (p.nthChild > 0) {
+                    selector += ':nth-child(' + p.nthChild + ')';
                 }
                 parts.push(selector);
-            } else if (p.index > 0) {
-                parts.push(p.tag + ':nth-child(' + p.index + ')');
+            } else if (p.nthChild > 0) {
+                parts.push(p.tag + ':nth-child(' + p.nthChild + ')');
             } else {
                 parts.push(p.tag);
             }
