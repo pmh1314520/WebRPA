@@ -1,1 +1,0 @@
-import{t as i}from"./index-DUXV0WOB.js";var a=i({base:"shrink-0 bg-divider border-none",variants:{orientation:{horizontal:"w-full h-divider",vertical:"h-full w-divider"}},defaultVariants:{orientation:"horizontal"}});export{a as d};
