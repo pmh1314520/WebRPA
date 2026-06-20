@@ -148,7 +148,7 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
         handleClassName="!w-3 !h-3 !bg-[hsl(var(--brand-500))] !border-2 !border-white !rounded-full"
       />
       <div
-        className={`w-full h-full rounded-[12px] flex flex-col overflow-hidden transition-shadow duration-200 ${(nodeData as any).__aiSpawning ? 'ai-node-spawn' : ''}`}
+        className={`w-full h-full rounded-[12px] flex flex-col transition-shadow duration-200 ${(nodeData as any).__aiSpawning ? 'ai-node-spawn' : ''}`}
         style={{
           backgroundColor: colorConfig.value,
           border: `2px solid ${selected ? colorConfig.border : colorConfig.border + '60'}`,
@@ -158,7 +158,7 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
         }}
       >
         <div
-          className="flex items-center justify-between px-2.5 py-1.5 shrink-0"
+          className="flex items-center justify-between px-2.5 py-1.5 shrink-0 rounded-t-[10px]"
           style={{
             borderBottom: `1px dashed ${colorConfig.border}50`,
             background: `linear-gradient(180deg, ${colorConfig.border}15, transparent)`,
@@ -250,7 +250,7 @@ export const NoteNode = memo(({ id, data, selected }: NodeProps) => {
             </div>
           )}
         </div>
-        <div className="flex-1 p-2.5 overflow-hidden cursor-text min-h-0" onDoubleClick={handleDoubleClick}>
+        <div className="flex-1 p-2.5 overflow-hidden cursor-text min-h-0 rounded-b-[10px]" onDoubleClick={handleDoubleClick}>
           {isEditing ? (
             <textarea
               ref={textareaRef}

@@ -28,6 +28,7 @@ import { useModuleStatsStore } from '@/store/moduleStatsStore'
 import { GroupNode } from './GroupNode'
 import { SubflowHeaderNode } from './SubflowHeaderNode'
 import { NoteNode } from './NoteNode'
+import { getModuleHexColor } from './moduleColors'
 import { ModuleSidebar } from './ModuleSidebar'
 import { ConfigPanel } from './ConfigPanel'
 import { BlockFlowView } from './BlockFlowView'
@@ -1765,17 +1766,15 @@ export function WorkflowEditor() {
             {canvasWidgets?.controls !== false && <Controls />}
             {canvasWidgets?.minimap !== false && <MiniMap 
               nodeColor={(node) => {
+                // 分组/便签等特殊节点用各自颜色；普通模块直接用其真实分类色，
+                // 保证缩略图里的小方块颜色与画布上模块颜色完全一致。
+                if (node.type === 'noteNode') {
+                  const c = (node.data as Record<string, unknown>)?.color
+                  return typeof c === 'string' && c ? c : '#fcd34d'
+                }
+                if (node.type === 'groupNode') return '#94a3b8'
                 const data = node.data as NodeData
-                if (data.moduleType?.startsWith('condition') || data.moduleType?.startsWith('loop') || data.moduleType?.startsWith('foreach')) {
-                  return '#22c55e'
-                }
-                if (data.moduleType?.includes('captcha')) {
-                  return '#f97316'
-                }
-                if (['select_dropdown', 'set_checkbox', 'drag_element', 'scroll_page', 'upload_file', 'download_file', 'save_image'].includes(data.moduleType)) {
-                  return '#a855f7'
-                }
-                return '#3b82f6'
+                return getModuleHexColor(data?.moduleType)
               }}
               zoomable
               pannable

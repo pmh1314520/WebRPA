@@ -75,3 +75,44 @@ function buildModuleColors(): Record<string, string> {
 }
 
 export const moduleColors: Record<string, string> = buildModuleColors()
+
+// Tailwind 分类色 → 代表性 hex（供 minimap 等需要真实颜色值的场景，确保缩略图颜色与画布模块一致）
+const tailwindHex: Record<string, string> = {
+  'bg-blue-500': '#3b82f6', 'bg-blue-600': '#2563eb', 'bg-blue-800': '#1e40af',
+  'bg-indigo-500': '#6366f1', 'bg-indigo-600': '#4f46e5', 'bg-indigo-700': '#4338ca', 'bg-indigo-800': '#3730a3',
+  'bg-purple-500': '#a855f7', 'bg-purple-600': '#9333ea', 'bg-purple-700': '#7e22ce',
+  'bg-violet-500': '#8b5cf6', 'bg-violet-600': '#7c3aed', 'bg-violet-700': '#6d28d9',
+  'bg-fuchsia-700': '#a21caf',
+  'bg-pink-500': '#ec4899', 'bg-pink-600': '#db2777', 'bg-pink-800': '#9d174d',
+  'bg-rose-500': '#f43f5e', 'bg-rose-600': '#e11d48', 'bg-rose-700': '#be123c',
+  'bg-red-600': '#dc2626',
+  'bg-orange-500': '#f97316', 'bg-orange-600': '#ea580c',
+  'bg-amber-600': '#d97706', 'bg-amber-700': '#b45309',
+  'bg-yellow-500': '#eab308',
+  'bg-lime-600': '#65a30d',
+  'bg-green-500': '#22c55e', 'bg-green-600': '#16a34a',
+  'bg-emerald-500': '#10b981', 'bg-emerald-600': '#059669',
+  'bg-teal-500': '#14b8a6', 'bg-teal-600': '#0d9488', 'bg-teal-800': '#115e59',
+  'bg-cyan-500': '#06b6d4', 'bg-cyan-600': '#0891b2', 'bg-cyan-700': '#0e7490',
+  'bg-sky-500': '#0ea5e9', 'bg-sky-600': '#0284c7', 'bg-sky-700': '#0369a1',
+  'bg-slate-600': '#475569', 'bg-slate-700': '#334155',
+  'bg-gray-600': '#4b5563',
+  'bg-stone-500': '#78716c',
+}
+
+function buildModuleHexColors(): Record<string, string> {
+  const colors: Record<string, string> = {}
+  for (const category of moduleCategories) {
+    const hex = tailwindHex[category.color] || '#3b82f6'
+    for (const moduleType of category.modules) colors[moduleType as string] = hex
+  }
+  return colors
+}
+
+export const moduleHexColors: Record<string, string> = buildModuleHexColors()
+
+/** 取模块的真实代表色（hex），用于 minimap 等。未知模块回退到蓝色。 */
+export function getModuleHexColor(moduleType?: string): string {
+  if (!moduleType) return '#3b82f6'
+  return moduleHexColors[moduleType] || '#3b82f6'
+}
