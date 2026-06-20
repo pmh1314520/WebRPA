@@ -13,6 +13,7 @@ import { useDialogRegistry, getDialogInfoForAI } from '@/store/dialogRegistry'
 import { localWorkflowApi, workflowApi, screensaverApi, dataAssetApi, imageAssetApi, scheduledTaskApi, workflowVersionsApi } from '@/services/api'
 import { socketService } from '@/services/socket'
 import { useAiActionLogStore } from '@/store/aiActionLogStore'
+import { actionNeedsApproval, requestApproval } from '@/store/aiPermissionStore'
 
 // 会改动画布、需要记入「AI 操作时间线」并可一键回退的 client_action
 const MUTATING_ACTIONS = new Set<string>([
@@ -225,6 +226,18 @@ export async function executeClientAction(
   payload: Record<string, any> = {}
 ): Promise<ClientActionResult> {
   try {
+    // 权限门控：根据用户设置的权限模式，决定该操作是否需要先经用户授权。
+    // 用户「拒绝」不会让 AI 停止任务——把拒绝结果返回给 AI，它会继续后续回复。
+    if (actionNeedsApproval(action)) {
+      const label = AI_ACTION_LABELS[action] || action
+      const approved = await requestApproval(action, label, payload)
+      if (!approved) {
+        return {
+          success: false,
+          error: `用户拒绝了操作「${label}」。这不代表任务终止，请继续完成其它可执行的步骤，或改用其它方式。`,
+        }
+      }
+    }
     // 记录「AI 操作时间线」：会改动画布的操作，先存一份操作前快照，供一键回退
     if (MUTATING_ACTIONS.has(action)) {
       try {

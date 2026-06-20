@@ -22,9 +22,11 @@ import {
   Cpu,
   ChevronUp,
   Check,
+  ShieldQuestion,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAIAssistantStore, type ChatMessage } from '@/store/aiAssistantStore'
+import { useAIPermissionStore } from '@/store/aiPermissionStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { useAiActionLogStore } from '@/store/aiActionLogStore'
 import { useWorkflowStore } from '@/store/workflowStore'
@@ -57,6 +59,7 @@ const QUICK_ACTIONS: { label: string; prompt: string }[] = [
 export function AIAssistantPanel() {
   const isOpen = useAIAssistantStore((s) => s.isPanelOpen)
   const setOpen = useAIAssistantStore((s) => s.setPanelOpen)
+  const pendingApproval = useAIPermissionStore((s) => s.pending)
   const messages = useAIAssistantStore((s) => s.messages)
   const setMessages = useAIAssistantStore((s) => s.setMessages)
   const appendMessage = useAIAssistantStore((s) => s.appendMessage)
@@ -1042,6 +1045,41 @@ export function AIAssistantPanel() {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* AI 操作授权提示：仅在"逐项确认/智能放行"模式下，AI 要操作时弹出 */}
+      {pendingApproval && (
+        <div className="border-t border-[hsl(var(--warning-500)/0.4)] bg-[hsl(var(--warning-50))] px-3 py-2.5 flex-shrink-0 animate-fade-in-down">
+          <div className="flex items-start gap-2">
+            <div className="w-6 h-6 rounded-full bg-[hsl(var(--warning-500)/0.15)] flex items-center justify-center flex-shrink-0 mt-0.5">
+              <ShieldQuestion className="w-3.5 h-3.5 text-[hsl(var(--warning-700))]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12.5px] font-semibold text-[hsl(var(--warning-800))]">
+                小助手请求授权：{pendingApproval.label}
+              </div>
+              {pendingApproval.payloadPreview && (
+                <div className="text-[10.5px] text-[hsl(var(--slate-600))] mt-0.5 font-mono truncate" title={pendingApproval.payloadPreview}>
+                  {pendingApproval.payloadPreview}
+                </div>
+              )}
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={() => pendingApproval.resolve(true)}
+                  className="px-3 py-1 rounded-[6px] bg-[hsl(var(--brand-600))] hover:bg-[hsl(var(--brand-700))] text-white text-[12px] font-medium transition-colors"
+                >
+                  允许执行
+                </button>
+                <button
+                  onClick={() => pendingApproval.resolve(false)}
+                  className="px-3 py-1 rounded-[6px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--slate-100))] text-[hsl(var(--slate-700))] text-[12px] font-medium transition-colors"
+                >
+                  拒绝（继续任务）
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 输入区 */}
       <div className="border-t border-[hsl(var(--border))] p-3 bg-[hsl(var(--slate-50))] flex-shrink-0">

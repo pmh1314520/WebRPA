@@ -919,6 +919,38 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
+
+                  {/* 操作权限模式（三档） */}
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">操作权限</Label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        控制小助手操作 WebRPA / 你电脑时是否需要你授权。拒绝某次操作不会终止任务，小助手会继续。
+                      </p>
+                    </div>
+                    {([
+                      ['approval', '逐项确认', '小助手每次真正要操作前都在聊天上方弹授权，你允许才执行'],
+                      ['smart', '智能放行', '仅在检测到高风险操作（删除/清空/运行/回档等）时才请求确认，其余自动执行'],
+                      ['full', '自由执行', '完全不拦截，小助手可不受限地操作一切（请谨慎开启）'],
+                    ] as const).map(([val, title, desc]) => {
+                      const current = config.aiAssistant?.permissionMode || 'smart'
+                      const active = current === val
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => updateAIAssistantConfig({ permissionMode: val })}
+                          className={`w-full text-left p-2.5 rounded-md border transition-colors ${active ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-3.5 h-3.5 rounded-full border-2 flex-none ${active ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`} />
+                            <span className="text-[13px] font-medium text-gray-800">{title}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 mt-0.5 ml-[22px]">{desc}</p>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* ===== 多模型管理 ===== */}

@@ -71,6 +71,8 @@ export interface GlobalConfig {
     systemPrompt: string   // 用户追加的系统提示词
     enableTools: boolean   // 启用 Skills 工具调用
     autoApprove: boolean   // 自动批准工具调用（不弹确认）
+    // 权限模式：approval=逐项确认(每次操作前都要授权) / smart=智能放行(仅高风险才确认) / full=自由执行(完全不拦)
+    permissionMode?: 'approval' | 'smart' | 'full'
     // ===== 多模型支持 =====
     models?: AIModelProfile[]   // 多模型档案（同/不同厂商均可）
     activeModelId?: string      // 当前手动选中的模型 id（聊天处上拉栏切换）
@@ -215,6 +217,7 @@ const defaultConfig: GlobalConfig = {
     systemPrompt: '',
     enableTools: true,
     autoApprove: false,
+    permissionMode: 'smart',
   },
   email: {
     senderEmail: '',
