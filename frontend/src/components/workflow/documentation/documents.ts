@@ -115,6 +115,12 @@ export const documents: DocumentItem[] = [
     description: '创建和管理自定义模块，扩展功能',
   },
   {
+    id: 'plugin-dev-guide',
+    title: '🧩 插件市场与开发',
+    icon: Puzzle,
+    description: '开发/打包/上架插件，扩展特定网站场景的自动化能力',
+  },
+  {
     id: 'platform-guide',
     title: '🧰 平台能力',
     icon: Wrench,

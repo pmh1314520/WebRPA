@@ -29,6 +29,7 @@ const FILE_TO_DOC_ID: Record<string, string> = {
   'content-triggers': 'triggers-guide',
   'content-scheduled-tasks': 'scheduled-tasks-guide',
   'content-custom-modules': 'custom-modules-guide',
+  'content-plugin-dev': 'plugin-dev-guide',
   'content-platform': 'platform-guide',
   'content-advanced': 'advanced-features',
   'content-ai-vision': 'ai-vision-guide',
