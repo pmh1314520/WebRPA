@@ -395,9 +395,14 @@ export function moveBlock(blocks: Block[], id: string, dir: -1 | 1): Block[] {
   if (!loc) return blocks
   const j = loc.index + dir
   if (j < 0 || j >= loc.list.length) return blocks
-  const tmp = loc.list[loc.index]
-  loc.list[loc.index] = loc.list[j]
-  loc.list[j] = tmp
+  const a = loc.list[loc.index]
+  const b = loc.list[j]
+  // 关键修复：flowStart（独立流程起点标记）属于"位置"而非"块本身"。
+  // 交换两块内容时必须让该标记留在原位置，否则把第 2 块上移到第 1 位会让它带着 flowStart，
+  // 生成图时就被拆成两条独立流程、中间连线丢失（用户反馈的"变独立流程"bug）。
+  const af = a.flowStart, bf = b.flowStart
+  loc.list[loc.index] = { ...b, flowStart: af }
+  loc.list[j] = { ...a, flowStart: bf }
   return [...blocks]
 }
 
@@ -427,10 +432,37 @@ export function moveBlockTo(
   subtreeIds(moving, ids)
   const targetId = target.id
   if (targetId && ids.has(targetId)) return blocks
+
+  // —— 维护 flowStart（独立流程起点标记），避免移动后把一条流程拆断或误并 ——
+  // 1) 若被移动块本身是某条顶层流程的起点，移除后让它的下一个顶层兄弟接管起点标记，
+  //    保证它原来所在的那条流程不丢起点。
+  if (moving.flowStart) {
+    const ti = blocks.findIndex((b) => b.id === id)
+    if (ti >= 0 && ti + 1 < blocks.length && !blocks[ti + 1].flowStart) {
+      blocks[ti + 1] = { ...blocks[ti + 1], flowStart: true }
+    }
+  }
+  // 2) 被移动块在落到新位置前先清掉起点标记（默认它接到序列中间，不该成为新流程起点）
+  const targetWasTopFlowStart = target.mode === 'before' && blocks.some((b) => b.id === target.id && b.flowStart)
+  moving.flowStart = false
+
   // 先摘除
   const removed = removeBlock(blocks, id)
   // 再插入到目标
-  if (target.mode === 'after') return insertAfter(removed, target.id, moving)
-  if (target.mode === 'before') return insertBefore(removed, target.id, moving)
-  return insertIntoContainer(removed, target.id, target.slot, moving)
+  let result: Block[]
+  if (target.mode === 'after') result = insertAfter(removed, target.id, moving)
+  else if (target.mode === 'before') result = insertBefore(removed, target.id, moving)
+  else result = insertIntoContainer(removed, target.id, target.slot, moving)
+
+  // 3) 若是"移到某顶层流程起点之前"，让被移动块接管起点，原起点块取消起点（仍属同一条流程）
+  if (targetWasTopFlowStart) {
+    result = result.map((b) =>
+      b.id === moving.id ? { ...b, flowStart: true } : (b.id === target.id ? { ...b, flowStart: false } : b)
+    )
+  }
+  // 4) 顶层第一个块必须是流程起点
+  if (result.length > 0 && !result[0].flowStart) {
+    result = result.map((b, i) => (i === 0 ? { ...b, flowStart: true } : b))
+  }
+  return result
 }
