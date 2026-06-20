@@ -3,9 +3,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { installGlobalTooltip } from './lib/globalTooltip'
+import { setupEditorI18n } from './lib/uiI18n'
 
 // 安装全局 tooltip 拦截：把所有 title 属性自动转成 WebRPA 主题浮窗
 installGlobalTooltip()
+
+// 编辑器界面国际化：首次按系统语言自动选择中/英，右上角可切换
+setupEditorI18n()
 
 // 抑制 "ResizeObserver loop completed with undelivered notifications" 这条无害警告。
 // 拖拽左右面板宽度时，浏览器 ResizeObserver 会在一帧内多次回调而抛出该提示，
