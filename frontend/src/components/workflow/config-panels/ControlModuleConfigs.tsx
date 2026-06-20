@@ -360,25 +360,79 @@ export function ForeachDictConfig({ data, onChange }: ConfigProps) {
 
 // 定时任务配置
 export function ScheduledTaskConfig({ data, onChange }: ConfigProps) {
+  const scheduleType = (data.scheduleType as string) || 'datetime'
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="cronExpression">Cron表达式</Label>
-        <VariableInput
-          value={(data.cronExpression as string) || ''}
-          onChange={(v) => onChange('cronExpression', v)}
-          placeholder="例如：0 0 * * * （每小时执行）"
-        />
+        <Label htmlFor="scheduleType">定时方式</Label>
+        <Select
+          id="scheduleType"
+          value={scheduleType}
+          onChange={(e) => onChange('scheduleType', e.target.value)}
+        >
+          <option value="datetime">指定日期时间执行</option>
+          <option value="delay">延迟一段时间后执行</option>
+        </Select>
         <p className="text-xs text-muted-foreground">
-          格式：秒 分 时 日 月 周
+          本模块会"等待"到设定的时间点 / 延迟结束后，再继续往下执行（用于流程内定时门控）。
+          若要把整条工作流注册成周期计划任务，请用底栏的「计划任务」面板。
         </p>
       </div>
+
+      {scheduleType === 'datetime' ? (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="targetDate">目标日期</Label>
+            <VariableInput
+              value={(data.targetDate as string) || ''}
+              onChange={(v) => onChange('targetDate', v)}
+              placeholder="YYYY-MM-DD，如 2026-01-01"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="targetTime">目标时间</Label>
+            <VariableInput
+              value={(data.targetTime as string) || ''}
+              onChange={(v) => onChange('targetTime', v)}
+              placeholder="HH:MM 或 HH:MM:SS，如 09:30"
+            />
+          </div>
+        </>
+      ) : (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-2">
+            <Label htmlFor="delayHours">小时</Label>
+            <VariableInput
+              value={String((data.delayHours as number | string) ?? '')}
+              onChange={(v) => onChange('delayHours', v)}
+              placeholder="0"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="delayMinutes">分钟</Label>
+            <VariableInput
+              value={String((data.delayMinutes as number | string) ?? '')}
+              onChange={(v) => onChange('delayMinutes', v)}
+              placeholder="0"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="delaySeconds">秒</Label>
+            <VariableInput
+              value={String((data.delaySeconds as number | string) ?? '')}
+              onChange={(v) => onChange('delaySeconds', v)}
+              placeholder="0"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
-        <Label htmlFor="taskName">任务名称</Label>
+        <Label htmlFor="taskName">任务备注（可选）</Label>
         <VariableInput
           value={(data.taskName as string) || ''}
           onChange={(v) => onChange('taskName', v)}
-          placeholder="输入任务名称"
+          placeholder="给这个定时步骤起个名字"
         />
       </div>
     </div>

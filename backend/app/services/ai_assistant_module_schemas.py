@@ -1429,14 +1429,29 @@ TRIGGER_DESKTOP_SCHEMAS: dict = {
         "combo": "AB 测试 / 灰度分流；有两个出口 path1 和 path2",
     },
 
-    # 计划任务节点
+    # 定时门控节点（流程内"等到某时间/延迟后再继续"，不是周期计划任务）
     "scheduled_task": {
         "required": ["scheduleType"],
-        "optional": ["cronExpression", "intervalSeconds", "specificTime"],
-        "defaults": {"scheduleType": "interval", "intervalSeconds": 300},
-        "desc": {"scheduleType": "interval/cron/specific", "cronExpression": "如 0 9 * * *"},
-        "example": {"scheduleType": "cron", "cronExpression": "0 9 * * *"},
-        "combo": "工作流入口节点",
+        "optional": ["targetDate", "targetTime", "delayHours", "delayMinutes", "delaySeconds", "taskName"],
+        "defaults": {"scheduleType": "datetime"},
+        "desc": {
+            "scheduleType": "datetime=等到指定日期时间 / delay=延迟一段时间后继续",
+            "targetDate": "datetime 模式：目标日期 YYYY-MM-DD",
+            "targetTime": "datetime 模式：目标时间 HH:MM 或 HH:MM:SS",
+            "delayHours": "delay 模式：延迟小时数",
+            "delayMinutes": "delay 模式：延迟分钟数",
+            "delaySeconds": "delay 模式：延迟秒数",
+        },
+        "conditional_required": {
+            "field": "scheduleType",
+            "default": "datetime",
+            "map": {
+                "datetime": ["targetDate", "targetTime"],
+                "delay": [],
+            },
+        },
+        "example": {"scheduleType": "delay", "delaySeconds": 30},
+        "combo": "用于流程内定时门控；要把整条工作流注册成周期计划任务，请用计划任务面板",
     },
 
     # 桌面应用自动化
