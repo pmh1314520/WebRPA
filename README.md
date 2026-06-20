@@ -6,12 +6,16 @@ WebRPA - 网页机器人流程自动化工具
 </h1>
 <p align="center">
   <img src="https://img.shields.io/badge/版本-2.2.0-blue.svg" alt="版本">
-  <img src="https://img.shields.io/badge/模块数量-542个-brightgreen.svg" alt="模块数量">
+  <img src="https://img.shields.io/badge/模块数量-560+个-brightgreen.svg" alt="模块数量">
   <img src="https://img.shields.io/badge/协议-AGPL--3.0%20%2B%20商业授权-green.svg" alt="协议">
   <img src="https://img.shields.io/badge/作者-青云制作__彭明航-orange.svg" alt="作者">
   <img src="https://img.shields.io/badge/Python-3.13-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/React-19-61dafb.svg" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5-3178c6.svg" alt="TypeScript">
+</p>
+
+<p align="center">
+  <b>中文</b> · <a href="README.en.md">English</a>
 </p>
 
 
@@ -29,12 +33,16 @@ WebRPA - 网页机器人流程自动化工具
 
 - **🚀 零代码开发**：可视化拖拽，无需编程基础
 - **📦 开箱即用**：内置Python、Node.js环境，一键启动
-- **🔧 模块丰富**：542个功能模块，覆盖95%自动化场景
-- **🤖 AI 小助手**：内置 AI 助手，可对话式理解需求、自动搭建/排查工作流，并具备**自愈能力**（运行失败自动诊断→修复→重跑）；OpenAI 兼容协议，支持 OpenAI / 智谱 / Deepseek / Ollama 等
+- **🔧 模块丰富**：560+个功能模块，覆盖95%自动化场景（含基于 DrissionPage 的反检测网页自动化模块）
+- **🤖 AI 小助手**：内置 AI 助手，可对话式理解需求、自动搭建/排查工作流，并具备**自愈能力**（运行失败自动诊断→修复→重跑）；OpenAI 兼容协议，支持 OpenAI / 智谱 / Deepseek / Ollama 等。支持**三档操作权限**（逐项确认 / 智能放行 / 自由执行），并能在编辑器报错时一键 **AI 诊断**
+- **🛡️ 永不白屏**：全局错误边界兜底，任何模块异常都弹出错误卡片（含报错详情与 AI 诊断），绝不让编辑器整页白屏
+- **🌳 版本历史**：Git 式本地版本快照（含节点、连线、全局变量），可随时恢复 / 对比；小助手会在大改动前自动存档
+- **☁️ WebDAV 远程存储**：工作流可保存/读取到 NAS、Nextcloud、坚果云等，多端共享
+- **⌨️ 自定义快捷键**：常用功能（运行/停止/保存/新建等）可自由绑定组合键
 - **🎨 界面美观**：现代化UI设计，Motion动效灵动，操作流畅，支持Mermaid流程图
 - **⚡ 性能强劲**：基于FastAPI + React，响应迅速
-- **🔌 易于扩展**：模块化架构，支持自定义开发，支持 MCP 服务器接入
-- **📚 文档完善**：36篇详细教学文档，覆盖所有544个模块分类
+- **🔌 易于扩展**：模块化架构，支持自定义模块开发，支持 MCP 服务器接入
+- **📚 文档完善**：内置详细教学文档，覆盖所有模块分类
 - **🆓 完全免费**：非商业使用完全免费，开源透明
 - **🔍 智能搜索**：模块和教学文档支持中文、拼音、拼音首字母模糊搜索
 - **📊 可视化流程**：内置Mermaid流程图，直观展示工作流逻辑
