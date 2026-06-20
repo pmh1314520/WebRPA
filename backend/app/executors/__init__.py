@@ -36,6 +36,7 @@ _SUBMODULES = [
     'notify_apprise', 'custom_module', 'note', 'media_audio', 'media_convert',
     'media_image_effect', 'media_qrcode', 'media_recognition', 'media_video_edit',
     'media_watermark', 'blind_watermark',
+    'drissionpage',
 ]
 
 _DIR = _Path(__file__).parent

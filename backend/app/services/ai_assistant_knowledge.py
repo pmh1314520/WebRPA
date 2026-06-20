@@ -100,6 +100,13 @@ WebRPA 内置 Git 式本地版本历史（快照含节点、连线、**全局变
 ## 总原则：任何模块都先 describe_module
 500+ 模块、很多带多模式（判别字段不同→必填字段不同）。配置任何模块前先 `describe_module(module_type=...)`，
 严格按返回的字段名/默认值/可选值/条件必填来配，绝不凭记忆猜字段名或模式值。
+
+## DrissionPage 反检测网页自动化（dp_ 系列）
+当常规 Playwright 网页模块被网站的反自动化/风控拦截（如检测 webdriver 特征、频繁验证码）时，
+改用 DrissionPage 系列模块（它控制真实浏览器内核，更隐蔽）：
+- 入口 `dp_open_page(url)` → 之后用 `dp_click` / `dp_input` / `dp_get_text` / `dp_get_html` / `dp_run_js` / `dp_wait_element` / `dp_scroll` 操作 → 末尾 `dp_close`。
+- 定位符语法：`#id` / `.class` / `text:文字` / `xpath://...` / `css:...`。
+- 需要本机已安装 DrissionPage（`Python313\\python.exe -m pip install DrissionPage`）；未装时模块会返回安装提示。
 """
 
 WEBRPA_AUTHOR = """\

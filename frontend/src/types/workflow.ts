@@ -619,6 +619,16 @@ export type ModuleType =
   | 'stop_workflow'
   // 自定义模块
   | 'custom_module'
+  // DrissionPage 高级网页自动化（对反自动化检测更隐蔽）
+  | 'dp_open_page'
+  | 'dp_click'
+  | 'dp_input'
+  | 'dp_get_text'
+  | 'dp_get_html'
+  | 'dp_run_js'
+  | 'dp_wait_element'
+  | 'dp_scroll'
+  | 'dp_close'
 
 // Excel文件资源
 export interface DataAsset {

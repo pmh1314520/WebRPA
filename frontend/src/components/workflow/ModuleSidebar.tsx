@@ -199,6 +199,16 @@ const moduleIcons: Record<ModuleType, React.ElementType> = {
   open_page: Globe,
   use_opened_page: Globe,
   close_page: X,
+  // DrissionPage 反检测自动化
+  dp_open_page: Globe,
+  dp_click: MousePointerClick,
+  dp_input: Type,
+  dp_get_text: FileText,
+  dp_get_html: Code,
+  dp_run_js: Code2,
+  dp_wait_element: Clock,
+  dp_scroll: ArrowDownUp,
+  dp_close: Power,
   refresh_page: RefreshCw,
   go_back: ArrowLeft,
   go_forward: ArrowRight,
@@ -821,6 +831,15 @@ const moduleIcons: Record<ModuleType, React.ElementType> = {
 // 模块搜索关键词（用于模糊搜索）
 const moduleKeywords: Record<ModuleType, string[]> = {
   open_page: ['打开', '网页', '浏览器', 'url', '地址', 'open', 'page'],
+  dp_open_page: ['drissionpage', 'dp', '反检测', '绕过', '风控', '打开', '网页', 'bypass', '隐蔽'],
+  dp_click: ['drissionpage', 'dp', '点击', '反检测', 'click'],
+  dp_input: ['drissionpage', 'dp', '输入', '反检测', 'input'],
+  dp_get_text: ['drissionpage', 'dp', '获取', '文本', 'text'],
+  dp_get_html: ['drissionpage', 'dp', '获取', '源码', 'html'],
+  dp_run_js: ['drissionpage', 'dp', '执行', 'js', 'javascript', '脚本'],
+  dp_wait_element: ['drissionpage', 'dp', '等待', '元素', 'wait'],
+  dp_scroll: ['drissionpage', 'dp', '滚动', 'scroll'],
+  dp_close: ['drissionpage', 'dp', '关闭', '浏览器', 'close'],
   click_element: ['点击', '单击', '双击', '右键', 'click', '按钮'],
   hover_element: ['悬停', '鼠标', '移动', 'hover', 'mouse', '移入', '经过', '停留'],
   input_text: ['输入', '文本', '填写', 'input', 'text', '表单'],
@@ -1446,6 +1465,11 @@ const moduleCategories = [
     name: '网页数据采集',
     color: 'bg-emerald-500',
     modules: ['screenshot', 'save_image', 'download_file', 'network_capture', 'network_monitor_start', 'network_monitor_wait', 'network_monitor_stop'] as ModuleType[],
+  },
+  {
+    name: 'DrissionPage 反检测自动化',
+    color: 'bg-teal-600',
+    modules: ['dp_open_page', 'dp_click', 'dp_input', 'dp_get_text', 'dp_get_html', 'dp_run_js', 'dp_wait_element', 'dp_scroll', 'dp_close'] as ModuleType[],
   },
   // ===== 桌面自动化 =====
   {

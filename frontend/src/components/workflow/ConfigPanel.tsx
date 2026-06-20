@@ -16,6 +16,10 @@ import { elementPickerApi, desktopPickerApi } from '@/services/api'
 
 // 导入拆分的配置组件
 import { ReadExcelConfig } from './config-panels/ReadExcelConfig'
+import {
+  DpOpenPageConfig, DpClickConfig, DpInputConfig, DpGetTextConfig, DpGetHtmlConfig,
+  DpRunJsConfig, DpWaitElementConfig, DpScrollConfig, DpCloseConfig,
+} from './config-panels/DrissionPageConfigs'
 import { ExcelModuleConfig } from './config-panels/ExcelModuleConfig'
 import { SimilarSelectorDialog } from './config-panels/SimilarSelectorDialog'
 import { UrlInputDialog } from './config-panels/UrlInputDialog'
@@ -1141,6 +1145,24 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
     switch (nodeData.moduleType) {
       case 'open_page':
         return <OpenPageConfig data={nodeData} onChange={handleChange} />
+      case 'dp_open_page':
+        return <DpOpenPageConfig data={nodeData} onChange={handleChange} />
+      case 'dp_click':
+        return <DpClickConfig data={nodeData} onChange={handleChange} />
+      case 'dp_input':
+        return <DpInputConfig data={nodeData} onChange={handleChange} />
+      case 'dp_get_text':
+        return <DpGetTextConfig data={nodeData} onChange={handleChange} />
+      case 'dp_get_html':
+        return <DpGetHtmlConfig data={nodeData} onChange={handleChange} />
+      case 'dp_run_js':
+        return <DpRunJsConfig data={nodeData} onChange={handleChange} />
+      case 'dp_wait_element':
+        return <DpWaitElementConfig data={nodeData} onChange={handleChange} />
+      case 'dp_scroll':
+        return <DpScrollConfig data={nodeData} onChange={handleChange} />
+      case 'dp_close':
+        return <DpCloseConfig />
       case 'use_opened_page':
         return <UseOpenedPageConfig data={nodeData} onChange={handleChange} />
       case 'click_element':

@@ -666,6 +666,8 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
               </div>
             </>
           )}
+
+          {activeTab === 'ai' && (
             <>
               <p className="text-xs text-gray-500 mb-4">
                 配置AI对话模块的默认值，新建模块时将自动填充这些配置

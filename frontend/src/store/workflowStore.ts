@@ -841,6 +841,16 @@ export const moduleTypeLabels: Record<ModuleType, string> = {
   note: '便签',
   // 自定义模块
   custom_module: '自定义模块',
+  // DrissionPage 高级网页自动化
+  dp_open_page: 'DP打开页面',
+  dp_click: 'DP点击元素',
+  dp_input: 'DP输入文本',
+  dp_get_text: 'DP获取文本',
+  dp_get_html: 'DP获取HTML',
+  dp_run_js: 'DP执行JS',
+  dp_wait_element: 'DP等待元素',
+  dp_scroll: 'DP滚动页面',
+  dp_close: 'DP关闭浏览器',
   // 实用工具
   file_hash_compare: '文件哈希对比',
   file_diff_compare: '文件差异对比',

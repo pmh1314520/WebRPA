@@ -5556,3 +5556,78 @@ AI_TASK_SCHEMAS: dict = {
 }
 
 _ALL_SCHEMAS.update(AI_TASK_SCHEMAS)
+
+
+# DrissionPage 高级网页自动化（对反自动化检测更隐蔽，常规 Playwright 被风控时改用它）
+DRISSIONPAGE_SCHEMAS: dict = {
+    "dp_open_page": {
+        "required": ["url"],
+        "optional": ["headless"],
+        "defaults": {"headless": "false"},
+        "desc": {"url": "要打开的网址", "headless": "是否无头(true/false)"},
+        "example": {"url": "https://example.com"},
+        "combo": "DrissionPage 系列入口：先 dp_open_page 再用其它 dp_ 模块操作",
+    },
+    "dp_click": {
+        "required": ["locator"],
+        "optional": ["timeout"],
+        "defaults": {"timeout": 10},
+        "desc": {"locator": "DrissionPage 定位符：'#id' / '.class' / 'text:文字' / 'xpath://...' / 'css:...'", "timeout": "等待秒数"},
+        "example": {"locator": "text:登录"},
+        "combo": "",
+    },
+    "dp_input": {
+        "required": ["locator", "text"],
+        "optional": ["clear"],
+        "defaults": {"clear": "true"},
+        "desc": {"locator": "目标输入框定位符", "text": "要输入的内容", "clear": "输入前是否清空"},
+        "example": {"locator": "#username", "text": "admin"},
+        "combo": "",
+    },
+    "dp_get_text": {
+        "required": ["locator"],
+        "optional": ["variableName"],
+        "defaults": {"variableName": "dp_text"},
+        "desc": {"locator": "目标元素定位符", "variableName": "保存文本到的变量名"},
+        "example": {"locator": ".title", "variableName": "title_text"},
+        "combo": "",
+    },
+    "dp_get_html": {
+        "required": [],
+        "optional": ["variableName"],
+        "defaults": {"variableName": "dp_html"},
+        "desc": {"variableName": "保存页面 HTML 的变量名"},
+        "example": {"variableName": "page_html"},
+        "combo": "",
+    },
+    "dp_run_js": {
+        "required": ["script"],
+        "optional": ["variableName"],
+        "defaults": {"variableName": "dp_js_result"},
+        "desc": {"script": "要执行的 JavaScript", "variableName": "保存返回值的变量名"},
+        "example": {"script": "return document.title"},
+        "combo": "",
+    },
+    "dp_wait_element": {
+        "required": ["locator"],
+        "optional": ["timeout"],
+        "defaults": {"timeout": 10},
+        "desc": {"locator": "等待出现的元素定位符", "timeout": "最长等待秒数"},
+        "example": {"locator": "#content"},
+        "combo": "",
+    },
+    "dp_scroll": {
+        "required": [],
+        "optional": ["direction", "pixels"],
+        "defaults": {"direction": "bottom", "pixels": 500},
+        "desc": {"direction": "bottom/top/down/up", "pixels": "down/up 时滚动像素"},
+        "example": {"direction": "bottom"},
+        "combo": "",
+    },
+    "dp_close": {
+        "required": [], "optional": [], "defaults": {},
+        "desc": {}, "example": {}, "combo": "DrissionPage 流程末尾关闭浏览器",
+    },
+}
+
+_ALL_SCHEMAS.update(DRISSIONPAGE_SCHEMAS)
