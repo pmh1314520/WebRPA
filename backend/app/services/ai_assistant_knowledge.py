@@ -23,6 +23,46 @@ WebRPA 是一款面向桌面的可视化 RPA（机器人流程自动化）开发
 - 可扩展：支持自定义模块、Python/JS 脚本节点、自定义 AI 模型
 """
 
+
+# ---------- WebRPA 常见报错 / 白屏问题知识（用于 AI 诊断） ----------
+
+WEBRPA_ERROR_KNOWLEDGE = """\
+# WebRPA 常见报错与"编辑器白屏"诊断知识（重要）
+
+当用户反馈"白屏""崩溃""报错"，或贴出一段 JS/控制台报错时，你要能判断：是什么错、为什么、出在哪、怎么修。
+WebRPA 已加全局错误边界（WorkflowErrorBoundary），正常情况下不会再整页白屏，而是弹出错误卡片（含报错详情与「AI 诊断」按钮）。
+
+## 一、前端（编辑器）白屏类报错——多为某个 React 组件渲染期抛异常
+
+典型根因与定位：
+1. **类型假设错误**：把"应是字符串的值"当字符串用，结果传进来是数字/对象。
+   - 例：`inputValue.split is not a function` / `xxx.trim is not a function` / `xxx.map is not a function`
+   - 常见来源：input_prompt 的 `defaultValue` 配成数字（如 8）；某节点字段类型与组件预期不符。
+   - 修复：把值显式 `String(...)` 归一化，或把对应配置项留空/改成正确类型。
+2. **读取 undefined 的属性**：`Cannot read properties of undefined (reading 'xxx')`
+   - 例：`Cannot read properties of undefined (reading 'create')`（monaco 编辑器在 vite preview/极速启动模式下分包加载顺序问题）。
+   - 例：节点缺少 `position` 字段，react-flow 内部计算坐标时抛错。
+   - 修复：补齐缺失字段 / 升级修复分包加载 / 清空画布重进。
+3. **JSON 解析失败**：打开的工作流文件损坏、被手动改坏。
+   - 修复：用「清空画布并继续」恢复，或检查该 .json 文件。
+
+## 二、运行期（执行工作流）报错——来自后端执行器
+
+- **selector 选不到元素 / 匹配到多个元素**：网页元素选择器不唯一或页面没加载完。
+  - 修复：用元素拾取器重新取更稳的 selector；前面加 `wait_element`；必要时用 XPath/文本定位。
+- **执行超时**：网络慢、元素迟迟不出现。修复：调大 timeout 或前置等待、加重试。
+- **变量未定义就被使用**：检查变量赋值节点是否在使用之前、变量名是否拼写一致。
+- **取值路径错**：用 `get_node_io_snapshot` 看上一步真实产出结构再修正。
+
+## 三、你的诊断输出规范（用户点了错误卡片上的「AI 诊断」时）
+
+1. 先一句话判定"这是什么错"（类型错误 / 空引用 / JSON 损坏 / 选择器问题 …）。
+2. 指出最可能的出错位置（哪个模块、哪个字段、或哪段源码）。
+3. 给"用户能立刻自救"的步骤（清空画布、把某字段留空、改正某配置、加等待等）。
+4. 若判断为 **WebRPA 源码层面的缺陷**：总结【错误原因】+【修复建议】，并提醒用户把这段总结连同报错信息发给开发者彭明航（QQ：2124691573，微信：QyPmh20061026），帮助 WebRPA 变稳健。
+5. 绝不能让用户以为"白屏=没救了"——要明确告诉他数据没丢、怎么恢复。
+"""
+
 WEBRPA_AUTHOR = """\
 WebRPA 由开发者 **青云制作_彭明航** 设计与开发。
 项目目标是让任何人都能用最简单的方式构建强大的自动化能力。
@@ -44,6 +84,20 @@ WebRPA 由开发者 **青云制作_彭明航** 设计与开发。
 - WebRPA 开源仓库：https://github.com/pmh1314520/WebRPA
 - 个人格言：「学习是永无止境的，学以致用才是王道！」
 - 高中三年担任副班长
+- 出生日期：2006 年 10 月 26 日（属狗）
+- 籍贯/常住：中国 · 江苏省 · 盐城市
+
+### 联系方式与社交账号（用户想联系作者、反馈 bug、寻求帮助时主动提供）
+- QQ：2124691573
+- 微信：QyPmh20061026
+- 手机号：18962091709
+- QQ 交流群：115069513
+- B 站主页：https://space.bilibili.com/1102546347
+- GitHub：https://github.com/pmh1314520
+- 抖音号：45389468265
+- 快手号：JSptx520
+
+> 当用户遇到疑似 WebRPA 源码层面的 bug、希望反馈问题或联系开发者时，请主动告知作者的 QQ（2124691573）与微信（QyPmh20061026），方便用户把报错信息和复现步骤发给彭明航，帮助 WebRPA 持续改进。
 
 ### 计算机自学历程（六年级起）
 
@@ -2089,5 +2143,7 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
     if user_extra_prompt:
         parts.append("\n# 用户附加指令\n")
         parts.append(user_extra_prompt)
+
+    parts.append(WEBRPA_ERROR_KNOWLEDGE)
 
     return "\n".join(parts)

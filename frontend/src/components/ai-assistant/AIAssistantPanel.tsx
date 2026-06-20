@@ -73,6 +73,30 @@ export function AIAssistantPanel() {
   const [showModelMenu, setShowModelMenu] = useState(false)
 
   const [input, setInput] = useState('')
+
+  // 对话底栏（输入框）可上下拖拽改变高度
+  const [composerHeight, setComposerHeight] = useState(56)
+  const composerResizeRef = useRef<{ startY: number; startH: number } | null>(null)
+  const startComposerResize = (e: React.MouseEvent) => {
+    e.preventDefault()
+    composerResizeRef.current = { startY: e.clientY, startH: composerHeight }
+    const onMove = (ev: MouseEvent) => {
+      if (!composerResizeRef.current) return
+      // 向上拖动 → 高度增大
+      const dy = composerResizeRef.current.startY - ev.clientY
+      const next = Math.max(44, Math.min(420, composerResizeRef.current.startH + dy))
+      setComposerHeight(next)
+    }
+    const onUp = () => {
+      composerResizeRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+    }
+    document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
   const [showSessions, setShowSessions] = useState(false)
   // 多模态：待发送的图片（data URL）
   const [attachedImages, setAttachedImages] = useState<string[]>([])
@@ -1004,6 +1028,14 @@ export function AIAssistantPanel() {
 
       {/* 输入区 */}
       <div className="border-t border-[hsl(var(--border))] p-3 bg-[hsl(var(--slate-50))] flex-shrink-0">
+        {/* 顶部拖拽手柄：上下拖拽改变输入框高度 */}
+        <div
+          onMouseDown={startComposerResize}
+          title="拖拽调整输入框高度"
+          className="group/grip -mt-1 mb-1.5 h-2.5 flex items-center justify-center cursor-ns-resize"
+        >
+          <span className="w-10 h-1 rounded-full bg-[hsl(var(--slate-300))] group-hover/grip:bg-[hsl(var(--brand-500))] transition-colors" />
+        </div>
         {/* 常驻使用建议提示条：只在已有消息时显示，避免和欢迎页提示卡重复 */}
         {messages.length > 0 && (
           <div className="mb-2 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-[hsl(var(--slate-700))] px-1 font-semibold">
@@ -1088,9 +1120,9 @@ export function AIAssistantPanel() {
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={configReady ? (isSending ? '小助手正在工作中…再次发送会先停止它' : '告诉我你想做什么…（可粘贴/拖拽/上传图片或文档，Enter 发送，Shift+Enter 换行）') : '请先在全局配置中配置模型'}
-            rows={2}
             disabled={!configReady}
-            className="flex-1 bg-transparent text-[13px] resize-none outline-none placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60 max-h-32 px-3 py-2.5 leading-relaxed"
+            style={{ height: composerHeight }}
+            className="flex-1 bg-transparent text-[13px] resize-none outline-none placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60 px-3 py-2.5 leading-relaxed overflow-y-auto"
           />
           <input
             ref={fileInputRef}
