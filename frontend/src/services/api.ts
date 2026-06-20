@@ -675,3 +675,40 @@ export const workflowBundleApi = {
       body: JSON.stringify({ bundle }),
     }),
 }
+
+
+// ==================== 插件市场 API ====================
+export interface PluginInfo {
+  id: string
+  name: string
+  version?: string
+  author?: string
+  description?: string
+  homepage?: string
+  keywords?: string[]
+  enabled?: boolean
+  official?: boolean
+  moduleIds?: string[]
+}
+
+export const pluginApi = {
+  installed: () =>
+    apiRequest<{ success: boolean; plugins: PluginInfo[] }>('/plugins/installed'),
+  market: () =>
+    apiRequest<{ success: boolean; source?: string; plugins: PluginInfo[] }>('/plugins/market'),
+  getMarketUrl: () => apiRequest<{ success: boolean; url: string }>('/plugins/market-url'),
+  setMarketUrl: (url: string) =>
+    apiRequest<{ success: boolean }>('/plugins/market-url', { method: 'POST', body: JSON.stringify({ url }) }),
+  installPackage: (pkg: unknown) =>
+    apiRequest<{ success: boolean; id?: string; moduleCount?: number; error?: string }>(
+      '/plugins/install', { method: 'POST', body: JSON.stringify({ package: pkg }) }
+    ),
+  installFromMarket: (pluginId: string) =>
+    apiRequest<{ success: boolean; error?: string }>(`/plugins/install-from-market/${encodeURIComponent(pluginId)}`, { method: 'POST' }),
+  setEnabled: (pluginId: string, enabled: boolean) =>
+    apiRequest<{ success: boolean; enabled?: boolean; error?: string }>(
+      `/plugins/${encodeURIComponent(pluginId)}/enable`, { method: 'POST', body: JSON.stringify({ enabled }) }
+    ),
+  uninstall: (pluginId: string) =>
+    apiRequest<{ success: boolean; error?: string }>(`/plugins/${encodeURIComponent(pluginId)}`, { method: 'DELETE' }),
+}

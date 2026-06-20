@@ -122,6 +122,7 @@ from app.api.scheduled_tasks import router as scheduled_tasks_router
 from app.api.phone import router as phone_router
 from app.api.desktop_picker import router as desktop_picker_router
 from app.api.custom_modules import router as custom_modules_router
+from app.api.plugins import router as plugins_router
 from app.api.ai_assistant import router as ai_assistant_router, set_sio as set_ai_assistant_sio
 from app.api.screensaver import router as screensaver_router
 from app.api.recorder import router as recorder_router
@@ -149,6 +150,7 @@ app.include_router(scheduled_tasks_router)
 app.include_router(phone_router)
 app.include_router(desktop_picker_router)
 app.include_router(custom_modules_router)
+app.include_router(plugins_router)
 app.include_router(ai_assistant_router)
 app.include_router(screensaver_router)
 app.include_router(recorder_router)

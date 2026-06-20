@@ -42,6 +42,7 @@ import type { CustomModule } from '@/types/customModule'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import { remoteService, type RemoteSession } from '@/services/remote'
+import { PluginMarketPanel } from './PluginMarketPanel'
 
 // 默认仓库地址
 const DEFAULT_HUB_URL = 'https://hub.pmhs.top'
@@ -173,7 +174,7 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
   const listContainerRef = useRef<HTMLDivElement>(null)
 
   // 状态
-  const [activeTab, setActiveTab] = useState<'browse' | 'publish' | 'my' | 'custom_modules' | 'guestbook' | 'remote' | 'settings'>('browse')
+  const [activeTab, setActiveTab] = useState<'browse' | 'publish' | 'my' | 'custom_modules' | 'plugins' | 'guestbook' | 'remote' | 'settings'>('browse')
   
   // 自定义模块仓库状态（本地自定义模块的浏览/管理）
   const [customModules, setCustomModules] = useState<CustomModule[]>([])
@@ -1736,6 +1737,7 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
                 { id: 'my',             label: '我的',     Icon: FolderOpen,    accent: 'warning' },
                 { id: 'publish',        label: '发布',     Icon: Upload,        accent: 'success' },
                 { id: 'custom_modules', label: '模块',     Icon: Package,       accent: 'violet'  },
+                { id: 'plugins',        label: '插件',     Icon: Package,       accent: 'brand'   },
                 { id: 'guestbook',      label: '留言板',   Icon: MessageSquare, accent: 'info'    },
                 { id: 'remote',         label: '远程',     Icon: Users,         accent: 'rose'    },
               ].map(tab => {
@@ -2285,6 +2287,11 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
                 )}
               </div>
             </div>
+          )}
+
+          {/* 插件市场标签页 */}
+          {activeTab === 'plugins' && (
+            <PluginMarketPanel />
           )}
 
           {/* 自定义模块标签页 */}
