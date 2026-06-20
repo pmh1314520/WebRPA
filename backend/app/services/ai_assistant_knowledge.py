@@ -954,6 +954,7 @@ def build_system_prompt(
     enable_tools: bool = True,
     workflow_summary: str = "",
     memory_summary: str = "",
+    max_heal_rounds: int = 5,
 ) -> str:
     """构建给 LLM 的系统提示词"""
     parts: list[str] = []
@@ -2205,6 +2206,19 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
     parts.append(WEBRPA_ERROR_KNOWLEDGE)
     parts.append(WEBRPA_MODULE_MASTERY)
     parts.append(WEBRPA_PLUGIN_MASTERY)
+
+    # 自愈轮数（可配置，覆盖知识库中"最多3轮"的静态说法）
+    try:
+        _rounds = int(max_heal_rounds)
+    except Exception:
+        _rounds = 5
+    _rounds = max(1, min(_rounds, 20))
+    parts.append(
+        "\n# 🔁 自愈循环轮数（以此为准，覆盖前文任何关于轮数上限的旧表述）\n"
+        f"- 本次会话自愈循环上限为 **{_rounds} 轮**（用户可在全局配置调整）。\n"
+        "- 轮数按问题难度动态使用：简单问题 1-2 轮即可；复杂问题（多处选择器失效/跨页流程/依赖外部状态）可用满额度。\n"
+        f"- 跑满 {_rounds} 轮仍无法修复时，才停下来向用户清晰汇报：已尝试了什么、卡在哪、需要用户提供什么，绝不无限重试或静默放弃。\n"
+    )
 
     return "\n".join(parts)
 

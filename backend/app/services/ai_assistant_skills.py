@@ -4251,3 +4251,63 @@ async def execute_skill(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         return {"error": f"参数错误: {e}"}
     except Exception as e:
         return {"error": f"执行失败: {e}"}
+
+
+# ---------- 图片 OCR 辅助（非多模态模型降级用） ----------
+
+async def _ocr_image_to_text(image: str) -> str:
+    """把一张图片（data URL 或 http URL）做 OCR，返回识别到的文字（best-effort）。
+    供非多模态模型降级使用——纯文本模型读不了图，就把图里的字提取出来喂给它。
+    失败返回空字符串，绝不抛异常打断主流程。"""
+    if not image or not isinstance(image, str):
+        return ""
+
+    def _do() -> str:
+        try:
+            import base64 as _b64
+            import io as _io
+            import numpy as _np
+            from PIL import Image as _Image
+            raw: bytes
+            s = image.strip()
+            if s.startswith("data:"):
+                # data:image/png;base64,xxxx
+                comma = s.find(",")
+                raw = _b64.b64decode(s[comma + 1:]) if comma != -1 else b""
+            elif s.startswith("http://") or s.startswith("https://"):
+                import requests as _rq
+                resp = _rq.get(s, timeout=15)
+                if resp.status_code != 200:
+                    return ""
+                raw = resp.content
+            else:
+                # 可能是本地路径
+                p = Path(s)
+                if p.exists():
+                    raw = p.read_bytes()
+                else:
+                    return ""
+            if not raw:
+                return ""
+            pil = _Image.open(_io.BytesIO(raw)).convert("RGB")
+            # 大图缩放，避免 CPU 推理过慢
+            max_side = max(pil.width, pil.height)
+            if max_side > 1600:
+                ratio = 1600 / max_side
+                pil = pil.resize((int(pil.width * ratio), int(pil.height * ratio)), _Image.Resampling.LANCZOS)
+            arr = _np.array(pil)
+            from app.executors.media import get_easyocr_reader
+            reader = get_easyocr_reader()
+            results = reader.readtext(arr)
+            # 按从上到下、从左到右排序
+            results_sorted = sorted(results, key=lambda x: (x[0][0][1], x[0][0][0]))
+            lines = [r[1] for r in results_sorted if len(r) > 1 and r[1]]
+            return "\n".join(lines).strip()
+        except Exception as e:
+            print(f"[_ocr_image_to_text] OCR 失败: {e}")
+            return ""
+
+    try:
+        return await asyncio.to_thread(_do)
+    except Exception:
+        return ""

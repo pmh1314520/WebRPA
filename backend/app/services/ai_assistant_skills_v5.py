@@ -344,3 +344,98 @@ def _register_v5() -> None:
 
 
 _register_v5()
+
+
+# ============================================================
+# 插件隔离测试 + 跨工作流编排（v5 扩展）
+# ============================================================
+
+async def skill_plugin_test_run(
+    plugin_id: str,
+    module_index: int = 0,
+    headless: bool = True,
+    **_: Any,
+) -> dict[str, Any]:
+    """隔离测试一个已安装插件的模块：直接在后端运行该模块封装的工作流（不动用户画布），
+    返回 workflow_id，随后用 get_recent_logs(workflow_id) 看结果，实现"纯净测试"闭环。"""
+    exported = plugin_manager.export_package(plugin_id)
+    if not exported.get("success"):
+        return exported
+    modules = (exported.get("package") or {}).get("modules") or []
+    if not modules:
+        return {"error": "该插件没有可测试的模块"}
+    if module_index < 0 or module_index >= len(modules):
+        return {"error": f"module_index 越界（共 {len(modules)} 个模块）"}
+    wf = (modules[module_index] or {}).get("workflow") or {}
+    nodes = wf.get("nodes") or []
+    edges = wf.get("edges") or []
+    if not nodes:
+        return {"error": "该模块的工作流为空，无法测试"}
+    # 复用后端执行引擎（与 run_workflow_now 同源）
+    from app.services.ai_assistant_skills import skill_run_workflow_now
+    res = await skill_run_workflow_now(
+        nodes=nodes, edges=edges, headless=headless,
+        name=f"插件隔离测试:{plugin_id}",
+    )
+    res["tip"] = "用 get_recent_logs(workflow_id) 查看测试结果；这是隔离测试，不影响用户画布。"
+    return res
+
+
+async def skill_run_local_workflow_file(
+    filename: str,
+    headless: bool = True,
+    set_output_to: str = "",
+    **_: Any,
+) -> dict[str, Any]:
+    """跨工作流编排：读取一个本地工作流文件并直接在后端运行，返回 workflow_id。
+    用于「让 A 工作流跑完→再跑 B」的链式编排。set_output_to 非空时，会把本次执行 id
+    记到后端全局变量，便于后续工作流引用衔接。"""
+    from app.services.ai_assistant_skills import skill_read_workflow, skill_run_workflow_now, skill_set_global_variable
+    read = await skill_read_workflow(filename=filename)
+    if read.get("error"):
+        return read
+    wf = read.get("workflow") or read
+    nodes = wf.get("nodes") or []
+    edges = wf.get("edges") or []
+    variables = wf.get("variables") or []
+    if not nodes:
+        return {"error": f"工作流 {filename} 没有节点"}
+    res = await skill_run_workflow_now(
+        nodes=nodes, edges=edges, variables=variables, headless=headless,
+        name=f"链式执行:{filename}",
+    )
+    if set_output_to and res.get("success"):
+        try:
+            await skill_set_global_variable(name=set_output_to, value=res.get("workflow_id"))
+        except Exception:
+            pass
+    res["tip"] = "用 get_recent_logs(workflow_id) 看这一环的结果，再决定是否继续下一个工作流。"
+    return res
+
+
+def _register_v5_extra() -> None:
+    registry.register(Skill(
+        name="plugin_test_run",
+        description="隔离测试已安装插件的某个模块：后端直接运行该模块封装的工作流(不动用户画布)，返回 workflow_id，再用 get_recent_logs 看结果。",
+        parameters={"type": "object", "properties": {
+            "plugin_id": {"type": "string"},
+            "module_index": {"type": "integer", "description": "默认 0，多模块插件可指定"},
+            "headless": {"type": "boolean", "description": "默认 true 无头运行"},
+        }, "required": ["plugin_id"]},
+        handler=skill_plugin_test_run,
+        requires_approval=True,
+    ))
+    registry.register(Skill(
+        name="run_local_workflow_file",
+        description="跨工作流编排：读取并运行一个本地工作流文件，返回 workflow_id。用于把多个工作流串成链（A 跑完再跑 B）。",
+        parameters={"type": "object", "properties": {
+            "filename": {"type": "string"},
+            "headless": {"type": "boolean"},
+            "set_output_to": {"type": "string", "description": "可选，把本次执行 id 存到该后端全局变量名，便于衔接"},
+        }, "required": ["filename"]},
+        handler=skill_run_local_workflow_file,
+        requires_approval=True,
+    ))
+
+
+_register_v5_extra()

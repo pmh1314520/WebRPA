@@ -753,6 +753,43 @@ async def chat_once(
         pass
 
     # 1. 把用户消息追加进会话
+    # 1-pre. 非多模态模型 + 用户发了图片 → 优雅降级：尝试 OCR 提取图片文字并并入文本，
+    #        否则明确告知"当前模型不支持图片"，绝不把图片硬塞给纯文本模型导致报错。
+    if images and not getattr(config, "supports_vision", False):
+        ocr_texts: list[str] = []
+        try:
+            from app.services.ai_assistant_skills import _ocr_image_to_text  # type: ignore
+            for img in images:
+                try:
+                    t = await _ocr_image_to_text(img)
+                    if t and t.strip():
+                        ocr_texts.append(t.strip())
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        n = len(images)
+        if ocr_texts:
+            user_message_text = (
+                f"{user_message_text}\n\n[系统提示：当前模型不支持识图，已对用户附带的 {n} 张图片做 OCR 文字识别，结果如下，请据此理解用户意图]\n"
+                + "\n---\n".join(ocr_texts)
+            )
+        else:
+            user_message_text = (
+                f"{user_message_text}\n\n[系统提示：用户附带了 {n} 张图片，但当前模型不支持图片识别（非多模态），已无法读取图片内容。"
+                "请在回复中友好提醒用户：如需识别图片，请在模型配置里切换到支持多模态/视觉的模型。仍尽力根据文字部分继续帮助用户。]"
+            )
+        try:
+            if on_event:
+                res = on_event("assistant_notice", {
+                    "text": f"当前模型不支持图片识别，已{'改用 OCR 提取文字' if ocr_texts else '忽略图片'}。如需识图请切换多模态模型。"
+                })
+                if asyncio.iscoroutine(res):
+                    await res
+        except Exception:
+            pass
+        images = None  # 不再以 image_url 形式下发
+
     user_msg = ChatMessage(
         id=uuid.uuid4().hex[:12],
         role=MessageRole.USER,
@@ -887,6 +924,7 @@ async def chat_once(
         enable_tools=config.enable_tools,
         workflow_summary=workflow_summary,
         memory_summary=memory_summary,
+        max_heal_rounds=getattr(config, "max_heal_rounds", 5) or 5,
     )
 
     # 把教训/画像/已学技能附加在系统提示词后

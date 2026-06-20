@@ -17,6 +17,7 @@ import commentsRoutes from './routes/comments.js'
 import guestbookRoutes from './routes/guestbook.js'
 import remoteRoutes from './routes/remote.js'
 import customModulesRoutes from './routes/customModules.js'
+import pluginsRoutes from './routes/plugins.js'
 import { setupWebSocket } from './websocket.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/logger.js'
@@ -113,6 +114,7 @@ app.use('/api/comments', commentsRoutes)
 app.use('/api/guestbook', guestbookRoutes)
 app.use('/api/remote', remoteRoutes)
 app.use('/api/custom-modules', customModulesRoutes)
+app.use('/api/plugins', pluginsRoutes)
 
 // 404 处理
 app.use(notFoundHandler)

@@ -228,6 +228,48 @@ export async function initDatabase() {
     )
   `)
 
+  // ============================================================
+  // 插件中心：中心化注册表（hub_plugins + hub_plugin_reviews）
+  // ============================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hub_plugins (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      version TEXT DEFAULT '1.0.0',
+      author TEXT DEFAULT '匿名',
+      description TEXT,
+      homepage TEXT,
+      keywords TEXT,
+      content TEXT NOT NULL,
+      module_count INTEGER DEFAULT 0,
+      download_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      ip_address TEXT,
+      client_id TEXT,
+      is_active INTEGER DEFAULT 1
+    )
+  `)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_hub_plugins_created_at ON hub_plugins(created_at)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_hub_plugins_download_count ON hub_plugins(download_count)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_hub_plugins_is_active ON hub_plugins(is_active)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_hub_plugins_client_id ON hub_plugins(client_id)`)
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hub_plugin_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      plugin_id TEXT NOT NULL,
+      user TEXT DEFAULT '匿名用户',
+      rating INTEGER DEFAULT 0,
+      comment TEXT,
+      client_id TEXT,
+      ip_address TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      is_active INTEGER DEFAULT 1
+    )
+  `)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_hub_plugin_reviews_plugin ON hub_plugin_reviews(plugin_id)`)
+
   // 保存数据库
   saveDatabase()
 

@@ -73,6 +73,8 @@ class AssistantConfig(BaseModel):
     system_prompt: str = ""           # 用户自定义追加的系统提示词（可空）
     enable_tools: bool = True         # 是否启用工具调用（Skills）
     auto_approve: bool = False        # 是否自动通过工具调用（无需用户确认）
+    max_heal_rounds: int = 5          # 自愈循环最大轮数（可配置，默认 5；复杂问题可延伸）
+    supports_vision: bool = False     # 当前模型是否支持多模态（图片输入）
 
 
 class ChatRequest(BaseModel):
