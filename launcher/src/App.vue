@@ -620,7 +620,7 @@
               </div>
               <div class="cfg-row cfg-row-toggle">
                 <div class="cfg-toggle-text">
-                  <div class="cfg-toggle-title">启动时自动启动前后端服务</div>
+                  <div class="cfg-toggle-title">自动启动前后端服务</div>
                   <div class="cfg-toggle-sub">打开启动器后立即拉起 API 与编辑器，无需点击启动按钮</div>
                 </div>
                 <label class="cfg-switch" :class="{ on: autoStartServices }">
@@ -2411,20 +2411,21 @@ body {
   border: 1px solid #bfdbfe;
 }
 .qr-frame {
-  background: white;
-  border-radius: 7px;
-  padding: 8px;
+  border-radius: 12px;
+  padding: 0;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
+  overflow: hidden;
 }
 .qr-frame img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
+  border-radius: 12px;
 }
 .qr-foot {
   display: inline-flex;

@@ -31,7 +31,7 @@ export function AIAssistantButton() {
       onMouseLeave={() => setHovered(false)}
       title="WebRPA 小助手 (Ctrl+K)"
       className={
-        'fixed bottom-6 right-6 z-40 group ' +
+        'fixed bottom-20 right-6 z-40 group ' +
         'flex items-center gap-2.5 h-12 pl-1.5 pr-4 ' +
         'rounded-full bg-[hsl(var(--card))] border border-[hsl(var(--brand-500)/0.25)] ' +
         'shadow-pop-lg ' +

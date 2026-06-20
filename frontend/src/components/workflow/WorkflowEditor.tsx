@@ -1150,7 +1150,6 @@ export function WorkflowEditor() {
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()
-    console.log('[WorkflowEditor] onDragOver 被调用，types:', event.dataTransfer.types)
     // 检查是否是文件拖拽
     if (event.dataTransfer.types.includes('Files')) {
       event.dataTransfer.dropEffect = 'copy'
@@ -1175,7 +1174,6 @@ export function WorkflowEditor() {
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
-      console.log('[WorkflowEditor] ========== onDrop 被调用 ==========')
       event.preventDefault()
       setIsDraggingFile(false)
 
@@ -1242,10 +1240,8 @@ export function WorkflowEditor() {
 
       // 模块拖拽逻辑
       const dataStr = event.dataTransfer.getData('application/reactflow')
-      console.log('[WorkflowEditor] onDrop 接收到数据:', dataStr)
-      
+
       if (!dataStr || !reactFlowInstance.current || !reactFlowWrapper.current) {
-        console.log('[WorkflowEditor] onDrop 数据为空或实例未初始化')
         return
       }
 
@@ -1255,30 +1251,29 @@ export function WorkflowEditor() {
         y: event.clientY,
       })
 
-      // 尝试解析为JSON（自定义模块）
-      try {
-        const data = JSON.parse(dataStr)
-        console.log('[WorkflowEditor] 解析JSON成功:', data)
-        if (data.type === 'custom_module' && data.moduleId) {
-          // 自定义模块
-          console.log('[WorkflowEditor] 拖拽自定义模块:', data)
-          addNode('custom_module' as ModuleType, position, {
-            customModuleId: data.moduleId,
-            customModuleName: data.moduleName,
-            label: data.displayName || data.moduleName,  // 使用display_name作为标签
-            icon: data.icon || '',  // 自定义图标
-            color: data.color || '#8B5CF6',  // 自定义颜色
-            description: data.description || '',  // 描述
-          })
-          return
+      // 自定义模块拖拽时传的是 JSON 字符串；普通模块传的是模块类型字符串（如 "wait"）。
+      // 只有看起来像 JSON（以 { 开头）才尝试解析，避免对普通模块名做 JSON.parse 抛错刷控制台。
+      const trimmed = dataStr.trim()
+      if (trimmed.startsWith('{')) {
+        try {
+          const data = JSON.parse(trimmed)
+          if (data.type === 'custom_module' && data.moduleId) {
+            addNode('custom_module' as ModuleType, position, {
+              customModuleId: data.moduleId,
+              customModuleName: data.moduleName,
+              label: data.displayName || data.moduleName,
+              icon: data.icon || '',
+              color: data.color || '#8B5CF6',
+              description: data.description || '',
+            })
+            return
+          }
+        } catch {
+          // 不是合法 JSON，退化为普通模块处理
         }
-      } catch (e) {
-        // 不是JSON，当作普通模块类型处理
-        console.log('[WorkflowEditor] JSON解析失败，当作普通模块处理:', e)
       }
 
       // 普通模块
-      console.log('[WorkflowEditor] 添加普通模块:', dataStr)
       addNode(dataStr as ModuleType, position)
     },
     [addNode, mergeWorkflow, addLog]
