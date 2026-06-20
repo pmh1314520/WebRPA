@@ -357,21 +357,31 @@ export function Toolbar() {
     }
 
     // 使用工作流名称作为文件名
-    const filename = name || '未命名工作流'
+    let filename = name || '未命名工作流'
     const workflowData = JSON.parse(exportWorkflow())
 
     try {
-      // 如果不跳过确认，且用户开启了覆盖提示，先检查文件是否已存在
+      // 覆盖提示 / 自动副本开关
       const showOverwriteConfirm = config.workflow?.showOverwriteConfirm !== false
-      console.log('[Toolbar] handleSave 调试:', {
-        skipConfirm,
-        showOverwriteConfirm,
-        configValue: config.workflow?.showOverwriteConfirm,
-        willCheckExists: !skipConfirm && showOverwriteConfirm
-      })
-      
-      if (!skipConfirm && showOverwriteConfirm) {
-        console.log('[Toolbar] 检查文件是否存在:', filename)
+      const autoSaveCopy = config.workflow?.autoSaveCopy === true
+
+      // 自动副本优先：开启后同名工作流不再弹覆盖提示，而是另存为带时间戳的副本
+      if (!skipConfirm && autoSaveCopy) {
+        const API_BASE = getBackendBaseUrl()
+        const checkResponse = await fetch(`${API_BASE}/api/local-workflows/check-exists`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, content: { _folder: currentFolder } })
+        })
+        const checkData = await checkResponse.json()
+        if (checkData.exists) {
+          const d = new Date()
+          const p = (n: number) => String(n).padStart(2, '0')
+          const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`
+          filename = `${filename} - 副本 ${stamp}`
+          addLog({ level: 'info', message: `已开启"自动创建副本"，本次另存为：${filename}` })
+        }
+      } else if (!skipConfirm && showOverwriteConfirm) {
         const API_BASE = getBackendBaseUrl()
         const checkResponse = await fetch(`${API_BASE}/api/local-workflows/check-exists`, {
           method: 'POST',
@@ -382,24 +392,17 @@ export function Toolbar() {
           })
         })
         const checkData = await checkResponse.json()
-        console.log('[Toolbar] 文件检查结果:', checkData)
 
         // 如果文件已存在，询问用户是否覆盖
         if (checkData.exists) {
-          console.log('[Toolbar] 文件已存在，弹出确认对话框')
           const shouldOverwrite = await confirm(
             `工作流 "${checkData.filename}" 已存在，是否覆盖？`,
             { type: 'warning', title: '文件已存在', confirmText: '覆盖', cancelText: '取消' }
           )
-          
-          console.log('[Toolbar] 用户选择:', shouldOverwrite ? '覆盖' : '取消')
-          
           if (!shouldOverwrite) {
             addLog({ level: 'info', message: '已取消保存' })
             return
           }
-        } else {
-          console.log('[Toolbar] 文件不存在，直接保存')
         }
       }
 
@@ -430,7 +433,7 @@ export function Toolbar() {
         addLog({ level: 'error', message: `保存出错: ${e}` })
       }
     }
-  }, [nodes.length, config.workflow?.localFolder, config.workflow?.showOverwriteConfirm, defaultFolder, name, exportWorkflow, addLog, confirm])
+  }, [nodes.length, config.workflow?.localFolder, config.workflow?.showOverwriteConfirm, config.workflow?.autoSaveCopy, defaultFolder, name, exportWorkflow, addLog, confirm])
 
   const handleNewWorkflow = useCallback(() => {
     clearWorkflow()

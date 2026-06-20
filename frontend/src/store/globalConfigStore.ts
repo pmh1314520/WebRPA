@@ -106,6 +106,7 @@ export interface GlobalConfig {
     localFolder: string
     autoSave: boolean  // 是否自动保存工作流
     showOverwriteConfirm: boolean  // 保存时是否显示覆盖提示（默认true）
+    autoSaveCopy: boolean  // 同名工作流自动创建副本保存（开启后不再弹覆盖提示，直接另存副本）
   }
   // 数据库默认配置
   database: {
@@ -239,6 +240,7 @@ const defaultConfig: GlobalConfig = {
     localFolder: '',  // 空字符串表示使用默认路径
     autoSave: false,  // 默认不开启自动保存
     showOverwriteConfirm: true,  // 默认显示覆盖提示
+    autoSaveCopy: false,  // 默认关闭自动副本
   },
   database: {
     host: 'localhost',
