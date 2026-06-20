@@ -15,20 +15,29 @@ export function PluginMarketPanel() {
   const [loading, setLoading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [marketSource, setMarketSource] = useState('')
+  const [marketUrl, setMarketUrl] = useState('')
+  const [showUrlEdit, setShowUrlEdit] = useState(false)
 
   const log = useCallback((level: 'info' | 'success' | 'warning' | 'error', message: string) => { addLog({ level, message }) }, [addLog])
 
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const [m, ins] = await Promise.all([pluginApi.market(), pluginApi.installed()])
+      const [m, ins, u] = await Promise.all([pluginApi.market(), pluginApi.installed(), pluginApi.getMarketUrl()])
       if (m.data?.plugins) setMarket(m.data.plugins)
       if (m.data?.source) setMarketSource(m.data.source)
       if (ins.data?.plugins) setInstalled(ins.data.plugins)
+      if (u.data?.url !== undefined) setMarketUrl(u.data.url)
     } finally {
       setLoading(false)
     }
   }, [])
+
+  const saveMarketUrl = async () => {
+    const res = await pluginApi.setMarketUrl(marketUrl.trim())
+    if (res.data?.success) { log('success', '插件市场地址已保存'); setShowUrlEdit(false); await refresh() }
+    else log('error', '保存失败')
+  }
 
   useEffect(() => { refresh() }, [refresh])
 
@@ -86,9 +95,18 @@ export function PluginMarketPanel() {
           <button onClick={() => setView('installed')} className={`px-3 py-1.5 text-[12.5px] font-medium ${view === 'installed' ? 'bg-[hsl(var(--brand-500))] text-white' : 'text-[hsl(var(--slate-600))] hover:bg-[hsl(var(--brand-50))]'}`}>已安装 ({installed.length})</button>
         </div>
         <div className="flex-1" />
+        <button onClick={() => setShowUrlEdit((v) => !v)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] rounded-[7px] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]">市场地址</button>
         <button onClick={handleInstallFromFile} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] rounded-[7px] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]"><Upload className="w-3.5 h-3.5" />从文件安装</button>
         <button onClick={refresh} disabled={loading} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] rounded-[7px] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))]">{loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}刷新</button>
       </div>
+
+      {showUrlEdit && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--slate-50)/0.5)]">
+          <input value={marketUrl} onChange={(e) => setMarketUrl(e.target.value)} placeholder="插件市场索引地址，如 https://your-site.com/plugins.json"
+            className="flex-1 px-2.5 py-1.5 text-[12px] rounded-[7px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] outline-none focus:border-[hsl(var(--brand-500))]" />
+          <button onClick={saveMarketUrl} className="px-3 py-1.5 text-[12px] rounded-[7px] bg-[hsl(var(--brand-600))] hover:bg-[hsl(var(--brand-700))] text-white">保存</button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {view === 'market' && marketSource === 'builtin' && (
