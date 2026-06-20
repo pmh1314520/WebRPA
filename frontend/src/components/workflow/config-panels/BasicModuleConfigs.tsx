@@ -1,5 +1,5 @@
 ﻿import type React from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, lazy, Suspense } from 'react'
 import type { Node, Edge } from '@xyflow/react'
 import type { NodeData } from '@/store/workflowStore'
 import type { ModuleType } from '@/types/workflow'
@@ -15,9 +15,12 @@ import { DualCoordinateInput } from '@/components/ui/dual-coordinate-input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ImagePathInput } from '@/components/ui/image-path-input'
 import { Code, Upload } from 'lucide-react'
-import { JsEditorDialog } from '../JsEditorDialog'
-import { InjectJsEditorDialog } from '../InjectJsEditorDialog'
-import { PythonEditorDialog } from '../PythonEditorDialog'
+// 代码编辑器弹窗按需懒加载：Monaco Editor 体积大且在生产构建(极速启动/preview)下
+// 若在启动时就同步加载其分包，曾出现 "Cannot read properties of undefined (reading 'create')"
+// 导致整页白屏。改为仅在用户真正打开代码编辑器时才加载 Monaco，彻底避开启动期初始化顺序问题。
+const JsEditorDialog = lazy(() => import('../JsEditorDialog').then((m) => ({ default: m.JsEditorDialog })))
+const InjectJsEditorDialog = lazy(() => import('../InjectJsEditorDialog').then((m) => ({ default: m.InjectJsEditorDialog })))
+const PythonEditorDialog = lazy(() => import('../PythonEditorDialog').then((m) => ({ default: m.PythonEditorDialog })))
 
 type RenderSelectorInput = (id: string, label: string, placeholder: string) => React.ReactNode
 
@@ -1149,12 +1152,16 @@ export function JsScriptConfig({ data, onChange }: { data: NodeData; onChange: (
       </div>
       
       {/* 代码编辑器弹窗 */}
-      <JsEditorDialog
-        isOpen={editorOpen}
-        code={code}
-        onClose={() => setEditorOpen(false)}
-        onSave={(newCode) => onChange('code', newCode)}
-      />
+      {editorOpen && (
+        <Suspense fallback={null}>
+          <JsEditorDialog
+            isOpen={editorOpen}
+            code={code}
+            onClose={() => setEditorOpen(false)}
+            onSave={(newCode) => onChange('code', newCode)}
+          />
+        </Suspense>
+      )}
     </>
   )
 }
@@ -1445,15 +1452,19 @@ export function PythonScriptConfig({ data, onChange }: { data: NodeData; onChang
       </div>
 
       {/* Python 代码编辑器弹窗 */}
-      <PythonEditorDialog
-        isOpen={editorOpen}
-        code={scriptContent}
-        onClose={() => setEditorOpen(false)}
-        onSave={(code) => {
-          onChange('scriptContent', code)
-          setEditorOpen(false)
-        }}
-      />
+      {editorOpen && (
+        <Suspense fallback={null}>
+          <PythonEditorDialog
+            isOpen={editorOpen}
+            code={scriptContent}
+            onClose={() => setEditorOpen(false)}
+            onSave={(code) => {
+              onChange('scriptContent', code)
+              setEditorOpen(false)
+            }}
+          />
+        </Suspense>
+      )}
     </>
   )
 }
@@ -2130,12 +2141,16 @@ export function InjectJavaScriptConfig({ data, onChange }: { data: NodeData; onC
       </div>
       
       {/* 代码编辑器弹窗 */}
-      <InjectJsEditorDialog
-        isOpen={editorOpen}
-        code={code}
-        onClose={() => setEditorOpen(false)}
-        onSave={(newCode) => onChange('javascriptCode', newCode)}
-      />
+      {editorOpen && (
+        <Suspense fallback={null}>
+          <InjectJsEditorDialog
+            isOpen={editorOpen}
+            code={code}
+            onClose={() => setEditorOpen(false)}
+            onSave={(newCode) => onChange('javascriptCode', newCode)}
+          />
+        </Suspense>
+      )}
     </>
   )
 }
