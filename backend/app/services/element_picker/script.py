@@ -28,13 +28,35 @@ PICKER_SCRIPT = r"""(function() {
 
     var tip = document.createElement('div');
     tip.id = '__picker_tip';
-    tip.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#1e40af;color:white;padding:10px 20px;border-radius:8px;font-size:14px;z-index:2147483647;font-family:sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
-    tip.textContent = 'Ctrl+点击：选 1 个元素 | Alt+点击两次：分别点击两个相似元素';
+    tip.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#1e40af;color:white;padding:10px 20px;border-radius:8px;font-size:14px;z-index:2147483647;font-family:sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:grab;user-select:none;';
+    tip.title = '可拖拽移动此提示，避免遮挡要选的元素';
+    tip.textContent = 'Ctrl+点击：选 1 个元素 | Alt+点击两次：分别点击两个相似元素（提示可拖动）';
+
+    // 最近一次 Ctrl+点击选中的元素：保留一个带"行进虚线"动效的高亮框，提示用户刚点的是哪个
+    var selectedBox = document.createElement('div');
+    selectedBox.id = '__picker_selected_box';
+    selectedBox.className = '__picker_selected_box';
+    selectedBox.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border-radius:4px;display:none;';
+
+    if (!document.getElementById('__picker_style')) {
+        var styleEl = document.createElement('style');
+        styleEl.id = '__picker_style';
+        styleEl.textContent = '@keyframes __picker_march{to{background-position:14px 0,-14px 100%,0 -14px,100% 14px;}}'
+            + '.__picker_selected_box{'
+            + 'background-image:linear-gradient(90deg,#10b981 50%,transparent 50%),linear-gradient(90deg,#10b981 50%,transparent 50%),linear-gradient(0deg,#10b981 50%,transparent 50%),linear-gradient(0deg,#10b981 50%,transparent 50%);'
+            + 'background-repeat:repeat-x,repeat-x,repeat-y,repeat-y;'
+            + 'background-size:14px 2px,14px 2px,2px 14px,2px 14px;'
+            + 'background-position:0 0,0 100%,0 0,100% 0;'
+            + 'animation:__picker_march 0.6s infinite linear;'
+            + 'box-shadow:0 0 0 1px rgba(16,185,129,0.25);}';
+        (document.head || document.documentElement).appendChild(styleEl);
+    }
 
     function attachUI() {
         if (!document.body) return;
         if (!box.isConnected) document.body.appendChild(box);
         if (!firstBox.isConnected) document.body.appendChild(firstBox);
+        if (!selectedBox.isConnected) document.body.appendChild(selectedBox);
         if (!tip.isConnected) document.body.appendChild(tip);
     }
     if (document.body) attachUI();
@@ -66,9 +88,9 @@ PICKER_SCRIPT = r"""(function() {
 
     function isPickerUI(el) {
         if (!el) return true;
-        if (el === box || el === tip || el === firstBox) return true;
+        if (el === box || el === tip || el === firstBox || el === selectedBox) return true;
         var id = el.id || '';
-        if (id === '__picker_box' || id === '__picker_tip' || id === '__picker_first_box') return true;
+        if (id === '__picker_box' || id === '__picker_tip' || id === '__picker_first_box' || id === '__picker_selected_box') return true;
         if (el.className && typeof el.className === 'string' && el.className.indexOf('__picker_similar_box') !== -1) return true;
         return false;
     }
@@ -110,26 +132,78 @@ PICKER_SCRIPT += r"""
         return path;
     }
 
-    // 单元素稳定 selector
+    // selector 是否唯一命中该元素
+    function isUnique(sel, el) {
+        try { var list = document.querySelectorAll(sel); return list.length === 1 && list[0] === el; } catch (e) { return false; }
+    }
+
+    function attrValEscape(v) { return String(v).replace(/(["\\])/g, '\\$1'); }
+
+    // 用稳定属性生成唯一 selector（比 class / nth 更稳，优先级高）
+    function uniqueAttrSelector(el) {
+        var tag = el.tagName.toLowerCase();
+        var attrs = ['data-testid', 'data-test', 'data-id', 'data-name', 'name', 'aria-label', 'placeholder', 'role', 'type', 'href', 'title', 'alt', 'for'];
+        for (var i = 0; i < attrs.length; i++) {
+            var v = el.getAttribute ? el.getAttribute(attrs[i]) : null;
+            if (v && v.length > 0 && v.length < 80) {
+                var sel = tag + '[' + attrs[i] + '="' + attrValEscape(v) + '"]';
+                if (isUnique(sel, el)) return sel;
+            }
+        }
+        return null;
+    }
+
+    // 兜底：从最近的唯一锚点（带唯一 id 的祖先 / body）逐层 nth-child，保证 100% 唯一
+    function nthChildPath(el) {
+        var parts = [];
+        var cur = el;
+        while (cur && cur !== document.body && cur !== document.documentElement) {
+            var tag = cur.tagName.toLowerCase();
+            if (cur.id) {
+                var idSel = '#' + cssEscape(cur.id);
+                if (isUnique(idSel, cur)) { parts.unshift(idSel); return parts.join(' > '); }
+            }
+            var p = cur.parentElement;
+            var idx = p ? Array.prototype.indexOf.call(p.children, cur) + 1 : 1;
+            parts.unshift(tag + ':nth-child(' + idx + ')');
+            cur = p;
+        }
+        return parts.length ? parts.join(' > ') : el.tagName.toLowerCase();
+    }
+
+    // 单元素稳定 selector（强化唯一性：id → 稳定属性 → 类名 → 路径 → nth-child 全路径兜底）
     function getSelector(el) {
         if (!el || el === document.body || el === document.documentElement) return 'body';
+        var tagLower = el.tagName.toLowerCase();
+        // 1) 唯一 id
         if (el.id) {
             try {
                 var idSel = '#' + cssEscape(el.id);
-                if (document.querySelectorAll(idSel).length === 1) return idSel;
+                if (isUnique(idSel, el)) return idSel;
             } catch (e) {}
         }
+        // 2) 稳定属性（name / data-* / aria-label / placeholder / href 等）
+        var attrSel = uniqueAttrSelector(el);
+        if (attrSel) return attrSel;
+        // 3) 类名（单个 → 多个组合）
         if (el.className && typeof el.className === 'string') {
             var classes = el.className.trim().split(/\s+/).filter(function(c) {
                 return c && c.length < 50 && !/^(active|hover|focus|selected|disabled)$/.test(c);
             });
             for (var i = 0; i < classes.length; i++) {
                 try {
-                    var sel = el.tagName.toLowerCase() + '.' + cssEscape(classes[i]);
-                    if (document.querySelectorAll(sel).length === 1) return sel;
+                    var sel = tagLower + '.' + cssEscape(classes[i]);
+                    if (isUnique(sel, el)) return sel;
+                } catch (e) {}
+            }
+            if (classes.length >= 2) {
+                try {
+                    var comboSel = tagLower + classes.slice(0, 4).map(function(c) { return '.' + cssEscape(c); }).join('');
+                    if (isUnique(comboSel, el)) return comboSel;
                 } catch (e) {}
             }
         }
+        // 4) 路径式 selector
         var path = getPath(el);
         var parts = [];
         var startIdx = 0;
@@ -143,7 +217,17 @@ PICKER_SCRIPT += r"""
             else if (n.nthOfType > 0) parts.push(n.tag.toLowerCase() + ':nth-of-type(' + n.nthOfType + ')');
             else parts.push(n.tag.toLowerCase());
         }
-        return parts.join(' > ');
+        var pathSel = parts.join(' > ');
+        if (isUnique(pathSel, el)) return pathSel;
+        // 5) 给末段补 nth-of-type 再试一次
+        var last = path.length > 0 ? path[path.length - 1] : null;
+        if (last && last.nthOfType > 0 && parts.length > 0) {
+            parts[parts.length - 1] = last.tag.toLowerCase() + ':nth-of-type(' + last.nthOfType + ')';
+            var pathSel2 = parts.join(' > ');
+            if (isUnique(pathSel2, el)) return pathSel2;
+        }
+        // 6) 兜底：nth-child 全路径，保证唯一（彻底避免"匹配到 N 个元素"）
+        return nthChildPath(el);
     }
 """
 
@@ -246,6 +330,51 @@ PICKER_SCRIPT += r"""
     var firstSample = null;
     var firstSampleTime = 0;
 
+    // 最近一次 Ctrl+点击选中的元素 + 高亮框跟随（滚动/缩放时重新定位）
+    var lastSelectedEl = null;
+    function positionSelectedBox() {
+        if (!lastSelectedEl) { selectedBox.style.display = 'none'; return; }
+        if (!lastSelectedEl.isConnected) { lastSelectedEl = null; selectedBox.style.display = 'none'; return; }
+        try {
+            var r = lastSelectedEl.getBoundingClientRect();
+            selectedBox.style.left = r.left + 'px';
+            selectedBox.style.top = r.top + 'px';
+            selectedBox.style.width = r.width + 'px';
+            selectedBox.style.height = r.height + 'px';
+            selectedBox.style.display = 'block';
+        } catch (e) { selectedBox.style.display = 'none'; }
+    }
+    window.addEventListener('scroll', positionSelectedBox, true);
+    window.addEventListener('resize', positionSelectedBox, true);
+
+    // 让顶部提示条支持拖拽，避免遮挡用户要选的元素
+    (function makeTipDraggable() {
+        var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+        tip.addEventListener('mousedown', function(e) {
+            dragging = true;
+            var r = tip.getBoundingClientRect();
+            tip.style.transform = 'none';
+            tip.style.left = r.left + 'px';
+            tip.style.top = r.top + 'px';
+            sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+            tip.style.cursor = 'grabbing';
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+        document.addEventListener('mousemove', function(e) {
+            if (!dragging) return;
+            var nx = ox + (e.clientX - sx), ny = oy + (e.clientY - sy);
+            nx = Math.max(0, Math.min(nx, window.innerWidth - tip.offsetWidth));
+            ny = Math.max(0, Math.min(ny, window.innerHeight - tip.offsetHeight));
+            tip.style.left = nx + 'px';
+            tip.style.top = ny + 'px';
+            e.preventDefault();
+        }, true);
+        document.addEventListener('mouseup', function() {
+            if (dragging) { dragging = false; tip.style.cursor = 'grab'; }
+        }, true);
+    })();
+
     function setFirstSampleBox(el) {
         if (!el) {
             firstBox.style.display = 'none';
@@ -344,6 +473,9 @@ PICKER_SCRIPT += r"""
                 attributes: attrs,
                 rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
             };
+            // 保留最近点击元素的高亮（行进虚线动效），让用户清楚刚刚点的是哪个
+            lastSelectedEl = el;
+            positionSelectedBox();
             tip.textContent = '已选择: ' + sel.slice(0, 80);
             tip.style.background = '#059669';
         }

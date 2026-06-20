@@ -601,7 +601,18 @@
         // 启用选择模式
         enableMode() {
             document.body.style.cursor = 'crosshair';
-            
+
+            // 自动关闭 WebRPA 普通元素选择器，避免两个选择器在浏览器里叠加干扰
+            try {
+                window.__elementPickerDisabled = true;
+                ['__picker_box', '__picker_tip', '__picker_first_box', '__picker_selected_box'].forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                var sims = document.querySelectorAll('.__picker_similar_box');
+                for (var i = 0; i < sims.length; i++) { try { sims[i].remove(); } catch (e) {} }
+            } catch (e) {}
+
             // 使用 window 级别监听，更早拦截事件，避免与其他脚本冲突
             window.addEventListener('click', this.handlers.click, true);
             window.addEventListener('mouseover', this.handlers.mouseover, true);
@@ -634,6 +645,8 @@
                 ElementHelper.state.selectedElement.style.outline = '';
                 ElementHelper.state.selectedElement = null;
             }
+            // 高级选择器关闭后，恢复普通元素选择器的可用状态（用户若之前启动过它，可继续使用）
+            try { window.__elementPickerDisabled = false; } catch (e) {}
             ElementHelper.ui.showNotification('✅ 元素选择模式已关闭');
         },
     
