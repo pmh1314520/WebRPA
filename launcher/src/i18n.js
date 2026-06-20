@@ -25,6 +25,7 @@ const DICT = {
   '点击启动后将自动拉起后端 API 服务和前端 Web 编辑器，并在浏览器中打开': 'Starts the backend API and the front-end web editor, then opens it in your browser',
   '启动 WebRPA': 'Start WebRPA', '启动中…': 'Starting…',
   '打开 WebRPA 编辑器': 'Open WebRPA Editor', '停止': 'Stop', '停止中…': 'Stopping…',
+  '小助手 Agent': 'Assistant Agent', '把小助手作为系统级 Agent 在独立窗口打开': 'Open the assistant as a system-level Agent in a separate window',
   '后端 API 服务': 'Backend API', '前端 Web 编辑器': 'Frontend Web Editor',
   '运行中': 'Running', '查看日志': 'View logs',
   '数据安全': 'Data security',

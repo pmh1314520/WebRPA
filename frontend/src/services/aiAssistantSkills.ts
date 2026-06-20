@@ -221,11 +221,89 @@ export function emitAssistantUiEvent(event: string, payload: any) {
 /**
  * 执行客户端操作。返回执行结果，便于把结果通过下一轮对话告诉 LLM。
  */
+// 独立窗口（系统级 Agent）模式：无编辑器画布
+const IS_STANDALONE_AGENT = typeof window !== 'undefined'
+  && new URLSearchParams(window.location.search).get('view') === 'assistant'
+
+// 仅在「有可视画布的编辑器窗口」才有意义的动作集合（在独立 Agent 窗口里执行属无效/误导，需降级提示）
+const EDITOR_ONLY_ACTIONS = new Set<string>([
+  // 节点 / 连线 / 画布视图
+  'add_nodes', 'delete_node', 'delete_nodes', 'update_node_config', 'connect_nodes', 'connect_branches',
+  'disconnect_edge', 'move_node', 'copy_nodes', 'paste_nodes', 'duplicate_node', 'rename_node',
+  'toggle_node_disabled', 'bulk_update_nodes', 'replace_module_type', 'align_nodes', 'auto_layout',
+  'auto_connect_chain', 'select_all_nodes', 'clear_selection', 'focus_node', 'fit_view',
+  'find_nodes_by_type', 'run_single_node',
+  // 画布运行 / 工作流装载
+  'run_workflow', 'run_workflow_headless', 'stop_workflow', 'save_workflow', 'save_workflow_to_folder',
+  'export_workflow', 'rename_workflow', 'new_workflow', 'load_workflow', 'load_workflow_from_data',
+  'get_workflow_detail', 'undo', 'redo',
+  // 版本历史（绑定画布快照）
+  'commit_version', 'list_versions', 'restore_version',
+  // 画布变量
+  'add_variable', 'update_variable', 'delete_variable', 'rename_variable', 'change_variable_type',
+  'list_variables', 'get_variable', 'clear_variables',
+  // 底栏数据 / 日志（反映画布运行）
+  'get_collected_data', 'set_collected_data', 'add_data_row', 'add_data_rows', 'set_data_cell',
+  'add_data_column', 'delete_data_row', 'delete_data_column', 'clear_data', 'download_data',
+  'get_logs', 'clear_logs', 'export_logs', 'set_verbose_log', 'set_max_log_count',
+  'get_node_runtime_errors', 'switch_bottom_panel',
+  // 仓库（操作当前画布）
+  'hub_publish_workflow', 'hub_download_workflow',
+])
+
+// ===== client_action 执行者选举（防多窗口重复执行同一动作） =====
+// 同源多窗口（编辑器 + 弹出的 Agent 窗口）通过 BroadcastChannel 选举唯一执行者：
+// 编辑器(优先级 0) > Agent 窗口(优先级 1)；同级用随机数 + id 决出唯一胜者。
+type _Claim = { id: string; prio: number; rand: number }
+const _electionPrio = IS_STANDALONE_AGENT ? 1 : 0
+const _electionId = `${_electionPrio}-${Math.random().toString(36).slice(2)}-${Date.now()}`
+let _electionChannel: BroadcastChannel | null = null
+const _claims: Record<string, _Claim[]> = {}
+try {
+  if (typeof BroadcastChannel !== 'undefined') {
+    _electionChannel = new BroadcastChannel('webrpa_clientaction_election')
+    _electionChannel.onmessage = (ev: MessageEvent) => {
+      const m: any = ev.data
+      if (m && m.type === 'claim' && m.toolCallId) {
+        (_claims[m.toolCallId] ||= []).push({ id: m.id, prio: m.prio, rand: m.rand })
+      }
+    }
+  }
+} catch { /* 不支持则退化为单窗口直接执行 */ }
+
+async function shouldExecuteClientAction(toolCallId: string): Promise<boolean> {
+  if (!_electionChannel || !toolCallId) return true  // 无法协调时按单窗口处理
+  const mine: _Claim = { id: _electionId, prio: _electionPrio, rand: Math.random() }
+  ;(_claims[toolCallId] ||= []).push(mine)
+  try { _electionChannel.postMessage({ type: 'claim', toolCallId, id: mine.id, prio: mine.prio, rand: mine.rand }) } catch { /* ignore */ }
+  // 等一小会儿收集其它窗口的认领
+  await new Promise((r) => setTimeout(r, 90))
+  const list = _claims[toolCallId] || [mine]
+  list.sort((a, b) => a.prio - b.prio || a.rand - b.rand || (a.id < b.id ? -1 : 1))
+  const winner = list[0]
+  delete _claims[toolCallId]
+  return winner.id === _electionId
+}
+
 export async function executeClientAction(
   action: string,
   payload: Record<string, any> = {}
 ): Promise<ClientActionResult> {
   try {
+    // 独立窗口（系统级 Agent）模式：没有可视画布，画布/版本/变量/数据面板类动作无效，
+    // 直接返回明确指引，让小助手改用后端「真生效」能力，避免误以为画布被改动。
+    if (IS_STANDALONE_AGENT && EDITOR_ONLY_ACTIONS.has(action)) {
+      return {
+        success: false,
+        error: (
+          '当前是 WebRPA 小助手「独立窗口 / 系统级 Agent」模式，没有可视画布，' +
+          `画布相关动作「${AI_ACTION_LABELS[action] || action}」在此无效。` +
+          '请改用后端真生效能力：run_workflow_now（直接跑工作流）、run_local_workflow_file（跑本地工作流文件）、' +
+          'save_local_workflow（保存）、list_workflows / read_workflow（读取）、set_global_variable（全局变量）、' +
+          'get_recent_logs（看执行日志）；若用户确实要操作画布，请提示其在 WebRPA 编辑器窗口中进行。'
+        ),
+      }
+    }
     // 权限门控：根据用户设置的权限模式，决定该操作是否需要先经用户授权。
     // 用户「拒绝」不会让 AI 停止任务——把拒绝结果返回给 AI，它会继续后续回复。
     if (actionNeedsApproval(action)) {
@@ -1974,6 +2052,11 @@ export function bindAssistantSocketEvents(handlers: {
     const action = data?.action
     const payload = data?.payload || {}
     if (!toolCallId || !action) return
+    // 多窗口选举：只有胜出的窗口执行并回传，避免编辑器窗口与独立 Agent 窗口重复执行同一动作
+    try {
+      const mine = await shouldExecuteClientAction(toolCallId)
+      if (!mine) return  // 其它窗口会执行并回传 ack
+    } catch { /* 选举异常则按执行处理 */ }
     try {
       const result = await executeClientAction(action, payload)
       socketService.emit('ai_client_action_ack', { tool_call_id: toolCallId, result })

@@ -164,6 +164,12 @@
               </svg>
               <span>打开 WebRPA 编辑器</span>
             </button>
+            <button v-if="backendRunning && frontendRunning" class="cta-agent" @click="openAssistantAgent" title="把小助手作为系统级 Agent 在独立窗口打开">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>小助手 Agent</span>
+            </button>
             <button
               class="cta-stop"
               @click="stopServices"
@@ -996,6 +1002,17 @@ const openBrowser = async () => {
   }
 }
 
+// 打开小助手「独立窗口 / 系统级 Agent」
+const openAssistantAgent = async () => {
+  try {
+    const config = await invoke('read_config')
+    const url = `http://localhost:${config.frontend.port}/?view=assistant&backend_port=${config.backend.port}`
+    await invoke('open_browser', { url })
+  } catch (error) {
+    showToast(`打开小助手失败: ${error}`, 'error')
+  }
+}
+
 const openGithub = () => invoke('open_browser', { url: 'https://github.com/pmh1314520/WebRPA' })
 const openBilibili = () => invoke('open_browser', { url: 'https://space.bilibili.com/1102546347' })
 const openIfdian = () => invoke('open_browser', { url: 'https://ifdian.net/a/qypmh' })
@@ -1731,6 +1748,25 @@ body {
 }
 .cta-stop:active:not(:disabled) { transform: translateY(1px); }
 .cta-stop:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 小助手 Agent 按钮 */
+.cta-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 150ms, transform 100ms;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+}
+.cta-agent:hover { filter: brightness(1.06); }
+.cta-agent:active { transform: translateY(1px); }
 
 /* ============================================================
    服务卡片
