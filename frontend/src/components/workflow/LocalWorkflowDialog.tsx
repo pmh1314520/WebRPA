@@ -132,6 +132,26 @@ export function LocalWorkflowDialog({ isOpen, onClose, onLog }: LocalWorkflowDia
     w.filename.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const handleOpenFolder = async () => {
+    const folder = config.workflow?.localFolder || defaultFolder || ''
+    try {
+      const API_BASE = getBackendBaseUrl()
+      const response = await fetch(`${API_BASE}/api/local-workflows/open-folder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder })
+      })
+      const data = await response.json()
+      if (data.success) {
+        onLog('success', `已打开工作流保存位置：${data.folder || folder}`)
+      } else {
+        onLog('error', `打开文件夹失败：${data.error || '未知错误'}`)
+      }
+    } catch (e) {
+      onLog('error', `打开文件夹出错：${e}`)
+    }
+  }
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -192,6 +212,15 @@ export function LocalWorkflowDialog({ isOpen, onClose, onLog }: LocalWorkflowDia
           >
             {!loading && <RefreshCw className="w-3.5 h-3.5" />}
             刷新
+          </Button>
+          <Button
+            variant="tonal"
+            size="sm"
+            onClick={handleOpenFolder}
+            title="在文件管理器中打开工作流 JSON 的保存位置"
+          >
+            <FolderOpen className="w-3.5 h-3.5" />
+            打开位置
           </Button>
         </div>
 

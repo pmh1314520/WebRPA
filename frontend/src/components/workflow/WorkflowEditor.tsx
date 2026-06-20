@@ -1729,8 +1729,6 @@ export function WorkflowEditor() {
             onSelectionChange={onSelectionChange}
             nodeTypes={nodeTypes}
             fitView
-            snapToGrid
-            snapGrid={[15, 15]}
             selectionOnDrag
             selectionMode={SelectionMode.Partial}
             selectNodesOnDrag={false}

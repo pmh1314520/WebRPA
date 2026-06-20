@@ -757,10 +757,17 @@ def conditional_required_map() -> dict[str, dict]:
     for mtype, schema in _ALL_SCHEMAS.items():
         cond = schema.get("conditional_required") if isinstance(schema, dict) else None
         if isinstance(cond, dict) and cond.get("map"):
+            # 条件必填字段若已有默认值，执行时会自动补全，不应提示"未填写"
+            defaults = schema.get("defaults") or {}
+            raw_map = cond.get("map") or {}
+            filtered_map = {
+                k: [f for f in (v or []) if f not in defaults]
+                for k, v in raw_map.items()
+            }
             out[mtype] = {
                 "field": cond.get("field"),
                 "default": cond.get("default"),
-                "map": cond.get("map"),
+                "map": filtered_map,
             }
     return out
 

@@ -1,7 +1,9 @@
 """本地工作流文件管理API"""
 import os
+import sys
 import json
 import shutil
+import subprocess
 from pathlib import Path
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -83,6 +85,24 @@ async def get_default_folder():
     """获取默认工作流文件夹路径"""
     ensure_folder_exists(DEFAULT_WORKFLOW_FOLDER)
     return {"folder": DEFAULT_WORKFLOW_FOLDER}
+
+
+@router.post("/open-folder")
+async def open_folder(config: WorkflowFolderConfig):
+    """在系统文件管理器中打开工作流 JSON 文件的保存位置"""
+    folder = config.folder if config.folder else DEFAULT_WORKFLOW_FOLDER
+    if not ensure_folder_exists(folder):
+        return {"success": False, "error": "无法创建或访问该文件夹"}
+    try:
+        if sys.platform.startswith("win"):
+            os.startfile(folder)  # type: ignore[attr-defined]
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", folder])
+        else:
+            subprocess.Popen(["xdg-open", folder])
+        return {"success": True, "folder": folder}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 @router.post("/check-exists")

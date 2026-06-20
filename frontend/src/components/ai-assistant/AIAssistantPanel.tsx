@@ -909,7 +909,9 @@ export function AIAssistantPanel() {
               你好，我是 WebRPA 小助手
             </div>
             <div className="text-[12.5px] text-[hsl(var(--slate-600))] leading-relaxed max-w-[340px] mb-5">
-              我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑
+              我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；
+              <strong className="text-[hsl(var(--brand-700))]">不止于此，我还能直接操作你的电脑</strong>——
+              打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。
             </div>
 
             <div className="w-full max-w-[360px] space-y-1.5">

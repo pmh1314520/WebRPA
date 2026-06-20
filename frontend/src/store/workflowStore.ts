@@ -3277,11 +3277,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         break
       }
       case 'right': {
-        // 右对齐：所有节点的x坐标对齐到最右边的节点
-        const maxX = Math.max(...selectedNodes.map(n => n.position.x))
+        // 右对齐：所有节点的「右边缘」对齐。模块条宽度不一时，必须按 x + 宽度 计算，
+        // 否则只对齐左边缘 x 会出现"看起来还是左对齐"的问题。
+        const getW = (n: typeof selectedNodes[number]) =>
+          ((n as any).width as number) || (n as any).measured?.width || 0
+        const maxRight = Math.max(...selectedNodes.map(n => n.position.x + getW(n)))
         updatedNodes = updatedNodes.map(node => {
           if (node.selected) {
-            return { ...node, position: { ...node.position, x: maxX } }
+            return { ...node, position: { ...node.position, x: maxRight - getW(node) } }
           }
           return node
         })

@@ -6,6 +6,9 @@ use std::sync::{Arc, Mutex};
 use std::io::{BufRead, BufReader};
 use std::thread;
 use tauri::{Manager, Window};
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState};
+use tauri_plugin_autostart::ManagerExt;
 use serde::{Deserialize, Serialize};
 use reqwest;
 
@@ -933,8 +936,50 @@ async fn open_browser(url: String) -> Result<(), String> {
     Ok(())
 }
 
+// 统一停止前后端服务（窗口关闭、托盘退出共用）
+fn shutdown_services(app: &tauri::AppHandle) {
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Some(pid) = state.backend_pid.lock().unwrap().take() {
+            kill_process_tree(pid);
+        }
+        if let Some(mut child) = state.backend_process.lock().unwrap().take() {
+            let _ = child.kill();
+        }
+        if let Some(pid) = state.frontend_pid.lock().unwrap().take() {
+            kill_process_tree(pid);
+        }
+        if let Some(mut child) = state.frontend_process.lock().unwrap().take() {
+            let _ = child.kill();
+        }
+    }
+}
+
+// 设置开机自启动（开 / 关）
+#[tauri::command]
+async fn set_autostart(app: tauri::AppHandle, enable: bool) -> Result<(), String> {
+    let manager = app.autolaunch();
+    if enable {
+        manager.enable().map_err(|e| format!("开启开机自启动失败: {}", e))?;
+    } else {
+        manager.disable().map_err(|e| format!("关闭开机自启动失败: {}", e))?;
+    }
+    Ok(())
+}
+
+// 查询当前是否已设置开机自启动
+#[tauri::command]
+async fn get_autostart(app: tauri::AppHandle) -> Result<bool, String> {
+    app.autolaunch()
+        .is_enabled()
+        .map_err(|e| format!("查询开机自启动状态失败: {}", e))
+}
+
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .manage(AppState {
             backend_process: Arc::new(Mutex::new(None)),
             frontend_process: Arc::new(Mutex::new(None)),
@@ -949,6 +994,52 @@ fn main() {
                     let _ = window.set_icon(icon.clone());
                 }
             }
+
+            // 系统托盘：最小化时隐藏到托盘，点击托盘图标或菜单可恢复
+            let show_item = MenuItem::with_id(app, "tray_show", "显示主窗口", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "tray_quit", "退出 WebRPA 启动器", true, None::<&str>)?;
+            let tray_menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            let mut tray_builder = TrayIconBuilder::new()
+                .tooltip("WebRPA 启动器")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "tray_show" => {
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.unminimize();
+                            let _ = w.set_focus();
+                        }
+                    }
+                    "tray_quit" => {
+                        shutdown_services(app);
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.unminimize();
+                            let _ = w.set_focus();
+                        }
+                    }
+                });
+
+            if let Some(icon) = app.default_window_icon() {
+                tray_builder = tray_builder.icon(icon.clone());
+            }
+
+            let _tray = tray_builder.build(app)?;
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -962,29 +1053,14 @@ fn main() {
             open_browser,
             get_version,
             open_backend_log,
-            open_frontend_log
+            open_frontend_log,
+            set_autostart,
+            get_autostart
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 // 窗口关闭时停止所有服务
-                let app_handle = window.app_handle();
-                if let Some(state) = app_handle.try_state::<AppState>() {
-                    // 使用进程树杀死后端
-                    if let Some(pid) = state.backend_pid.lock().unwrap().take() {
-                        kill_process_tree(pid);
-                    }
-                    if let Some(mut child) = state.backend_process.lock().unwrap().take() {
-                        let _ = child.kill();
-                    }
-                    
-                    // 使用进程树杀死前端
-                    if let Some(pid) = state.frontend_pid.lock().unwrap().take() {
-                        kill_process_tree(pid);
-                    }
-                    if let Some(mut child) = state.frontend_process.lock().unwrap().take() {
-                        let _ = child.kill();
-                    }
-                }
+                shutdown_services(window.app_handle());
             }
         })
         .run(tauri::generate_context!())

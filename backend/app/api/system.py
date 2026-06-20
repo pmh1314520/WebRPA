@@ -189,9 +189,16 @@ async def module_required_fields():
         schemas = get_all_module_schemas()
         result = {}
         for mtype, schema in schemas.items():
-            req = schema.get("required") if isinstance(schema, dict) else None
+            if not isinstance(schema, dict):
+                continue
+            req = schema.get("required")
             if isinstance(req, list) and req:
-                result[mtype] = req
+                # 有默认值的必填字段在执行时会自动补默认值（见 apply_default_config），
+                # 不应在配置面板提示"未填写"，否则用户看到默认值却仍被警告。
+                defaults = schema.get("defaults") or {}
+                filtered = [f for f in req if f not in defaults]
+                if filtered:
+                    result[mtype] = filtered
         return {"requiredFields": result, "conditionalRequired": conditional_required_map()}
     except Exception as e:
         return {"requiredFields": {}, "conditionalRequired": {}, "error": str(e)}

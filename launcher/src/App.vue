@@ -26,7 +26,7 @@
           </div>
         </div>
         <div class="window-controls">
-          <button class="win-btn" @click="minimize" aria-label="最小化">
+          <button class="win-btn" @click="minimize" aria-label="最小化到托盘" title="最小化到系统托盘">
             <svg viewBox="0 0 24 24" width="14" height="14">
               <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
             </svg>
@@ -610,6 +610,16 @@
               </div>
               <div class="cfg-row cfg-row-toggle">
                 <div class="cfg-toggle-text">
+                  <div class="cfg-toggle-title">开机自启动</div>
+                  <div class="cfg-toggle-sub">开机登录 Windows 后自动启动 WebRPA 启动器（可配合下方"自动启动服务"实现开机即用）</div>
+                </div>
+                <label class="cfg-switch" :class="{ on: autoLaunchOnBoot }">
+                  <input type="checkbox" v-model="autoLaunchOnBoot" />
+                  <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                </label>
+              </div>
+              <div class="cfg-row cfg-row-toggle">
+                <div class="cfg-toggle-text">
                   <div class="cfg-toggle-title">启动时自动启动前后端服务</div>
                   <div class="cfg-toggle-sub">打开启动器后立即拉起 API 与编辑器，无需点击启动按钮</div>
                 </div>
@@ -747,6 +757,24 @@ const autoStartServices = ref(
 watch(autoStartServices, (v) => {
   try { localStorage.setItem(AUTO_START_KEY, v ? '1' : '0') } catch {}
 })
+
+// 开机自启动（调用 Rust 端 autostart 插件，真实写入系统启动项）
+const autoLaunchOnBoot = ref(false)
+// 标记初始读取阶段，避免读取到当前状态后又触发 watch 反向写入
+let suppressAutoLaunchWrite = false
+watch(autoLaunchOnBoot, async (v) => {
+  if (suppressAutoLaunchWrite) return
+  try {
+    await invoke('set_autostart', { enable: v })
+    showToast(v ? '已开启开机自启动' : '已关闭开机自启动', 'success')
+  } catch (e) {
+    showToast(`设置开机自启动失败: ${e}`, 'error')
+    // 失败时回滚开关状态
+    suppressAutoLaunchWrite = true
+    autoLaunchOnBoot.value = !v
+    setTimeout(() => { suppressAutoLaunchWrite = false }, 0)
+  }
+})
 const saving = ref(false)
 // 自动保存状态：idle / saving / saved / invalid
 const autoSaveStatus = ref('idle')
@@ -815,7 +843,8 @@ const frontendStateText = computed(() => stopping.value && frontendRunning.value
 
 // 标题栏控制
 const minimize = async () => {
-  try { await getCurrentWindow().minimize() } catch (e) { console.error(e) }
+  // 最小化到系统托盘：隐藏窗口，可通过托盘图标或菜单恢复
+  try { await getCurrentWindow().hide() } catch (e) { console.error(e) }
 }
 const closeApp = async () => {
   // 防止重复点击
@@ -1085,6 +1114,13 @@ const openFrontendLog = async () => {
 onMounted(async () => {
   try { version.value = await invoke('get_version') } catch { version.value = '?' }
   await loadConfig()
+  // 读取系统真实的开机自启动状态，同步到开关（避免触发反向写入）
+  try {
+    const enabled = await invoke('get_autostart')
+    suppressAutoLaunchWrite = true
+    autoLaunchOnBoot.value = !!enabled
+    setTimeout(() => { suppressAutoLaunchWrite = false }, 0)
+  } catch (e) { console.error('读取开机自启动状态失败:', e) }
   await checkServiceStatus()
   startStatusCheck()
   setTimeout(checkUpdate, 1500)
