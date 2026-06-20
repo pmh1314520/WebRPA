@@ -165,15 +165,29 @@ export function VersionHistoryPanel({ open, onClose }: Props) {
       <div className="fixed inset-0 z-[9998] bg-black/30" onClick={onClose} />
       <div className="fixed right-0 top-0 z-[9999] h-full w-[420px] bg-[hsl(var(--background))] border-l border-[hsl(var(--border))] shadow-2xl flex flex-col">
         {/* 头部 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--border))]">
-          <div className="flex items-center gap-2">
-            <GitCommit className="w-4 h-4 text-violet-600" />
-            <span className="font-medium text-sm">版本历史</span>
-            <span className="text-xs text-muted-foreground truncate max-w-[160px]">{name || '未命名工作流'}</span>
+        <div className="px-4 py-3 border-b border-[hsl(var(--border))] bg-gradient-to-r from-violet-50 to-transparent">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex-none">
+                <GitCommit className="w-4 h-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))] leading-tight">版本历史</div>
+                <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">本地快照 · 可恢复 / 对比</div>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-1 rounded hover:bg-[hsl(var(--accent))] flex-none">
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-[hsl(var(--accent))]">
-            <X className="w-4 h-4" />
-          </button>
+          {/* 当前工作流名：作为独立、专业的信息条 */}
+          <div className="mt-2.5 flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[hsl(var(--card))] border border-[hsl(var(--border))]">
+            <span className="text-[10px] font-medium text-muted-foreground flex-none">当前工作流</span>
+            <span className="text-xs font-semibold text-violet-700 truncate" title={name || '未命名工作流'}>
+              {name || '未命名工作流'}
+            </span>
+            <span className="ml-auto text-[10px] text-muted-foreground flex-none">{versions.length} 个版本</span>
+          </div>
         </div>
 
         {/* 提交区 */}
@@ -263,7 +277,7 @@ export function VersionHistoryPanel({ open, onClose }: Props) {
                             <span>{v.createdAt}</span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5">
-                            {v.summary?.nodeCount ?? 0} 个节点 · {v.summary?.edgeCount ?? 0} 条连线
+                            {v.summary?.nodeCount ?? 0} 个节点 · {v.summary?.edgeCount ?? 0} 条连线 · {v.summary?.variableCount ?? 0} 个变量
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">

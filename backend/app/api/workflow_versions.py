@@ -85,10 +85,11 @@ def _read_version_file(filepath: str) -> Optional[dict]:
 
 
 def _summarize_content(content: dict) -> dict:
-    """统计工作流的节点/边数量，用于版本列表展示"""
+    """统计工作流的节点/边/变量数量，用于版本列表展示"""
     nodes = content.get("nodes", []) if isinstance(content, dict) else []
     edges = content.get("edges", []) if isinstance(content, dict) else []
-    return {"nodeCount": len(nodes), "edgeCount": len(edges)}
+    variables = content.get("variables", []) if isinstance(content, dict) else []
+    return {"nodeCount": len(nodes), "edgeCount": len(edges), "variableCount": len(variables)}
 
 
 @router.post("/commit")

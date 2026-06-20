@@ -504,7 +504,7 @@ export interface WorkflowVersionInfo {
   version: string
   message: string
   createdAt: string
-  summary?: { nodeCount?: number; edgeCount?: number }
+  summary?: { nodeCount?: number; edgeCount?: number; variableCount?: number }
 }
 export interface WorkflowDiff {
   nodesAdded: { id: string; label: string }[]
