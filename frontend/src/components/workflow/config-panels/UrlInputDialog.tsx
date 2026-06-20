@@ -49,7 +49,7 @@ export function UrlInputDialog({
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-800">
               <strong>Ctrl+点击</strong>：选择单个元素<br/>
-              <strong>Shift+点击</strong>：选择相似元素（先点第一个，再点第二个相似的）
+              <strong>Alt+点击</strong>：选择相似元素（先点第一个，再点第二个相似的）
             </p>
           </div>
           <div className="flex justify-end gap-2">

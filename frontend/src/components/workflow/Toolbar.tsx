@@ -34,6 +34,7 @@ import {
   Square,
   Save,
   FolderOpen,
+  FilePlus,
   Settings,
   BookOpen,
   Globe,
@@ -436,6 +437,18 @@ export function Toolbar() {
     setWorkflowId(null)
     addLog({ level: 'info', message: '已创建新工作流' })
   }, [clearWorkflow, addLog])
+
+  // 点击"新建"按钮：画布有内容时先确认，避免误清空未保存的工作流
+  const handleNewWorkflowClick = useCallback(async () => {
+    if (nodes.length > 0) {
+      const ok = await confirm('新建工作流会清空当前画布，未保存的内容将丢失。确定要新建吗？', {
+        type: 'warning',
+        title: '新建工作流',
+      })
+      if (!ok) return
+    }
+    handleNewWorkflow()
+  }, [nodes.length, confirm, handleNewWorkflow])
 
   // 智能整理（基于 ELKJS 的自动排版）
   const handleAutoLayout = useCallback(async () => {
@@ -1439,6 +1452,15 @@ export function Toolbar() {
 
       {/* 文件操作 - 大屏幕显示全部，小屏幕使用下拉菜单 */}
       <div className="hidden lg:flex items-center gap-1">
+        <Button
+          variant="tonal"
+          size="sm"
+          onClick={handleNewWorkflowClick}
+          title="新建工作流 (Alt+N)"
+        >
+          <FilePlus className="w-4 h-4 mr-1" />
+          新建
+        </Button>
         <Button 
           variant="success" 
           size="sm" 
@@ -1482,6 +1504,10 @@ export function Toolbar() {
         <DropdownMenuContent align="start" className="w-40">
           <DropdownMenuLabel>文件操作</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleNewWorkflowClick}>
+            <FilePlus className="w-4 h-4 mr-2 text-[hsl(var(--success-600))]" />
+            新建
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleSave()}>
             <Save className="w-4 h-4 mr-2 text-[hsl(var(--brand-600))]" />
             保存

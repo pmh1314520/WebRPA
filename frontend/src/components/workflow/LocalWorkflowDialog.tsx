@@ -56,6 +56,7 @@ export function LocalWorkflowDialog({ isOpen, onClose, onLog }: LocalWorkflowDia
       const response = await fetch(`${API_BASE}/api/local-workflows/list`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({ folder })
       })
       const data = await response.json()

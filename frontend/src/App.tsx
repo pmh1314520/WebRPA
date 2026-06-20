@@ -239,30 +239,31 @@ function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
-      <div
-        className="h-full w-full"
-        style={{
-          paddingRight: aiPanelOpen ? aiPanelWidth : 0,
-          transition: 'padding-right 200ms cubic-bezier(0.25, 1, 0.5, 1)',
-        }}
-      >
-        <WorkflowErrorBoundary>
+      <WorkflowErrorBoundary>
+        <div
+          className="h-full w-full"
+          style={{
+            paddingRight: aiPanelOpen ? aiPanelWidth : 0,
+            transition: 'padding-right 200ms cubic-bezier(0.25, 1, 0.5, 1)',
+          }}
+        >
           <WorkflowEditor />
-        </WorkflowErrorBoundary>
-      </div>
-      <InputPromptDialog />
-      <MusicPlayerContainer />
-      <VideoPlayerContainer />
-      <ImageViewerContainer />
-      <UpdateDialog
-        isOpen={updateInfo.show}
-        currentVersion={CURRENT_VERSION}
-        latestVersion={updateInfo.latestVersion}
-        downloadUrl={updateInfo.downloadUrl}
-        onClose={handleCloseUpdate}
-        onSkip={handleSkipUpdate}
-      />
-      <MouseCoordinateOverlay />
+        </div>
+        <InputPromptDialog />
+        <MusicPlayerContainer />
+        <VideoPlayerContainer />
+        <ImageViewerContainer />
+        <UpdateDialog
+          isOpen={updateInfo.show}
+          currentVersion={CURRENT_VERSION}
+          latestVersion={updateInfo.latestVersion}
+          downloadUrl={updateInfo.downloadUrl}
+          onClose={handleCloseUpdate}
+          onSkip={handleSkipUpdate}
+        />
+        <MouseCoordinateOverlay />
+      </WorkflowErrorBoundary>
+      {/* AI 小助手放在错误边界之外：即使编辑器崩溃，也能用它来诊断错误 */}
       <AIAssistantPanel />
       <AIAssistantButton />
     </div>

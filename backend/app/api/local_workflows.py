@@ -141,7 +141,7 @@ async def list_workflows(config: WorkflowFolderConfig):
     
     try:
         for filename in os.listdir(folder):
-            if filename.endswith('.json'):
+            if filename.lower().endswith('.json'):
                 filepath = os.path.join(folder, filename)
                 try:
                     stat = os.stat(filepath)
@@ -157,20 +157,20 @@ async def list_workflows(config: WorkflowFolderConfig):
                     except Exception:
                         pass
                     
-                    workflows.append(LocalWorkflowInfo(
+                    workflows.append((stat.st_mtime, LocalWorkflowInfo(
                         filename=filename,
                         name=workflow_name,
                         modifiedTime=modified_time,
                         size=stat.st_size
-                    ))
+                    )))
                 except Exception as e:
                     print(f"Error reading file {filename}: {e}")
                     continue
         
-        # 按修改时间倒序排列
-        workflows.sort(key=lambda x: x.modifiedTime, reverse=True)
+        # 按真实修改时间（数值）倒序排列，避免字符串排序在边界情况下不稳定
+        workflows.sort(key=lambda x: x[0], reverse=True)
         
-        return {"workflows": [w.model_dump() for w in workflows]}
+        return {"workflows": [w.model_dump() for _, w in workflows]}
     
     except Exception as e:
         return {"error": str(e), "workflows": []}

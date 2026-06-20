@@ -32,18 +32,24 @@ export function InputPromptDialog() {
 
   const handlePromptRequest = useCallback((data: PromptData) => {
     try {
-      setPromptData(data)
-      setInputValue(data.defaultValue || '')
+      // 归一化默认值为字符串：defaultValue 可能是数字（如 integer 模式配了 8），
+      // 若直接存进 inputValue 状态，后续 inputValue.split / inputValue.trim 会因
+      // "不是字符串"而抛 TypeError 导致编辑器白屏。这里统一转成字符串。
+      const rawDefault = (data as { defaultValue?: unknown }).defaultValue
+      const defaultStr = rawDefault === null || rawDefault === undefined ? '' : String(rawDefault)
+      setPromptData({ ...data, defaultValue: defaultStr })
+      setInputValue(defaultStr)
       // 复选框模式：解析默认值为布尔值
       if (data.inputMode === 'checkbox') {
-        const defaultBool = data.defaultValue?.toLowerCase() === 'true' || data.defaultValue === '1'
+        const lower = defaultStr.toLowerCase()
+        const defaultBool = lower === 'true' || defaultStr === '1'
         setCheckboxValue(defaultBool)
       } else {
         setCheckboxValue(false)
       }
       // 滑动条模式：解析默认值为数字
       if (data.inputMode === 'slider_int' || data.inputMode === 'slider_float') {
-        const defaultNum = parseFloat(data.defaultValue) || data.minValue || 0
+        const defaultNum = parseFloat(defaultStr) || data.minValue || 0
         setSliderValue(defaultNum)
       } else {
         setSliderValue(0)
@@ -56,12 +62,12 @@ export function InputPromptDialog() {
           data.selectOptions = []
         }
         
-        if (data.defaultValue) {
+        if (defaultStr) {
           try {
-            const parsed = JSON.parse(data.defaultValue)
+            const parsed = JSON.parse(defaultStr)
             setSelectedItems(Array.isArray(parsed) ? parsed : [parsed])
           } catch {
-            setSelectedItems(data.defaultValue ? [data.defaultValue] : [])
+            setSelectedItems(defaultStr ? [defaultStr] : [])
           }
         } else {
           setSelectedItems([])

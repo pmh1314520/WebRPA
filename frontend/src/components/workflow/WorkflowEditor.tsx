@@ -871,6 +871,26 @@ export function WorkflowEditor() {
       if (target.closest('.monaco-editor') || target.closest('[role="textbox"]')) {
         return
       }
+
+      // 快捷键作用域限制：以下都是"画布模块操作"快捷键（复制/粘贴/删除/禁用/全选等），
+      // 必须只在用户确实在操作画布时才生效，否则会误触发。
+      // 1) 模块条模式下，画布快捷键交给 BlockFlowView 自己处理，避免重复触发
+      //    （典型 bug：Ctrl+D 被两个处理器各切换一次，结果"切了又切回去"，看起来无法禁用）
+      if (useLayoutStore.getState().editorViewMode === 'block') {
+        return
+      }
+      // 2) 焦点落在弹窗/侧边面板/下拉菜单等非画布 UI 上时，不响应模块快捷键
+      if (target.closest('[role="dialog"], .modern-dialog, .modal-mask, [data-dialog-portal], [data-radix-popper-content-wrapper], .ai-assistant-panel')) {
+        return
+      }
+      // 3) 仅当焦点在画布容器内、或没有任何具体 UI 获得焦点（focus 在 body）时才处理
+      {
+        const wrapperEl = reactFlowWrapper.current
+        const onCanvas = target === document.body || (!!wrapperEl && wrapperEl.contains(target))
+        if (!onCanvas) {
+          return
+        }
+      }
       
       // Delete/Backspace 删除选中节点或边
       if (event.key === 'Delete' || event.key === 'Backspace') {
