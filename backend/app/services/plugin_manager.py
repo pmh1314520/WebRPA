@@ -265,3 +265,154 @@ def install_from_market(plugin_id: str) -> Dict[str, Any]:
         pkg = {k: target.get(k) for k in ("id", "name", "version", "author", "description", "homepage", "keywords")}
         pkg["modules"] = []
     return install_plugin(pkg)
+
+
+# ============================================================
+# 发布 / 上架（导出市场就绪包，可选 POST 到 hub）
+# ============================================================
+def export_package(plugin_id: str) -> Dict[str, Any]:
+    """导出已安装插件为「市场就绪」的完整包 JSON（含模块定义），供开发者上架。"""
+    with _lock:
+        idx = _load_index()
+        entry = idx.get(plugin_id)
+        if not entry:
+            return {"success": False, "error": "插件未安装"}
+        # 优先用安装时备份的原始包
+        backup = _PLUGINS_DIR / f"{plugin_id}.pkg.json"
+        if backup.exists():
+            try:
+                pkg = json.loads(backup.read_text(encoding="utf-8"))
+                return {"success": True, "package": pkg}
+            except Exception:
+                pass
+        # 回退：从已落地的自定义模块反向组装
+        modules: List[Dict[str, Any]] = []
+        for mid in entry.get("moduleIds", []):
+            f = _CUSTOM_MODULES_DIR / f"{mid}.json"
+            if f.exists():
+                try:
+                    modules.append(json.loads(f.read_text(encoding="utf-8")))
+                except Exception:
+                    pass
+        pkg = {
+            "id": entry["id"],
+            "name": entry.get("name"),
+            "version": entry.get("version") or "1.0.0",
+            "author": entry.get("author") or "",
+            "description": entry.get("description") or "",
+            "homepage": entry.get("homepage") or "",
+            "keywords": entry.get("keywords") or [],
+            "knowledge": entry.get("knowledge") or "",
+            "modules": modules,
+        }
+        return {"success": True, "package": pkg}
+
+
+def publish_plugin(plugin_id: str, hub_url: str = "") -> Dict[str, Any]:
+    """发布插件：导出市场就绪包；若提供 hub_url 则 POST 上架到中心化仓库。"""
+    exported = export_package(plugin_id)
+    if not exported.get("success"):
+        return exported
+    pkg = exported["package"]
+    if not hub_url:
+        hub_url = get_market_url()
+    if hub_url:
+        try:
+            # hub 约定：POST {hub_url}/publish ，body 为完整包
+            endpoint = hub_url.rstrip("/")
+            if not endpoint.endswith("/publish"):
+                endpoint = endpoint + "/publish"
+            resp = requests.post(endpoint, json=pkg, timeout=15)
+            if resp.status_code in (200, 201):
+                return {"success": True, "published": True, "package": pkg, "response": _safe_json(resp)}
+            return {"success": False, "error": f"上架失败 HTTP {resp.status_code}", "package": pkg}
+        except Exception as e:
+            return {"success": False, "error": f"上架请求失败: {e}", "package": pkg}
+    # 无 hub：仅导出本地市场就绪包文件供手动上架
+    _ensure_dirs()
+    out = _PLUGINS_DIR / f"{plugin_id}.market.json"
+    out.write_text(json.dumps(pkg, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"success": True, "published": False, "package": pkg, "exportedPath": str(out)}
+
+
+def _safe_json(resp: "requests.Response") -> Any:
+    try:
+        return resp.json()
+    except Exception:
+        return resp.text[:500]
+
+
+# ============================================================
+# 评分 / 评论（本地存储；若配置了 hub 则同时同步）
+# 存储：backend/data/plugins/reviews.json
+#   { plugin_id: { "reviews": [ {id, user, rating(1-5), comment, createdAt} ], } }
+# ============================================================
+_REVIEWS_FILE = _PLUGINS_DIR / "reviews.json"
+
+
+def _load_reviews() -> Dict[str, Any]:
+    if _REVIEWS_FILE.exists():
+        try:
+            return json.loads(_REVIEWS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _save_reviews(data: Dict[str, Any]) -> None:
+    _ensure_dirs()
+    _REVIEWS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _summarize(reviews: List[Dict[str, Any]]) -> Dict[str, Any]:
+    n = len(reviews)
+    avg = round(sum(r.get("rating", 0) for r in reviews) / n, 2) if n else 0
+    return {"count": n, "average": avg}
+
+
+def add_review(plugin_id: str, rating: int, comment: str = "", user: str = "匿名用户") -> Dict[str, Any]:
+    try:
+        rating = int(rating)
+    except Exception:
+        return {"success": False, "error": "评分必须为 1-5 的整数"}
+    if rating < 1 or rating > 5:
+        return {"success": False, "error": "评分必须为 1-5"}
+    with _lock:
+        data = _load_reviews()
+        bucket = data.setdefault(plugin_id, {"reviews": []})
+        review = {
+            "id": f"rv_{int(datetime.now().timestamp() * 1000)}",
+            "user": (user or "匿名用户").strip()[:40],
+            "rating": rating,
+            "comment": (comment or "").strip()[:1000],
+            "createdAt": datetime.now().isoformat(),
+        }
+        bucket["reviews"].insert(0, review)
+        _save_reviews(data)
+        # 可选同步到 hub
+        hub = get_market_url()
+        if hub:
+            try:
+                requests.post(hub.rstrip("/") + "/reviews", json={"pluginId": plugin_id, **review}, timeout=8)
+            except Exception:
+                pass
+        return {"success": True, "review": review, "summary": _summarize(bucket["reviews"])}
+
+
+def get_reviews(plugin_id: str) -> Dict[str, Any]:
+    # 优先合并 hub 上的评论
+    merged: List[Dict[str, Any]] = []
+    hub = get_market_url()
+    if hub:
+        try:
+            resp = requests.get(hub.rstrip("/") + f"/reviews/{plugin_id}", timeout=8)
+            if resp.status_code == 200:
+                remote = resp.json()
+                items = remote.get("reviews") if isinstance(remote, dict) else remote
+                if isinstance(items, list):
+                    merged.extend(items)
+        except Exception:
+            pass
+    local = _load_reviews().get(plugin_id, {}).get("reviews", [])
+    merged.extend(local)
+    return {"success": True, "reviews": merged, "summary": _summarize(merged)}

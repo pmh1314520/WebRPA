@@ -711,4 +711,29 @@ export const pluginApi = {
     ),
   uninstall: (pluginId: string) =>
     apiRequest<{ success: boolean; error?: string }>(`/plugins/${encodeURIComponent(pluginId)}`, { method: 'DELETE' }),
+  exportPackage: (pluginId: string) =>
+    apiRequest<{ success: boolean; package?: unknown; error?: string }>(
+      `/plugins/${encodeURIComponent(pluginId)}/export`
+    ),
+  publish: (pluginId: string, hubUrl?: string) =>
+    apiRequest<{ success: boolean; published?: boolean; package?: unknown; exportedPath?: string; error?: string }>(
+      `/plugins/${encodeURIComponent(pluginId)}/publish`, { method: 'POST', body: JSON.stringify({ hubUrl: hubUrl || '' }) }
+    ),
+  getReviews: (pluginId: string) =>
+    apiRequest<{ success: boolean; reviews: PluginReview[]; summary: { count: number; average: number } }>(
+      `/plugins/${encodeURIComponent(pluginId)}/reviews`
+    ),
+  addReview: (pluginId: string, rating: number, comment?: string, user?: string) =>
+    apiRequest<{ success: boolean; review?: PluginReview; summary?: { count: number; average: number }; error?: string }>(
+      `/plugins/${encodeURIComponent(pluginId)}/reviews`,
+      { method: 'POST', body: JSON.stringify({ rating, comment: comment || '', user: user || '匿名用户' }) }
+    ),
+}
+
+export interface PluginReview {
+  id: string
+  user: string
+  rating: number
+  comment: string
+  createdAt: string
 }

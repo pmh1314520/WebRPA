@@ -1,17 +1,24 @@
 /* ============================================================
-   WebRPA 编辑器界面国际化（中/英）运行时翻译层
+   WebRPA 编辑器界面国际化（中/英）运行时翻译层（强力版）
    - 首次按系统语言自动选择；用户切换后记忆
-   - 通过文本节点字典翻译 + 防抖 MutationObserver 覆盖 React 重渲染
-   - 跳过 React Flow 画布（用户节点/数据），只翻译界面 chrome
-   说明：这是渐进式 i18n 层，字典覆盖高频界面文案；未覆盖的保持中文。
+   - 文本节点：先整句精确匹配（UI_DICT），未命中再做短语级替换（PHRASES）
+     —— 短语级替换可覆盖"日志"等动态拼接文本，尽量做到处处英文
+   - 同时翻译 placeholder / title / aria-label 等属性
+   - 防抖 MutationObserver 覆盖 React 重渲染；跳过输入框/代码编辑器/画布以保护编辑与性能
    ============================================================ */
-import { UI_DICT } from './uiI18nDict'
+import { UI_DICT, PHRASES } from './uiI18nDict'
 
 const LS_KEY = 'webrpa.editor.lang'
-const origMap = new WeakMap<Text, string>()
+const origText = new WeakMap<Text, string>()
+const origAttr = new WeakMap<Element, Record<string, string>>()
 let curLang: 'zh' | 'en' = 'zh'
 let observer: MutationObserver | null = null
 let pending = false
+
+// 短语按长度降序，避免短词先替换破坏长词
+const PHRASE_PAIRS: [string, string][] = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
+const ATTRS = ['placeholder', 'title', 'aria-label']
+const hasCJK = (s: string) => /[\u4e00-\u9fa5]/.test(s)
 
 export function detectLang(): 'zh' | 'en' {
   try {
@@ -26,9 +33,22 @@ export function getLang(): 'zh' | 'en' {
   return curLang
 }
 
+function translateString(zh: string): string {
+  const key = zh.trim()
+  // 1) 整句精确匹配
+  if (UI_DICT[key] !== undefined) return zh.replace(key, UI_DICT[key])
+  // 2) 短语级替换（覆盖动态拼接，如日志）
+  if (!hasCJK(zh)) return zh
+  let out = zh
+  for (const [zhP, enP] of PHRASE_PAIRS) {
+    if (out.indexOf(zhP) !== -1) out = out.split(zhP).join(enP)
+  }
+  // 收敛多余空格
+  return out.replace(/[ \t]{2,}/g, ' ')
+}
+
 function shouldSkip(el: Element | null): boolean {
   if (!el) return true
-  // 跳过画布（用户节点/连线/数据）、代码编辑器、输入控件
   return !!el.closest(
     '.react-flow__renderer, .react-flow__viewport, .monaco-editor, input, textarea, [contenteditable="true"], #langToggleBtn'
   )
@@ -40,21 +60,38 @@ function translateTextNode(node: Text) {
   const tag = p?.tagName
   if (tag === 'SCRIPT' || tag === 'STYLE') return
   if (!node.nodeValue || !node.nodeValue.trim()) return
-  if (!origMap.has(node)) origMap.set(node, node.nodeValue)
-  const zh = origMap.get(node) as string
-  const key = zh.trim()
-  if (curLang === 'en') {
-    const en = UI_DICT[key]
-    if (en !== undefined) node.nodeValue = zh.replace(key, en)
-  } else {
-    node.nodeValue = zh
+  if (!origText.has(node)) origText.set(node, node.nodeValue)
+  const zh = origText.get(node) as string
+  node.nodeValue = curLang === 'en' ? translateString(zh) : zh
+}
+
+function translateAttrs(el: Element) {
+  if (shouldSkip(el)) return
+  for (const attr of ATTRS) {
+    if (!el.hasAttribute(attr)) continue
+    const cur = el.getAttribute(attr) || ''
+    if (!cur) continue
+    let bak = origAttr.get(el)
+    if (!bak) { bak = {}; origAttr.set(el, bak) }
+    if (bak[attr] === undefined) bak[attr] = cur
+    const zh = bak[attr]
+    if (!hasCJK(zh)) continue
+    el.setAttribute(attr, curLang === 'en' ? translateString(zh) : zh)
   }
 }
 
 function walk(root: Node) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  // 文本节点
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   let n: Node | null
-  while ((n = walker.nextNode())) translateTextNode(n as Text)
+  while ((n = tw.nextNode())) translateTextNode(n as Text)
+  // 属性
+  if (root instanceof Element || root === document.body) {
+    const base = root instanceof Element ? root : document.body
+    translateAttrs(base as Element)
+    const els = (base as Element).querySelectorAll('[placeholder],[title],[aria-label]')
+    els.forEach((el) => translateAttrs(el))
+  }
 }
 
 function scheduleWalk() {
@@ -66,8 +103,51 @@ function scheduleWalk() {
   })
 }
 
+function injectToggle() {
+  if (document.getElementById('langToggleBtn')) return
+  const btn = document.createElement('button')
+  btn.id = 'langToggleBtn'
+  btn.type = 'button'
+  btn.textContent = curLang === 'en' ? '中文' : 'EN'
+  btn.title = 'Switch language / 切换语言'
+  btn.style.cssText = [
+    'position:fixed', 'top:8px', 'right:10px', 'z-index:2147483600',
+    'height:26px', 'min-width:42px', 'padding:0 10px', 'border-radius:7px',
+    'font-size:12px', 'font-weight:700', 'cursor:pointer', 'color:#fff', 'border:none',
+    'background:linear-gradient(135deg,#3b82f6,#2563eb)', 'box-shadow:0 2px 8px rgba(37,99,235,.35)',
+  ].join(';')
+  btn.addEventListener('click', toggleLang)
+  document.body.appendChild(btn)
+}
+
 function apply() {
+  // 切换时做一次"含画布"的全量翻译（一次性，不影响后续性能）
   walk(document.body)
+  // 画布只在显式切换时翻译一次（避免拖拽时持续重翻译造成卡顿）
+  if (curLang === 'en') {
+    document.querySelectorAll('.react-flow__renderer, .react-flow__viewport').forEach((el) => {
+      const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+      let n: Node | null
+      while ((n = tw.nextNode())) {
+        const t = n as Text
+        const par = t.parentElement
+        if (par && par.closest('input, textarea, [contenteditable="true"]')) continue
+        if (!t.nodeValue || !t.nodeValue.trim()) continue
+        if (!origText.has(t)) origText.set(t, t.nodeValue)
+        t.nodeValue = translateString(origText.get(t) as string)
+      }
+    })
+  } else {
+    // 还原画布
+    document.querySelectorAll('.react-flow__renderer, .react-flow__viewport').forEach((el) => {
+      const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+      let n: Node | null
+      while ((n = tw.nextNode())) {
+        const t = n as Text
+        if (origText.has(t)) t.nodeValue = origText.get(t) as string
+      }
+    })
+  }
   document.documentElement.lang = curLang === 'en' ? 'en' : 'zh-CN'
   const btn = document.getElementById('langToggleBtn')
   if (btn) btn.textContent = curLang === 'en' ? '中文' : 'EN'
@@ -81,25 +161,6 @@ export function setLang(lang: 'zh' | 'en') {
 
 export function toggleLang() {
   setLang(curLang === 'en' ? 'zh' : 'en')
-}
-
-function injectToggle() {
-  if (document.getElementById('langToggleBtn')) return
-  const btn = document.createElement('button')
-  btn.id = 'langToggleBtn'
-  btn.type = 'button'
-  btn.textContent = curLang === 'en' ? '中文' : 'EN'
-  btn.title = 'Switch language / 切换语言'
-  btn.style.cssText = [
-    'position:fixed', 'top:8px', 'right:10px', 'z-index:2147483600',
-    'height:26px', 'min-width:42px', 'padding:0 10px', 'border-radius:7px',
-    'font-size:12px', 'font-weight:700', 'cursor:pointer',
-    'color:#fff', 'border:none',
-    'background:linear-gradient(135deg,#3b82f6,#2563eb)',
-    'box-shadow:0 2px 8px rgba(37,99,235,.35)',
-  ].join(';')
-  btn.addEventListener('click', toggleLang)
-  document.body.appendChild(btn)
 }
 
 export function setupEditorI18n() {

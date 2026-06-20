@@ -63,9 +63,42 @@ Object.assign(DICT, {
 
 if (typeof window !== 'undefined') window.__WEBRPA_LAUNCHER_DICT = DICT
 
+// 短语级字典：覆盖动态拼接文本/日志（整句未命中时按长度降序逐个替换）
+const PHRASES = {
+  '正在启动': 'Starting ', '正在停止': 'Stopping ', '正在检查': 'Checking ',
+  '正在下载': 'Downloading ', '正在安装': 'Installing ', '正在退出': 'Exiting ',
+  '正在连接': 'Connecting ', '正在加载': 'Loading ', '正在保存': 'Saving ',
+  '已启动': 'Started ', '已停止': 'Stopped ', '已就绪': 'Ready ', '已退出': 'Exited ',
+  '已保存': 'Saved ', '已连接': 'Connected ', '已断开': 'Disconnected ',
+  '已完成': 'Done ', '已取消': 'Canceled ', '已更新': 'Updated ',
+  '启动成功': 'Started successfully', '启动失败': 'Failed to start',
+  '停止成功': 'Stopped successfully', '停止失败': 'Failed to stop',
+  '连接成功': 'Connected', '连接失败': 'Connection failed',
+  '后端服务': 'Backend service', '前端服务': 'Frontend service',
+  '后端': 'Backend', '前端': 'Frontend', '服务': 'service',
+  '端口': 'port', '地址': 'host', '日志': 'logs',
+  '失败': 'failed', '成功': 'succeeded', '错误': 'error', '警告': 'warning',
+  '请稍候': 'please wait', '请重试': 'please retry',
+}
+const PHRASE_PAIRS = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
+const hasCJK = (s) => /[\u4e00-\u9fa5]/.test(s)
+const ATTRS = ['placeholder', 'title']
+
+function translateStr(zh) {
+  const key = zh.trim()
+  if (DICT[key] !== undefined) return zh.replace(key, DICT[key])
+  if (!hasCJK(zh)) return zh
+  let out = zh
+  for (const [zhP, enP] of PHRASE_PAIRS) {
+    if (out.indexOf(zhP) !== -1) out = out.split(zhP).join(enP)
+  }
+  return out.replace(/[ \t]{2,}/g, ' ')
+}
+
 // ===== 运行时翻译引擎 =====
 const LS_KEY = 'webrpa.launcher.lang'
 const origMap = new WeakMap()
+const origAttrMap = new WeakMap()
 let curLang = 'zh'
 let observer = null
 
@@ -84,14 +117,24 @@ function translateNode(node) {
   const tag = p.tagName
   if (tag === 'SCRIPT' || tag === 'STYLE') return
   if (p.id === 'langToggle') return
+  if (p.closest('input, textarea, [contenteditable="true"]')) return
   if (!node.nodeValue || !node.nodeValue.trim()) return
   if (!origMap.has(node)) origMap.set(node, node.nodeValue)
   const zh = origMap.get(node)
-  const key = zh.trim()
-  if (curLang === 'en') {
-    if (DICT[key] !== undefined) node.nodeValue = zh.replace(key, DICT[key])
-  } else {
-    node.nodeValue = zh
+  node.nodeValue = curLang === 'en' ? translateStr(zh) : zh
+}
+
+function translateAttrs(el) {
+  for (const attr of ATTRS) {
+    if (!el.hasAttribute || !el.hasAttribute(attr)) continue
+    const cur = el.getAttribute(attr) || ''
+    if (!cur) continue
+    let bak = origAttrMap.get(el)
+    if (!bak) { bak = {}; origAttrMap.set(el, bak) }
+    if (bak[attr] === undefined) bak[attr] = cur
+    const zh = bak[attr]
+    if (!hasCJK(zh)) continue
+    el.setAttribute(attr, curLang === 'en' ? translateStr(zh) : zh)
   }
 }
 
@@ -99,6 +142,10 @@ function walkAndTranslate(root) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   let n
   while ((n = walker.nextNode())) translateNode(n)
+  if (root.querySelectorAll) {
+    root.querySelectorAll('[placeholder],[title]').forEach((el) => translateAttrs(el))
+    if (root.nodeType === 1) translateAttrs(root)
+  }
 }
 
 function applyAll() {

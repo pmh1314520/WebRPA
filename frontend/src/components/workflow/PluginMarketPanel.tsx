@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Package, Download, Trash2, Upload, RefreshCw, Power, ExternalLink, Loader2 } from 'lucide-react'
-import { pluginApi, type PluginInfo } from '@/services/api'
+import { Package, Download, Trash2, Upload, RefreshCw, Power, ExternalLink, Loader2, Star, Send, X, MessageSquare } from 'lucide-react'
+import { pluginApi, type PluginInfo, type PluginReview } from '@/services/api'
 import { useWorkflowStore } from '@/store/workflowStore'
 
 /**
@@ -17,6 +17,14 @@ export function PluginMarketPanel() {
   const [marketSource, setMarketSource] = useState('')
   const [marketUrl, setMarketUrl] = useState('')
   const [showUrlEdit, setShowUrlEdit] = useState(false)
+  // 详情/评分弹窗
+  const [detail, setDetail] = useState<PluginInfo | null>(null)
+  const [reviews, setReviews] = useState<PluginReview[]>([])
+  const [reviewSummary, setReviewSummary] = useState<{ count: number; average: number }>({ count: 0, average: 0 })
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [myRating, setMyRating] = useState(5)
+  const [myComment, setMyComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const log = useCallback((level: 'info' | 'success' | 'warning' | 'error', message: string) => { addLog({ level, message }) }, [addLog])
 
@@ -70,6 +78,49 @@ export function PluginMarketPanel() {
     } finally { setBusyId(null) }
   }
 
+  const openDetail = useCallback(async (p: PluginInfo) => {
+    setDetail(p)
+    setMyRating(5)
+    setMyComment('')
+    setReviews([])
+    setReviewSummary({ count: 0, average: 0 })
+    setReviewsLoading(true)
+    try {
+      const res = await pluginApi.getReviews(p.id)
+      if (res.data?.success) {
+        setReviews(res.data.reviews || [])
+        setReviewSummary(res.data.summary || { count: 0, average: 0 })
+      }
+    } finally {
+      setReviewsLoading(false)
+    }
+  }, [])
+
+  const submitReview = async () => {
+    if (!detail) return
+    setSubmitting(true)
+    try {
+      const res = await pluginApi.addReview(detail.id, myRating, myComment.trim())
+      if (res.data?.success) {
+        log('success', `已提交对「${detail.name}」的评分`)
+        setMyComment('')
+        const r = await pluginApi.getReviews(detail.id)
+        if (r.data?.success) { setReviews(r.data.reviews || []); setReviewSummary(r.data.summary || { count: 0, average: 0 }) }
+      } else log('error', `评分失败：${res.data?.error || res.error}`)
+    } finally { setSubmitting(false) }
+  }
+
+  const handlePublish = async (p: PluginInfo) => {
+    setBusyId(p.id)
+    try {
+      const res = await pluginApi.publish(p.id)
+      if (res.data?.success) {
+        if (res.data.published) log('success', `插件「${p.name}」已上架到市场`)
+        else log('success', `已导出市场就绪包${res.data.exportedPath ? `：${res.data.exportedPath}` : ''}（未配置市场地址，可手动上架）`)
+      } else log('error', `发布失败：${res.data?.error || res.error}`)
+    } finally { setBusyId(null) }
+  }
+
   const handleInstallFromFile = () => {
     const input = document.createElement('input')
     input.type = 'file'; input.accept = 'application/json,.json'
@@ -87,7 +138,7 @@ export function PluginMarketPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* 工具条 */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--slate-50)/0.5)]">
         <div className="inline-flex rounded-[8px] border border-[hsl(var(--border))] overflow-hidden">
@@ -130,6 +181,7 @@ export function PluginMarketPanel() {
                 <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-1 flex items-center gap-2 flex-wrap">
                   {p.author && <span>作者：{p.author}</span>}
                   {p.homepage && <a href={p.homepage} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[hsl(var(--brand-600))] hover:underline">主页<ExternalLink className="w-3 h-3" /></a>}
+                  <button onClick={() => openDetail(p)} className="inline-flex items-center gap-0.5 text-[hsl(var(--brand-600))] hover:underline"><MessageSquare className="w-3 h-3" />详情 / 评分</button>
                 </div>
               </div>
               <div className="flex flex-col gap-1.5 flex-none">
@@ -140,6 +192,7 @@ export function PluginMarketPanel() {
                 ) : (
                   <>
                     <button onClick={() => handleToggle(p)} disabled={busyId === p.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] rounded-[7px] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] disabled:opacity-60"><Power className="w-3.5 h-3.5" />{p.enabled ? '禁用' : '启用'}</button>
+                    <button onClick={() => handlePublish(p)} disabled={busyId === p.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] rounded-[7px] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] disabled:opacity-60"><Upload className="w-3.5 h-3.5" />发布</button>
                     <button onClick={() => handleUninstall(p.id)} disabled={busyId === p.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] rounded-[7px] border border-[hsl(var(--border))] text-[hsl(var(--danger-600))] hover:bg-[hsl(var(--danger-50))] disabled:opacity-60"><Trash2 className="w-3.5 h-3.5" />卸载</button>
                   </>
                 )}
@@ -151,6 +204,82 @@ export function PluginMarketPanel() {
           <div className="text-center text-[12.5px] text-[hsl(var(--muted-foreground))] py-10">{view === 'market' ? '市场暂无插件' : '尚未安装任何插件'}</div>
         )}
       </div>
+
+      {detail && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDetail(null)}>
+          <div className="w-[520px] max-w-[92%] max-h-[86%] overflow-hidden flex flex-col rounded-[12px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3 px-4 py-3 border-b border-[hsl(var(--border))]">
+              <div className="w-10 h-10 rounded-[9px] bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-700))] flex items-center justify-center flex-none"><Package className="w-5 h-5" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-semibold text-[hsl(var(--slate-900))] truncate">{detail.name}</span>
+                  {detail.version && <span className="text-[11px] text-[hsl(var(--muted-foreground))]">v{detail.version}</span>}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(reviewSummary.average) ? 'text-amber-400 fill-amber-400' : 'text-[hsl(var(--slate-300))]'}`} />
+                    ))}
+                  </div>
+                  <span className="text-[12px] text-[hsl(var(--muted-foreground))]">{reviewSummary.average || 0} · {reviewSummary.count} 条评价</span>
+                </div>
+              </div>
+              <button onClick={() => setDetail(null)} className="p-1 rounded hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]"><X className="w-4 h-4" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+              {detail.description && <p className="text-[12.5px] text-[hsl(var(--slate-700))] leading-relaxed">{detail.description}</p>}
+              <div className="text-[11.5px] text-[hsl(var(--muted-foreground))] flex items-center gap-3 flex-wrap">
+                {detail.author && <span>作者：{detail.author}</span>}
+                {detail.homepage && <a href={detail.homepage} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[hsl(var(--brand-600))] hover:underline">主页<ExternalLink className="w-3 h-3" /></a>}
+                {detail.keywords && detail.keywords.length > 0 && <span>标签：{detail.keywords.join('、')}</span>}
+              </div>
+
+              {/* 我要评分 */}
+              <div className="rounded-[9px] border border-[hsl(var(--border))] p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-medium text-[hsl(var(--slate-700))]">我的评分</span>
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button key={s} type="button" onClick={() => setMyRating(s)} className="p-0.5">
+                        <Star className={`w-4 h-4 ${s <= myRating ? 'text-amber-400 fill-amber-400' : 'text-[hsl(var(--slate-300))]'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea value={myComment} onChange={(e) => setMyComment(e.target.value)} rows={2} placeholder="写下你的使用体验（选填）"
+                  className="w-full px-2.5 py-1.5 text-[12px] rounded-[7px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] outline-none focus:border-[hsl(var(--brand-500))] resize-none" />
+                <div className="flex justify-end">
+                  <button onClick={submitReview} disabled={submitting} className="inline-flex items-center gap-1 px-3 py-1.5 text-[12px] rounded-[7px] bg-[hsl(var(--brand-600))] hover:bg-[hsl(var(--brand-700))] text-white disabled:opacity-60">{submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}提交评分</button>
+                </div>
+              </div>
+
+              {/* 评论列表 */}
+              <div className="space-y-2">
+                <div className="text-[12px] font-medium text-[hsl(var(--slate-700))]">用户评价</div>
+                {reviewsLoading ? (
+                  <div className="text-center text-[12px] text-[hsl(var(--muted-foreground))] py-4"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
+                ) : reviews.length === 0 ? (
+                  <div className="text-center text-[12px] text-[hsl(var(--muted-foreground))] py-4">还没有评价，来做第一个吧</div>
+                ) : reviews.map((r) => (
+                  <div key={r.id} className="rounded-[8px] border border-[hsl(var(--border))] p-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-medium text-[hsl(var(--slate-800))]">{r.user}</span>
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`w-3 h-3 ${s <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-[hsl(var(--slate-300))]'}`} />
+                        ))}
+                      </div>
+                      <span className="text-[10.5px] text-[hsl(var(--muted-foreground))] ml-auto">{new Date(r.createdAt).toLocaleString()}</span>
+                    </div>
+                    {r.comment && <p className="text-[12px] text-[hsl(var(--slate-600))] mt-1 whitespace-pre-wrap">{r.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

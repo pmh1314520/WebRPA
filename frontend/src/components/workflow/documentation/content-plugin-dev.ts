@@ -94,6 +94,21 @@ WebRPA 开放了插件扩展能力：第三方开发者可以把「针对特定�
 | POST /api/plugins/install-from-market/{id} | 从市场安装 |
 | POST /api/plugins/{id}/enable | 启用/禁用 |
 | DELETE /api/plugins/{id} | 卸载 |
+| GET /api/plugins/{id}/export | 导出市场就绪包 JSON |
+| POST /api/plugins/{id}/publish | 发布/上架（可选 hubUrl，POST 到 hub） |
+| GET /api/plugins/{id}/reviews | 获取评分/评论（合并本地与 hub） |
+| POST /api/plugins/{id}/reviews | 提交评分（1-5）与评论 |
+
+---
+
+## 六、一键发布与评分
+
+- 在「已安装」列表中点每个插件的「发布」按钮：若已在全局配置填写市场地址，会按约定 POST 到 \`{市场地址}/publish\` 上架；
+  未配置时会在 \`backend/data/plugins/\` 下导出 \`<id>.market.json\` 市场就绪包，供你手动上架。
+- 在「详情 / 评分」弹窗中可查看平均分与全部评价，并提交自己的 1-5 星评分与评论。评分本地存储；
+  若配置了市场地址，会同步 \`POST {市场地址}/reviews\`，并在读取时合并 \`GET {市场地址}/reviews/{id}\` 的远程评价。
+
+> Hub 端约定（自建中心化仓库时实现）：\`POST /publish\` 接收完整插件包；\`POST /reviews\` 接收 \`{pluginId, rating, comment, user}\`；\`GET /reviews/{id}\` 返回 \`{reviews:[...]}\`。
 
 更完整的图文版开发文档见 WebRPA 官网「插件开发文档」页。遇到问题可联系作者：QQ 2124691573 / 微信 QyPmh20061026。
 `
