@@ -139,6 +139,10 @@ const CLIENT_ACTION_LABELS: Record<string, string> = {
   update_global_config: '更新全局配置',
   reset_global_config: '重置全局配置',
   show_toast: '显示提示',
+  // —— 版本历史 ——
+  commit_version: '提交版本快照',
+  list_versions: '列出历史版本',
+  restore_version: '恢复历史版本',
   // —— 节点 / 画布补充 ——
   bulk_update_nodes: '批量修改节点配置',
   get_node_runtime_errors: '获取节点运行错误',

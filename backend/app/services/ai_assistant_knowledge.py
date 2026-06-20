@@ -63,6 +63,45 @@ WebRPA 已加全局错误边界（WorkflowErrorBoundary），正常情况下不�
 5. 绝不能让用户以为"白屏=没救了"——要明确告诉他数据没丢、怎么恢复。
 """
 
+
+# ---------- 模块精通 / 等待 / 脚本 / 触发器 / 版本历史 ----------
+
+WEBRPA_MODULE_MASTERY = """\
+# 模块精通速记（务必牢记，常被用户考察）
+
+## 固定等待模块（wait）的多种等待类型
+`wait` 不只是"等几秒"，它有 `waitType` 三种模式，不同模式配置不同字段：
+- `waitType=time`（固定等待，默认）：配 `duration`（秒，数字，如 2）。
+- `waitType=selector`（等待元素）：配 `selector`（元素选择器）+ 可选 `state`（visible/hidden/attached/detached）。
+- `waitType=navigation`（等待页面加载完成）：无需额外字段，等到 networkidle。
+配置前务必按 `waitType` 选对字段，别只会填 duration。生产环境优先用 selector 模式或 `wait_element` / `wait_page_load`。
+
+## 脚本类模块的 print / console.log（重点澄清，别搞错）
+- `python_script` 里的 `print(...)` **不会**作为"业务结果"显示在 WebRPA 底栏日志栏的规范位置；
+  要把结果交给工作流：用 `return 值`（外层节点配 `resultVariable` 接收），再用 `print_log(message="{结果变量}")` 显示。
+- `js_script` / `inject_javascript` 里的 `console.log(...)` 输出到浏览器 DevTools 控制台，**绝不会**进 WebRPA 日志栏；
+  同样必须 `return` 值 + `resultVariable` + `print_log`。
+- 一句话：脚本里的 print/console.log 只用于调试，面向用户的输出一律走 `return + resultVariable + print_log`。
+
+## 触发器模块 + 定时任务（要会用、用得对）
+- 触发器类模块（如 `scheduled_task` 定时门控、热键/Webhook/启动/文件变化/元素变化/概率等触发）是"何时开始/何时继续"的入口或门控；
+  搭建涉及"定时/条件触发"的流程时，先 describe_module 看清该触发器需要的字段。
+- 流程内"等到某时间点 / 延迟后再继续"用 `scheduled_task` 模块：`scheduleType=datetime`(配 targetDate/targetTime) 或 `scheduleType=delay`(配 delayHours/delayMinutes/delaySeconds)。
+- 要把"整条工作流"注册成周期性计划任务（每天/每周/间隔等）：用 `create_scheduled_task`（真·APScheduler，与底栏「计划任务」面板共享），不要和流程内的 scheduled_task 门控混淆。
+
+## 版本历史（你要主动用它，提升安全性）
+WebRPA 内置 Git 式本地版本历史（快照含节点、连线、**全局变量**，可恢复/对比）。你能直接调用：
+- `commit_version(message?)`：把当前画布提交为一个快照。
+- `list_versions()`：查看历史版本。
+- `restore_version(version)`：恢复到指定版本。
+**最佳实践**：在对已有工作流做较大改动（批量改配置/删节点/重排结构）之前，**先 `commit_version` 存个档**，
+再开始改；万一改坏了可一键 `restore_version` 回档。主动这么做，用户的工作流更安全可靠。
+
+## 总原则：任何模块都先 describe_module
+500+ 模块、很多带多模式（判别字段不同→必填字段不同）。配置任何模块前先 `describe_module(module_type=...)`，
+严格按返回的字段名/默认值/可选值/条件必填来配，绝不凭记忆猜字段名或模式值。
+"""
+
 WEBRPA_AUTHOR = """\
 WebRPA 由开发者 **青云制作_彭明航** 设计与开发。
 项目目标是让任何人都能用最简单的方式构建强大的自动化能力。
@@ -2157,5 +2196,6 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
         parts.append(user_extra_prompt)
 
     parts.append(WEBRPA_ERROR_KNOWLEDGE)
+    parts.append(WEBRPA_MODULE_MASTERY)
 
     return "\n".join(parts)

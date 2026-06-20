@@ -10,7 +10,7 @@
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { useDialogRegistry, getDialogInfoForAI } from '@/store/dialogRegistry'
-import { localWorkflowApi, workflowApi, screensaverApi, dataAssetApi, imageAssetApi, scheduledTaskApi } from '@/services/api'
+import { localWorkflowApi, workflowApi, screensaverApi, dataAssetApi, imageAssetApi, scheduledTaskApi, workflowVersionsApi } from '@/services/api'
 import { socketService } from '@/services/socket'
 import { useAiActionLogStore } from '@/store/aiActionLogStore'
 
@@ -18,14 +18,14 @@ import { useAiActionLogStore } from '@/store/aiActionLogStore'
 const MUTATING_ACTIONS = new Set<string>([
   'new_workflow', 'load_workflow_from_data', 'add_nodes', 'delete_node', 'delete_nodes',
   'update_node_config', 'toggle_node_disabled', 'align_nodes', 'paste_nodes', 'move_node',
-  'rename_node', 'connect_nodes', 'disconnect_edge', 'rename_workflow',
+  'rename_node', 'connect_nodes', 'disconnect_edge', 'rename_workflow', 'restore_version',
 ])
 const AI_ACTION_LABELS: Record<string, string> = {
   new_workflow: '新建工作流', load_workflow_from_data: '装载工作流到画布', add_nodes: '添加节点',
   delete_node: '删除节点', delete_nodes: '批量删除节点', update_node_config: '修改节点配置',
   toggle_node_disabled: '启用/禁用节点', align_nodes: '对齐节点', paste_nodes: '粘贴节点',
   move_node: '移动节点', rename_node: '重命名节点', connect_nodes: '连接节点',
-  disconnect_edge: '删除连线', rename_workflow: '重命名工作流',
+  disconnect_edge: '删除连线', rename_workflow: '重命名工作流', restore_version: '恢复历史版本',
 }
 
 /**
@@ -1227,6 +1227,59 @@ export async function executeClientAction(
         try {
           const res: any = await localWorkflowApi.getDefaultFolder()
           return { success: true, data: res?.data ?? res }
+        } catch (e: any) {
+          return { success: false, error: e?.message || String(e) }
+        }
+      }
+
+      // ============================================================
+      // 版本历史（Git 式本地快照：含节点/连线/全局变量，可恢复/对比）
+      // ============================================================
+      case 'commit_version': {
+        try {
+          const s = useWorkflowStore.getState()
+          const name = s.name
+          if (!name) return { success: false, error: '请先给工作流命名再提交版本' }
+          const folder = useGlobalConfigStore.getState().config.workflow?.localFolder || undefined
+          const content = JSON.parse(s.exportWorkflow())
+          const message = (payload.message as string) || ''
+          const res: any = await workflowVersionsApi.commit(name, content, message, folder)
+          if (res?.data?.success) {
+            return { success: true, message: `已提交版本 ${res.data.version}`, data: { version: res.data.version } }
+          }
+          return { success: false, error: res?.data?.error || res?.error || '提交失败' }
+        } catch (e: any) {
+          return { success: false, error: e?.message || String(e) }
+        }
+      }
+
+      case 'list_versions': {
+        try {
+          const s = useWorkflowStore.getState()
+          const name = s.name
+          if (!name) return { success: false, error: '工作流未命名' }
+          const folder = useGlobalConfigStore.getState().config.workflow?.localFolder || undefined
+          const res: any = await workflowVersionsApi.list(name, folder)
+          return { success: true, data: res?.data?.versions ?? [] }
+        } catch (e: any) {
+          return { success: false, error: e?.message || String(e) }
+        }
+      }
+
+      case 'restore_version': {
+        try {
+          const version = payload.version as string
+          if (!version) return { success: false, error: '缺少 version' }
+          const s = useWorkflowStore.getState()
+          const name = s.name
+          const folder = useGlobalConfigStore.getState().config.workflow?.localFolder || undefined
+          const res: any = await workflowVersionsApi.get(name, version, folder)
+          if (res?.data?.success && res.data.content) {
+            const ok = s.importWorkflow(res.data.content)
+            if (ok) return { success: true, message: `已恢复到版本 ${version}` }
+            return { success: false, error: '恢复失败：版本内容无法解析' }
+          }
+          return { success: false, error: res?.data?.error || res?.error || '恢复失败' }
         } catch (e: any) {
           return { success: false, error: e?.message || String(e) }
         }

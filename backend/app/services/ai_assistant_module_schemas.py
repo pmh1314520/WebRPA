@@ -4493,15 +4493,26 @@ except ImportError:
 
 PRIORITY_SCHEMAS: dict = {
     "wait": {
-        "required": ["waitDuration"],
-        "optional": ["waitType"],
-        "defaults": {"waitType": "fixed", "waitDuration": 1},
+        "required": [],
+        "optional": ["waitType", "duration", "selector", "state"],
+        "defaults": {"waitType": "time", "duration": 1},
         "desc": {
-            "waitDuration": "等待秒数(数字,例如 2 表示 2 秒)",
-            "waitType": "fixed(固定等待)",
+            "waitType": "等待类型：time=固定等待秒数 / selector=等待某元素出现或消失 / navigation=等待页面加载完成",
+            "duration": "time 模式：等待秒数（数字，如 2 表示 2 秒）",
+            "selector": "selector 模式：要等待的元素 CSS 选择器",
+            "state": "selector 模式：visible(默认)/hidden/attached/detached",
         },
-        "example": {"waitDuration": 2, "waitType": "fixed"},
-        "combo": "调试用,生产环境优先用 wait_element / wait_page_load",
+        "conditional_required": {
+            "field": "waitType",
+            "default": "time",
+            "map": {
+                "time": ["duration"],
+                "selector": ["selector"],
+                "navigation": [],
+            },
+        },
+        "example": {"waitType": "time", "duration": 2},
+        "combo": "固定等待(time)适合调试；生产环境优先用 selector 模式或 wait_element / wait_page_load 更稳定",
     },
     "set_variable": {
         "required": ["variableName", "variableValue"],
