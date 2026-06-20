@@ -974,6 +974,38 @@ async fn get_autostart(app: tauri::AppHandle) -> Result<bool, String> {
         .map_err(|e| format!("查询开机自启动状态失败: {}", e))
 }
 
+// 打开小助手「独立原生窗口（系统级 Agent）」：竖屏、无边框、置顶，可贴边自动隐藏
+#[tauri::command]
+async fn open_assistant_agent_window(app: tauri::AppHandle) -> Result<(), String> {
+    // 已存在则直接显示并聚焦
+    if let Some(w) = app.get_webview_window("assistant") {
+        let _ = w.show();
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+        return Ok(());
+    }
+    let config = read_config().await?;
+    let url_str = format!(
+        "http://localhost:{}/?view=assistant&backend_port={}",
+        config.frontend.port, config.backend.port
+    );
+    let parsed = url::Url::parse(&url_str).map_err(|e| format!("URL 解析失败: {}", e))?;
+    let win = tauri::WebviewWindowBuilder::new(&app, "assistant", tauri::WebviewUrl::External(parsed))
+        .title("WebRPA 小助手")
+        .inner_size(380.0, 720.0)
+        .min_inner_size(320.0, 460.0)
+        .decorations(false)
+        .resizable(true)
+        .always_on_top(true)
+        .skip_taskbar(false)
+        .build()
+        .map_err(|e| format!("创建小助手窗口失败: {}", e))?;
+    if let Some(icon) = app.default_window_icon() {
+        let _ = win.set_icon(icon.clone());
+    }
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_autostart::init(
@@ -1055,12 +1087,15 @@ fn main() {
             open_backend_log,
             open_frontend_log,
             set_autostart,
-            get_autostart
+            get_autostart,
+            open_assistant_agent_window
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                // 窗口关闭时停止所有服务
-                shutdown_services(window.app_handle());
+                // 仅当主窗口关闭时才停止所有服务；关闭小助手 Agent 窗口不应影响前后端服务
+                if window.label() == "main" {
+                    shutdown_services(window.app_handle());
+                }
             }
         })
         .run(tauri::generate_context!())

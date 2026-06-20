@@ -24,6 +24,8 @@ import {
   Check,
   ShieldQuestion,
   ExternalLink,
+  Pin,
+  Minus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAIAssistantStore, type ChatMessage, type RollbackSnapshot } from '@/store/aiAssistantStore'
@@ -41,6 +43,7 @@ import {
 import { MessageBubble, getToolDisplayLabel } from './MessageBubble'
 import { PanelResizer } from '@/components/workflow/PanelResizer'
 import { useLayoutStore, LAYOUT_LIMITS } from '@/store/layoutStore'
+import { isTauriRuntime, agentSetAlwaysOnTop, agentMinimize, agentClose } from '@/lib/tauriAgentWindow'
 
 const QUICK_PROMPTS = [
   { text: '帮我新建一个打开网页的工作流', icon: Zap, color: 'icon-chip-success' },
@@ -77,6 +80,9 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   const aiFallbackConfig = useGlobalConfigStore((s) => s.config.ai)
   const updateAIAssistantConfig = useGlobalConfigStore((s) => s.updateAIAssistantConfig)
   const [showModelMenu, setShowModelMenu] = useState(false)
+
+  // 独立 Agent 窗口（Tauri）置顶状态
+  const [agentPinned, setAgentPinned] = useState(true)
 
   const [input, setInput] = useState('')
 
@@ -863,6 +869,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       <div
         className="flex items-center justify-between px-4 h-14 border-b border-[hsl(var(--border))] flex-shrink-0"
         style={{ background: 'linear-gradient(180deg, hsl(var(--brand-50) / 0.6), hsl(var(--card)))' }}
+        {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           {/* 渐变 LOGO 圆环 */}
@@ -917,6 +924,24 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             >
               <ExternalLink className="w-3.5 h-3.5" />
             </Button>
+          )}
+          {standalone && isTauriRuntime() && (
+            <>
+              <Button
+                variant={agentPinned ? 'tonal' : 'ghost'}
+                size="icon-sm"
+                title={agentPinned ? '取消置顶' : '窗口置顶'}
+                onClick={() => { const next = !agentPinned; setAgentPinned(next); agentSetAlwaysOnTop(next) }}
+              >
+                <Pin className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" title="最小化" onClick={() => agentMinimize()}>
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" title="关闭" onClick={() => agentClose()}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </>
           )}
           {!standalone && (
             <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)}>

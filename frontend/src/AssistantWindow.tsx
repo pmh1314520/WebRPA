@@ -6,6 +6,7 @@ import { socketService } from '@/services/socket'
 import { updateApiBase } from '@/services/api'
 import { preloadConfig } from '@/services/config'
 import { useAIAssistantStore } from '@/store/aiAssistantStore'
+import { setupAgentWindowBehaviors } from '@/lib/tauriAgentWindow'
 
 /**
  * 小助手独立进程窗口（系统级 Agent 模式）
@@ -27,6 +28,8 @@ export function AssistantWindow() {
       }
     }
     init()
+    // 原生窗口（Tauri）：启用置顶/拖动/贴边自动隐藏等系统级行为（非 Tauri 环境自动跳过）
+    setupAgentWindowBehaviors()
     return () => {
       try { socketService.disconnect() } catch { /* ignore */ }
     }

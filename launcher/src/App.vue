@@ -1002,12 +1002,10 @@ const openBrowser = async () => {
   }
 }
 
-// 打开小助手「独立窗口 / 系统级 Agent」
+// 打开小助手「独立原生窗口 / 系统级 Agent」（Tauri 原生窗口，支持置顶/拖动/贴边隐藏）
 const openAssistantAgent = async () => {
   try {
-    const config = await invoke('read_config')
-    const url = `http://localhost:${config.frontend.port}/?view=assistant&backend_port=${config.backend.port}`
-    await invoke('open_browser', { url })
+    await invoke('open_assistant_agent_window')
   } catch (error) {
     showToast(`打开小助手失败: ${error}`, 'error')
   }
