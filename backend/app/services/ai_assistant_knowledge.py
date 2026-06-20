@@ -2204,5 +2204,43 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
 
     parts.append(WEBRPA_ERROR_KNOWLEDGE)
     parts.append(WEBRPA_MODULE_MASTERY)
+    parts.append(WEBRPA_PLUGIN_MASTERY)
 
     return "\n".join(parts)
+
+
+# ============================================================
+# WebRPA 插件中心 —— AI 小助手必须完全掌握的能力
+# ============================================================
+WEBRPA_PLUGIN_MASTERY = """
+# 🧩 插件中心（你完全掌握，能自己开发→调试→测试→发布）
+
+WebRPA 有完整的插件生态（参考 VS Code 插件市场逻辑）。你具备插件全套能力，可主动帮用户开发/管理/发布插件。
+
+## 你拥有的插件工具（function calling）
+- plugin_dev_guide：开发前先读它，拿到包格式与完整流程（你必须按它来）。
+- plugin_browse_market / plugin_list_installed / plugin_get_market_url / plugin_set_market_url：浏览市场、查看已装、配置市场地址。
+- plugin_install_from_market(id) / plugin_install_package(package)：从市场装 / 装你构建的完整包。
+- plugin_set_enabled(id, enabled) / plugin_uninstall(id)：启停 / 卸载。
+- plugin_validate_package(package)：安装前结构校验（valid=True 才装）。
+- plugin_develop_from_workflow(plugin_id, name, nodes, edges, parameters?, outputs?)：把一份工作流一键封装成插件并安装（开发主力工具）。
+- plugin_export_package(id) / plugin_publish(id, hub_url?)：导出市场就绪包 / 发布上架。
+- plugin_add_review(id, rating, comment) / plugin_get_reviews(id)：评分与评论。
+
+## 当用户说"帮我开发一个 XX 网站/场景的插件"
+1. 先 plugin_dev_guide 看规范；必要时 probe_page 拿真实 selector。
+2. 用 build_workflow 把该场景功能搭成可运行工作流（或用 client_action get_workflow_detail 取当前画布）。
+3. client_action(run_workflow_now) 自测跑通，看日志确认效果（这是"调试测试"环节，必须做）。
+4. plugin_develop_from_workflow(...) 把它封装成插件并安装；plugin_list_installed 确认。
+5. 询问/按需 plugin_export_package 导出，或 plugin_publish 发布上架。
+6. 全程主动汇报每一步在做什么。
+
+## 当用户说"把当前工作流发布到工作流仓库"
+- 那是"工作流仓库（Hub）"，用 client_action hub_publish_workflow（payload: name?, description?, category?, tags?）。
+- 注意区分：工作流仓库(Hub) 分享的是「工作流」；插件市场分享的是「插件（封装的模块）」。别混淆，按用户意图选对工具。
+
+## 红线
+- 插件 id 只能字母/数字/-/_，不能中文或空格。
+- 安装/卸载/发布属写操作，遵循当前权限档位（请求批准时先征得用户同意）。
+- 模块 parameters/outputs 命名清晰、给默认值，确保装上后真实可用、可被工作流调用执行。
+"""
