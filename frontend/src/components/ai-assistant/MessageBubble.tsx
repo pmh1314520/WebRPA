@@ -230,6 +230,12 @@ function getToolLabel(tc: ToolCall): { label: string; sublabel?: string; isMcp?:
   return { label: base }
 }
 
+/** 给外部（如"工作中"指示器）用的：返回工具调用的可读中文标签 */
+export function getToolDisplayLabel(tc: ToolCall): string {
+  const { label, sublabel } = getToolLabel(tc)
+  return sublabel && sublabel !== label ? `${label}（${sublabel}）` : label
+}
+
 const STATUS_LABELS: Record<string, string> = {
   pending: '待执行',
   running: '执行中',

@@ -35,7 +35,7 @@ import {
   executeClientAction,
   onAssistantUiEvent,
 } from '@/services/aiAssistantSkills'
-import { MessageBubble } from './MessageBubble'
+import { MessageBubble, getToolDisplayLabel } from './MessageBubble'
 import { PanelResizer } from '@/components/workflow/PanelResizer'
 import { useLayoutStore, LAYOUT_LIMITS } from '@/store/layoutStore'
 
@@ -350,6 +350,21 @@ export function AIAssistantPanel() {
 
   const configReady = !!(resolvedConfig.api_url && resolvedConfig.model)
 
+  // 当前正在执行的操作（用于"工作中"指示器展示具体在干什么，避免用户以为卡住）
+  const currentActivity = (() => {
+    if (!isSending) return ''
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m.role === 'assistant' && m.tool_calls && m.tool_calls.length > 0) {
+        const running = [...m.tool_calls].reverse().find((tc) => tc.status === 'running' || tc.status === 'pending')
+        const target = running || m.tool_calls[m.tool_calls.length - 1]
+        if (target) {
+          try { return getToolDisplayLabel(target) } catch { return '' }
+        }
+      }
+    }
+    return ''
+  })()
   // ===== 多模型：模型档案列表（聊天处上拉栏 + 候选排序用） =====
   const assistantModels = (aiAssistantConfig?.models || []).filter((m) => m.apiUrl && m.model)
   const activeModelId = aiAssistantConfig?.activeModelId
@@ -1013,7 +1028,9 @@ export function AIAssistantPanel() {
               <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--brand-500))] animate-pulse" style={{ animationDelay: '300ms' }} />
             </div>
             <span className="text-[12px] text-[hsl(var(--muted-foreground))] italic">
-              小助手工作中…可在下方再次发送来打断
+              {currentActivity
+                ? `小助手正在：${currentActivity}…（可在下方再次发送来打断）`
+                : '小助手工作中…可在下方再次发送来打断'}
             </span>
           </div>
         )}
