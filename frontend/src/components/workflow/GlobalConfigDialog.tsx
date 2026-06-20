@@ -10,6 +10,7 @@ import { systemApi, securityApi, getAuthToken, setAuthToken, credentialApi, rete
 import { aiAssistantApi } from '@/services/aiAssistantApi'
 import { getBackendBaseUrl } from '@/services/config'
 import { MCPConfigPanel } from './MCPConfigPanel'
+import { SHORTCUT_ACTIONS, eventToCombo } from '@/lib/customShortcuts'
 
 const SCENE_LABELS: { key: AssistantScene; label: string }[] = [
   { key: 'vision', label: '多模态' },
@@ -386,7 +387,8 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
     updateEmailTriggerConfig,
     updateApiTriggerConfig,
     updateFileTriggerConfig,
-    updateWorkflowConfig, 
+    updateWorkflowConfig,
+    updateShortcuts, 
     updateDatabaseConfig, 
     updateQQConfig,
     updateFeishuConfig,
@@ -625,11 +627,44 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     ))}
                   </div>
                 </div>
+
+                {/* 自定义快捷键 */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="mb-3">
+                    <Label className="text-sm font-medium text-gray-700">自定义快捷键</Label>
+                    <p className="text-xs text-gray-500 mt-1">点击输入框后按下想要的组合键即可绑定常用功能（不影响内置快捷键）。按 Esc 或点「清除」可解绑。</p>
+                  </div>
+                  <div className="space-y-2">
+                    {SHORTCUT_ACTIONS.map((act) => {
+                      const combo = (config.shortcuts || {})[act.id] || ''
+                      return (
+                        <div key={act.id} className="flex items-center justify-between gap-2">
+                          <span className="text-[13px] text-gray-600 flex-1 min-w-0 truncate">{act.label}</span>
+                          <input
+                            readOnly
+                            value={combo}
+                            placeholder="点击后按组合键"
+                            onKeyDown={(e) => {
+                              e.preventDefault()
+                              if (e.key === 'Escape') { updateShortcuts({ [act.id]: '' }); return }
+                              const c = eventToCombo(e.nativeEvent)
+                              if (c) updateShortcuts({ [act.id]: c })
+                            }}
+                            className="w-40 px-2 py-1 text-[12px] text-center font-mono rounded border border-gray-300 bg-white text-black cursor-pointer focus:border-blue-500 focus:ring-1 focus:ring-blue-300 outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateShortcuts({ [act.id]: '' })}
+                            className="text-[11px] text-gray-400 hover:text-red-500 px-1"
+                          >清除</button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             </>
           )}
-
-          {activeTab === 'ai' && (
             <>
               <p className="text-xs text-gray-500 mb-4">
                 配置AI对话模块的默认值，新建模块时将自动填充这些配置

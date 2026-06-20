@@ -237,6 +237,33 @@ function App() {
     setUpdateInfo(prev => ({ ...prev, show: false }))
   }
 
+  // 用户自定义快捷键：匹配组合键后触发对应功能（纯附加，不影响内置快捷键）
+  const customShortcuts = useGlobalConfigStore((state) => state.config.shortcuts)
+  useEffect(() => {
+    const map = customShortcuts || {}
+    if (Object.keys(map).length === 0) return
+    const comboToAction: Record<string, string> = {}
+    for (const [actionId, combo] of Object.entries(map)) {
+      if (combo) comboToAction[combo] = actionId
+    }
+    const handler = async (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      const { eventToCombo, SHORTCUT_ACTION_MAP } = await import('@/lib/customShortcuts')
+      const combo = eventToCombo(e)
+      if (!combo) return
+      const actionId = comboToAction[combo]
+      if (!actionId) return
+      const action = SHORTCUT_ACTION_MAP[actionId]
+      if (action) {
+        e.preventDefault()
+        action.run()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [customShortcuts])
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
       <WorkflowErrorBoundary>

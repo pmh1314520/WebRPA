@@ -110,6 +110,8 @@ export interface GlobalConfig {
     showOverwriteConfirm: boolean  // 保存时是否显示覆盖提示（默认true）
     autoSaveCopy: boolean  // 同名工作流自动创建副本保存（开启后不再弹覆盖提示，直接另存副本）
   }
+  // 用户自定义快捷键：{ 功能ID: 组合键 }，如 { run_workflow: 'Ctrl+Alt+R' }
+  shortcuts?: Record<string, string>
   // 数据库默认配置
   database: {
     host: string
@@ -171,6 +173,7 @@ interface GlobalConfigState {
   updateApiTriggerConfig: (config: Partial<GlobalConfig['apiTrigger']>) => void
   updateFileTriggerConfig: (config: Partial<GlobalConfig['fileTrigger']>) => void
   updateWorkflowConfig: (config: Partial<GlobalConfig['workflow']>) => void
+  updateShortcuts: (shortcuts: Record<string, string>) => void
   updateDatabaseConfig: (config: Partial<GlobalConfig['database']>) => void
   updateQQConfig: (config: Partial<GlobalConfig['qq']>) => void
   updateFeishuConfig: (config: Partial<GlobalConfig['feishu']>) => void
@@ -245,6 +248,7 @@ const defaultConfig: GlobalConfig = {
     showOverwriteConfirm: true,  // 默认显示覆盖提示
     autoSaveCopy: false,  // 默认关闭自动副本
   },
+  shortcuts: {},
   database: {
     host: 'localhost',
     port: 3306,
@@ -373,6 +377,15 @@ export const useGlobalConfigStore = create<GlobalConfigState>()(
         })
       },
 
+      updateShortcuts: (shortcuts: Record<string, string>) => {
+        set({
+          config: {
+            ...get().config,
+            shortcuts: { ...(get().config.shortcuts || {}), ...shortcuts },
+          },
+        })
+      },
+
       updateDatabaseConfig: (databaseConfig) => {
         set({
           config: {
@@ -443,6 +456,7 @@ export const useGlobalConfigStore = create<GlobalConfigState>()(
             aiScraper: persisted?.config?.aiScraper || defaultConfig.aiScraper,
             aiAssistant: persisted?.config?.aiAssistant || defaultConfig.aiAssistant,
             workflow: persisted?.config?.workflow || defaultConfig.workflow,
+            shortcuts: persisted?.config?.shortcuts || {},
             database: persisted?.config?.database || defaultConfig.database,
             qq: persisted?.config?.qq || defaultConfig.qq,
             feishu: persisted?.config?.feishu || defaultConfig.feishu,
