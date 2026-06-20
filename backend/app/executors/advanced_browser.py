@@ -45,16 +45,84 @@ class SelectDropdownExecutor(ModuleExecutor):
             
             await pw_wait_for_element(context.page, escape_css_selector(selector), state='visible', timeout=wait_timeout)
             element = context.page.locator(escape_css_selector(selector))
-            
-            if select_by == 'value':
-                await element.select_option(value=value)
-            elif select_by == 'label':
-                await element.select_option(label=value)
-            elif select_by == 'index':
-                await element.select_option(index=int(value))
-            
-            return ModuleResult(success=True, message=f"已选择: {value}")
-        
+
+            # 1) 先按原生 <select> 处理
+            try:
+                if select_by == 'value':
+                    await element.select_option(value=value)
+                elif select_by == 'label':
+                    await element.select_option(label=value)
+                elif select_by == 'index':
+                    await element.select_option(index=int(value))
+                return ModuleResult(success=True, message=f"已选择: {value}")
+            except Exception as native_err:
+                # 2) 原生失败 → 可能是 Element Plus / Ant Design 等"伪下拉"（div 封装，非原生 select）
+                #    策略：点击触发器展开下拉，再在弹出的选项里按文本/索引点击
+                try:
+                    await element.first.click(timeout=wait_timeout)
+                except Exception:
+                    # 有些组件真正可点的是内部 input，退一步点其内部
+                    try:
+                        await element.first.locator('input,.el-select__wrapper,.el-input__wrapper').first.click(timeout=3000)
+                    except Exception:
+                        pass
+                await context.page.wait_for_timeout(350)
+
+                target_text = str(value).strip()
+                option_selectors = [
+                    '.el-select-dropdown__item',
+                    '.el-cascader-node__label',
+                    '.ant-select-item-option-content',
+                    '.ant-select-item-option',
+                    'li[role="option"]',
+                    '[role="option"]',
+                    '.el-option',
+                    'li.option',
+                ]
+                clicked = False
+                for osel in option_selectors:
+                    opts = context.page.locator(osel)
+                    try:
+                        count = await opts.count()
+                    except Exception:
+                        count = 0
+                    if count == 0:
+                        continue
+                    # 按索引选择：直接点第 N 个可见选项
+                    if select_by == 'index':
+                        try:
+                            await opts.nth(int(value)).click(timeout=3000)
+                            clicked = True
+                            break
+                        except Exception:
+                            continue
+                    # 按文本/标签选择：找文本匹配的可见选项
+                    for i in range(min(count, 200)):
+                        opt = opts.nth(i)
+                        try:
+                            if not await opt.is_visible():
+                                continue
+                            txt = (await opt.inner_text()).strip()
+                        except Exception:
+                            continue
+                        if txt == target_text or (target_text and target_text in txt):
+                            try:
+                                await opt.click(timeout=3000)
+                                clicked = True
+                            except Exception:
+                                clicked = False
+                            break
+                    if clicked:
+                        break
+
+                if clicked:
+                    return ModuleResult(success=True, message=f"已选择(自定义下拉): {value}")
+                return ModuleResult(
+                    success=False,
+                    error=f"选择下拉框失败：原生 select 不可用（{native_err}），且未在自定义下拉组件中找到选项「{value}」。"
+                          f"可尝试改用「点击元素」先展开下拉，再「点击元素」选中目标项。"
+                )
+
         except Exception as e:
             return ModuleResult(success=False, error=f"选择下拉框失败: {str(e)}")
 
