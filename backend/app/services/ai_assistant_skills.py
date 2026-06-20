@@ -2399,7 +2399,9 @@ async def skill_probe_page(url: str, timeout: int = 20000, **_: Any) -> dict[str
                     await page.wait_for_load_state("networkidle", timeout=8000)
                 except Exception:
                     pass
-                snapshot = await page.evaluate(_PROBE_JS)
+                snapshot = await _asyncio.wait_for(page.evaluate(_PROBE_JS), timeout=20)
+            except _asyncio.TimeoutError:
+                err = "读取页面 DOM 超时（20 秒）：页面可能体积过大或脚本繁重"
             except Exception as e:
                 err = f"页面加载/解析失败：{e}"
             finally:
@@ -2494,7 +2496,11 @@ async def skill_get_page_dom_snapshot(target_description: str = "", **_: Any) ->
         return {"error": "当前没有已打开的浏览器页面。请先调用 client_action open_auto_browser 或让用户启动浏览器"}
 
     try:
-        snapshot: dict[str, Any] = await page.evaluate(_PROBE_JS)
+        # 加超时兜底：页面正在跳转/卡死/极重时 evaluate 可能永不返回，
+        # 否则会让 AI 工具调用一直"执行中"等不到头。超时即返回错误，让 AI 改用其它方式。
+        snapshot: dict[str, Any] = await _asyncio.wait_for(page.evaluate(_PROBE_JS), timeout=20)
+    except _asyncio.TimeoutError:
+        return {"error": "读取页面 DOM 超时（20 秒）。页面可能正在加载/跳转或体积过大，请等页面稳定后重试，或改用 probe_page(url=...)"}
     except Exception as e:
         return {"error": f"读取页面 DOM 失败：{e}"}
 
