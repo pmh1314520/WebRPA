@@ -122,7 +122,9 @@ function translateNode(node) {
   if (!node.nodeValue || !node.nodeValue.trim()) return
   if (!origMap.has(node)) origMap.set(node, node.nodeValue)
   const zh = origMap.get(node)
-  node.nodeValue = curLang === 'en' ? translateStr(zh) : zh
+  const next = curLang === 'en' ? translateStr(zh) : zh
+  // 只在真正变化时才写入，避免赋值触发新的 characterData 变更引发 MutationObserver 死循环
+  if (node.nodeValue !== next) node.nodeValue = next
 }
 
 function translateAttrs(el) {
@@ -135,7 +137,8 @@ function translateAttrs(el) {
     if (bak[attr] === undefined) bak[attr] = cur
     const zh = bak[attr]
     if (!hasCJK(zh)) continue
-    el.setAttribute(attr, curLang === 'en' ? translateStr(zh) : zh)
+    const next = curLang === 'en' ? translateStr(zh) : zh
+    if (el.getAttribute(attr) !== next) el.setAttribute(attr, next)
   }
 }
 
@@ -150,10 +153,16 @@ function walkAndTranslate(root) {
 }
 
 function applyAll() {
+  // 翻译期间断开 observer，结束后清空期间产生的变更记录再重连，杜绝"赋值→变更→再翻译"的死循环
+  if (observer) observer.disconnect()
   walkAndTranslate(document.body)
   document.documentElement.lang = curLang === 'en' ? 'en' : 'zh-CN'
   const btn = document.getElementById('langToggle')
   if (btn) btn.textContent = curLang === 'en' ? '中文' : 'EN'
+  if (observer) {
+    observer.takeRecords()
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+  }
 }
 
 function injectToggle() {
@@ -178,14 +187,24 @@ function injectToggle() {
 
 export function setupLauncherI18n() {
   curLang = detectLang()
+  let pending = false
   const start = () => {
     injectToggle()
     applyAll()
-    // 监听 Vue 重渲染，新增/变化的文本重新翻译
+    // 监听 Vue 重渲染：防抖 + 翻译期间断开（配合"仅变化才写入"），彻底避免死循环卡死
     observer = new MutationObserver(() => {
-      if (curLang === 'en') walkAndTranslate(document.body)
-      const btn = document.getElementById('langToggle')
-      if (!btn) injectToggle()
+      if (pending) return
+      pending = true
+      requestAnimationFrame(() => {
+        pending = false
+        if (!document.getElementById('langToggle')) injectToggle()
+        if (curLang === 'en') {
+          observer.disconnect()
+          walkAndTranslate(document.body)
+          observer.takeRecords()
+          observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+        }
+      })
     })
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })
   }

@@ -62,7 +62,9 @@ function translateTextNode(node: Text) {
   if (!node.nodeValue || !node.nodeValue.trim()) return
   if (!origText.has(node)) origText.set(node, node.nodeValue)
   const zh = origText.get(node) as string
-  node.nodeValue = curLang === 'en' ? translateString(zh) : zh
+  const next = curLang === 'en' ? translateString(zh) : zh
+  // 仅在变化时写入，避免赋值触发新变更导致 observer 每帧重复翻译（高 CPU/卡顿）
+  if (node.nodeValue !== next) node.nodeValue = next
 }
 
 function translateAttrs(el: Element) {
@@ -76,7 +78,8 @@ function translateAttrs(el: Element) {
     if (bak[attr] === undefined) bak[attr] = cur
     const zh = bak[attr]
     if (!hasCJK(zh)) continue
-    el.setAttribute(attr, curLang === 'en' ? translateString(zh) : zh)
+    const next = curLang === 'en' ? translateString(zh) : zh
+    if (el.getAttribute(attr) !== next) el.setAttribute(attr, next)
   }
 }
 
@@ -99,7 +102,15 @@ function scheduleWalk() {
   pending = true
   requestAnimationFrame(() => {
     pending = false
-    if (curLang === 'en') walk(document.body)
+    if (curLang === 'en') {
+      // 翻译期间断开 observer，清空期间产生的变更记录后重连，避免"赋值→变更→再翻译"反复触发
+      if (observer) observer.disconnect()
+      walk(document.body)
+      if (observer) {
+        observer.takeRecords()
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+      }
+    }
   })
 }
 
