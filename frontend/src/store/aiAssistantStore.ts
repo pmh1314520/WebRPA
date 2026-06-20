@@ -38,6 +38,17 @@ export interface SessionListItem {
   last_message_preview: string
 }
 
+/** 回滚快照：记录某条用户消息发送「之前」的画布状态，供一键回滚 */
+export interface RollbackSnapshot {
+  nodes: any[]
+  edges: any[]
+  name?: string
+  variables?: any[]
+  /** 该用户消息的原始输入文本，回滚后回填到输入框 */
+  text: string
+  createdAt: number
+}
+
 interface AIAssistantState {
   // 面板可见性
   isPanelOpen: boolean
@@ -68,6 +79,11 @@ interface AIAssistantState {
   // 会话列表
   sessions: SessionListItem[]
   setSessions: (s: SessionListItem[]) => void
+
+  // 回滚快照：messageId -> 该用户消息发送前的画布状态
+  rollbackSnapshots: Record<string, RollbackSnapshot>
+  setRollbackSnapshot: (id: string, snap: RollbackSnapshot) => void
+  getRollbackSnapshot: (id: string) => RollbackSnapshot | undefined
 }
 
 export const useAIAssistantStore = create<AIAssistantState>((set, get) => ({
@@ -116,4 +132,8 @@ export const useAIAssistantStore = create<AIAssistantState>((set, get) => ({
 
   sessions: [],
   setSessions: (sessions) => set({ sessions }),
+
+  rollbackSnapshots: {},
+  setRollbackSnapshot: (id, snap) => set({ rollbackSnapshots: { ...get().rollbackSnapshots, [id]: snap } }),
+  getRollbackSnapshot: (id) => get().rollbackSnapshots[id],
 }))

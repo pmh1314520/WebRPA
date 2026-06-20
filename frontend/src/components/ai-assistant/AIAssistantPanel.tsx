@@ -25,7 +25,7 @@ import {
   ShieldQuestion,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAIAssistantStore, type ChatMessage } from '@/store/aiAssistantStore'
+import { useAIAssistantStore, type ChatMessage, type RollbackSnapshot } from '@/store/aiAssistantStore'
 import { useAIPermissionStore } from '@/store/aiPermissionStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { useAiActionLogStore } from '@/store/aiActionLogStore'
@@ -69,6 +69,8 @@ export function AIAssistantPanel() {
   const setCurrentSessionId = useAIAssistantStore((s) => s.setCurrentSessionId)
   const sessions = useAIAssistantStore((s) => s.sessions)
   const setSessions = useAIAssistantStore((s) => s.setSessions)
+  const setRollbackSnapshot = useAIAssistantStore((s) => s.setRollbackSnapshot)
+  const getRollbackSnapshot = useAIAssistantStore((s) => s.getRollbackSnapshot)
 
   const aiAssistantConfig = useGlobalConfigStore((s) => s.config.aiAssistant)
   const aiFallbackConfig = useGlobalConfigStore((s) => s.config.ai)
@@ -321,7 +323,15 @@ export function AIAssistantPanel() {
   }, [])
 
   // 选中节点"问 AI"：打开面板并预填提示，可选自动发送（用 ref 持有最新 handleSend，避免闭包陈旧）
-  const handleSendRef = useRef<((t?: string) => void) | null>(null)
+  const handleSendRef = useRef<((t?: string, imgs?: string[]) => void) | null>(null)
+  // 编辑器截图：AI 调用 capture_editor_screenshot 后缓存截图，待当前回合结束自动作为图片发给视觉模型
+  const pendingScreenshotRef = useRef<string | null>(null)
+  useEffect(() => {
+    return onAssistantUiEvent('editor_screenshot_captured', (payload: any) => {
+      const dataUrl = payload?.dataUrl
+      if (typeof dataUrl === 'string' && dataUrl) pendingScreenshotRef.current = dataUrl
+    })
+  }, [])
   useEffect(() => {
     return onAssistantUiEvent('ask_ai', (payload: any) => {
       const prompt = (payload?.prompt as string) || ''
@@ -339,15 +349,18 @@ export function AIAssistantPanel() {
   const resolvedConfig = (() => {
     const a = aiAssistantConfig
     const b = aiFallbackConfig
+    const model = a?.model || b?.model || ''
     return {
       api_url: a?.apiUrl || b?.apiUrl || '',
       api_key: a?.apiKey || b?.apiKey || '',
-      model: a?.model || b?.model || '',
+      model,
       temperature: a?.temperature ?? 0.7,
       max_tokens: a?.maxTokens ?? 4000,
       system_prompt: a?.systemPrompt || '',
       enable_tools: a?.enableTools ?? true,
       auto_approve: a?.autoApprove ?? false,
+      max_heal_rounds: (a as any)?.maxHealRounds ?? 5,
+      supports_vision: isVisionModelName(model),
     }
   })()
 
@@ -386,15 +399,23 @@ export function AIAssistantPanel() {
       system_prompt: a?.systemPrompt || '',
       enable_tools: a?.enableTools ?? true,
       auto_approve: a?.autoApprove ?? false,
+      max_heal_rounds: (a as any)?.maxHealRounds ?? 5,
+      // 模型支持多模态：勾选了「多模态」场景，或模型名命中视觉关键词
+      supports_vision: (m.scenes || []).includes('vision') || isVisionModelName(m.model || ''),
     }
+  }
+
+  // 判断模型名是否为多模态/视觉模型（用于决定是否启用编辑器截图、识图能力）
+  function isVisionModelName(model: string): boolean {
+    const m = (model || '').toLowerCase()
+    if (!m) return false
+    return /(vision|gpt-4o|gpt-4\.1|4v|glm-4v|glm-4\.\d+v|claude-3|claude-4|sonnet|opus|gemini|qwen.*vl|qwen-vl|yi-vision|internvl|llava|multimodal|moonshot.*vision|step-1v|doubao.*vision|minicpm-v)/i.test(m)
   }
 
   function isThinkingQuery(text: string): boolean {
     if (text.length > 80) return true
     return /分析|为什么|原因|设计|规划|方案|推理|优化|排查|诊断|比较|对比|架构|算法|证明|论证|思考/i.test(text)
-  }
-
-  // 构建候选模型列表（已排序）：第一个是主模型，其余是备用
+  }  // 构建候选模型列表（已排序）：第一个是主模型，其余是备用
   function buildCandidates(hasImages: boolean, messageText: string): any[] {
     if (assistantModels.length === 0) return [resolvedConfig]
     let ordered = [...assistantModels]
@@ -618,6 +639,21 @@ export function AIAssistantPanel() {
       images: images.length > 0 ? images : undefined,
       attachmentNames: docNames.length > 0 ? docNames : undefined,
     }
+    // 回滚快照：在 AI 改动画布「之前」记录当前画布状态（节点/连线/名称/全局变量），
+    // 绑定到这条用户消息，供用户事后一键回滚到此次对话之前的状态。
+    let preSnapshot: RollbackSnapshot | null = null
+    try {
+      const wf = useWorkflowStore.getState()
+      preSnapshot = {
+        nodes: JSON.parse(JSON.stringify(wf.nodes || [])),
+        edges: JSON.parse(JSON.stringify(wf.edges || [])),
+        name: wf.name,
+        variables: JSON.parse(JSON.stringify(wf.variables || [])),
+        text: messageText,
+        createdAt: Date.now(),
+      }
+      setRollbackSnapshot(userMsg.id, preSnapshot)
+    } catch { /* 快照失败不阻断发送 */ }
     appendMessage(userMsg)
     setInput('')
     setAttachedImages([])
@@ -673,6 +709,11 @@ export function AIAssistantPanel() {
           }
         }
         setMessages(serverMsgs)
+        // 把回滚快照绑定到服务端这条用户消息的真实 id（serverMsgs 替换了本地临时 id）
+        if (preSnapshot) {
+          const lastUser = [...serverMsgs].reverse().find((m: ChatMessage) => m.role === 'user')
+          if (lastUser?.id) setRollbackSnapshot(lastUser.id, preSnapshot)
+        }
       } else {
         appendMessage(res.data.message)
       }
@@ -694,6 +735,14 @@ export function AIAssistantPanel() {
           setSessions(res.data)
         }
       })
+      // 若本回合 AI 截取了编辑器界面，回合结束后自动把截图作为图片发给视觉模型分析
+      if (pendingScreenshotRef.current) {
+        const shot = pendingScreenshotRef.current
+        pendingScreenshotRef.current = null
+        setTimeout(() => {
+          handleSendRef.current?.('这是当前 WebRPA 编辑器界面的截图，请查看并据此分析问题。', [shot])
+        }, 300)
+      }
     }
   }
   // 持有最新 handleSend 供 ask_ai 事件自动发送
@@ -1021,6 +1070,17 @@ export function AIAssistantPanel() {
             message={m}
             onEdit={(t) => { setInput(t); setTimeout(() => textareaRef.current?.focus(), 50) }}
             onResend={(t) => handleSend(t)}
+            canRollback={m.role === 'user' && !!getRollbackSnapshot(m.id)}
+            onRollback={() => {
+              const snap = getRollbackSnapshot(m.id)
+              if (!snap) return
+              if (!window.confirm('回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并把该消息重新填回输入框，方便你修改后重发。确定回滚吗？')) return
+              try {
+                useWorkflowStore.getState().restoreSnapshot({ nodes: snap.nodes, edges: snap.edges, name: snap.name, variables: snap.variables })
+                setInput(snap.text || '')
+                setTimeout(() => textareaRef.current?.focus(), 60)
+              } catch { /* ignore */ }
+            }}
           />
         ))}
         {isSending && (

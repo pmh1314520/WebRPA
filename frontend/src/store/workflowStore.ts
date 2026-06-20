@@ -222,6 +222,8 @@ interface WorkflowState {
   setWorkflowNameWithHistory: (name: string) => void  // 设置名称并保存历史
   clearWorkflow: () => void
   loadWorkflow: (workflow: { nodes: Node<NodeData>[]; edges: Edge[]; name: string }) => void
+  // 回滚：把画布完整恢复到某个快照（含节点、连线、名称、全局变量）
+  restoreSnapshot: (snapshot: { nodes: Node<NodeData>[]; edges: Edge[]; name?: string; variables?: Variable[] }) => void
   
   // 未保存状态管理
   markAsUnsaved: () => void
@@ -2981,7 +2983,29 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   markAsUnsaved: () => {
     set({ hasUnsavedChanges: true })
   },
-  
+
+  // 回滚：把画布完整恢复到某个快照（节点 + 连线 + 名称 + 全局变量），并写入一条历史便于再撤销
+  restoreSnapshot: (snapshot) => {
+    const safeNodes = sanitizeNodes(snapshot.nodes || [])
+    const safeEdges = sanitizeEdges(snapshot.edges || [])
+    const state = get()
+    const hist = {
+      nodes: JSON.parse(JSON.stringify(safeNodes)),
+      edges: JSON.parse(JSON.stringify(safeEdges)),
+      name: snapshot.name ?? state.name,
+    }
+    set({
+      nodes: safeNodes as any,
+      edges: safeEdges as any,
+      name: snapshot.name ?? state.name,
+      variables: Array.isArray(snapshot.variables) ? snapshot.variables : state.variables,
+      selectedNodeId: null,
+      hasUnsavedChanges: true,
+      history: [hist],
+      historyIndex: 0,
+    })
+  },
+
   markAsSaved: () => {
     set({ hasUnsavedChanges: false })
   },

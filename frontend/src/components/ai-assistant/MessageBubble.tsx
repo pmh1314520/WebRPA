@@ -12,6 +12,7 @@ import {
   Pencil,
   RotateCcw,
   FileText,
+  Undo2,
 } from 'lucide-react'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { marked } from 'marked'
@@ -27,6 +28,10 @@ interface MessageBubbleProps {
   message: ChatMessage
   onResend?: (content: string) => void
   onEdit?: (content: string) => void
+  /** 回滚到这条用户消息发送前的画布状态（节点/连线/全局变量），并回填输入框 */
+  onRollback?: () => void
+  /** 是否存在可回滚的快照 */
+  canRollback?: boolean
 }
 
 // 工具名 → 中文显示
@@ -458,7 +463,7 @@ function ReasoningCard({
   )
 }
 
-export function MessageBubble({ message, onResend, onEdit }: MessageBubbleProps) {
+export function MessageBubble({ message, onResend, onEdit, onRollback, canRollback }: MessageBubbleProps) {
   if (message.role === 'tool') {
     return null
   }
@@ -541,8 +546,18 @@ export function MessageBubble({ message, onResend, onEdit }: MessageBubbleProps)
             </div>
           )}
           {/* 用户消息：悬停显示「编辑 / 重发」 */}
-          {isUser && message.content && (onEdit || onResend) && (
+          {isUser && message.content && (onEdit || onResend || (canRollback && onRollback)) && (
             <div className="flex justify-end gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+              {canRollback && onRollback && (
+                <button
+                  type="button"
+                  onClick={() => onRollback()}
+                  title="回滚：把画布恢复到这条消息发送之前的状态，并把消息填回输入框"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[10.5px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--brand-600))] hover:bg-[hsl(var(--brand-50))] transition-colors"
+                >
+                  <Undo2 className="w-3 h-3" /> 回滚
+                </button>
+              )}
               {onEdit && (
                 <button
                   type="button"

@@ -1026,6 +1026,23 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium text-gray-700">自愈循环最大轮数</Label>
+                      <p className="text-xs text-gray-500 mt-1">工作流运行失败时，小助手自动「诊断→修复→重跑」的最多轮数。简单任务用不满，复杂任务可调高（1-20，默认 5）。</p>
+                    </div>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={config.aiAssistant?.maxHealRounds ?? 5}
+                      onChange={(e) => {
+                        const n = Math.max(1, Math.min(20, parseInt(e.target.value || '5', 10) || 5))
+                        updateAIAssistantConfig({ maxHealRounds: n })
+                      }}
+                      className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-center"
+                    />
+                  </div>
                 </div>
               </div>
             </>

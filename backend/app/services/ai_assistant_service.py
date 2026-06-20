@@ -925,6 +925,7 @@ async def chat_once(
         workflow_summary=workflow_summary,
         memory_summary=memory_summary,
         max_heal_rounds=getattr(config, "max_heal_rounds", 5) or 5,
+        supports_vision=bool(getattr(config, "supports_vision", False)),
     )
 
     # 把教训/画像/已学技能附加在系统提示词后
@@ -950,7 +951,8 @@ async def chat_once(
             "open_scheduled_tasks / close_scheduled_tasks / open_documentation / close_documentation / "
             "open_workflow_hub / close_workflow_hub / open_auto_browser / close_auto_browser / "
             "open_phone_mirror / close_phone_mirror / open_variable_tracking / close_variable_tracking / "
-            "open_export_dialog / open_module_search / take_screenshot\n"
+            "open_export_dialog / open_module_search / take_screenshot / "
+            "capture_editor_screenshot（截取当前 WebRPA 编辑器界面并作为图片加入对话，仅在模型支持多模态时使用）\n"
             "**弹窗自主操作（强烈推荐）**：list_open_dialogs（列出所有打开的弹窗+可用 actions） / "
             "respond_to_dialog(dialog_id, action, params={value:...})（响应弹窗，例如填写输入弹窗） / "
             "dismiss_dialog(dialog_id)（关闭弹窗，等价取消）。"

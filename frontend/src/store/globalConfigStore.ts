@@ -78,6 +78,7 @@ export interface GlobalConfig {
     activeModelId?: string      // 当前手动选中的模型 id（聊天处上拉栏切换）
     autoFallback?: boolean      // 某模型请求失败时自动切换其它模型重试
     autoSceneRoute?: boolean    // 按问答场景（多模态/深度思考/普通）自动选模型
+    maxHealRounds?: number      // 自愈循环最大轮数（默认 5，复杂问题可调高）
   }
   // 发送邮件模块默认配置
   email: {

@@ -1778,6 +1778,34 @@ export async function executeClientAction(
         emitAssistantUiEvent('take_screenshot', payload)
         return { success: true, message: '已发起截图' }
 
+      case 'capture_editor_screenshot': {
+        // 截取当前 WebRPA 编辑器界面，作为图片在下一条消息中喂给视觉模型
+        try {
+          const html2canvas = (await import('html2canvas')).default
+          // 优先截画布主区域，否则截整个页面
+          const target = (document.querySelector('.react-flow') as HTMLElement)
+            || (document.querySelector('#root') as HTMLElement)
+            || document.body
+          const canvas = await html2canvas(target, {
+            backgroundColor: '#0b1020',
+            scale: Math.min(1, 1400 / Math.max(target.clientWidth || 1400, 1)),
+            logging: false,
+            useCORS: true,
+            ignoreElements: (el) => el.id === 'langToggleBtn',
+          })
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+          // 通知面板：在当前回合结束后，自动以图片形式发给视觉模型
+          emitAssistantUiEvent('editor_screenshot_captured', { dataUrl })
+          return {
+            success: true,
+            message: '已截取编辑器界面，将在下一条消息中作为图片提供给你分析',
+            data: { captured: true, width: canvas.width, height: canvas.height },
+          }
+        } catch (e: any) {
+          return { success: false, error: `截图失败：${e?.message || e}` }
+        }
+      }
+
       // ============================================================
       // 通知 / 提示
       // ============================================================

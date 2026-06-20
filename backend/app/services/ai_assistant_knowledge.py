@@ -955,6 +955,7 @@ def build_system_prompt(
     workflow_summary: str = "",
     memory_summary: str = "",
     max_heal_rounds: int = 5,
+    supports_vision: bool = False,
 ) -> str:
     """构建给 LLM 的系统提示词"""
     parts: list[str] = []
@@ -2219,6 +2220,31 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
         "- 轮数按问题难度动态使用：简单问题 1-2 轮即可；复杂问题（多处选择器失效/跨页流程/依赖外部状态）可用满额度。\n"
         f"- 跑满 {_rounds} 轮仍无法修复时，才停下来向用户清晰汇报：已尝试了什么、卡在哪、需要用户提供什么，绝不无限重试或静默放弃。\n"
     )
+
+    # 长任务检查点（任务级自动存档/回滚）
+    parts.append(
+        "\n# 🧷 长任务检查点（多步骤任务必做）\n"
+        "- 开始一个会大幅改动画布的多步骤任务前，先 commit_version(message='任务开始前') 存一个检查点。\n"
+        "- 任务拆成若干阶段，每完成一个稳定阶段就 commit_version 一次（带简短阶段说明），形成可回溯的检查点链。\n"
+        "- 某阶段改坏且自愈无效时，restore_version 回到最近一个可用检查点，再换思路，而不是在坏状态上继续叠改。\n"
+    )
+
+    # 多模态 / 编辑器截图能力（按当前模型是否支持视觉动态注入）
+    if supports_vision:
+        parts.append(
+            "\n# 👁️ 编辑器截图（当前模型支持多模态/视觉，可用）\n"
+            "- 当遇到「纯 UI / 布局 / 样式 / 看不懂用户描述的界面问题」且文字信息不足时，可调用"
+            " client_action(action='capture_editor_screenshot') 截取当前 WebRPA 编辑器界面。\n"
+            "- 截图会作为图片自动加入对话，你（视觉模型）可直接看到编辑器画面再分析。\n"
+            "- 不要滥用：仅在确有必要『看一眼界面』时才截图；能用 get_workflow_detail 等文字信息解决就别截图。\n"
+        )
+    else:
+        parts.append(
+            "\n# 👁️ 编辑器截图（当前模型不支持多模态，禁用）\n"
+            "- 当前模型不支持图片识别，**不要**调用 capture_editor_screenshot，也无法理解用户发来的图片。\n"
+            "- 若用户发来图片或问界面外观类问题，请友好告知：需在模型配置里切换到支持多模态/视觉的模型；"
+            "同时尽量用文字信息（get_workflow_detail / get_logs 等）帮助用户。\n"
+        )
 
     return "\n".join(parts)
 
