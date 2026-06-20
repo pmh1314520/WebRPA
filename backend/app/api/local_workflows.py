@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
+from app.services import webdav_manager
+
 router = APIRouter(prefix="/api/local-workflows", tags=["local-workflows"])
 
 # 默认工作流文件夹（项目根目录下的 workflows 文件夹）
@@ -84,12 +86,45 @@ def _sanitize_filename(filename: str) -> str:
 async def get_default_folder():
     """获取默认工作流文件夹路径"""
     ensure_folder_exists(DEFAULT_WORKFLOW_FOLDER)
+    if webdav_manager.is_enabled():
+        return {"folder": "WebDAV", "webdav": True}
     return {"folder": DEFAULT_WORKFLOW_FOLDER}
+
+
+# ==================== WebDAV（连 NAS/网盘）配置 ====================
+
+class WebDAVConfig(BaseModel):
+    enabled: bool = False
+    url: str = ""
+    username: str = ""
+    password: str = ""
+    remoteDir: str = ""
+
+
+@router.get("/webdav-config")
+async def get_webdav_config():
+    """读取 WebDAV 配置（密码原样返回，仅本机使用）"""
+    return {"success": True, "config": webdav_manager.get_config()}
+
+
+@router.post("/webdav-config")
+async def set_webdav_config(cfg: WebDAVConfig):
+    """保存 WebDAV 配置"""
+    saved = webdav_manager.save_config(cfg.model_dump())
+    return {"success": True, "config": saved}
+
+
+@router.post("/webdav-test")
+async def test_webdav(cfg: WebDAVConfig):
+    """测试 WebDAV 连接（用传入的配置，不落盘）"""
+    return webdav_manager.test_connection(cfg.model_dump())
 
 
 @router.post("/open-folder")
 async def open_folder(config: WorkflowFolderConfig):
     """在系统文件管理器中打开工作流 JSON 文件的保存位置"""
+    if webdav_manager.is_enabled():
+        return {"success": False, "error": "当前工作流存储在 WebDAV 远程目录，无法在本地打开。请在 NAS/网盘客户端中查看。"}
     folder = config.folder if config.folder else DEFAULT_WORKFLOW_FOLDER
     if not ensure_folder_exists(folder):
         return {"success": False, "error": "无法创建或访问该文件夹"}
@@ -108,28 +143,36 @@ async def open_folder(config: WorkflowFolderConfig):
 @router.post("/check-exists")
 async def check_workflow_exists(request: SaveWorkflowRequest):
     """检查工作流文件是否已存在"""
+    filename = request.filename
+    if not filename.endswith('.json'):
+        filename += '.json'
+    filename = "".join(c for c in filename if c not in r'\/:*?"<>|')
+
+    if webdav_manager.is_enabled():
+        try:
+            return {"exists": webdav_manager.exists_workflow(filename), "filename": filename, "filepath": f"WebDAV/{filename}"}
+        except Exception:
+            return {"exists": False, "filename": filename, "filepath": f"WebDAV/{filename}"}
+
     # 从 content 中提取 folder 信息，如果为空则使用默认值
     folder = request.content.get('_folder')
     if not folder:  # 如果为 None 或空字符串，使用默认文件夹
         folder = DEFAULT_WORKFLOW_FOLDER
-    
-    filename = request.filename
-    if not filename.endswith('.json'):
-        filename += '.json'
-    
-    # 清理文件名中的非法字符
-    filename = "".join(c for c in filename if c not in r'\/:*?"<>|')
-    
+
     filepath = os.path.join(folder, filename)
-    
     exists = os.path.exists(filepath)
-    
     return {"exists": exists, "filename": filename, "filepath": filepath}
 
 
 @router.post("/list")
 async def list_workflows(config: WorkflowFolderConfig):
-    """列出指定文件夹中的所有工作流文件"""
+    """列出指定文件夹中的所有工作流文件（启用 WebDAV 时走远程目录）"""
+    if webdav_manager.is_enabled():
+        try:
+            return {"workflows": webdav_manager.list_workflows()}
+        except Exception as e:
+            return {"error": f"WebDAV 列举失败: {e}", "workflows": []}
+
     # 如果 folder 为空字符串或 None，使用默认文件夹
     folder = config.folder if config.folder else DEFAULT_WORKFLOW_FOLDER
     
@@ -208,28 +251,35 @@ async def save_workflow(request: SaveWorkflowRequest):
 
 @router.post("/save-to-folder")
 async def save_workflow_to_folder(request: SaveWorkflowRequest):
-    """保存工作流到指定文件夹（从请求体获取文件夹路径）"""
+    """保存工作流到指定文件夹（从请求体获取文件夹路径；启用 WebDAV 时存到远程）"""
+    # 移除临时的 _folder 字段
+    content = request.content
+    if isinstance(content, dict) and '_folder' in content:
+        content = {k: v for k, v in content.items() if k != '_folder'}
+
+    filename = _sanitize_filename(request.filename)
+    if not filename:
+        return {"success": False, "error": "文件名无效"}
+    if not filename.endswith('.json'):
+        filename += '.json'
+
+    if webdav_manager.is_enabled():
+        try:
+            webdav_manager.save_workflow(filename, content)
+            return {"success": True, "filepath": f"WebDAV/{filename}", "filename": filename}
+        except Exception as e:
+            return {"success": False, "error": f"WebDAV 保存失败: {e}"}
+
     # 优先用 request.folder 字段，其次从 content._folder 取（兼容旧前端）
     folder = request.folder
     if not folder:
         folder = request.content.get('_folder') if isinstance(request.content, dict) else None
     if not folder:
         folder = DEFAULT_WORKFLOW_FOLDER
-    
-    # 移除临时的 _folder 字段
-    content = request.content
-    if isinstance(content, dict) and '_folder' in content:
-        content = {k: v for k, v in content.items() if k != '_folder'}
-    
+
     if not ensure_folder_exists(folder):
         return {"success": False, "error": "[ERROR] 未配置工作流保存路径"}
-    
-    filename = _sanitize_filename(request.filename)
-    if not filename:
-        return {"success": False, "error": "文件名无效"}
-    if not filename.endswith('.json'):
-        filename += '.json'
-    
+
     filepath = _safe_resolve_in_folder(folder, filename)
     if not filepath:
         return {"success": False, "error": "文件路径不安全"}
@@ -246,14 +296,22 @@ async def save_workflow_to_folder(request: SaveWorkflowRequest):
 
 @router.get("/load/{filename:path}")
 async def load_workflow(filename: str, folder: str = None):
-    """加载指定的工作流文件"""
-    # 如果 folder 为空字符串或 None，使用默认文件夹
-    folder = folder if folder else DEFAULT_WORKFLOW_FOLDER
-    
-    # 路径穿越防御
+    """加载指定的工作流文件（启用 WebDAV 时从远程读取）"""
     safe_filename = _sanitize_filename(filename)
     if not safe_filename:
         return {"success": False, "error": "文件名无效"}
+
+    if webdav_manager.is_enabled():
+        try:
+            content = webdav_manager.read_workflow(safe_filename)
+            if content is None:
+                return {"success": False, "error": "文件不存在"}
+            return {"success": True, "content": content}
+        except Exception as e:
+            return {"success": False, "error": f"WebDAV 读取失败: {e}"}
+
+    # 如果 folder 为空字符串或 None，使用默认文件夹
+    folder = folder if folder else DEFAULT_WORKFLOW_FOLDER
     filepath = _safe_resolve_in_folder(folder, safe_filename)
     if not filepath:
         return {"success": False, "error": "文件路径不安全"}
@@ -273,14 +331,20 @@ async def load_workflow(filename: str, folder: str = None):
 
 @router.post("/delete")
 async def delete_workflow(filename: str, folder: str = None):
-    """删除指定的工作流文件"""
-    # 如果 folder 为空字符串或 None，使用默认文件夹
-    folder = folder if folder else DEFAULT_WORKFLOW_FOLDER
-    
-    # 路径穿越防御
+    """删除指定的工作流文件（启用 WebDAV 时删除远程文件）"""
     safe_filename = _sanitize_filename(filename)
     if not safe_filename:
         return {"success": False, "error": "文件名无效"}
+
+    if webdav_manager.is_enabled():
+        try:
+            webdav_manager.delete_workflow(safe_filename)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": f"WebDAV 删除失败: {e}"}
+
+    # 如果 folder 为空字符串或 None，使用默认文件夹
+    folder = folder if folder else DEFAULT_WORKFLOW_FOLDER
     filepath = _safe_resolve_in_folder(folder, safe_filename)
     if not filepath:
         return {"success": False, "error": "文件路径不安全"}
