@@ -62,6 +62,62 @@ Object.assign(DICT, {
   '当前已是最新版本': 'You are on the latest version'
 })
 
+// 追加：完整覆盖赞助/外包/配置/页脚/状态/提示等所有可见中文
+Object.assign(DICT, {
+  // 顶部窗口控制 + 更新条
+  '最小化到系统托盘': 'Minimize to system tray',
+  '· 点击下载查看更新内容': '· Click to download and view changes',
+  // 赞助弹窗
+  '支持 WebRPA 持续开发': 'Support ongoing WebRPA development',
+  '独立学生开发者 · 个人使用完全免费 · 为爱发电': 'Indie student developer · Free for personal use · For the love of it',
+  '嗨': 'Hi',
+  '，能看到这里说明 WebRPA 已经为你解决了一些问题。': ', if you are reading this, WebRPA has already solved some problems for you.',
+  'WebRPA 由独立学生开发者开发并维护，': 'WebRPA is developed and maintained by an indie student developer; ',
+  '个人使用完全免费': 'completely free for personal use',
+  '，没有任何广告或付费墙。': ', with no ads or paywalls.',
+  '如果它真的让你的工作变得轻松了一点点，希望你能请作者喝杯咖啡，让这个项目能继续走下去。': 'If it has made your work even a little easier, please consider buying the author a coffee so this project can keep going.',
+  '每一位赞助者的名称（无论金额多少）我都会手动依次添加到下个版本的 README 文档中以表感谢！': 'Every sponsor\u2019s name (regardless of amount) will be manually added to the next version\u2019s README as thanks!',
+  '微信': 'WeChat', '支付宝': 'Alipay',
+  '您也可以通过"爱发电"平台持续支持 WebRPA 的开发工作': 'You can also support WebRPA development on the "Afdian" platform',
+  '备注': 'Note', '联系': 'Contact',
+  '赞助时请备注名称，这样能更方便我收录到下个版本的 README 文档中': 'Please leave your name when sponsoring, so I can include it in the next version\u2019s README',
+  '若您对 WebRPA 有任何疑问，可以添加开发者的 QQ：2124691573': 'For any questions about WebRPA, add the developer on QQ: 2124691573',
+  // 外包弹窗
+  '把开发需求交给作者': 'Hire the author for your dev needs',
+  '微信小程序 · 网站 · 桌面应用 · 自动化脚本': 'WeChat Mini Program · Website · Desktop App · Automation Script',
+  '您有以下开发需求？欢迎把项目交给作者承接，专业全栈开发、价格公道、按时交付：': 'Have any of these needs? Hand your project to the author \u2014 professional full-stack development, fair pricing, on-time delivery:',
+  '微信小程序全栈开发': 'WeChat Mini Program full-stack dev',
+  '前后端一体，从设计到上线': 'Front-end & back-end, from design to launch',
+  '网站全栈开发': 'Website full-stack dev',
+  '官网 / 后台 / Web 应用': 'Website / admin / web app',
+  'Windows 桌面应用开发': 'Windows desktop app dev',
+  '工具软件 / 自动化客户端': 'Utility software / automation client',
+  '自动化脚本开发': 'Automation script dev',
+  'RPA / 爬虫 / 批处理': 'RPA / crawler / batch',
+  '复制': 'Copy', '复制失败，请手动复制': 'Copy failed, please copy manually',
+  // 关闭遮罩
+  '正在关闭 WebRPA 启动器': 'Closing WebRPA launcher',
+  '正在关闭后端与前端服务…': 'Stopping backend and frontend services…',
+  '服务已停止，正在退出启动器…': 'Services stopped, exiting launcher…',
+  '正在退出启动器…': 'Exiting launcher…',
+  // 状态 / 提示
+  '所有服务都已在运行': 'All services are already running',
+  '后端服务尚未运行': 'Backend service not running yet',
+  '前端服务尚未运行': 'Frontend service not running yet',
+  '后端和前端服务均已运行': 'Both backend and frontend are running',
+  '后端服务': 'Backend service', '前端服务': 'Frontend service',
+  '后端 API 服务': 'Backend API service', '前端 Web 编辑器': 'Frontend Web editor',
+  '配置已保存': 'Configuration saved',
+  '服务已停止': 'Services stopped',
+  '当前已是最新版本': 'You are on the latest version',
+  '已开启开机自启动': 'Auto-start on boot enabled',
+  '已关闭开机自启动': 'Auto-start on boot disabled',
+  '读取开机自启动状态失败': 'Failed to read auto-start status',
+  '加载配置失败': 'Failed to load configuration',
+  '检查服务状态失败': 'Failed to check service status',
+  '官网 / 后台 / Web 应用': 'Website / admin / web app',
+})
+
 if (typeof window !== 'undefined') window.__WEBRPA_LAUNCHER_DICT = DICT
 
 // 短语级字典：覆盖动态拼接文本/日志（整句未命中时按长度降序逐个替换）
@@ -80,6 +136,15 @@ const PHRASES = {
   '端口': 'port', '地址': 'host', '日志': 'logs',
   '失败': 'failed', '成功': 'succeeded', '错误': 'error', '警告': 'warning',
   '请稍候': 'please wait', '请重试': 'please retry',
+  // 扩充：启动器常见词，兜底覆盖任何遗漏的动态中文
+  '启动器': 'launcher', '编辑器': 'editor', '配置': 'config', '设置': 'settings',
+  '更新': 'update', '版本': 'version', '下载': 'download', '安装': 'install',
+  '作者': 'author', '赞助': 'sponsor', '支持': 'support', '复制': 'copy',
+  '打开': 'open', '关闭': 'close', '保存': 'save', '启动': 'start', '停止': 'stop',
+  '运行': 'running', '检查': 'check', '退出': 'exit', '重启': 'restart',
+  '已': '', '正在': '', '请': 'please ', '了': '', '的': ' ',
+  '微信': 'WeChat', '支付宝': 'Alipay', '联系': 'contact', '备注': 'note',
+  '免费': 'free', '开源': 'open source', '本地': 'local', '浏览器': 'browser',
 }
 const PHRASE_PAIRS = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
 const hasCJK = (s) => /[\u4e00-\u9fa5]/.test(s)

@@ -165,10 +165,14 @@
               <span>打开 WebRPA 编辑器</span>
             </button>
             <button v-if="backendRunning && frontendRunning" class="cta-agent" @click="openAssistantAgent" title="把小助手作为系统级 Agent 在独立窗口打开">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="8" width="16" height="11" rx="3"/>
+                <path d="M12 8V4"/><circle cx="12" cy="3" r="1.4" fill="currentColor" stroke="none"/>
+                <circle cx="9" cy="13" r="1.3" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="13" r="1.3" fill="currentColor" stroke="none"/>
+                <path d="M9.5 16.5h5"/><path d="M2.5 12v3"/><path d="M21.5 12v3"/>
               </svg>
-              <span>小助手 Agent</span>
+              <span>Agent</span>
             </button>
             <button
               class="cta-stop"
