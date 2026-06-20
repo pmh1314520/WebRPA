@@ -15,7 +15,7 @@ WebRPA - 网页机器人流程自动化工具
 </p>
 
 <p align="center">
-  <b>中文</b> · <a href="README.en.md">English</a>
+  <b>中文</b> · <a href="README.en.md">EN</a>
 </p>
 
 

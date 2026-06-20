@@ -15,7 +15,7 @@ WebRPA - Web Robotic Process Automation Tool
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <b>English</b>
+  <a href="README.md">中文</a> · <b>EN</b>
 </p>
 
 
