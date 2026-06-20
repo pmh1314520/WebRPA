@@ -10,6 +10,7 @@ import { SelectNative as Select } from '@/components/ui/select-native'
 import { Button } from '@/components/ui/button'
 import { VariableInput } from '@/components/ui/variable-input'
 import { Trash2, Crosshair, Loader2, Ban, ChevronLeft, ChevronRight, Settings, Sparkles, ScanSearch } from 'lucide-react'
+import { moduleIcons } from './ModuleSidebar'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { elementPickerApi, desktopPickerApi } from '@/services/api'
 
@@ -2259,7 +2260,10 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
               <ChevronLeft className="w-4 h-4" />
             </span>
             <span className="icon-chip icon-chip-brand !w-7 !h-7">
-              <Settings className="w-3.5 h-3.5" />
+              {(() => {
+                const MIcon = moduleIcons[nodeData.moduleType as keyof typeof moduleIcons] || Settings
+                return <MIcon className="w-3.5 h-3.5" />
+              })()}
             </span>
             <span className="text-[10px] text-[hsl(var(--brand-700))] font-semibold mt-1 tracking-wide" style={{ writingMode: 'vertical-rl' }}>
               {String(moduleTypeLabels[nodeData.moduleType as keyof typeof moduleTypeLabels] ?? nodeData.moduleType)}
@@ -2273,7 +2277,10 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="icon-block icon-block-brand !w-9 !h-9 !rounded-[10px] flex-shrink-0">
-                  <Settings className="w-4 h-4" strokeWidth={2.4} />
+                  {(() => {
+                    const MIcon = moduleIcons[nodeData.moduleType as keyof typeof moduleIcons] || Settings
+                    return <MIcon className="w-4 h-4" strokeWidth={2.4} />
+                  })()}
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-[14px] font-bold text-[hsl(var(--slate-900))] truncate tracking-tight">{String(moduleTypeLabels[nodeData.moduleType as keyof typeof moduleTypeLabels] ?? nodeData.moduleType)}</h2>
