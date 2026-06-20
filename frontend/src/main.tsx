@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import AssistantWindow from './AssistantWindow.tsx'
 import { installGlobalTooltip } from './lib/globalTooltip'
 import { setupEditorI18n } from './lib/uiI18n'
 
@@ -28,8 +29,11 @@ window.addEventListener('unhandledrejection', (e) => {
   }
 })
 
+// 独立窗口模式（系统级 Agent）：URL 带 ?view=assistant 时只渲染小助手本体
+const __isAssistantWindow = new URLSearchParams(window.location.search).get('view') === 'assistant'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {__isAssistantWindow ? <AssistantWindow /> : <App />}
   </StrictMode>,
 )

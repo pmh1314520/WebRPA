@@ -23,6 +23,7 @@ import {
   ChevronUp,
   Check,
   ShieldQuestion,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAIAssistantStore, type ChatMessage, type RollbackSnapshot } from '@/store/aiAssistantStore'
@@ -56,7 +57,7 @@ const QUICK_ACTIONS: { label: string; prompt: string }[] = [
   { label: '变量链路', prompt: '请分析我当前工作流的变量传递链路：每个变量由哪个模块产生、被哪些模块使用，是否存在未使用或未定义的变量。' },
 ]
 
-export function AIAssistantPanel() {
+export function AIAssistantPanel({ standalone = false }: { standalone?: boolean } = {}) {
   const isOpen = useAIAssistantStore((s) => s.isPanelOpen)
   const setOpen = useAIAssistantStore((s) => s.setPanelOpen)
   const pendingApproval = useAIPermissionStore((s) => s.pending)
@@ -811,35 +812,45 @@ export function AIAssistantPanel() {
   const [draftWidth, setDraftWidth] = useState<number | null>(null)
   const effectiveWidth = draftWidth ?? aiAssistantWidth
 
-  if (!isOpen) return null
+  if (!isOpen && !standalone) return null
 
   return (
     <div
       className={
-        'fixed top-0 right-0 h-screen z-50 ' +
-        'max-w-full responsive-drawer-right ' +
-        'bg-[hsl(var(--card))] border-l border-[hsl(var(--border))] shadow-pop-2xl ' +
-        'flex flex-col animate-slide-in-right'
+        standalone
+          ? 'fixed inset-0 w-screen h-screen z-50 bg-[hsl(var(--card))] flex flex-col'
+          : (
+            'fixed top-0 right-0 h-screen z-50 ' +
+            'max-w-full responsive-drawer-right ' +
+            'bg-[hsl(var(--card))] border-l border-[hsl(var(--border))] shadow-pop-2xl ' +
+            'flex flex-col animate-slide-in-right'
+          )
       }
-      style={{
-        width: effectiveWidth,
-        transition: draftWidth === null ? 'width 200ms ease-out' : 'none',
-      }}
+      style={
+        standalone
+          ? undefined
+          : {
+            width: effectiveWidth,
+            transition: draftWidth === null ? 'width 200ms ease-out' : 'none',
+          }
+      }
     >
-      {/* 左边缘拖拽手柄 */}
-      <PanelResizer
-        direction="horizontal"
-        side="left"
-        size={effectiveWidth}
-        minSize={LAYOUT_LIMITS.aiAssistant.min}
-        maxSize={LAYOUT_LIMITS.aiAssistant.max}
-        factor={-1}
-        onLive={(w) => setDraftWidth(w)}
-        onCommit={(w) => {
-          setAiAssistantWidth(w)
-          setDraftWidth(null)
-        }}
-      />
+      {/* 左边缘拖拽手柄（独立窗口模式不需要） */}
+      {!standalone && (
+        <PanelResizer
+          direction="horizontal"
+          side="left"
+          size={effectiveWidth}
+          minSize={LAYOUT_LIMITS.aiAssistant.min}
+          maxSize={LAYOUT_LIMITS.aiAssistant.max}
+          factor={-1}
+          onLive={(w) => setDraftWidth(w)}
+          onCommit={(w) => {
+            setAiAssistantWidth(w)
+            setDraftWidth(null)
+          }}
+        />
+      )}
       {/* 顶部装饰条 */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[hsl(var(--brand-500))] via-[hsl(var(--brand-400))] to-[hsl(var(--info-500))]" />
 
@@ -859,8 +870,9 @@ export function AIAssistantPanel() {
             )}
           </div>
           <div className="min-w-0">
-            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient">
+            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-2">
               WebRPA 小助手
+              {standalone && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-700))]">独立窗口 · Agent</span>}
             </div>
             <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1">
               <span className={`w-1.5 h-1.5 rounded-full ${configReady ? 'bg-[hsl(var(--success-500))]' : 'bg-[hsl(var(--warning-500))]'}`} />
@@ -888,9 +900,24 @@ export function AIAssistantPanel() {
           >
             <Clock className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)}>
-            <X className="w-3.5 h-3.5" />
-          </Button>
+          {!standalone && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="在独立窗口打开（系统级 Agent）"
+              onClick={() => {
+                const url = window.location.origin + '/?view=assistant'
+                window.open(url, 'webrpa-assistant', 'width=460,height=820,menubar=no,toolbar=no,location=no,status=no')
+              }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          {!standalone && (
+            <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)}>
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
