@@ -326,6 +326,8 @@ export function AIAssistantPanel() {
   const handleSendRef = useRef<((t?: string, imgs?: string[]) => void) | null>(null)
   // 编辑器截图：AI 调用 capture_editor_screenshot 后缓存截图，待当前回合结束自动作为图片发给视觉模型
   const pendingScreenshotRef = useRef<string | null>(null)
+  // 防循环：标记「当前这一回合本身就是截图自动发起的回合」，避免截图回合再触发截图无限套娃
+  const autoScreenshotInFlightRef = useRef(false)
   useEffect(() => {
     return onAssistantUiEvent('editor_screenshot_captured', (payload: any) => {
       const dataUrl = payload?.dataUrl
@@ -736,9 +738,14 @@ export function AIAssistantPanel() {
         }
       })
       // 若本回合 AI 截取了编辑器界面，回合结束后自动把截图作为图片发给视觉模型分析
-      if (pendingScreenshotRef.current) {
+      if (autoScreenshotInFlightRef.current) {
+        // 本回合就是「截图自动发起」的回合：清除标记，且丢弃此回合内再次截取的图，杜绝无限套娃
+        autoScreenshotInFlightRef.current = false
+        pendingScreenshotRef.current = null
+      } else if (pendingScreenshotRef.current) {
         const shot = pendingScreenshotRef.current
         pendingScreenshotRef.current = null
+        autoScreenshotInFlightRef.current = true
         setTimeout(() => {
           handleSendRef.current?.('这是当前 WebRPA 编辑器界面的截图，请查看并据此分析问题。', [shot])
         }, 300)

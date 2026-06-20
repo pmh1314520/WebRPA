@@ -390,19 +390,32 @@ async def skill_run_local_workflow_file(
     """跨工作流编排：读取一个本地工作流文件并直接在后端运行，返回 workflow_id。
     用于「让 A 工作流跑完→再跑 B」的链式编排。set_output_to 非空时，会把本次执行 id
     记到后端全局变量，便于后续工作流引用衔接。"""
-    from app.services.ai_assistant_skills import skill_read_workflow, skill_run_workflow_now, skill_set_global_variable
-    read = await skill_read_workflow(filename=filename)
-    if read.get("error"):
-        return read
-    wf = read.get("workflow") or read
+    import json as _json
+    from app.services.ai_assistant_skills import (
+        _get_workflow_folder, skill_run_workflow_now, skill_set_global_variable,
+    )
+    # 直接读取完整工作流文件（不走 read_workflow 的摘要，避免 >30 节点被截断丢失 nodes/edges）
+    folder = _get_workflow_folder()
+    fn = filename if str(filename).endswith(".json") else f"{filename}.json"
+    fp = folder / fn
+    try:
+        fp.resolve().relative_to(folder.resolve())
+    except ValueError:
+        return {"error": "非法的文件名"}
+    if not fp.exists():
+        return {"error": f"工作流文件不存在: {fn}"}
+    try:
+        wf = _json.loads(fp.read_text(encoding="utf-8"))
+    except Exception as e:
+        return {"error": f"读取工作流失败: {e}"}
     nodes = wf.get("nodes") or []
     edges = wf.get("edges") or []
     variables = wf.get("variables") or []
     if not nodes:
-        return {"error": f"工作流 {filename} 没有节点"}
+        return {"error": f"工作流 {fn} 没有节点"}
     res = await skill_run_workflow_now(
         nodes=nodes, edges=edges, variables=variables, headless=headless,
-        name=f"链式执行:{filename}",
+        name=f"链式执行:{wf.get('name', fp.stem)}",
     )
     if set_output_to and res.get("success"):
         try:

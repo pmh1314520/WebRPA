@@ -2929,8 +2929,9 @@ async def skill_run_workflow_now(
             execute_workflow,
             executions_store,
             execution_results,
+            WorkflowCreate,
+            ExecuteOptions,
         )
-        from app.models.workflow import WorkflowCreate, ExecuteOptions
         from fastapi import BackgroundTasks
         # 1) 创建 workflow（直接复用现有 API 内部函数）
         wf_req = WorkflowCreate(
