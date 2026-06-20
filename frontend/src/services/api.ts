@@ -169,6 +169,10 @@ export const systemApi = {
   getMousePosition: () => apiRequest('/system/mouse-position'),
   takeScreenshot: (params?: any) =>
     apiRequest('/system/screenshot', { method: 'POST', body: JSON.stringify(params || {}) }),
+  screenshotBase64: () =>
+    apiRequest<{ success: boolean; dataUrl?: string; width?: number; height?: number; error?: string }>(
+      '/system/screenshot-base64', { method: 'POST', body: '{}' }
+    ),
 }
 
 // ==================== 工作流 API ====================

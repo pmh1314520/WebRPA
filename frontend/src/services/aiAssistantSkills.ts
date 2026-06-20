@@ -1795,7 +1795,7 @@ export async function executeClientAction(
           })
           const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
           // 通知面板：在当前回合结束后，自动以图片形式发给视觉模型
-          emitAssistantUiEvent('editor_screenshot_captured', { dataUrl })
+          emitAssistantUiEvent('editor_screenshot_captured', { dataUrl, caption: '这是当前 WebRPA 编辑器界面的截图，请查看并据此分析问题。' })
           return {
             success: true,
             message: '已截取编辑器界面，将在下一条消息中作为图片提供给你分析',
@@ -1803,6 +1803,25 @@ export async function executeClientAction(
           }
         } catch (e: any) {
           return { success: false, error: `截图失败：${e?.message || e}` }
+        }
+      }
+
+      case 'capture_screen_for_agent': {
+        // 系统级 Agent「看屏」：截取整个桌面屏幕，作为图片喂给视觉模型
+        try {
+          const { systemApi } = await import('@/services/api')
+          const res = await systemApi.screenshotBase64()
+          if (!res.data?.success || !res.data.dataUrl) {
+            return { success: false, error: res.data?.error || '屏幕截图失败' }
+          }
+          emitAssistantUiEvent('editor_screenshot_captured', { dataUrl: res.data.dataUrl, caption: '这是当前整个电脑屏幕的截图，请查看屏幕内容后据此判断与操作。' })
+          return {
+            success: true,
+            message: '已截取整个屏幕，将在下一条消息中作为图片提供给你查看',
+            data: { captured: true, width: res.data.width, height: res.data.height },
+          }
+        } catch (e: any) {
+          return { success: false, error: `屏幕截图失败：${e?.message || e}` }
         }
       }
 

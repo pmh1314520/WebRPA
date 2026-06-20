@@ -2235,8 +2235,10 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
             "\n# 👁️ 编辑器截图（当前模型支持多模态/视觉，可用）\n"
             "- 当遇到「纯 UI / 布局 / 样式 / 看不懂用户描述的界面问题」且文字信息不足时，可调用"
             " client_action(action='capture_editor_screenshot') 截取当前 WebRPA 编辑器界面。\n"
-            "- 截图会作为图片自动加入对话，你（视觉模型）可直接看到编辑器画面再分析。\n"
-            "- 不要滥用：仅在确有必要『看一眼界面』时才截图；能用 get_workflow_detail 等文字信息解决就别截图。\n"
+            "- 作为系统级 Agent 操作电脑时，可调用 client_action(action='capture_screen_for_agent') 截取整个屏幕「看屏」，"
+            "据此判断当前桌面状态再决定下一步操作（配合鼠标/键盘/ai_vision_act 等）。\n"
+            "- 截图会作为图片自动加入对话，你（视觉模型）可直接看到画面再分析。\n"
+            "- 不要滥用：仅在确有必要『看一眼界面/屏幕』时才截图；能用 get_workflow_detail 等文字信息解决就别截图。\n"
         )
     else:
         parts.append(

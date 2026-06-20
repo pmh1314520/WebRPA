@@ -92,6 +92,43 @@ async def screenshot_screen():
         return {"success": False, "error": f"截屏失败: {e}"}
 
 
+@router.post("/screenshot-base64")
+async def screenshot_base64():
+    """对当前屏幕截图并直接返回 base64 data URL（供 AI 小助手「看屏」喂给视觉模型）。
+    自动缩放到最长边 1400px、jpeg 压缩，控制体积。"""
+    import asyncio as _asyncio
+    import base64 as _b64
+    import io as _io
+    try:
+        from PIL import ImageGrab, Image
+    except ImportError:
+        return {"success": False, "error": "缺少 Pillow 依赖"}
+    try:
+        loop = _asyncio.get_running_loop()
+
+        def _grab() -> dict:
+            img = ImageGrab.grab()
+            if img is None:
+                return {"success": False, "error": "未获取到图像"}
+            w, h = img.width, img.height
+            max_side = max(w, h)
+            if max_side > 1400:
+                ratio = 1400 / max_side
+                img = img.convert("RGB").resize((int(w * ratio), int(h * ratio)), Image.Resampling.LANCZOS)
+            else:
+                img = img.convert("RGB")
+            buf = _io.BytesIO()
+            img.save(buf, format="JPEG", quality=70)
+            b64 = _b64.b64encode(buf.getvalue()).decode("ascii")
+            return {"success": True, "dataUrl": f"data:image/jpeg;base64,{b64}", "width": w, "height": h}
+
+        return await loop.run_in_executor(None, _grab)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "error": f"截屏失败: {e}"}
+
+
 # 设置 socketio 实例的引用（保留旧名以兼容历史导入）
 _sio = None
 
