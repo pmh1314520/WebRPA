@@ -926,6 +926,7 @@ async def chat_once(
         memory_summary=memory_summary,
         max_heal_rounds=getattr(config, "max_heal_rounds", 5) or 5,
         supports_vision=bool(getattr(config, "supports_vision", False)),
+        agent_mode=bool(getattr(config, "agent_mode", False)),
     )
 
     # 把教训/画像/已学技能附加在系统提示词后

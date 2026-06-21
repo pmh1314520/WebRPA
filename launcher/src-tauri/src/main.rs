@@ -993,9 +993,10 @@ async fn open_assistant_agent_window(app: tauri::AppHandle) -> Result<(), String
     let win = tauri::WebviewWindowBuilder::new(&app, "assistant", tauri::WebviewUrl::External(parsed))
         .title("WebRPA 小助手")
         .inner_size(380.0, 720.0)
-        .min_inner_size(320.0, 460.0)
+        .min_inner_size(340.0, 520.0)
         .decorations(false)
         .resizable(true)
+        .maximizable(false) // 禁用最大化 → 同时禁用 Windows 拖到边缘自动半屏(Aero Snap)
         .always_on_top(true)
         .skip_taskbar(false)
         .build()
@@ -1003,7 +1004,132 @@ async fn open_assistant_agent_window(app: tauri::AppHandle) -> Result<(), String
     if let Some(icon) = app.default_window_icon() {
         let _ = win.set_icon(icon.clone());
     }
+    // 启动基于全局光标的贴边自动隐藏/唤出线程（比前端 4px 条带可靠）
+    spawn_agent_autohide(app.clone());
     Ok(())
+}
+
+// ---- Windows 全局光标位置（用于 Agent 窗口贴边自动隐藏/唤出）----
+#[cfg(target_os = "windows")]
+#[repr(C)]
+struct PointApi { x: i32, y: i32 }
+
+#[cfg(target_os = "windows")]
+extern "system" {
+    fn GetCursorPos(lp_point: *mut PointApi) -> i32;
+}
+
+#[cfg(target_os = "windows")]
+fn global_cursor_pos() -> Option<(i32, i32)> {
+    unsafe {
+        let mut p = PointApi { x: 0, y: 0 };
+        if GetCursorPos(&mut p) != 0 { Some((p.x, p.y)) } else { None }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn global_cursor_pos() -> Option<(i32, i32)> { None }
+
+// QQ 式贴边自动隐藏：窗口拖到屏幕边缘后，鼠标离开自动滑出屏幕只留极窄边；鼠标回到该边缘再滑回。
+// 用全局光标轮询实现，避免依赖前端极窄条带捕获鼠标（不可靠）。
+fn spawn_agent_autohide(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let mut docked: i32 = 0; // 0无 1左 2右 3上
+        let mut hidden = false;
+        let mut leave_at: Option<std::time::Instant> = None;
+        // 缓存贴边时的显示器几何（隐藏后窗口移出屏幕，current_monitor 可能失效）
+        let (mut dmx, mut dmy, mut dmw) = (0i32, 0i32, 0i32);
+        let peek = 3i32;
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(120));
+            let win = match app.get_webview_window("assistant") {
+                Some(w) => w,
+                None => return, // 窗口已关闭，线程退出
+            };
+            if win.is_minimized().unwrap_or(false) { continue; }
+            let outer = match win.outer_position() { Ok(p) => p, Err(_) => continue };
+            let size = match win.outer_size() { Ok(s) => s, Err(_) => continue };
+            let (wx, wy, ww, wh) = (outer.x, outer.y, size.width as i32, size.height as i32);
+            let cur = global_cursor_pos();
+
+            if !hidden {
+                // 取当前显示器几何
+                if let Ok(Some(mon)) = win.current_monitor() {
+                    let mp = mon.position();
+                    let ms = mon.size();
+                    let (mx, my, mw) = (mp.x, mp.y, ms.width as i32);
+                    let th = 14i32;
+                    let new_dock = if wx <= mx + th { 1 }
+                        else if wx + ww >= mx + mw - th { 2 }
+                        else if wy <= my + th { 3 }
+                        else { 0 };
+                    docked = new_dock;
+                    if docked != 0 { dmx = mx; dmy = my; dmw = mw; }
+                }
+            }
+            if docked == 0 { leave_at = None; continue; }
+
+            let inside = match cur {
+                Some((cx, cy)) => cx >= wx && cx <= wx + ww && cy >= wy && cy <= wy + wh,
+                None => false,
+            };
+            let near_edge = match cur {
+                Some((cx, cy)) => match docked {
+                    1 => cx <= dmx + 3 && cy >= wy && cy <= wy + wh,
+                    2 => cx >= dmx + dmw - 3 && cy >= wy && cy <= wy + wh,
+                    3 => cy <= dmy + 3 && cx >= wx && cx <= wx + ww,
+                    _ => false,
+                },
+                None => false,
+            };
+
+            if !hidden {
+                if !inside {
+                    match leave_at {
+                        None => leave_at = Some(std::time::Instant::now()),
+                        Some(t) => {
+                            if t.elapsed() > std::time::Duration::from_millis(650) {
+                                let (tx, ty) = match docked {
+                                    1 => (dmx - (ww - peek), wy),
+                                    2 => (dmx + dmw - peek, wy),
+                                    3 => (wx, dmy - (wh - peek)),
+                                    _ => (wx, wy),
+                                };
+                                animate_move(&win, wx, wy, tx, ty);
+                                hidden = true;
+                                leave_at = None;
+                            }
+                        }
+                    }
+                } else {
+                    leave_at = None;
+                }
+            } else if near_edge {
+                let (tx, ty) = match docked {
+                    1 => (dmx, wy),
+                    2 => (dmx + dmw - ww, wy),
+                    3 => (wx, dmy),
+                    _ => (wx, wy),
+                };
+                animate_move(&win, wx, wy, tx, ty);
+                let _ = win.set_focus();
+                hidden = false;
+                leave_at = None;
+            }
+        }
+    });
+}
+
+fn animate_move(win: &tauri::WebviewWindow, fx: i32, fy: i32, tx: i32, ty: i32) {
+    use tauri::PhysicalPosition;
+    let steps = 6;
+    for i in 1..=steps {
+        let x = fx + (tx - fx) * i / steps;
+        let y = fy + (ty - fy) * i / steps;
+        let _ = win.set_position(PhysicalPosition::new(x, y));
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let _ = win.set_position(PhysicalPosition::new(tx, ty));
 }
 
 fn main() {

@@ -52,6 +52,14 @@ const QUICK_PROMPTS = [
   { text: '我画布上有哪些节点？', icon: ListTree, color: 'icon-chip-warning' },
 ]
 
+// 独立 Agent 窗口：以"操作电脑"为主的快捷指令（对标 OpenInterpreter / Hermes 这类系统级 Agent）
+const AGENT_QUICK_PROMPTS = [
+  { text: '帮我整理一下桌面上的文件，按类型归类到文件夹', icon: Zap, color: 'icon-chip-success' },
+  { text: '截一张当前屏幕的图并分析上面有什么', icon: MessageCircleQuestion, color: 'icon-chip-info' },
+  { text: '打开记事本，写入一段今天的待办清单并保存到桌面', icon: Layers, color: 'icon-chip-violet' },
+  { text: '查找并打开电脑上的某个程序', icon: ListTree, color: 'icon-chip-warning' },
+]
+
 // 常驻快捷指令（有对话时显示在输入框上方）：借助已有 skills 让 AI 执行
 const QUICK_ACTIONS: { label: string; prompt: string }[] = [
   { label: '整流程体检', prompt: '请对我当前画布上的整个工作流做一次体检：检查未连线的孤立节点、未定义/未赋值就被使用的变量、缺失的必填项、可能的死循环或逻辑问题，逐条列出问题并给出具体修复建议。' },
@@ -374,6 +382,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       auto_approve: a?.autoApprove ?? false,
       max_heal_rounds: (a as any)?.maxHealRounds ?? 5,
       supports_vision: isVisionModelName(model),
+      agent_mode: standalone,
     }
   })()
 
@@ -415,6 +424,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       max_heal_rounds: (a as any)?.maxHealRounds ?? 5,
       // 模型支持多模态：勾选了「多模态」场景，或模型名命中视觉关键词
       supports_vision: (m.scenes || []).includes('vision') || isVisionModelName(m.model || ''),
+      agent_mode: standalone,
     }
   }
 
@@ -871,7 +881,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
         style={{ background: 'linear-gradient(180deg, hsl(var(--brand-50) / 0.6), hsl(var(--card)))' }}
         {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
           {/* 渐变 LOGO 圆环 */}
           <div className="relative flex-shrink-0">
             <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[hsl(var(--brand-500))] to-[hsl(var(--brand-700))] flex items-center justify-center shadow-brand-glow ring-1 ring-[hsl(var(--brand-500)/0.3)]">
@@ -881,18 +891,18 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[hsl(var(--success-500))] border-2 border-[hsl(var(--card))] shadow-success-glow animate-pulse-ring" />
             )}
           </div>
-          <div className="min-w-0">
-            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-2">
-              WebRPA 小助手
-              {standalone && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-700))]">独立窗口 · Agent</span>}
+          <div className="min-w-0" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
+            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-1.5 whitespace-nowrap">
+              <span className="truncate">WebRPA 小助手</span>
+              {standalone && <span className="flex-shrink-0 text-[9.5px] font-semibold px-1.5 py-0.5 rounded bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-700))] whitespace-nowrap">Agent</span>}
             </div>
             <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${configReady ? 'bg-[hsl(var(--success-500))]' : 'bg-[hsl(var(--warning-500))]'}`} />
-              {configReady ? resolvedConfig.model : '尚未配置模型'}
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${configReady ? 'bg-[hsl(var(--success-500))]' : 'bg-[hsl(var(--warning-500))]'}`} />
+              <span className="truncate">{configReady ? resolvedConfig.model : '尚未配置模型'}</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0">
           <Button variant="ghost" size="icon-sm" title="新对话" onClick={handleNewSession}>
             <Plus className="w-3.5 h-3.5" />
           </Button>
@@ -904,14 +914,16 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           >
             <History className="w-3.5 h-3.5" />
           </Button>
-          <Button
-            variant={showTimeline ? 'tonal' : 'ghost'}
-            size="icon-sm"
-            title="AI 操作时间线（可一键回退）"
-            onClick={() => { setShowTimeline((v) => !v); setShowSessions(false) }}
-          >
-            <Clock className="w-3.5 h-3.5" />
-          </Button>
+          {!standalone && (
+            <Button
+              variant={showTimeline ? 'tonal' : 'ghost'}
+              size="icon-sm"
+              title="AI 操作时间线（可一键回退）"
+              onClick={() => { setShowTimeline((v) => !v); setShowSessions(false) }}
+            >
+              <Clock className="w-3.5 h-3.5" />
+            </Button>
+          )}
           {!standalone && (
             <Button
               variant="ghost"
@@ -927,6 +939,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           )}
           {standalone && isTauriRuntime() && (
             <>
+              <span className="w-px h-5 bg-[hsl(var(--border))] mx-0.5" />
               <Button
                 variant={agentPinned ? 'tonal' : 'ghost'}
                 size="icon-sm"
@@ -1061,12 +1074,22 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               </div>
             </div>
             <div className="text-[16px] font-bold text-gradient mb-1.5 tracking-tight">
-              你好，我是 WebRPA 小助手
+              {standalone ? '你好，我是你的电脑 Agent' : '你好，我是 WebRPA 小助手'}
             </div>
             <div className="text-[12.5px] text-[hsl(var(--slate-600))] leading-relaxed max-w-[340px] mb-5">
-              我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；
-              <strong className="text-[hsl(var(--brand-700))]">不止于此，我还能直接操作你的电脑</strong>——
-              打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。
+              {standalone ? (
+                <>
+                  我是一个<strong className="text-[hsl(var(--brand-700))]">系统级智能 Agent</strong>，能直接操作你的电脑——
+                  打开/关闭软件、管理文件、运行命令与脚本、看屏截图、控制鼠标键盘、联网查资料，自己规划步骤、自己执行、自己验证。
+                  当然，我也能顺手帮你操作 WebRPA、搭建并运行自动化工作流。
+                </>
+              ) : (
+                <>
+                  我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；
+                  <strong className="text-[hsl(var(--brand-700))]">不止于此，我还能直接操作你的电脑</strong>——
+                  打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。
+                </>
+              )}
             </div>
 
             <div className="w-full max-w-[360px] space-y-1.5">
@@ -1074,7 +1097,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
                 <Zap className="w-3 h-3" />
                 快速开始
               </div>
-              {QUICK_PROMPTS.map((q, idx) => {
+              {(standalone ? AGENT_QUICK_PROMPTS : QUICK_PROMPTS).map((q, idx) => {
                 const Icon = q.icon
                 return (
                   <button
@@ -1093,7 +1116,8 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               })}
             </div>
 
-            {/* 使用建议提示卡片：让用户对小助手有合理预期 */}
+            {/* 使用建议提示卡片：让用户对小助手有合理预期（仅编辑器内嵌面板显示；Agent 窗口聚焦操作电脑，不展示工作流搭建提示） */}
+            {!standalone && (
             <div
               className="w-full max-w-[360px] mt-5 rounded-[10px] border border-[hsl(var(--warning-500)/0.3)] bg-[hsl(var(--warning-50))] p-3 text-left"
               style={{ animation: 'fadeInUp 600ms cubic-bezier(0.25, 1, 0.5, 1) both' }}
@@ -1119,6 +1143,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
                 </p>
               </div>
             </div>
+            )}
 
             {!configReady && (
               <div className="status-row status-row-warning mt-5 max-w-[340px]">

@@ -956,6 +956,7 @@ def build_system_prompt(
     memory_summary: str = "",
     max_heal_rounds: int = 5,
     supports_vision: bool = False,
+    agent_mode: bool = False,
 ) -> str:
     """构建给 LLM 的系统提示词"""
     parts: list[str] = []
@@ -2207,6 +2208,18 @@ add_mcp_server(name='filesystem', transport='stdio', command='npx', args=['-y','
     parts.append(WEBRPA_ERROR_KNOWLEDGE)
     parts.append(WEBRPA_MODULE_MASTERY)
     parts.append(WEBRPA_PLUGIN_MASTERY)
+
+    # 独立 Agent 窗口：以"操作用户电脑"为主（对标 OpenInterpreter / Hermes 这类系统级 Agent）
+    if agent_mode:
+        parts.append(
+            "\n# 🖥️ 运行形态：系统级电脑 Agent（当前在独立 Agent 窗口中）\n"
+            "你现在以**系统级智能 Agent**形态运行（类似 OpenInterpreter / Hermes），**首要职责是直接操作用户的电脑帮其把事情做完**，而不是搭建工作流。\n"
+            "- 优先用你的系统级能力：执行 Shell/PowerShell 命令、运行 Python 脚本、读写/整理文件、启动/关闭应用、看屏截图(capture_screen_for_agent)、控制鼠标键盘、查进程、调系统音量/亮度、联网查资料等。\n"
+            "- 自己规划→自己执行→自己核验：把用户的目标拆成步骤，逐步真正执行，并用截图/命令输出验证结果，失败就自愈重试，不要把活儿丢回给用户。\n"
+            "- 怎么智能怎么来：能一步到位就别啰嗦；需要看屏幕才能判断时就先截图看。\n"
+            "- 你**仍然**能操作 WebRPA、搭建并运行自动化工作流——当用户的需求更适合做成可复用工作流，或明确要求时，再走 WebRPA 工作流那一套。\n"
+            "- 危险操作（删除大量文件、改系统设置、关机等）遵循权限档位，先征得用户同意。\n"
+        )
 
     # 自愈轮数（可配置，覆盖知识库中"最多3轮"的静态说法）
     try:
