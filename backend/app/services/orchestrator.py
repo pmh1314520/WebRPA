@@ -378,6 +378,15 @@ def report_result(node_id: str, token: str, task_id: str,
         task["status"] = "failed"
         _save_tasks(tasks)
         _save_nodes(nodes)
+        try:
+            from app.services import alert_center
+            alert_center.notify_event(
+                "【WebRPA 集群】任务最终失败",
+                f"工作流：{task.get('workflow')}\n任务ID：{task_id}\n"
+                f"已尝试 {task.get('attempts')} 次（含转移），全部失败。\n"
+                f"最后节点：{node_id}")
+        except Exception:
+            pass
         return {"success": True, "status": "failed"}
 
 

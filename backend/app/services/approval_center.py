@@ -97,6 +97,14 @@ def create_request(requester: str, action: str, target: str,
                              detail={"request_id": rid, "action": action})
         except Exception:
             pass
+        try:
+            from app.services import alert_center
+            alert_center.notify_event(
+                "【WebRPA 审批】有新的待审批申请",
+                f"发起人：{requester}\n操作：{action}\n对象：{target}\n事由：{reason or '（无）'}\n"
+                f"请到企业控制中心「审批中心」处理。单号：{rid}")
+        except Exception:
+            pass
         return {"success": True, "request_id": rid, "status": "pending"}
 
 

@@ -73,6 +73,32 @@ def get_retry_policy() -> dict[str, Any]:
     return get_config().get("retry") or dict(_DEFAULT_CONFIG["retry"])
 
 
+def notify_event(title: str, content: str) -> None:
+    """企业事件通知（审批待办 / 集群任务最终失败 / 节点离线等）。
+
+    后台线程 fire-and-forget 发送到已启用的渠道，绝不阻塞调用方（事件循环安全）。
+    与 dispatch_alert 不同：不受 notify_on=failure 过滤限制，只要配了启用渠道就发。
+    """
+    try:
+        cfg = get_config()
+        if not cfg.get("enabled"):
+            return
+        channels = [c for c in (cfg.get("channels") or [])
+                    if isinstance(c, dict) and c.get("enabled", True)]
+        if not channels:
+            return
+
+        def _worker():
+            try:
+                notify_all(channels, title, content)
+            except Exception as e:
+                print(f"[alert_center] 事件通知发送失败: {e}")
+
+        threading.Thread(target=_worker, daemon=True).start()
+    except Exception as e:
+        print(f"[alert_center] notify_event 异常: {e}")
+
+
 def _build_message(record: dict[str, Any]) -> tuple[str, str]:
     name = record.get("workflow_name", "（未命名）")
     status = record.get("status", "failed")
