@@ -304,3 +304,144 @@ export const PHRASES: Record<string, string> = {
   '（': ' (', '）': ') ', '【': '[', '】': ']', '“': '"', '”': '"', '‘': "'", '’': "'",
   '《': '<', '》': '>', '…': '...',
 }
+
+// ============================================================
+// 大批领域词库（多字词，运行时按长度降序优先于单字兜底）
+// 目标：把配置面板/模型说明/帮助文本等深层中文也翻成可读英文
+// ============================================================
+Object.assign(PHRASES, {
+  // —— RPA / 流程领域 ——
+  '自动化工作流': 'automation workflow', '自动化': 'automation', '工作流': 'workflow',
+  '子流程头节点': 'subflow header node', '子流程头': 'subflow header', '头节点': 'header node',
+  '子流程': 'subflow', '主流程': 'main flow', '流程图': 'flowchart', '流程': 'flow',
+  '触发器': 'trigger', '定时触发': 'scheduled trigger', '定时任务': 'scheduled task',
+  '计划任务': 'scheduled task', '定时': 'scheduled', '计划': 'plan', '任务': 'task',
+  '调用子流程': 'call subflow', '调用': 'call', '返回值': 'return value', '返回': 'return',
+  '未命名子流程': 'Untitled subflow', '未命名工作流': 'Untitled workflow', '未命名': 'Untitled',
+  // —— 节点 / 模块 ——
+  '节点备注': 'node note', '节点': 'node', '模块条': 'module bar', '模块': 'module',
+  '连线': 'edge', '连接线': 'edge', '分组': 'group', '画布': 'canvas',
+  '设为子流程': 'Set as subflow', '设为': 'Set as', '标记': 'mark',
+  // —— 输入输出 / 数据 ——
+  '输入框': 'input box', '输入': 'input', '输出': 'output', '读取文件': 'read file',
+  '写入文件': 'write file', '读取': 'read', '写入': 'write', '获取': 'get', '设置变量': 'set variable',
+  '设置': 'set', '取值': 'get value', '赋值': 'assign', '数值': 'number', '数字': 'number',
+  '字符串': 'string', '布尔': 'boolean', '布尔值': 'boolean', '列表': 'list', '字典': 'dictionary',
+  '对象': 'object', '数组': 'array', '键值对': 'key-value pair', '键值': 'key-value',
+  '全局变量': 'global variable', '局部变量': 'local variable', '环境变量': 'environment variable',
+  '变量名': 'variable name', '变量': 'variable', '参数': 'parameter', '字段': 'field',
+  '默认值': 'default value', '当前值': 'current value', '初始值': 'initial value',
+  // —— 文件 / 媒体 ——
+  '文件夹': 'folder', '文件名': 'file name', '文件路径': 'file path', '文件': 'file',
+  '路径': 'path', '目录': 'directory', '文本': 'text', '内容': 'content',
+  '音频': 'audio', '视频': 'video', '图片': 'image', '图像': 'image', '截图': 'screenshot',
+  '录屏': 'screen recording', '屏幕': 'screen', '录制': 'recording', '回放': 'playback',
+  '编码': 'encoding', '解码': 'decoding', '加密': 'encrypt', '解密': 'decrypt',
+  '压缩': 'compress', '解压': 'unzip', '格式转换': 'format conversion', '转换': 'convert',
+})
+
+Object.assign(PHRASES, {
+  // —— 浏览器 / 网页 ——
+  '浏览器': 'browser', '网页': 'web page', '网址': 'URL', '标签页': 'tab', '当前标签页': 'current tab',
+  '新标签页': 'new tab', '页面离开确认': 'page leave confirm', '页面离开': 'page leave', '页面': 'page',
+  '在当前标签页中执行代码': 'Run code in the current tab', '在所有标签页中执行代码': 'Run code in all tabs',
+  '在指定索引的标签页中执行代码': 'Run code in the tab at the given index',
+  '在URL匹配的标签页中执行代码': 'Run code in tabs matching the URL',
+  '执行代码': 'run code', '执行': 'execute', '元素选择器': 'element selector', '选择器': 'selector',
+  '元素': 'element', '属性': 'attribute', '文本内容': 'text content', '内部文本': 'inner text',
+  '点击元素': 'click element', '输入文本': 'type text', '悬停': 'hover', '滚动': 'scroll',
+  '遍历': 'iterate', '相似元素': 'similar elements', '相似': 'similar', '所有相似元素': 'all similar elements',
+  '忽略证书错误': 'ignore certificate errors', '证书错误': 'certificate error', '证书': 'certificate',
+  '禁用Web安全策略': 'disable web security', 'Web安全策略': 'web security policy', '安全策略': 'security policy',
+  '隐藏自动化特征': 'hide automation fingerprint', '自动化特征': 'automation fingerprint',
+  '最大化启动': 'launch maximized', '最大化': 'maximize', '最小化': 'minimize', '全屏': 'fullscreen',
+  '无头模式': 'headless mode', '无头': 'headless', '反检测': 'anti-detection',
+  // —— 桌面 / 系统 / 设备 ——
+  '桌面': 'desktop', '应用': 'application', '软件': 'software', '窗口': 'window', '进程': 'process',
+  '记事本、计算器、Office 等': 'Notepad, Calculator, Office, etc.', '记事本': 'Notepad', '计算器': 'Calculator',
+  '鼠标': 'mouse', '键盘': 'keyboard', '指针': 'pointer', '坐标': 'coordinate', '触摸': 'touch',
+  '触摸点': 'touch point', '精确坐标': 'exact coordinates', '手势': 'gesture', '请选择手势': 'Select a gesture',
+  '将指针拖拽到需要操作的位置': 'Drag the pointer to where you want to operate',
+  '即为当前触摸点的精确坐标': 'is the exact coordinate of the current touch point',
+  '手机镜像': 'phone mirror', '镜像': 'mirror', '设备': 'device', '手机': 'phone',
+  '屏保弹幕': 'screensaver barrage', '屏保': 'screensaver', '弹幕': 'barrage',
+  // —— 模型 / AI ——
+  '阿里通义千问，中文友好': 'Alibaba Tongyi Qianwen, China-friendly', '阿里通义千问': 'Alibaba Tongyi Qianwen',
+  '通义千问': 'Tongyi Qianwen', '阿里': 'Alibaba', '中文友好': 'China-friendly', '中文': 'Chinese',
+  '免费，速度极快': 'free, very fast', '免费，速度快': 'free, fast', '免费，性能强': 'free, strong performance',
+  '性价比高，速度快': 'cost-effective, fast', '性价比极高': 'highly cost-effective', '性价比': 'cost-effectiveness',
+  '性能更强': 'stronger performance', '性能均衡': 'balanced performance', '性能强': 'strong performance',
+  '最强性能': 'top performance', '性能': 'performance', '速度极快': 'very fast', '速度快': 'fast', '速度': 'speed',
+  'Meta 开源模型，性能均衡': 'Meta open-source model, balanced performance', '开源模型': 'open-source model',
+  '按使用量付费': 'pay as you go', '提供免费额度，适合测试': 'free quota available, good for testing',
+  '需要先安装并下载模型，完全免费': 'requires installing and downloading the model first, completely free',
+  '免费额度': 'free quota', '额度': 'quota', '付费': 'paid', '完全免费': 'completely free', '免费': 'free',
+  '适合测试': 'good for testing', '多模态': 'multimodal', '视觉': 'vision', '推理': 'reasoning', '对话': 'chat',
+})
+
+Object.assign(PHRASES, {
+  // —— Python 编辑器 / 代码模板 ——
+  '主函数模板': 'main function template', '主函数': 'main function', '函数': 'function',
+  '类定义': 'class definition', '类': 'class', '定义': 'definition',
+  '异常处理': 'exception handling', '异常': 'exception', '处理': 'handle',
+  'if-else 语句': 'if-else statement', '语句': 'statement', '注释': 'comment',
+  '导入模块': 'import module', '缩进': 'indentation', '代码片段': 'code snippet', '代码': 'code',
+  '运行代码': 'run code', '调试': 'debug', '断点': 'breakpoint', '单步': 'step',
+  // —— 自定义模块 ——
+  '在工作流中创建一个名为': 'creates in the workflow one named', '在日志模块中可以写': 'in the log module you can write',
+  '自定义模块': 'custom module', '调用时可以传递参数到子流程': 'parameters can be passed to the subflow when called',
+  '可以在子流程中访问和修改全局变量': 'you can read and modify global variables inside the subflow',
+  '使用"调用子流程"模块调用': 'invoke via the "Call subflow" module',
+  '使用子流程头节点标记起始位置': 'use the subflow header node to mark the start',
+  '通过"设置变量"模块设置返回值': 'set the return value via the "Set variable" module',
+  '然后在后续模块中使用此选择器即可遍历所有相似元素': 'then use this selector in later modules to iterate over all similar elements',
+  // —— 安全 / 网络 / 权限 ——
+  '访问令牌': 'access token', '令牌': 'token', '其它设备访问需携带访问令牌': 'other devices must include an access token to access',
+  '保护文件共享 / 远程控制 / 命令执行等高危能力': 'protects high-risk capabilities like file sharing / remote control / command execution',
+  '文件共享': 'file sharing', '远程控制': 'remote control', '命令执行': 'command execution', '高危': 'high-risk',
+  '权限': 'permission', '验证': 'verify', '校验': 'check', '检测': 'detect', '识别': 'recognize',
+  '请求': 'request', '响应': 'response', '接口': 'API', '服务器': 'server', '客户端': 'client',
+  '网络': 'network', '协议': 'protocol', '监听': 'listen', '局域网': 'LAN', '本机': 'local machine',
+  // —— AI 助手面板长句 ——
+  '更适合作为你的搭档：先让它快速搭出基本框架或提建议，再由你完善细节':
+    'works better as your partner: let it quickly draft a basic framework or give suggestions, then you refine the details',
+  '能直接操作你的电脑': 'can directly operate your computer',
+  '打开/关闭软件、管理文件、运行命令与脚本、看屏截图、控制鼠标键盘、联网查资料，自己规划步骤、自己执行、自己验证':
+    'open/close software, manage files, run commands and scripts, take screenshots, control mouse and keyboard, search online, and plan, execute and verify steps on its own',
+  '当然，我也能顺手帮你操作 WebRPA、搭建并运行自动化工作流':
+    'of course, I can also help you operate WebRPA and build and run automation workflows',
+  '搭档': 'partner', '框架': 'framework', '建议': 'suggestion', '细节': 'details', '步骤': 'step',
+})
+
+Object.assign(PHRASES, {
+  // —— 通用名词 / 动词（覆盖高频残留字组成的词）——
+  '使用方法': 'usage', '使用说明': 'instructions', '使用': 'use', '用法': 'usage', '用途': 'purpose',
+  '名称': 'name', '名字': 'name', '动作': 'action', '行为': 'behavior', '操作': 'operation',
+  '表格': 'table', '表单': 'form', '列表项': 'list item', '表达式': 'expression', '格式': 'format',
+  '支持': 'support', '持续': 'continuous', '保持': 'keep', '一键': 'one-click', '一个': 'one',
+  '字符': 'character', '字段': 'field', '键盘按键': 'keyboard key', '按键': 'key', '按下': 'press',
+  '按住': 'hold', '释放': 'release', '快捷键': 'shortcut', '组合键': 'key combo',
+  '频率': 'frequency', '出现': 'appear', '弹出': 'pop up', '记录': 'record', '日志记录': 'logging',
+  '新增': 'add', '新建': 'new', '可选': 'optional', '可用': 'available', '可以': 'can',
+  '配置项': 'config item', '配置': 'config', '保留': 'keep', '示例': 'example', '提示': 'tip',
+  '程度': 'level', '进度': 'progress', '目标': 'target', '目录树': 'directory tree',
+  '获取': 'get', '变化': 'change', '转化': 'transform', '包含': 'contains', '包括': 'including',
+  '方式': 'method', '方法': 'method', '方向': 'direction', '位置': 'position', '位': 'bit',
+  '发送': 'send', '发布': 'publish', '触发': 'trigger', '需要': 'need', '选项': 'option',
+  '选中': 'selected', '间隔': 'interval', '区间': 'range', '编码': 'encoding', '建立': 'establish',
+  '等待': 'wait', '相等': 'equal', '等于': 'equals', '大于': 'greater than', '小于': 'less than',
+  '包含关系': 'contains', '是否包含': 'whether it contains', '是否相等': 'whether equal',
+  '类型': 'type', '种类': 'kind', '状态': 'status', '结果': 'result', '过程': 'process',
+  '开始': 'start', '结束': 'end', '停止': 'stop', '暂停': 'pause', '恢复': 'resume', '继续': 'continue',
+  '重试': 'retry', '跳过': 'skip', '忽略': 'ignore', '清除': 'clear', '清空': 'clear', '重置': 'reset',
+  '默认': 'default', '自定义': 'custom', '高级': 'advanced', '基础': 'basic', '常规': 'general',
+  '启用': 'enable', '禁用': 'disable', '开启': 'on', '关闭': 'off', '打开': 'open',
+  '显示': 'show', '隐藏': 'hide', '展开': 'expand', '折叠': 'collapse', '收起': 'collapse',
+  '添加': 'add', '移除': 'remove', '删除': 'delete', '编辑': 'edit', '修改': 'modify', '更新': 'update',
+  '保存': 'save', '另存为': 'save as', '导入': 'import', '导出': 'export', '上传': 'upload', '下载': 'download',
+  '复制': 'copy', '粘贴': 'paste', '剪切': 'cut', '撤销': 'undo', '重做': 'redo', '移动': 'move',
+  '查找': 'find', '搜索': 'search', '筛选': 'filter', '排序': 'sort', '替换': 'replace', '匹配': 'match',
+  '安装': 'install', '卸载': 'uninstall', '发现': 'found', '检查': 'check', '更多': 'more',
+  '完成': 'done', '成功': 'success', '失败': 'failed', '错误': 'error', '警告': 'warning',
+  '确定': 'OK', '取消': 'cancel', '确认': 'confirm', '应用': 'apply', '提交': 'submit',
+})

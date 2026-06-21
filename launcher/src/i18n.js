@@ -133,6 +133,19 @@ Object.assign(DICT, {
   '设置开机自启动失败': 'Failed to set auto-start',
 })
 
+// 追加：检查脚本发现的残留中文（静态整句 + 专有名词）
+Object.assign(DICT, {
+  '爱发电': 'Afdian',
+  '青云制作_彭明航': 'QingYun Studio_Peng Minghang',
+  '微信号': 'WeChat ID',
+  '自动启动服务': 'Auto-start services',
+  '服务运行中，重启后才会应用新配置': 'Services running; new config applies after restart',
+  '后端端口必须在 1024-65535': 'Backend port must be 1024-65535',
+  '前端端口必须在 1024-65535': 'Frontend port must be 1024-65535',
+  '后端和前端端口不能相同': 'Backend and frontend ports must differ',
+  '已打开加速下载，下载后解压覆盖原目录': 'Mirror download opened; unzip and overwrite the original folder',
+})
+
 if (typeof window !== 'undefined') window.__WEBRPA_LAUNCHER_DICT = DICT
 
 // 短语级字典：覆盖动态拼接文本/日志（整句未命中时按长度降序逐个替换）
@@ -163,6 +176,30 @@ const PHRASES = {
   '版权所有': 'All rights reserved', '群': 'group', '答案': 'answer',
   '显示': 'display', '界面': 'UI', '语言': 'language', '稍候': 'wait', '请稍候': 'please wait',
   '中英文': 'language', '独立窗口': 'standalone window', '跟随': 'follows', '此设置': 'this setting',
+  // —— 检查脚本发现的动态片段（${} 拼接的 toast/错误，需短语兜底）——
+  '启动超时': 'start timed out', '请检查': 'please check', '日志': 'logs', '秒': 's',
+  '小助手': 'Assistant', '读取': 'read', '开机自启动': 'auto-start', '状态': 'status',
+  '加载配置': 'load config', '检查服务状态': 'check service status', '检查服务': 'check service',
+  '入群答案': 'Join answer', '入群': 'join ', '群号': 'group number', '已复制': 'Copied ',
+  '自动保存': 'auto-save', '出错': 'error', '失败': 'failed', '成功': 'succeeded',
+  '加载': 'load', '保存失败': 'save failed', '加载失败': 'load failed',
+  '不能相同': 'must differ', '不能': 'cannot ', '必须': 'must ', '相同': 'same',
+  '应用': 'apply', '新配置': 'new config', '原目录': 'the original folder', '解压': 'unzip',
+  '覆盖': 'overwrite', '下载后': 'after download', '已打开': 'opened ',
+  // —— 高频连接/语气词 + 单字兜底（与编辑器一致，尽量清除残留）——
+  '和': ' & ', '与': ' & ', '或': ' / ', '把': '', '被': '', '给': 'to ', '为': 'as ',
+  '在': 'in ', '从': 'from ', '到': 'to ', '至': 'to ', '后': ' after', '前': ' before',
+  '时': ' when', '未': 'not ', '中': '', '个': '', '该': 'this ', '此': 'this ',
+  '这个': 'this ', '这': 'this ', '那': 'that ', '所有': 'all ', '每个': 'each ',
+  '当前': 'current ', '点击': 'click ', '需要': 'need ', '可以': 'can ', '没有': 'no ',
+  '存在': 'exists', '不可': 'cannot ', '不支持': 'not supported', '模型': 'model',
+  '名称': 'name', '端口号': 'port', '地址': 'host', '错误': 'error', '警告': 'warning',
+  '提示': 'notice', '信息': 'info', '消息': 'message', '内容': 'content', '名': 'name',
+  '号': ' No.', '次': ' time(s)', '项': ' item(s)', '条': ' item(s)',
+  // —— 全角标点 → 半角（清除中文标点）——
+  '，': ', ', '。': '. ', '：': ': ', '；': '; ', '、': ', ', '？': '? ', '！': '! ',
+  '（': ' (', '）': ') ', '【': '[', '】': ']', '“': '"', '”': '"', '‘': "'", '’': "'",
+  '《': '<', '》': '>', '…': '...',
 }
 const PHRASE_PAIRS = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
 const hasCJK = (s) => /[\u4e00-\u9fa5]/.test(s)
