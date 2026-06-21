@@ -76,3 +76,14 @@ Thumbs.db
 # 环境变量
 .env
 .env.local
+
+# 运行时数据（执行历史/告警/编排/队列/单测/探针/发布/知识库/任务计划）—— 不入库
+data/execution_history.jsonl
+data/alert_config.json
+data/pipelines.json
+data/run_queue_config.json
+data/workflow_tests.json
+data/health_probes.json
+data/published_workflows.json
+data/task_plan.json
+data/knowledge_base/
