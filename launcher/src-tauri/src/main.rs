@@ -1060,10 +1060,8 @@ fn spawn_agent_autohide(app: tauri::AppHandle) {
                     let ms = mon.size();
                     let (mx, my, mw) = (mp.x, mp.y, ms.width as i32);
                     let th = 14i32;
-                    let new_dock = if wx <= mx + th { 1 }
-                        else if wx + ww >= mx + mw - th { 2 }
-                        else if wy <= my + th { 3 }
-                        else { 0 };
+                    // 仅在屏幕右边缘贴边自动隐藏（与界面提示文案保持一致）
+                    let new_dock = if wx + ww >= mx + mw - th { 2 } else { 0 };
                     docked = new_dock;
                     if docked != 0 { dmx = mx; dmy = my; dmw = mw; }
                 }

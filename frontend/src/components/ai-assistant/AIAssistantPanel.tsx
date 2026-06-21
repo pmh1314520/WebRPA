@@ -901,8 +901,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           </div>
           <div className="min-w-0" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
             <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-1.5 whitespace-nowrap" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
-              <span className="truncate">WebRPA 小助手</span>
-              {standalone && <span className="flex-shrink-0 text-[9.5px] font-semibold px-1.5 py-0.5 rounded bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-700))] whitespace-nowrap">Agent</span>}
+              <span className="truncate">{standalone ? 'WebRPA Agent' : 'WebRPA 小助手'}</span>
             </div>
             <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${configReady ? 'bg-[hsl(var(--success-500))]' : 'bg-[hsl(var(--warning-500))]'}`} />
@@ -964,7 +963,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
         <div className="flex items-start gap-2 px-3 py-2 bg-[hsl(var(--brand-50))] border-b border-[hsl(var(--brand-500)/0.2)] flex-shrink-0 animate-fade-in-down">
           <PanelRightClose className="w-3.5 h-3.5 text-[hsl(var(--brand-600))] flex-shrink-0 mt-0.5" />
           <span className="text-[11px] leading-snug text-[hsl(var(--brand-700))] flex-1">
-            将窗口拖到屏幕左右边缘可自动收起，鼠标移到边缘即可重新唤出
+            将窗口拖到屏幕右边缘可自动收起，鼠标移至边缘可重新唤出
           </span>
           <button
             onClick={dismissEdgeHint}
@@ -1086,7 +1085,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               </div>
             </div>
             <div className="text-[16px] font-bold text-gradient mb-1.5 tracking-tight">
-              {standalone ? '你好，我是你的电脑 Agent' : '你好，我是 WebRPA 小助手'}
+              {standalone ? '你好，我是WebRPA Agent' : '你好，我是 WebRPA 小助手'}
             </div>
             <div className="text-[12.5px] text-[hsl(var(--slate-600))] leading-relaxed max-w-[340px] mb-5">
               {standalone ? (
@@ -1159,7 +1158,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             {!configReady && (
               <div className="status-row status-row-warning mt-5 max-w-[340px]">
                 <Settings className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-[12px]">请先在全局配置中填写小助手的模型</span>
+                <span className="text-[12px]">请先在WebRPA编辑器的全局配置中填写模型API</span>
               </div>
             )}
           </div>
