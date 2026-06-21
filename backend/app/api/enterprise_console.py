@@ -92,6 +92,7 @@ const DICT={
 "需要 ":"Requires ","新建用户":"Create user","角色":"Roles","创建":"Create","用户":"Users","删除":"Delete","预置":"preset","权限：":"permissions: ","请填写用户名和口令":"Please fill in username and password","请至少选一个角色":"Select at least one role","已创建":"Created","删除用户 ":"Delete user ","已删除":"Deleted","角色[":"roles[",
 "校验哈希链完整性":"Verify hash-chain integrity","共 ":"Total ","条审计记录":" audit records","暂无审计记录":"No audit records","链完整，共 ":"Chain intact, total ","条":" records","检测到篡改！断裂于 #":"Tampering detected! Broken at #",
 "批准":"Approve","驳回":"Reject","发起 ":"by ","审批人 ":"approver ","暂无审批单":"No approval requests","驳回意见（可空）：":"Rejection comment (optional):","（已签发执行令牌）":" (grant token issued)","执行":"Execute"," · 已执行":" · executed","确认执行该已批准的危险操作？":"Execute this approved dangerous operation?","已执行：":"Executed: ",
+"发起审批申请":"Submit approval request","危险操作":"Dangerous operation","删除工作流":"Delete workflow","移除集群节点":"Remove cluster node","批量派发任务":"Bulk dispatch tasks","申请理由":"Reason","说明为什么需要此操作":"Explain why this operation is needed","提交申请":"Submit","工作流文件名（逗号分隔）":"Workflow file names (comma-separated)","节点 ID":"Node ID","请填写节点 ID":"Please enter node ID","已提交申请":"Submitted"," 个工作流":" workflows",
 "凭据值始终加密存储，此处仅管理「哪些角色可取用」，绝不显示明文。":"Credential values are always encrypted; here you only manage which roles can access them. Plaintext is never shown.","仅特权可取":"privileged only","允许角色：":"Allowed roles: ","（未授权普通角色）":"(no normal roles authorized)","设置":"Configure","凭据库为空。请先在编辑器凭据库新增凭据。":"Vault is empty. Add credentials in the editor first.","设置访问角色：":"Set access roles: ","保存":"Save","已保存":"Saved",
 "文档抽取":"Document extraction","文档类型":"Document type","选择文档（图片或 PDF）":"Select document (image or PDF)","抽取字段":"Extract fields","需在编辑器全局配置中填写支持视觉的多模态模型。":"A vision-capable multimodal model must be configured in the editor's global settings.","字段模板":"Field templates","内置":"built-in","（自由抽取键值对）":"(free key-value extraction)","请选择文件":"Please select a file","抽取中，请稍候…":"Extracting, please wait…","抽取失败：":"Extraction failed: ","抽取结果":"Extraction result","校验问题":"Validation issues","页）":" pages)",
 "让 Agent 操作电脑":"Let the Agent operate the computer","目标（越具体越好）":"Goal (the more specific the better)","最大步数":"Max steps","开始执行":"Start","需配置支持视觉的多模态模型。执行期间 Agent 会真实操作本机鼠标键盘，请勿干扰。":"A vision model is required. During execution the Agent really controls this machine's mouse/keyboard — do not interfere.","历史会话":"Past sessions","暂无会话":"No sessions","请填写目标":"Please enter a goal","Agent 将真实操作本机，确认开始？":"The Agent will really control this machine. Start?","执行中，可能需要一段时间…":"Running, this may take a while…","执行失败：":"Execution failed: ","动作历史":"Action history"," 步":" steps","步 · ":" steps · ",
@@ -205,13 +206,30 @@ async function verifyChain(){try{const r=await api('/audit/verify');const v=r.re
 // ---------- 审批中心 ----------
 async function vApprovals(){
  const r=await api('/approvals');const reqs=r.requests||[];
- let h='<div class="card">'+(reqs.length?reqs.map(q=>{
+ let h='';
+ if(can('approval.create')){h+='<div class="card"><h3 style="margin-top:0">发起审批申请</h3><div class="frm">'
+ +'<label>危险操作</label><select id="aac" onchange="aacFields()"><option value="workflow.delete">删除工作流</option><option value="node.remove">移除集群节点</option><option value="cluster.dispatch_bulk">批量派发任务</option></select>'
+ +'<div id="aacFields"></div>'
+ +'<label>申请理由</label><input id="aar" placeholder="说明为什么需要此操作"/>'
+ +'<button class="act" onclick="createApproval()">提交申请</button></div></div>'}
+ h+='<div class="card">'+(reqs.length?reqs.map(q=>{
   let btn='';if(q.status==='pending'&&can('approval.decide'))btn='<button class="act" onclick="decide(\''+q.id+'\',true)">批准</button><button class="act bad" onclick="decide(\''+q.id+'\',false)">驳回</button>';
   else if(q.status==='approved'&&!q.consumed&&can('approval.create'))btn='<button class="act" onclick="execApproval(\''+q.id+'\')">执行</button>';
   return '<div class="row">'+statusTag(q.status)+'<div class="flex1"><div class="title">'+esc(q.action)+' <span class="mut">'+esc(q.target)+'</span></div><div class="mut">发起 '+esc(q.requester)+' · '+esc(q.created_at)+(q.reason?(' · '+esc(q.reason)):'')+(q.approver?(' · 审批人 '+esc(q.approver)):'')+(q.consumed?' · 已执行':'')+'</div></div>'+btn+'</div>'}).join(''):'<div class="empty">暂无审批单</div>')+'</div>';
  setView(h);
+ if(can('approval.create'))aacFields();
 }
-async function execApproval(rid){if(!confirm('确认执行该已批准的危险操作？'))return;try{const r=await api('/approvals/'+rid+'/execute',{method:'POST'});toast('已执行：'+(r.executed||''));refresh()}catch(e){toast(e.message)}}
+function aacFields(){const a=document.getElementById('aac');if(!a)return;const v=a.value;let f='';
+ if(v==='workflow.delete')f='<label>工作流文件名</label><input id="aa_fn" placeholder="例如 demo.json"/>';
+ else if(v==='node.remove')f='<label>节点 ID</label><input id="aa_nid"/>';
+ else if(v==='cluster.dispatch_bulk')f='<label>工作流文件名（逗号分隔）</label><input id="aa_wfs"/><label>标签约束（逗号分隔，可空）</label><input id="aa_tags"/>';
+ document.getElementById('aacFields').innerHTML=f;}
+async function createApproval(){const action=document.getElementById('aac').value;const reason=document.getElementById('aar').value.trim();
+ let target='';let payload={};
+ if(action==='workflow.delete'){const fn=(document.getElementById('aa_fn').value||'').trim();if(!fn){toast('请填写工作流文件名');return}target=fn;payload={filename:fn}}
+ else if(action==='node.remove'){const nid=(document.getElementById('aa_nid').value||'').trim();if(!nid){toast('请填写节点 ID');return}target=nid;payload={node_id:nid}}
+ else if(action==='cluster.dispatch_bulk'){const wfs=(document.getElementById('aa_wfs').value||'').split(',').map(s=>s.trim()).filter(Boolean);if(!wfs.length){toast('请填写工作流文件名');return}target=wfs.length+' 个工作流';const tags=(document.getElementById('aa_tags').value||'').split(',').map(s=>s.trim()).filter(Boolean);payload={workflows:wfs};if(tags.length)payload.constraints={tags:tags}}
+ try{await api('/approvals',{method:'POST',body:JSON.stringify({action:action,target:target,payload:payload,reason:reason})});toast('已提交申请');refresh()}catch(e){toast(e.message)}}
 async function decide(rid,ok){let comment='';if(!ok){comment=prompt('驳回意见（可空）：')||'';if(comment===null)return}
  try{const r=await api('/approvals/'+rid+'/decide',{method:'POST',body:JSON.stringify({approved:ok,comment:comment})});toast('已'+(ok?'批准':'驳回')+(r.grant_token?'（已签发执行令牌）':''));refresh()}catch(e){toast(e.message)}}
 
