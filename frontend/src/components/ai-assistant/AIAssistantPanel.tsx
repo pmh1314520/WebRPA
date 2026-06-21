@@ -148,12 +148,17 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   // 立即滚到底部（不带动画，用于打开面板/切换会话场景）
   const scrollToBottomImmediate = () => {
     const c = messagesContainerRef.current
-    if (c) {
-      c.scrollTop = c.scrollHeight
+    if (!c) return
+    // 欢迎页（无消息）保持在顶部，避免把 Logo/问候语滚出视口、逼用户手动往上滚
+    if (messages.length === 0) {
+      c.scrollTop = 0
+      return
     }
+    c.scrollTop = c.scrollHeight
   }
 
   useEffect(() => {
+    if (messages.length === 0) return // 欢迎页不自动滚动
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, isSending])
 

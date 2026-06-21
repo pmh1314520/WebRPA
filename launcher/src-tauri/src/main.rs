@@ -1097,12 +1097,26 @@ fn spawn_agent_autohide(app: tauri::AppHandle) {
             let cur = global_cursor_pos();
 
             if !hidden {
-                // 取当前显示器几何
-                if let Ok(Some(mon)) = win.current_monitor() {
+                // 取当前显示器几何：current_monitor() 对无边框置顶窗口偶发返回 None，
+                // 那样 docked 永远是 0、永不收起。这里加兜底：用窗口中心点在所有显示器里找，
+                // 再退到主显示器，确保几何一定拿得到。
+                let mon_opt = win.current_monitor().ok().flatten()
+                    .or_else(|| {
+                        let (cx, cy) = (wx + ww / 2, wy + wh / 2);
+                        win.available_monitors().ok().and_then(|list| {
+                            list.into_iter().find(|m| {
+                                let p = m.position(); let s = m.size();
+                                cx >= p.x && cx < p.x + s.width as i32
+                                    && cy >= p.y && cy < p.y + s.height as i32
+                            })
+                        })
+                    })
+                    .or_else(|| win.primary_monitor().ok().flatten());
+                if let Some(mon) = mon_opt {
                     let mp = mon.position();
                     let ms = mon.size();
                     let (mx, my, mw) = (mp.x, mp.y, ms.width as i32);
-                    let th = 14i32;
+                    let th = 20i32;
                     // 仅在屏幕右边缘贴边自动隐藏（与界面提示文案保持一致）
                     let new_dock = if wx + ww >= mx + mw - th { 2 } else { 0 };
                     docked = new_dock;
