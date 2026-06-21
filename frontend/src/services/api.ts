@@ -60,6 +60,10 @@ function isConnectionError(error: unknown): boolean {
 
 // 显示连接错误弹窗
 async function showConnectionErrorDialog() {
+  // 独立 Agent 窗口（?view=assistant）：后端不可达时不弹"重试"框，交由 Agent 自身的健康巡检关闭窗口
+  try {
+    if (new URLSearchParams(window.location.search).get('view') === 'assistant') return
+  } catch { /* ignore */ }
   const existingDialog = document.getElementById('connection-error-dialog')
   if (existingDialog) return
 
