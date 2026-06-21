@@ -87,3 +87,16 @@ data/health_probes.json
 data/published_workflows.json
 data/task_plan.json
 data/knowledge_base/
+
+# 企业级平台能力（含口令哈希/密钥/会话/审计/审批/ACL/节点 token 等敏感数据）—— 不入库
+data/rbac.json
+data/sessions.json
+data/.rbac_secret
+data/sso_config.json
+data/audit_log.jsonl
+data/approvals.json
+data/vault_acl.json
+data/robots.json
+data/cluster_tasks.json
+data/idp_templates.json
+data/computer_use_sessions.json
