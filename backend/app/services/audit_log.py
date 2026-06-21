@@ -107,8 +107,23 @@ def invalidate_cache() -> None:
 
 def query(*, actor: Optional[str] = None, action: Optional[str] = None,
           since: Optional[str] = None, until: Optional[str] = None,
-          limit: int = 200) -> list[dict[str, Any]]:
-    """检索审计日志（倒序返回最近的 limit 条）。"""
+          limit: int = 200, offset: int = 0) -> list[dict[str, Any]]:
+    """检索审计日志（倒序返回，支持 offset 分页）。"""
+    matched = _filter_records(actor=actor, action=action, since=since, until=until)
+    matched.reverse()  # 最新在前
+    start = max(0, int(offset or 0))
+    return matched[start:start + max(1, int(limit or 200))]
+
+
+def count(*, actor: Optional[str] = None, action: Optional[str] = None,
+          since: Optional[str] = None, until: Optional[str] = None) -> int:
+    """符合过滤条件的总条数（供前端分页计算总页数）。"""
+    return len(_filter_records(actor=actor, action=action, since=since, until=until))
+
+
+def _filter_records(*, actor: Optional[str] = None, action: Optional[str] = None,
+                    since: Optional[str] = None, until: Optional[str] = None) -> list[dict[str, Any]]:
+    """按条件过滤所有记录（正序）。"""
     if not _LOG_FILE.exists():
         return []
     out: list[dict[str, Any]] = []
@@ -131,8 +146,31 @@ def query(*, actor: Optional[str] = None, action: Optional[str] = None,
                 out.append(rec)
     except Exception as e:
         print(f"[audit] 读取失败: {e}")
-    out.reverse()
-    return out[:limit]
+    return out
+
+
+def export_text(fmt: str = "jsonl", *, actor: Optional[str] = None,
+                action: Optional[str] = None, since: Optional[str] = None,
+                until: Optional[str] = None) -> str:
+    """导出符合条件的审计记录（正序）。fmt: jsonl / csv。"""
+    records = _filter_records(actor=actor, action=action, since=since, until=until)
+    if fmt == "csv":
+        import csv
+        import io
+        buf = io.StringIO()
+        # 加 BOM 让 Excel 正确识别 UTF-8 中文
+        buf.write("\ufeff")
+        w = csv.writer(buf)
+        w.writerow(["seq", "ts", "actor", "action", "target", "result", "detail", "hash"])
+        for r in records:
+            w.writerow([
+                r.get("seq", ""), r.get("ts", ""), r.get("actor", ""),
+                r.get("action", ""), r.get("target", ""), r.get("result", ""),
+                json.dumps(r.get("detail", {}), ensure_ascii=False), r.get("hash", ""),
+            ])
+        return buf.getvalue()
+    # 默认 jsonl
+    return "\n".join(json.dumps(r, ensure_ascii=False) for r in records)
 
 
 def verify_chain() -> dict[str, Any]:
