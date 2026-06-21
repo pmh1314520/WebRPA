@@ -13,6 +13,8 @@ const loaders = import.meta.glob<{ [k: string]: string }>('./content-*.ts')
 
 // 首页文档预先 eager import（小文件，进 bundle 后打开教学文档可立即显示首页内容，不等待 chunk 加载）
 import { gettingStartedContent } from './content-getting-started'
+// 当前界面语言（教学文档英文版按语言切换；缺失英文版时回退中文）
+import { getLang } from '@/lib/uiI18n'
 
 // 文件名 → 文档 id 映射（与 documents.ts 中的 id 保持一致）
 const FILE_TO_DOC_ID: Record<string, string> = {
@@ -58,32 +60,43 @@ const FILE_TO_DOC_ID: Record<string, string> = {
 
 // 按 docId 索引的 lazy loader
 const docIdToLoader = new Map<string, () => Promise<{ [k: string]: string }>>()
+// 英文版 loader（文件名形如 content-xxx.en.ts）
+const docIdToLoaderEn = new Map<string, () => Promise<{ [k: string]: string }>>()
 for (const [path, loader] of Object.entries(loaders)) {
-  // path: './content-xxx.ts'
+  // path: './content-xxx.ts' 或 './content-xxx.en.ts'
   const fileBase = path.replace(/^\.\//, '').replace(/\.ts$/, '')
-  const docId = FILE_TO_DOC_ID[fileBase]
-  if (docId) docIdToLoader.set(docId, loader as () => Promise<{ [k: string]: string }>)
+  if (fileBase.endsWith('.en')) {
+    const zhBase = fileBase.replace(/\.en$/, '')
+    const docId = FILE_TO_DOC_ID[zhBase]
+    if (docId) docIdToLoaderEn.set(docId, loader as () => Promise<{ [k: string]: string }>)
+  } else {
+    const docId = FILE_TO_DOC_ID[fileBase]
+    if (docId) docIdToLoader.set(docId, loader as () => Promise<{ [k: string]: string }>)
+  }
 }
 
-// 内存缓存：docId → 已解析的 markdown 字符串
+// 内存缓存：`${lang}:${docId}` → 已解析的 markdown 字符串
 const contentCache = new Map<string, string>()
 // 进行中的加载 promise 缓存，避免并发重复加载
 const inflight = new Map<string, Promise<string>>()
 
-// 预填首页文档（让弹窗第一次打开时无延迟显示）
-contentCache.set('getting-started', gettingStartedContent)
+// 预填首页文档中文版（让弹窗第一次打开时无延迟显示）
+contentCache.set('zh:getting-started', gettingStartedContent)
 
-/** 异步获取某文档的 markdown 内容；命中缓存则同步返回。 */
+/** 异步获取某文档的 markdown 内容；命中缓存则同步返回。英文模式优先英文版，缺失则回退中文。 */
 export async function loadDocContent(docId: string): Promise<string> {
-  const cached = contentCache.get(docId)
+  const lang = getLang()
+  const cacheKey = `${lang}:${docId}`
+  const cached = contentCache.get(cacheKey)
   if (cached !== undefined) return cached
 
-  const pending = inflight.get(docId)
+  const pending = inflight.get(cacheKey)
   if (pending) return pending
 
-  const loader = docIdToLoader.get(docId)
+  // 英文模式：优先英文 loader；无英文版则回退中文 loader
+  const loader = (lang === 'en' && docIdToLoaderEn.get(docId)) || docIdToLoader.get(docId)
   if (!loader) {
-    contentCache.set(docId, '')
+    contentCache.set(cacheKey, '')
     return ''
   }
 
@@ -98,23 +111,23 @@ export async function loadDocContent(docId: string): Promise<string> {
           break
         }
       }
-      contentCache.set(docId, text)
+      contentCache.set(cacheKey, text)
       return text
     } catch (e) {
       console.error('[documentation] 加载失败', docId, e)
-      contentCache.set(docId, '')
+      contentCache.set(cacheKey, '')
       return ''
     } finally {
-      inflight.delete(docId)
+      inflight.delete(cacheKey)
     }
   })()
-  inflight.set(docId, p)
+  inflight.set(cacheKey, p)
   return p
 }
 
 /** 同步返回缓存中的内容（无缓存返回 undefined）。 */
 export function getCachedContent(docId: string): string | undefined {
-  return contentCache.get(docId)
+  return contentCache.get(`${getLang()}:${docId}`)
 }
 
 /** 预热：批量异步加载（可被搜索/下载全部触发）。 */
@@ -133,7 +146,7 @@ export const documentContents: Record<string, string> = new Proxy(
   {},
   {
     get(_t, key: string) {
-      return contentCache.get(key) ?? ''
+      return contentCache.get(`${getLang()}:${key}`) ?? ''
     },
   },
 ) as Record<string, string>
