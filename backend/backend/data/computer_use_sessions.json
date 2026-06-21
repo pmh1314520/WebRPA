@@ -1,0 +1,100 @@
+[
+  {
+    "success": false,
+    "session_id": "cua_a17270943e",
+    "goal": "做点什么",
+    "status": "fail",
+    "reason": "检测到重复动作循环（click），Agent 卡死，已提前终止",
+    "steps": 3,
+    "history": [
+      {
+        "step": 1,
+        "action": "click",
+        "reason": "repeat",
+        "params": {
+          "x": 100,
+          "y": 100
+        },
+        "at": "2026-06-21T23:06:49.784525",
+        "result": {
+          "ok": true,
+          "executed": "click"
+        }
+      },
+      {
+        "step": 2,
+        "action": "click",
+        "reason": "repeat",
+        "params": {
+          "x": 100,
+          "y": 100
+        },
+        "at": "2026-06-21T23:06:50.597713",
+        "result": {
+          "ok": true,
+          "executed": "click"
+        }
+      },
+      {
+        "step": 3,
+        "action": "click",
+        "reason": "repeat",
+        "params": {
+          "x": 100,
+          "y": 100
+        },
+        "at": "2026-06-21T23:06:51.408249"
+      }
+    ],
+    "finished_at": "2026-06-21T23:06:51.408306"
+  },
+  {
+    "success": false,
+    "session_id": "cua_e5db27719d",
+    "goal": "做点什么",
+    "status": "fail",
+    "reason": "检测到重复动作循环（click），Agent 卡死，已提前终止",
+    "steps": 3,
+    "history": [
+      {
+        "step": 1,
+        "action": "click",
+        "reason": "repeat",
+        "params": {
+          "x": 100,
+          "y": 100
+        },
+        "at": "2026-06-21T23:07:09.164960",
+        "result": {
+          "ok": true,
+          "executed": "click"
+        }
+      },
+      {
+        "step": 2,
+        "action": "click",
+        "reason": "repeat",
+        "params": {
+          "x": 100,
+          "y": 100
+        },
+        "at": "2026-06-21T23:07:09.978298",
+        "result": {
+          "ok": true,
+          "executed": "click"
+        }
+      },
+      {
+        "step": 3,
+        "action": "click",
+        "reason": "repeat",
+        "params": {
+          "x": 100,
+          "y": 100
+        },
+        "at": "2026-06-21T23:07:10.788668"
+      }
+    ],
+    "finished_at": "2026-06-21T23:07:10.788733"
+  }
+]

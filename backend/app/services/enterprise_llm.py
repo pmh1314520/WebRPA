@@ -56,8 +56,9 @@ async def text_chat(system: str, user: str, *, temperature: float = 0.2) -> str:
     config.temperature = temperature
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     raw = await _call_llm(config=config, messages=messages, tools=None, on_event=None)
-    content, _tc, _rc = _parse_assistant_response(raw)
-    return content or ""
+    content, _tc, rc = _parse_assistant_response(raw)
+    # 推理型模型（如 MiMo）有时把最终答案放在 reasoning_content，content 为空 → 兜底
+    return (content or rc or "")
 
 
 async def vision_chat(system: str, user_text: str, images_b64: list[str],
@@ -80,8 +81,9 @@ async def vision_chat(system: str, user_text: str, images_b64: list[str],
         {"role": "user", "content": content_parts},
     ]
     raw = await _call_llm(config=config, messages=messages, tools=None, on_event=None)
-    content, _tc, _rc = _parse_assistant_response(raw)
-    return content or ""
+    content, _tc, rc = _parse_assistant_response(raw)
+    # 推理型模型（如 MiMo）有时把最终答案放在 reasoning_content，content 为空 → 兜底
+    return (content or rc or "")
 
 
 def extract_json(text: str) -> Any:

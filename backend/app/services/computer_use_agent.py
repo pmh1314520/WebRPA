@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
+import json
 import secrets
 import time
 from datetime import datetime
@@ -185,6 +186,18 @@ async def run_session(goal: str, *, max_steps: int = 15,
             "at": datetime.now().isoformat(),
         }
 
+        # 循环检测：若连续多次给出完全相同的动作（同类型同参数），说明 Agent 卡死，
+        # 提前判失败并给出清晰原因，避免空耗剩余步数。
+        sig = json.dumps({"a": act_name, "p": record_item["params"]}, ensure_ascii=False, sort_keys=True)
+        recent_sigs = [
+            json.dumps({"a": h["action"], "p": h.get("params", {})}, ensure_ascii=False, sort_keys=True)
+            for h in history[-2:]
+        ]
+        if act_name not in ("finish", "fail") and recent_sigs.count(sig) >= 2:
+            final_status, final_reason = "fail", f"检测到重复动作循环（{act_name}），Agent 卡死，已提前终止"
+            history.append(record_item)
+            break
+
         if act_name == "finish":
             final_status, final_reason = "success", action.get("reason", "目标已完成")
             history.append(record_item)
@@ -209,7 +222,12 @@ async def run_session(goal: str, *, max_steps: int = 15,
             if len(history) >= 2 and not history[-2].get("result", {}).get("ok", True):
                 final_status, final_reason = "fail", f"连续动作执行失败：{result.get('error')}"
                 break
-        await asyncio.sleep(0.6)  # 等界面响应
+        # 等界面响应：启动程序/输入/回车等会改变窗口的动作给更长的稳定时间，
+        # 否则下一帧截图可能在新窗口出现前就拍了，导致 Agent 误判未完成。
+        settle = 0.8
+        if act_name in ("type", "key"):
+            settle = 1.6
+        await asyncio.sleep(settle)
     else:
         final_status, final_reason = "fail", "达到最大步数仍未完成"
 
