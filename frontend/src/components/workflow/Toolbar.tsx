@@ -1650,16 +1650,6 @@ export function Toolbar() {
           <span className="hidden lg:inline">版本</span>
         </Button>
 
-        {/* 全局配置 - 中性灰 */}
-        <Button 
-          variant="tonal-warning" 
-          size="sm" 
-          onClick={() => setShowGlobalConfig(true)}
-        >
-          <Settings className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">全局配置</span>
-        </Button>
-
         {/* 其他操作下拉菜单 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -1675,6 +1665,10 @@ export function Toolbar() {
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuLabel>工具与功能</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setShowGlobalConfig(true)}>
+              <Settings className="w-4 h-4 mr-2 text-[hsl(var(--warning-600))]" />
+              全局配置
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowVariableTracking(true)}>
               <Activity className="w-4 h-4 mr-2 text-[hsl(var(--info-500))]" />
               变量追踪

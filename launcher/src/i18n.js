@@ -231,23 +231,7 @@ function applyAll() {
 }
 
 function injectToggle() {
-  if (document.getElementById('langToggle')) return
-  const controls = document.querySelector('.window-controls')
-  const btn = document.createElement('button')
-  btn.id = 'langToggle'
-  btn.className = 'win-btn'
-  btn.style.width = 'auto'
-  btn.style.padding = '0 8px'
-  btn.style.fontSize = '11px'
-  btn.style.fontWeight = '700'
-  btn.title = 'Switch language / 切换语言'
-  btn.textContent = curLang === 'en' ? '中文' : 'EN'
-  btn.addEventListener('click', () => {
-    curLang = curLang === 'en' ? 'zh' : 'en'
-    try { localStorage.setItem(LS_KEY, curLang) } catch (e) {}
-    applyAll()
-  })
-  if (controls) controls.insertBefore(btn, controls.firstChild)
+  // 语言切换已移入启动器「设置」，不再在右上角注入按钮
 }
 
 export function setupLauncherI18n() {
@@ -275,6 +259,16 @@ export function setupLauncherI18n() {
   }
   // 等首帧渲染后再执行
   setTimeout(start, 60)
+}
+
+if (typeof window !== 'undefined') {
+  window.__getLauncherLang = () => curLang
+  window.__setLauncherLang = (lang) => {
+    if (lang !== 'zh' && lang !== 'en') return
+    curLang = lang
+    try { localStorage.setItem(LS_KEY, curLang) } catch (e) {}
+    applyAll()
+  }
 }
 
 export { DICT }

@@ -23,7 +23,6 @@ import {
   ChevronUp,
   Check,
   ShieldQuestion,
-  ExternalLink,
   Pin,
   Minus,
 } from 'lucide-react'
@@ -883,8 +882,8 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
           {/* 渐变 LOGO 圆环 */}
-          <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[hsl(var(--brand-500))] to-[hsl(var(--brand-700))] flex items-center justify-center shadow-brand-glow ring-1 ring-[hsl(var(--brand-500)/0.3)]">
+          <div className="relative flex-shrink-0" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
+            <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[hsl(var(--brand-500))] to-[hsl(var(--brand-700))] flex items-center justify-center shadow-brand-glow ring-1 ring-[hsl(var(--brand-500)/0.3)]" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
               <Sparkles className="w-4 h-4 text-white" strokeWidth={2.4} />
             </div>
             {configReady && (
@@ -892,11 +891,11 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             )}
           </div>
           <div className="min-w-0" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
-            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-1.5 whitespace-nowrap">
+            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-1.5 whitespace-nowrap" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
               <span className="truncate">WebRPA 小助手</span>
               {standalone && <span className="flex-shrink-0 text-[9.5px] font-semibold px-1.5 py-0.5 rounded bg-[hsl(var(--brand-100))] text-[hsl(var(--brand-700))] whitespace-nowrap">Agent</span>}
             </div>
-            <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1">
+            <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${configReady ? 'bg-[hsl(var(--success-500))]' : 'bg-[hsl(var(--warning-500))]'}`} />
               <span className="truncate">{configReady ? resolvedConfig.model : '尚未配置模型'}</span>
             </div>
@@ -922,19 +921,6 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               onClick={() => { setShowTimeline((v) => !v); setShowSessions(false) }}
             >
               <Clock className="w-3.5 h-3.5" />
-            </Button>
-          )}
-          {!standalone && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="在独立窗口打开（系统级 Agent）"
-              onClick={() => {
-                const url = window.location.origin + '/?view=assistant'
-                window.open(url, 'webrpa-assistant', 'width=460,height=820,menubar=no,toolbar=no,location=no,status=no')
-              }}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
             </Button>
           )}
           {standalone && isTauriRuntime() && (
@@ -1066,8 +1052,8 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       {/* 消息区 */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 && !isSending && (
-          <div className="h-full flex flex-col items-center justify-center text-center px-2 animate-fade-in-up">
-            <div className="relative mb-4">
+          <div className="min-h-full flex flex-col items-center justify-center text-center px-2 py-4 animate-fade-in-up">
+            <div className="relative mb-4 flex-shrink-0">
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[hsl(var(--brand-500)/0.4)] to-[hsl(var(--info-500)/0.4)] blur-xl" />
               <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--brand-500))] to-[hsl(var(--brand-700))] flex items-center justify-center shadow-brand-glow ring-2 ring-[hsl(var(--brand-500)/0.25)]">
                 <Sparkles className="w-7 h-7 text-white" strokeWidth={2.2} />
@@ -1085,8 +1071,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
                 </>
               ) : (
                 <>
-                  我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；
-                  <strong className="text-[hsl(var(--brand-700))]">不止于此，我还能直接操作你的电脑</strong>——
+                  我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；不止于此，我还能直接操作你的电脑——
                   打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。
                 </>
               )}

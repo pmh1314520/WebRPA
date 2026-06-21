@@ -976,7 +976,7 @@ async fn get_autostart(app: tauri::AppHandle) -> Result<bool, String> {
 
 // 打开小助手「独立原生窗口（系统级 Agent）」：竖屏、无边框、置顶，可贴边自动隐藏
 #[tauri::command]
-async fn open_assistant_agent_window(app: tauri::AppHandle) -> Result<(), String> {
+async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>) -> Result<(), String> {
     // 已存在则直接显示并聚焦
     if let Some(w) = app.get_webview_window("assistant") {
         let _ = w.show();
@@ -985,9 +985,10 @@ async fn open_assistant_agent_window(app: tauri::AppHandle) -> Result<(), String
         return Ok(());
     }
     let config = read_config().await?;
+    let lang_q = match lang.as_deref() { Some("en") => "en", _ => "zh" };
     let url_str = format!(
-        "http://localhost:{}/?view=assistant&backend_port={}",
-        config.frontend.port, config.backend.port
+        "http://localhost:{}/?view=assistant&lang={}&backend_port={}",
+        config.frontend.port, lang_q, config.backend.port
     );
     let parsed = url::Url::parse(&url_str).map_err(|e| format!("URL 解析失败: {}", e))?;
     let win = tauri::WebviewWindowBuilder::new(&app, "assistant", tauri::WebviewUrl::External(parsed))

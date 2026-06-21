@@ -86,7 +86,56 @@ Object.assign(UI_DICT, {
    用于覆盖"动态拼接文本/日志"，在整句精确匹配未命中时按长度降序逐个替换。
    注意：短语会被无差别替换，故只放语义稳定、歧义低的片段。
    ============================================================ */
+// 追加：AI 小助手面板 / Agent 窗口 可见整句
+Object.assign(UI_DICT, {
+  '你好，我是 WebRPA 小助手': "Hi, I'm the WebRPA Assistant",
+  '你好，我是你的电脑 Agent': "Hi, I'm your computer Agent",
+  '快速开始': 'Quick start', '使用建议': 'Tips',
+  '尚未配置模型': 'No model configured', '未配置': 'Not configured', '已配置': 'Configured',
+  '请先在全局配置中配置模型': 'Configure a model in Global Settings first',
+  '请先在「全局配置 → 小助手」中填写 API 地址和模型': 'Please set the API URL and model in Settings → Assistant first',
+  'Skills 已启用': 'Skills enabled', 'Skills 已禁用': 'Skills disabled',
+  '我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；不止于此，我还能直接操作你的电脑—— 打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。':
+    'I know WebRPA inside out — I can build workflows, run tasks and answer questions. Beyond that, I can directly operate your computer: open apps, manage files, run commands, control the mouse and keyboard, and more.',
+  // 编辑器内嵌面板快捷指令
+  '帮我新建一个打开网页的工作流': 'Create a workflow that opens a web page',
+  'WebRPA 怎么用？': 'How do I use WebRPA?',
+  '列出所有 AI 类模块': 'List all AI modules',
+  '我画布上有哪些节点？': 'What nodes are on my canvas?',
+  // Agent 窗口快捷指令
+  '帮我整理一下桌面上的文件，按类型归类到文件夹': 'Organize my desktop files into folders by type',
+  '截一张当前屏幕的图并分析上面有什么': 'Take a screenshot of my screen and analyze it',
+  '打开记事本，写入一段今天的待办清单并保存到桌面': 'Open Notepad, write today\u2019s to-do list and save it to the desktop',
+  '查找并打开电脑上的某个程序': 'Find and open a program on my computer',
+  // 使用建议卡片
+  '其智能程度还取决于接入的 AI 模型能力。一次性生成完美工作流很难，因为：':
+    'Its intelligence also depends on the connected AI model. Generating a perfect workflow in one shot is hard because:',
+  '网页元素 Selector 难以准确预测': 'Web element selectors are hard to predict accurately',
+  '桌面控件路径需要拾取器实地获取': 'Desktop control paths must be captured live with the picker',
+  '手机屏幕坐标无法凭空判断': 'Phone screen coordinates cannot be guessed',
+  '绝大多数情况下都需要人工干预，请合理预期。': 'In most cases human input is needed — please set expectations accordingly.',
+})
+
+// 追加：工具栏「更多」菜单 / 录制 / 对齐等可见整句
+Object.assign(UI_DICT, {
+  '全局配置': 'Global Settings',
+  '变量追踪': 'Variable Tracking',
+  '手机镜像': 'Phone Mirror',
+  '屏保弹幕': 'Screensaver',
+  '计划任务': 'Scheduled Tasks',
+  '工具与功能': 'Tools & Features',
+  '更多操作': 'More',
+  '录制': 'Record',
+  '录制生成节点': 'Record to nodes',
+  '网页智能录制': 'Web smart recording',
+  '桌面录制': 'Desktop recording',
+  '水平均匀分布': 'Distribute horizontally',
+  '垂直均匀分布': 'Distribute vertically',
+  '正在加载教学文档…': 'Loading tutorials…',
+})
+
 export const PHRASES: Record<string, string> = {
+
   // —— 日志/执行状态片段 ——
   '正在执行': 'Executing',
   '执行完成': 'Execution finished',

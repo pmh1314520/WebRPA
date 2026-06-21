@@ -21,6 +21,14 @@ const ATTRS = ['placeholder', 'title', 'aria-label']
 const hasCJK = (s: string) => /[\u4e00-\u9fa5]/.test(s)
 
 export function detectLang(): 'zh' | 'en' {
+  // URL ?lang= 优先（Agent 独立窗口由启动器传入，使其语言跟随启动器）
+  try {
+    const u = new URLSearchParams(window.location.search).get('lang')
+    if (u === 'zh' || u === 'en') {
+      try { localStorage.setItem(LS_KEY, u) } catch { /* ignore */ }
+      return u
+    }
+  } catch { /* ignore */ }
   try {
     const saved = localStorage.getItem(LS_KEY)
     if (saved === 'zh' || saved === 'en') return saved
@@ -114,23 +122,6 @@ function scheduleWalk() {
   })
 }
 
-function injectToggle() {
-  if (document.getElementById('langToggleBtn')) return
-  const btn = document.createElement('button')
-  btn.id = 'langToggleBtn'
-  btn.type = 'button'
-  btn.textContent = curLang === 'en' ? '中文' : 'EN'
-  btn.title = 'Switch language / 切换语言'
-  btn.style.cssText = [
-    'position:fixed', 'top:8px', 'right:10px', 'z-index:2147483600',
-    'height:26px', 'min-width:42px', 'padding:0 10px', 'border-radius:7px',
-    'font-size:12px', 'font-weight:700', 'cursor:pointer', 'color:#fff', 'border:none',
-    'background:linear-gradient(135deg,#3b82f6,#2563eb)', 'box-shadow:0 2px 8px rgba(37,99,235,.35)',
-  ].join(';')
-  btn.addEventListener('click', toggleLang)
-  document.body.appendChild(btn)
-}
-
 function apply() {
   // 切换时做一次"含画布"的全量翻译（一次性，不影响后续性能）
   walk(document.body)
@@ -177,7 +168,6 @@ export function toggleLang() {
 export function setupEditorI18n() {
   curLang = detectLang()
   const start = () => {
-    injectToggle()
     apply()
     observer = new MutationObserver(() => scheduleWalk())
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })

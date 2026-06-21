@@ -545,6 +545,26 @@
           <div class="modal-body">
             <div class="cfg-block">
               <div class="cfg-block-head">
+                <span class="cfg-block-icon cfg-block-icon-indigo">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
+                  </svg>
+                </span>
+                <span class="cfg-block-title">界面语言 / Language</span>
+              </div>
+              <div class="cfg-row cfg-row-toggle">
+                <div class="cfg-toggle-text">
+                  <div class="cfg-toggle-title">显示语言</div>
+                  <div class="cfg-toggle-sub">切换启动器中英文；Agent 独立窗口语言会跟随此设置</div>
+                </div>
+                <div class="lang-seg">
+                  <button class="lang-seg-btn" :class="{ on: uiLang === 'zh' }" @click="setUiLang('zh')">中文</button>
+                  <button class="lang-seg-btn" :class="{ on: uiLang === 'en' }" @click="setUiLang('en')">English</button>
+                </div>
+              </div>
+            </div>
+            <div class="cfg-block">
+              <div class="cfg-block-head">
                 <span class="cfg-block-icon cfg-block-icon-blue">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
                     <rect x="3" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -740,6 +760,12 @@ const showSponsorModal = ref(false)
 const showHire = ref(false)
 const enlargedQr = ref('')
 const showConfigModal = ref(false)
+// 界面语言（与 i18n.js 联动；Agent 窗口语言跟随）
+const uiLang = ref('zh')
+const setUiLang = (l) => {
+  uiLang.value = l
+  try { if (window.__setLauncherLang) window.__setLauncherLang(l) } catch (e) {}
+}
 // 是否在启动器启动时自动弹出赞助提示（持久化在 localStorage，默认开启）
 const SPONSOR_AUTO_KEY = 'webrpa.launcher.sponsorAutoShow'
 const showSponsorOnStartup = ref(
@@ -1009,7 +1035,7 @@ const openBrowser = async () => {
 // 打开小助手「独立原生窗口 / 系统级 Agent」（Tauri 原生窗口，支持置顶/拖动/贴边隐藏）
 const openAssistantAgent = async () => {
   try {
-    await invoke('open_assistant_agent_window')
+    await invoke('open_assistant_agent_window', { lang: uiLang.value })
   } catch (error) {
     showToast(`打开小助手失败: ${error}`, 'error')
   }
@@ -1131,6 +1157,7 @@ const openFrontendLog = async () => {
 }
 
 onMounted(async () => {
+  try { uiLang.value = (window.__getLauncherLang && window.__getLauncherLang()) || 'zh' } catch (e) {}
   try { version.value = await invoke('get_version') } catch { version.value = '?' }
   await loadConfig()
   // 读取系统真实的开机自启动状态，同步到开关（避免触发反向写入）
@@ -1426,8 +1453,13 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
-.status-strip-left { display: flex; align-items: center; gap: 12px; }
+.status-strip-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* 英文模式：按钮文案更长，收紧字号/内边距并允许换行，避免被挤出屏幕点不到 */
+html.lang-en .status-strip-right { gap: 5px; }
+html.lang-en .chip-btn { padding: 6px 8px; font-size: 11.5px; }
+html.lang-en .chip-btn svg { width: 13px; height: 13px; }
 .status-strip-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 .big-status {
@@ -1769,6 +1801,12 @@ body {
 }
 .cta-agent:hover { filter: brightness(1.06); }
 .cta-agent:active { transform: translateY(1px); }
+
+/* 语言切换分段控件（设置内） */
+.lang-seg { display: inline-flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.lang-seg-btn { padding: 6px 12px; font-size: 12px; font-weight: 600; background: #fff; color: #6b7280; border: none; cursor: pointer; transition: background 150ms, color 150ms; }
+.lang-seg-btn:hover { background: #f3f4f6; }
+.lang-seg-btn.on { background: #2563eb; color: #fff; }
 
 /* ============================================================
    服务卡片
@@ -2459,11 +2497,13 @@ body {
   overflow: hidden;
 }
 .qr-frame img {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   display: block;
-  object-fit: cover;
-  border-radius: 12px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 .qr-foot {
   display: inline-flex;
