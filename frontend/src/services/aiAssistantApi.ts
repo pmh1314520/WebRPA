@@ -77,6 +77,12 @@ export const aiAssistantApi = {
       { method: 'POST', body: JSON.stringify({ filename, content_base64: contentBase64 }) }
     ),
 
+  transcribe: (audioBase64: string, language = 'zh', modelSize = 'base') =>
+    apiRequest<{ success: boolean; text: string; error?: string; language?: string }>(
+      '/ai-assistant/transcribe',
+      { method: 'POST', body: JSON.stringify({ audio_base64: audioBase64, language, model_size: modelSize }) }
+    ),
+
   listSkills: () =>
     apiRequest<{ count: number; skills: any[] }>('/ai-assistant/skills'),
 

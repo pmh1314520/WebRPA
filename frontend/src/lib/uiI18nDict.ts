@@ -96,6 +96,7 @@ Object.assign(UI_DICT, {
   '告诉我你想做什么…（可粘贴/拖拽/上传图片或文档，Enter 发送，Shift+Enter 换行）':
     'Tell me what you want to do… (paste/drag/upload images or documents, Enter to send, Shift+Enter for a new line)',
   '小助手正在工作中…再次发送会先停止它': 'The assistant is working… sending again will stop it first',
+  '语音输入（说话指挥）': 'Voice input (speak to command)', '停止录音并识别': 'Stop recording and transcribe', '识别中…': 'Transcribing…',
   // Agent / 小助手面板按钮与提示的 title（hover 提示也需英文）
   'AI 操作时间线（可一键回退）': 'AI action timeline (one-click revert)',
   '窗口置顶': 'Pin window', '取消置顶': 'Unpin window',

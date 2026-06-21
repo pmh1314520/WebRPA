@@ -559,11 +559,34 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             await sio.emit('execution:started', {'workflowId': workflow_id})
             
             print(f"[run_execution] 开始执行工作流: {workflow_id}")
+            import time as _t_hist
+            _run_start_ts = _t_hist.time()
             result = await executor.execute()
             print(f"[run_execution] 执行完成，结果: {result.status.value}")
             
             execution_results[workflow_id] = result
             execution_data[workflow_id] = executor.get_collected_data()
+
+            # 记录执行历史 + 失败告警（异常隔离，不影响主流程）
+            try:
+                from app.services.execution_history import record_run as _record_run
+                from app.services.alert_center import dispatch_alert as _dispatch_alert
+                _wf_name = getattr(workflow, 'name', '') or workflow_id
+                _rec = _record_run(
+                    workflow_name=_wf_name,
+                    workflow_id=workflow_id,
+                    status=result.status.value,
+                    duration_ms=int((_t_hist.time() - _run_start_ts) * 1000),
+                    executed_nodes=getattr(result, 'executed_nodes', 0),
+                    failed_nodes=getattr(result, 'failed_nodes', 0),
+                    error=(getattr(result, 'error', '') or getattr(result, 'error_message', '') or ''),
+                    source='editor',
+                    started_at=_run_start_ts,
+                )
+                _dispatch_alert(_rec)
+            except Exception as _he:
+                print(f"[run_execution] 记录执行历史/告警失败: {_he}")
+
             
             # 导出数据
             if execution_data[workflow_id]:
@@ -638,7 +661,25 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             print(f"[run_execution] 执行异常: {e}")
             import traceback
             traceback.print_exc()
-            
+
+            # 记录失败历史 + 告警（异常隔离）
+            try:
+                from app.services.execution_history import record_run as _record_run
+                from app.services.alert_center import dispatch_alert as _dispatch_alert
+                _wf_name = getattr(workflow, 'name', '') or workflow_id
+                _rec = _record_run(
+                    workflow_name=_wf_name,
+                    workflow_id=workflow_id,
+                    status='failed',
+                    executed_nodes=(executor.executed_nodes if executor else 0),
+                    failed_nodes=(executor.failed_nodes if executor else 1),
+                    error=str(e)[:500],
+                    source='editor',
+                )
+                _dispatch_alert(_rec)
+            except Exception as _he:
+                print(f"[run_execution] 记录失败历史/告警失败: {_he}")
+
             # 即使出现异常，也要发送 execution:completed 事件
             await sio.emit('execution:completed', {
                 'workflowId': workflow_id,

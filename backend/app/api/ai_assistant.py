@@ -135,6 +135,73 @@ async def api_cancel_session(session_id: str):
     return {"success": ok, "session_id": session_id}
 
 
+# ---------- 语音转文字（语音指挥 Agent） ----------
+
+class TranscribeRequest(BaseModel):
+    audio_base64: str          # 可为 data URL 或纯 base64
+    language: str = "zh"       # zh/en/... 或 auto
+    model_size: str = "base"   # tiny/base/small/medium/large
+
+
+_whisper_cache: dict = {}
+
+
+@router.post("/transcribe")
+async def api_transcribe(req: TranscribeRequest):
+    """把一段录音（base64）用本地 Whisper 转成文字，供 Agent 语音指挥。"""
+    import base64 as _b64
+    import os as _os
+    import tempfile as _tmp
+
+    raw = req.audio_base64 or ""
+    if "," in raw and raw.strip().startswith("data:"):
+        raw = raw.split(",", 1)[1]
+    try:
+        audio_bytes = _b64.b64decode(raw)
+    except Exception as e:
+        return {"success": False, "error": f"音频解码失败: {e}", "text": ""}
+    if not audio_bytes:
+        return {"success": False, "error": "空音频", "text": ""}
+
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        return {"success": False, "error": "未安装 faster-whisper，无法语音识别", "text": ""}
+
+    # 写临时音频文件（webm/ogg/wav 都可由底层 ffmpeg 解码）
+    fd, tmp_path = _tmp.mkstemp(suffix=".webm")
+    _os.close(fd)
+    try:
+        with open(tmp_path, "wb") as f:
+            f.write(audio_bytes)
+
+        app_dir = _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+        models_dir = _os.path.join(app_dir, "data", "whisper_models")
+        _os.makedirs(models_dir, exist_ok=True)
+        model_size = req.model_size or "base"
+        cache_key = model_size
+        if cache_key not in _whisper_cache:
+            try:
+                _whisper_cache[cache_key] = WhisperModel(
+                    f"Systran/faster-whisper-{model_size}",
+                    device="cpu", compute_type="int8", download_root=models_dir,
+                )
+            except Exception as e:
+                return {"success": False, "error": f"加载语音模型失败（首次需联网下载）：{e}", "text": ""}
+        model = _whisper_cache[cache_key]
+        lang = req.language if req.language and req.language != "auto" else None
+        segments, info = model.transcribe(tmp_path, language=lang)
+        text = "".join(seg.text for seg in segments).strip()
+        return {"success": True, "text": text, "language": getattr(info, "language", req.language)}
+    except Exception as e:
+        return {"success": False, "error": f"识别失败: {type(e).__name__}: {str(e)[:200]}", "text": ""}
+    finally:
+        try:
+            _os.remove(tmp_path)
+        except Exception:
+            pass
+
+
 # ---------- 共享配置（跨上下文：编辑器在系统浏览器、Agent 在 Tauri WebView2，
 #            两者 localStorage 隔离，故小助手配置经后端共享，让独立 Agent 窗口也能读到） ----------
 

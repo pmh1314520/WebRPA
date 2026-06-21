@@ -132,6 +132,8 @@ from app.api.security import router as security_router
 from app.api.credentials import router as credentials_router
 from app.api.retention import router as retention_router
 from app.api.workflow_bundle import router as workflow_bundle_router
+from app.api.dashboard import router as dashboard_router
+from app.api.published_workflows import router as published_workflows_router
 app.include_router(workflows_router)
 app.include_router(element_picker_router)
 app.include_router(data_assets_router)
@@ -160,6 +162,8 @@ app.include_router(security_router)
 app.include_router(credentials_router)
 app.include_router(retention_router)
 app.include_router(workflow_bundle_router)
+app.include_router(dashboard_router)
+app.include_router(published_workflows_router)
 
 # 设置 Socket.IO 实例（避免循环导入）
 set_workflows_sio(sio)
@@ -455,7 +459,24 @@ async def startup_event():
             # 判断执行状态
             is_success = result.status.value == 'completed'
             is_stopped = result.status.value == 'stopped'
-            
+
+            # 记录执行历史 + 失败告警（异常隔离）
+            try:
+                from app.services.execution_history import record_run as _record_run
+                from app.services.alert_center import dispatch_alert as _dispatch_alert
+                _rec = _record_run(
+                    workflow_name=getattr(workflow, 'name', '') or workflow_filename,
+                    workflow_id=getattr(workflow, 'id', '') or '',
+                    status=result.status.value,
+                    executed_nodes=result.executed_nodes,
+                    failed_nodes=result.failed_nodes,
+                    error=('' if is_success else (result.error_message or '执行失败')),
+                    source='scheduled',
+                )
+                _dispatch_alert(_rec)
+            except Exception as _he:
+                print(f"[ScheduledTask] 记录执行历史/告警失败: {_he}")
+
             return {
                 'success': is_success,
                 'stopped': is_stopped,

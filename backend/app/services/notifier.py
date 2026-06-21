@@ -144,12 +144,50 @@ def _send_webhook(cfg: Dict[str, Any], title: str, content: str) -> Dict[str, An
     return _http_post_json(url, payload)
 
 
+def _send_feishu(cfg: Dict[str, Any], title: str, content: str) -> Dict[str, Any]:
+    """飞书自定义机器人 webhook。支持可选加签 secret。"""
+    url = _resolve_secret(str(cfg.get("webhook", "") or cfg.get("url", "")))
+    if not url:
+        return {"success": False, "error": "飞书缺少 webhook"}
+    text = f"{title}\n{content}"
+    payload: Dict[str, Any] = {"msg_type": "text", "content": {"text": text}}
+    secret = _resolve_secret(str(cfg.get("secret", "")))
+    if secret:
+        ts = str(int(time.time()))
+        string_to_sign = f"{ts}\n{secret}"
+        sign = base64.b64encode(
+            hmac.new(string_to_sign.encode("utf-8"), digestmod=hashlib.sha256).digest()
+        ).decode("utf-8")
+        payload["timestamp"] = ts
+        payload["sign"] = sign
+    return _http_post_json(url, payload)
+
+
+def _send_qq(cfg: Dict[str, Any], title: str, content: str) -> Dict[str, Any]:
+    """QQ（NapCat / OneBot HTTP）。cfg: {target_type:'private'|'group', target_id, api_url}"""
+    api_url = (str(cfg.get("api_url", "")).strip() or "http://localhost:3000").rstrip("/")
+    target_type = (cfg.get("target_type") or "private").lower()
+    target_id = cfg.get("target_id")
+    if not target_id:
+        return {"success": False, "error": "QQ 缺少 target_id"}
+    text = f"{title}\n{content}"
+    try:
+        tid = int(str(target_id).strip())
+    except Exception:
+        return {"success": False, "error": "QQ target_id 必须是数字"}
+    if target_type == "group":
+        return _http_post_json(f"{api_url}/send_group_msg", {"group_id": tid, "message": text})
+    return _http_post_json(f"{api_url}/send_private_msg", {"user_id": tid, "message": text})
+
+
 _SENDERS = {
     "email": _send_email,
     "wecom": _send_wecom,
     "dingtalk": _send_dingtalk,
     "serverchan": _send_serverchan,
     "webhook": _send_webhook,
+    "feishu": _send_feishu,
+    "qq": _send_qq,
 }
 
 

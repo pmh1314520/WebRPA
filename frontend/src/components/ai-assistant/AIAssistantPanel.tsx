@@ -26,6 +26,7 @@ import {
   Pin,
   Minus,
   PanelRightClose,
+  Mic,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAIAssistantStore, type ChatMessage, type RollbackSnapshot } from '@/store/aiAssistantStore'
@@ -93,6 +94,60 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   }
 
   const [input, setInput] = useState('')
+
+  // 语音指挥：录音 → Whisper 转文字 → 填入输入框
+  const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle')
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+
+  const stopVoiceRecording = () => {
+    try { mediaRecorderRef.current?.stop() } catch { /* ignore */ }
+  }
+
+  const startVoiceRecording = async () => {
+    if (voiceState !== 'idle') { stopVoiceRecording(); return }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setError('当前环境不支持录音')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      audioChunksRef.current = []
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        if (blob.size < 800) { setVoiceState('idle'); return } // 太短，忽略
+        setVoiceState('transcribing')
+        try {
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const fr = new FileReader()
+            fr.onload = () => resolve(String(fr.result))
+            fr.onerror = reject
+            fr.readAsDataURL(blob)
+          })
+          const res = await aiAssistantApi.transcribe(dataUrl, 'zh')
+          if (res.success && res.data?.success && res.data.text) {
+            setInput((prev) => (prev ? prev + ' ' : '') + res.data!.text)
+            setTimeout(() => textareaRef.current?.focus(), 50)
+          } else {
+            setError(res.data?.error || '语音识别失败')
+          }
+        } catch (e: any) {
+          setError('语音识别失败：' + (e?.message || e))
+        } finally {
+          setVoiceState('idle')
+        }
+      }
+      mediaRecorderRef.current = mr
+      mr.start()
+      setVoiceState('recording')
+    } catch (e: any) {
+      setError('无法访问麦克风：' + (e?.message || e))
+      setVoiceState('idle')
+    }
+  }
 
   // 对话底栏（输入框）可上下拖拽改变高度
   const [composerHeight, setComposerHeight] = useState(56)
@@ -1355,6 +1410,16 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             className="hidden"
             onChange={(e) => { if (e.target.files) { void addFiles(e.target.files); e.target.value = '' } }}
           />
+          <Button
+            onClick={startVoiceRecording}
+            disabled={!configReady || voiceState === 'transcribing'}
+            size="icon-sm"
+            variant={voiceState === 'recording' ? 'destructive' : 'ghost'}
+            title={voiceState === 'recording' ? '停止录音并识别' : (voiceState === 'transcribing' ? '识别中…' : '语音输入（说话指挥）')}
+            className={'!h-8 !w-8 flex-shrink-0 m-1' + (voiceState === 'recording' ? ' animate-pulse' : '')}
+          >
+            <Mic className="w-3.5 h-3.5" />
+          </Button>
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={!configReady}
