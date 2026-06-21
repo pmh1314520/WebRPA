@@ -193,3 +193,24 @@ async def get_sso_config(x_webrpa_session: Optional[str] = Header(None)):
 async def set_sso_config(req: SSOConfigReq, x_webrpa_session: Optional[str] = Header(None)):
     _require(x_webrpa_session, "rbac.manage")
     return rbac.set_sso_config(req.config)
+
+
+class EnforceReq(BaseModel):
+    enabled: bool
+
+
+@router.get("/enforcement")
+async def get_enforcement(x_webrpa_session: Optional[str] = Header(None)):
+    """查询全局 RBAC 强制开关。"""
+    _require(x_webrpa_session, "rbac.manage")
+    return {"success": True, "enabled": rbac.is_enforced()}
+
+
+@router.put("/enforcement")
+async def set_enforcement(req: EnforceReq, x_webrpa_session: Optional[str] = Header(None)):
+    """开启/关闭全局 RBAC 强制（开启后远程访问需登录+权限，本机豁免）。"""
+    s = _require(x_webrpa_session, "rbac.manage")
+    res = rbac.set_enforced(req.enabled)
+    audit_log.record(s["username"], "rbac.role_change", "enforcement",
+                     detail={"enabled": req.enabled})
+    return res

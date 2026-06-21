@@ -62,8 +62,9 @@ app.add_middleware(
 from starlette.responses import JSONResponse as _JSONResponse
 from app.services import security_manager as _sec
 
-# 这些路径无需鉴权（文档 / 安全状态查询 / CORS 预检）
-_AUTH_PUBLIC_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/api/security/")
+# 这些路径无需鉴权（文档 / 安全状态查询 / CORS 预检 / 登录入口 / 控制台页面）
+_AUTH_PUBLIC_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/api/security/",
+                         "/api/rbac/login", "/api/rbac/sso/login", "/console")
 
 
 @app.middleware("http")
@@ -91,12 +92,54 @@ async def _auth_middleware(request, call_next):
                 token = auth[7:].strip()
         if _sec.verify(token):
             return await call_next(request)
+        # 持有有效 RBAC 会话令牌的远程用户也放行（企业控制中心登录后即可访问）
+        try:
+            from app.services import rbac as _rbac
+            if _rbac.resolve_session(request.headers.get("x-webrpa-session")):
+                return await call_next(request)
+        except Exception:
+            pass
         return _JSONResponse(
             status_code=401,
             content={"detail": "需要访问令牌：请在 WebRPA 安全设置中获取 Token 并在远程访问时携带"},
         )
     except Exception:
         # 鉴权中间件自身异常时不阻断业务（避免误伤）
+        return await call_next(request)
+
+
+@app.middleware("http")
+async def _rbac_enforce_middleware(request, call_next):
+    """全局 RBAC 强制（opt-in）：开启后，远程请求需携带有效会话令牌且具备相应权限。
+    本机（loopback）请求豁免，保证本地编辑器开箱即用；执行机节点接口与登录接口豁免。
+    """
+    try:
+        from app.services import rbac as _rbac
+        if request.method == "OPTIONS":
+            return await call_next(request)
+        if not _rbac.is_enforced():
+            return await call_next(request)
+        path = request.url.path or ""
+        if _rbac.is_enforce_exempt(path):
+            return await call_next(request)
+        # 本机来源豁免（与访问令牌中间件一致的信任模型）
+        client_host = request.client.host if request.client else None
+        if _sec.is_loopback(client_host):
+            return await call_next(request)
+        # 仅对 API 路径强制
+        if not path.startswith("/api/"):
+            return await call_next(request)
+        token = request.headers.get("x-webrpa-session")
+        session = _rbac.resolve_session(token)
+        if not session:
+            return _JSONResponse(status_code=401,
+                                 content={"detail": "需要登录：请在 x-webrpa-session 头携带有效会话令牌"})
+        perm = _rbac.required_permission_for(request.method, path)
+        if perm and not _rbac.has_permission(session, perm):
+            return _JSONResponse(status_code=403,
+                                 content={"detail": f"缺少权限：{perm}"})
+        return await call_next(request)
+    except Exception:
         return await call_next(request)
 
 # 导入并注册路由
@@ -136,6 +179,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.published_workflows import router as published_workflows_router
 from app.api.orchestration import router as orchestration_router
 from app.api.console import router as console_router
+from app.api.enterprise_console import router as enterprise_console_router
 # 企业级平台能力
 from app.api.rbac import router as rbac_router
 from app.api.audit import router as audit_router
@@ -177,6 +221,7 @@ app.include_router(dashboard_router)
 app.include_router(published_workflows_router)
 app.include_router(orchestration_router)
 app.include_router(console_router)
+app.include_router(enterprise_console_router)
 # 企业级平台能力
 app.include_router(rbac_router)
 app.include_router(audit_router)

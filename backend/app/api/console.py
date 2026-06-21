@@ -50,6 +50,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-size:12px;background:#0b1220;
 <header>
   <h1>WebRPA 控制台</h1>
   <input id="tok" placeholder="访问令牌(可选)"/>
+  <button class="act" onclick="location.href='/console/enterprise'">企业控制中心</button>
   <button class="act" onclick="refresh()">刷新</button>
 </header>
 <nav id="nav"></nav>

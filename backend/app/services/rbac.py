@@ -591,3 +591,58 @@ def delete_role(name: str) -> dict[str, Any]:
 
 def all_permissions() -> list[str]:
     return list(ALL_PERMISSIONS)
+
+
+# ---------- 全局权限强制（opt-in）----------
+_ENFORCE_FILE = _DATA_DIR / "rbac_enforce.json"
+
+# 路径前缀 → 所需权限（用于全局强制时的粗粒度 authz）
+# 说明：方法敏感的端点用 (method, prefix) 细分；其余按前缀归类。
+_PATH_PERM_RULES: list[tuple[str, str, str]] = [
+    # (method 前缀匹配 '*'=任意, 路径前缀, 所需权限)
+    ("GET", "/api/credentials", "credential.view"),
+    ("*", "/api/credentials", "credential.manage"),
+    ("GET", "/api/workflows", "workflow.view"),
+    ("GET", "/api/local-workflows", "workflow.view"),
+    ("*", "/api/workflows", "workflow.edit"),
+    ("*", "/api/local-workflows", "workflow.edit"),
+    ("*", "/api/scheduled-tasks", "workflow.edit"),
+]
+
+# 这些路径即使在强制模式下也不需要会话（执行机用节点 token / 公共接口 / 登录）
+_ENFORCE_EXEMPT_PREFIXES = (
+    "/api/rbac/login", "/api/rbac/sso/login", "/api/security/",
+    "/api/orchestrator/nodes/register", "/api/orchestrator/nodes/heartbeat",
+    "/api/orchestrator/nodes/claim", "/api/orchestrator/nodes/report",
+    "/health", "/api/config", "/docs", "/redoc", "/openapi.json", "/console",
+)
+
+
+def is_enforced() -> bool:
+    """是否开启全局 RBAC 强制（默认关闭，保证本机编辑器开箱即用）。"""
+    try:
+        if _ENFORCE_FILE.exists():
+            return bool(json.loads(_ENFORCE_FILE.read_text(encoding="utf-8")).get("enabled", False))
+    except Exception:
+        pass
+    return False
+
+
+def set_enforced(enabled: bool) -> dict[str, Any]:
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    _ENFORCE_FILE.write_text(json.dumps({"enabled": bool(enabled)}, ensure_ascii=False),
+                             encoding="utf-8")
+    return {"success": True, "enabled": bool(enabled)}
+
+
+def is_enforce_exempt(path: str) -> bool:
+    return any(path.startswith(p) for p in _ENFORCE_EXEMPT_PREFIXES)
+
+
+def required_permission_for(method: str, path: str) -> Optional[str]:
+    """返回访问该路径所需的权限；None 表示仅需登录（认证）即可。"""
+    method = (method or "GET").upper()
+    for m, prefix, perm in _PATH_PERM_RULES:
+        if path.startswith(prefix) and (m == "*" or m == method):
+            return perm
+    return None
