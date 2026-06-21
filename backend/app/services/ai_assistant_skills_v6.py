@@ -168,6 +168,93 @@ def _parse_ddg_results_regex(html: str, max_results: int) -> list[dict[str, str]
     return results
 
 
+def _clean_bing_url(href: str) -> str:
+    """Bing 结果链接常是跳转形式 https://www.bing.com/ck/a?...&u=a1<base64url>。
+    解出真实 URL；非跳转链接原样返回。"""
+    if not href:
+        return ""
+    try:
+        if "bing.com/ck/a" not in href:
+            return href
+        import base64
+        from urllib.parse import urlparse, parse_qs
+        u = (parse_qs(urlparse(href).query).get("u") or [""])[0]
+        if u.startswith("a1"):
+            b = u[2:]
+            b += "=" * (-len(b) % 4)
+            decoded = base64.urlsafe_b64decode(b).decode("utf-8", "ignore")
+            if decoded.startswith("http"):
+                return decoded
+        return href
+    except Exception:
+        return href
+
+
+def _parse_bing_results(html: str, max_results: int) -> list[dict[str, str]]:
+    """解析 Bing 搜索结果页（li.b_algo）。"""
+    results: list[dict[str, str]] = []
+    try:
+        from bs4 import BeautifulSoup
+    except Exception:
+        return results
+    soup = BeautifulSoup(html, "html.parser")
+    for li in soup.select("li.b_algo"):
+        a = li.select_one("h2 a") or li.select_one("a")
+        if not a:
+            continue
+        link = _clean_bing_url(a.get("href", ""))
+        title = a.get_text(" ", strip=True)
+        if not (link and title) or not link.startswith("http") or "bing.com/ck/a" in link:
+            continue
+        snip_el = li.select_one(".b_caption p") or li.select_one("p")
+        snippet = snip_el.get_text(" ", strip=True) if snip_el else ""
+        results.append({"title": title, "url": link, "snippet": snippet})
+        if len(results) >= max_results:
+            break
+    return results
+
+
+async def _bing_html_search(query: str, max_results: int, timeout: int) -> list[dict[str, str]]:
+    """用 Bing 网页端搜索（免 API Key），作为 DuckDuckGo 的兜底引擎。"""
+    import httpx
+    headers = {
+        "User-Agent": _UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8",
+        # 关键：带上市场/语言 cookie，否则 Bing 可能返回不含 b_algo 的市场首页
+        "Cookie": "SRCHHPGUSR=SRCHLANG=en; _EDGE_S=mkt=en-us",
+    }
+    url = "https://www.bing.com/search"
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True, headers=headers) as client:
+        resp = await client.get(url, params={"q": query})
+        if resp.status_code != 200 or not resp.text:
+            raise RuntimeError(f"Bing HTTP {resp.status_code}")
+        return _parse_bing_results(resp.text, max_results)
+
+
+async def _search(query: str, max_results: int, timeout: int) -> tuple[list[dict[str, str]], str]:
+    """统一搜索入口：DuckDuckGo 优先，失败/空结果时自动切 Bing。
+    返回 (结果列表, 实际使用的引擎名)。两个引擎都失败则抛出最后的异常。"""
+    errors: list[str] = []
+    # 1) DuckDuckGo
+    try:
+        ddg = await _ddg_html_search(query, max_results, timeout)
+        if ddg:
+            return ddg, "duckduckgo"
+    except Exception as e:
+        errors.append(f"ddg: {e}")
+    # 2) Bing 兜底
+    try:
+        bing = await _bing_html_search(query, max_results, timeout)
+        if bing:
+            return bing, "bing"
+    except Exception as e:
+        errors.append(f"bing: {e}")
+    if errors:
+        raise RuntimeError("；".join(errors))
+    return [], "none"
+
+
 # =============================================================================
 # Skill 处理函数
 # =============================================================================
@@ -191,7 +278,7 @@ async def skill_web_search(
     except Exception:
         n = 8
     try:
-        results = await _ddg_html_search(q, n, int(timeout or 15))
+        results, engine = await _search(q, n, int(timeout or 15))
     except Exception as e:
         return {"error": f"搜索失败：{e}", "query": q, "results": []}
     if not results:
@@ -201,7 +288,7 @@ async def skill_web_search(
             "results": [],
             "note": "未搜到结果，可换个关键词或更具体的措辞重试。",
         }
-    return {"query": q, "count": len(results), "results": results}
+    return {"query": q, "count": len(results), "results": results, "engine": engine}
 
 
 async def skill_read_webpage(
@@ -322,7 +409,7 @@ async def skill_research(
         k = 3
 
     try:
-        results = await _ddg_html_search(q, max(k, 6), int(timeout or 20))
+        results, engine = await _search(q, max(k, 6), int(timeout or 20))
     except Exception as e:
         return {"error": f"搜索失败：{e}", "query": q, "sources": []}
     if not results:
@@ -353,6 +440,7 @@ async def skill_research(
     ok = sum(1 for s in clean_sources if s.get("content"))
     return {
         "query": q,
+        "engine": engine,
         "source_count": len(clean_sources),
         "readable_count": ok,
         "sources": clean_sources,
