@@ -425,3 +425,35 @@ def reap_stale_tasks() -> dict[str, Any]:
         _save_tasks(tasks)
         _save_nodes(nodes)
         return {"success": True, "reassigned": reassigned}
+
+
+# ---------- 后台自动转移循环（离线节点的任务自动 failover）----------
+_reaper_task = None
+
+
+def start_reaper_loop(interval_sec: int = 30) -> None:
+    """启动后台循环：定时把离线节点上滞留的任务自动转移/重排队。
+    实现需求「节点离线时任务自动转移」，无需人工触发。"""
+    global _reaper_task
+    import asyncio
+    if _reaper_task is not None and not _reaper_task.done():
+        return
+
+    async def _loop():
+        while True:
+            try:
+                await asyncio.sleep(max(10, int(interval_sec)))
+                res = reap_stale_tasks()
+                if res.get("reassigned"):
+                    print(f"[orchestrator] 自动转移离线节点任务：{res['reassigned']} 个")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"[orchestrator] 自动转移循环异常: {e}")
+
+    try:
+        _reaper_task = asyncio.create_task(_loop())
+        print("[orchestrator] 集群任务自动转移循环已启动")
+    except RuntimeError:
+        # 无运行中的事件循环（极少数），交由 startup 重试
+        _reaper_task = None

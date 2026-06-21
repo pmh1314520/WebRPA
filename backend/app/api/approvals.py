@@ -65,3 +65,13 @@ async def decide(rid: str, req: DecideReq, x_webrpa_session: Optional[str] = Hea
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error"))
     return res
+
+
+@router.post("/{rid}/execute")
+async def execute(rid: str, x_webrpa_session: Optional[str] = Header(None)):
+    """执行已批准的危险操作（消费一次性令牌并真正落地动作）。"""
+    s = _require(x_webrpa_session, "approval.create")
+    res = approval_center.execute_by_id(rid, s["username"])
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error"))
+    return res

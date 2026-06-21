@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import json
@@ -210,14 +211,14 @@ async def extract(file_bytes: bytes, filename: str, doc_type: str = "form",
         return {"success": False,
                 "error": "未配置多模态 AI 模型，无法进行文档抽取（请在全局配置填写支持视觉的模型）"}
 
-    images = _to_images(file_bytes, filename)
+    images = await asyncio.to_thread(_to_images, file_bytes, filename)
     if not images:
         return {"success": False, "error": "无法解析该文档（不支持的格式或文件损坏）"}
 
     # 仅取首图做抽取（多页文档以首页为主，必要时可扩展为多页合并）
     main_img = images[0]
     img_b64 = base64.b64encode(main_img).decode("ascii")
-    ocr_hint = _ocr_text(main_img)
+    ocr_hint = await asyncio.to_thread(_ocr_text, main_img)
 
     fields = template.get("fields", [])
     if fields:

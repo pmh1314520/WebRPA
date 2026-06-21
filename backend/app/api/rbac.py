@@ -72,7 +72,9 @@ async def login(req: LoginReq):
 
 @router.post("/sso/login")
 async def sso_login(req: SSOLoginReq):
-    res = rbac.sso_login(req.provider, req.payload)
+    import asyncio
+    # SSO 涉及同步网络请求（LDAP/OAuth），放到线程池执行，避免阻塞事件循环
+    res = await asyncio.to_thread(rbac.sso_login, req.provider, req.payload)
     audit_log.record(f"{req.provider}:sso", "rbac.sso_login", req.provider,
                      result="success" if res.get("success") else "failed")
     if not res.get("success"):

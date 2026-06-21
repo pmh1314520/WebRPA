@@ -306,6 +306,13 @@ async def startup_event():
         start_probe_loop()
     except Exception as e:
         print(f"[Startup] 健康探针循环启动失败: {e}")
+
+    # 启动集群任务自动转移循环（离线节点上滞留的任务自动 failover）
+    try:
+        from app.services.orchestrator import start_reaper_loop
+        start_reaper_loop()
+    except Exception as e:
+        print(f"[Startup] 集群任务自动转移循环启动失败: {e}")
     
     # 启动留存清理（录像/采集数据滚动清理，避免磁盘膨胀）
     try:

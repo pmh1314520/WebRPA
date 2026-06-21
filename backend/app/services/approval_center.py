@@ -175,3 +175,74 @@ def consume_grant(rid: str, grant_token: str) -> dict[str, Any]:
         _save(data)
         return {"ok": True, "action": req["action"], "target": req["target"],
                 "payload": req.get("payload", {})}
+
+
+def execute_approved(rid: str, grant_token: str, actor: str) -> dict[str, Any]:
+    """消费审批令牌并真正执行被批准的危险操作（approve → execute 闭环）。
+
+    支持的动作：
+      - workflow.delete   payload={filename}            删除本地工作流文件
+      - node.remove       payload={node_id}             从集群移除节点
+      - cluster.dispatch_bulk payload={workflows:[..],constraints?} 批量派发集群任务
+    """
+    grant = consume_grant(rid, grant_token)
+    if not grant.get("ok"):
+        return {"success": False, "error": grant.get("error")}
+    action = grant["action"]
+    payload = grant.get("payload", {}) or {}
+    try:
+        if action == "workflow.delete":
+            from pathlib import Path
+            fn = payload.get("filename", "")
+            if not fn:
+                return {"success": False, "error": "缺少 filename"}
+            folder = Path(__file__).parent.parent.parent.parent / "workflows"
+            fp = folder / (fn if fn.endswith(".json") else fn + ".json")
+            try:
+                fp.resolve().relative_to(folder.resolve())
+            except ValueError:
+                return {"success": False, "error": "非法文件名"}
+            if not fp.exists():
+                return {"success": False, "error": "文件不存在"}
+            fp.unlink()
+            _audit_exec(actor, action, fn)
+            return {"success": True, "executed": action, "target": fn}
+        if action == "node.remove":
+            from app.services import orchestrator
+            res = orchestrator.remove_node(payload.get("node_id", ""))
+            _audit_exec(actor, action, payload.get("node_id", ""))
+            return {"success": res.get("success", False), "executed": action, "result": res}
+        if action == "cluster.dispatch_bulk":
+            from app.services import orchestrator
+            workflows = payload.get("workflows", []) or []
+            constraints = payload.get("constraints")
+            results = [orchestrator.submit_task(w, constraints=constraints, requester=actor)
+                       for w in workflows]
+            _audit_exec(actor, action, f"{len(workflows)} workflows")
+            return {"success": True, "executed": action, "results": results}
+        return {"success": False, "error": f"不支持自动执行的动作：{action}（已消费令牌，请人工处理）"}
+    except Exception as e:
+        return {"success": False, "error": f"执行失败：{e}"}
+
+
+def _audit_exec(actor: str, action: str, target: str) -> None:
+    try:
+        from app.services import audit_log
+        audit_log.record(actor, "approval.execute", target, result="executed",
+                         detail={"action": action})
+    except Exception:
+        pass
+
+
+def execute_by_id(rid: str, actor: str) -> dict[str, Any]:
+    """对已批准的审批单按 id 执行（服务端持有令牌，由调用方权限保证安全）。"""
+    with _lock:
+        req = _load()["requests"].get(rid)
+        if not req:
+            return {"success": False, "error": "审批单不存在"}
+        if req.get("status") != "approved":
+            return {"success": False, "error": "审批单未批准"}
+        if req.get("consumed"):
+            return {"success": False, "error": "该审批已执行过"}
+        token = req.get("grant_token") or ""
+    return execute_approved(rid, token, actor)
