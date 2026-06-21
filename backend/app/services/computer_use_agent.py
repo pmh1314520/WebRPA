@@ -52,6 +52,18 @@ def _data_file():
     return folder / "computer_use_sessions.json"
 
 
+# 急停标志：另一请求可调 request_stop() 让正在运行的会话在下一步前安全终止。
+# 不使用 pyautogui 角落急停（会误伤左上角的合法点击）。
+_stop_requested = False
+
+
+def request_stop() -> dict:
+    """请求停止当前正在运行的 Computer-Use 会话（下一步前生效）。"""
+    global _stop_requested
+    _stop_requested = True
+    return {"success": True}
+
+
 def _grab_screenshot() -> tuple[str, int, int]:
     """全屏截图 → (base64_png, width, height)。"""
     from PIL import ImageGrab
@@ -142,6 +154,8 @@ async def run_session(goal: str, *, max_steps: int = 15,
     history: list[dict[str, Any]] = []
     final_status = "running"
     final_reason = ""
+    global _stop_requested
+    _stop_requested = False  # 新会话开始，清除遗留的停止请求
 
     try:
         from app.services import audit_log
@@ -152,6 +166,10 @@ async def run_session(goal: str, *, max_steps: int = 15,
 
     loop = asyncio.get_event_loop()
     for step in range(1, max_steps + 1):
+        # 急停检查：用户可通过 /api/computer-use/stop 请求终止
+        if _stop_requested:
+            final_status, final_reason = "fail", "用户请求停止，会话已安全终止"
+            break
         # 截屏（线程池）
         try:
             b64, w, h = await loop.run_in_executor(None, _grab_screenshot)

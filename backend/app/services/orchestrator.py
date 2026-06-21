@@ -30,6 +30,25 @@ _nodes_cache: Optional[dict[str, Any]] = None
 _tasks_cache: Optional[dict[str, Any]] = None
 
 HEARTBEAT_TIMEOUT = 60  # 秒，超过未心跳判离线
+_ENROLL_FILE = _DATA_DIR / "cluster_enroll.json"
+
+
+def get_enrollment_secret() -> str:
+    """读取集群入网密钥（为空表示不校验，本地/内网开箱即用）。"""
+    try:
+        if _ENROLL_FILE.exists():
+            return str(json.loads(_ENROLL_FILE.read_text(encoding="utf-8")).get("secret", "") or "")
+    except Exception:
+        pass
+    return ""
+
+
+def set_enrollment_secret(secret: str) -> dict[str, Any]:
+    """设置/清空集群入网密钥。设置后，执行机注册必须携带匹配密钥。"""
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    _ENROLL_FILE.write_text(json.dumps({"secret": secret or ""}, ensure_ascii=False),
+                            encoding="utf-8")
+    return {"success": True, "enabled": bool(secret)}
 
 
 def _load_nodes() -> dict[str, Any]:
@@ -91,8 +110,13 @@ def invalidate_cache() -> None:
 def register_node(name: str, *, tags: Optional[list[str]] = None,
                   capabilities: Optional[list[str]] = None,
                   max_concurrency: int = 2, host: str = "",
-                  node_id: Optional[str] = None) -> dict[str, Any]:
-    """注册（或重注册）一台执行机。返回 node_id + token（执行机后续凭 token 心跳/领任务）。"""
+                  node_id: Optional[str] = None,
+                  enroll_secret: Optional[str] = None) -> dict[str, Any]:
+    """注册（或重注册）一台执行机。返回 node_id + token（执行机后续凭 token 心跳/领任务）。
+    若配置了集群入网密钥，注册必须携带匹配的 enroll_secret，否则拒绝。"""
+    required = get_enrollment_secret()
+    if required and (enroll_secret or "") != required:
+        return {"success": False, "error": "集群入网密钥无效，拒绝注册"}
     with _lock:
         data = _load_nodes()
         nid = node_id or f"node_{secrets.token_hex(5)}"

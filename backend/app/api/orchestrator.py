@@ -28,6 +28,7 @@ class RegisterReq(BaseModel):
     max_concurrency: Optional[int] = 2
     host: Optional[str] = ""
     node_id: Optional[str] = None
+    enroll_secret: Optional[str] = None
 
 
 class HeartbeatReq(BaseModel):
@@ -53,9 +54,13 @@ class ReportReq(BaseModel):
 
 @router.post("/nodes/register")
 async def register_node(req: RegisterReq):
-    return orchestrator.register_node(
+    res = orchestrator.register_node(
         req.name, tags=req.tags, capabilities=req.capabilities,
-        max_concurrency=req.max_concurrency or 2, host=req.host or "", node_id=req.node_id)
+        max_concurrency=req.max_concurrency or 2, host=req.host or "", node_id=req.node_id,
+        enroll_secret=req.enroll_secret)
+    if not res.get("success"):
+        raise HTTPException(status_code=403, detail=res.get("error"))
+    return res
 
 
 @router.post("/nodes/heartbeat")
@@ -151,3 +156,20 @@ async def overview(x_webrpa_session: Optional[str] = Header(None)):
 async def reap(x_webrpa_session: Optional[str] = Header(None)):
     _require(x_webrpa_session, "cluster.manage")
     return orchestrator.reap_stale_tasks()
+
+
+class EnrollReq(BaseModel):
+    secret: str
+
+
+@router.get("/enrollment")
+async def get_enrollment(x_webrpa_session: Optional[str] = Header(None)):
+    _require(x_webrpa_session, "cluster.manage")
+    return {"success": True, "enabled": bool(orchestrator.get_enrollment_secret())}
+
+
+@router.put("/enrollment")
+async def set_enrollment(req: EnrollReq, x_webrpa_session: Optional[str] = Header(None)):
+    """设置/清空集群入网密钥（设置后执行机注册需携带匹配密钥）。"""
+    _require(x_webrpa_session, "cluster.manage")
+    return orchestrator.set_enrollment_secret(req.secret)

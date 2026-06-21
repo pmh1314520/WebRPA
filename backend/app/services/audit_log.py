@@ -21,6 +21,8 @@ _LOG_FILE = _DATA_DIR / "audit_log.jsonl"
 _lock = threading.RLock()
 
 _GENESIS = "0" * 64
+# 内存缓存最后一条记录的 (seq, hash)，避免每次写入都全文件扫描（O(n²) → O(1)）
+_last_cache: Optional[tuple[int, str]] = None
 
 
 def _compute_hash(record: dict[str, Any]) -> str:
@@ -54,14 +56,27 @@ def _last_record() -> Optional[dict[str, Any]]:
     return last
 
 
+def _get_prev() -> tuple[int, str]:
+    """返回 (上一条 seq, 上一条 hash)。优先用内存缓存，缓存未命中才回退全文件扫描一次。"""
+    global _last_cache
+    if _last_cache is not None:
+        return _last_cache
+    prev = _last_record()
+    if prev:
+        _last_cache = (prev["seq"], prev["hash"])
+    else:
+        _last_cache = (0, _GENESIS)
+    return _last_cache
+
+
 def record(actor: str, action: str, target: str = "",
            result: str = "success", detail: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """追加一条审计记录，返回该记录。"""
+    global _last_cache
     with _lock:
         _DATA_DIR.mkdir(parents=True, exist_ok=True)
-        prev = _last_record()
-        prev_hash = prev["hash"] if prev else _GENESIS
-        seq = (prev["seq"] + 1) if prev else 1
+        prev_seq, prev_hash = _get_prev()
+        seq = prev_seq + 1
         rec = {
             "seq": seq,
             "ts": datetime.now().isoformat(),
@@ -76,9 +91,18 @@ def record(actor: str, action: str, target: str = "",
         try:
             with _LOG_FILE.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            # 写入成功才推进缓存，失败则保持原值下次重试时重新计算
+            _last_cache = (seq, rec["hash"])
         except Exception as e:
             print(f"[audit] 写入失败: {e}")
         return rec
+
+
+def invalidate_cache() -> None:
+    """清空内存缓存（数据目录被外部改动或测试切换路径时调用）。"""
+    global _last_cache
+    with _lock:
+        _last_cache = None
 
 
 def query(*, actor: Optional[str] = None, action: Optional[str] = None,

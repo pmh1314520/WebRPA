@@ -96,6 +96,7 @@ const DICT={
 "凭据值始终加密存储，此处仅管理「哪些角色可取用」，绝不显示明文。":"Credential values are always encrypted; here you only manage which roles can access them. Plaintext is never shown.","仅特权可取":"privileged only","允许角色：":"Allowed roles: ","（未授权普通角色）":"(no normal roles authorized)","设置":"Configure","凭据库为空。请先在编辑器凭据库新增凭据。":"Vault is empty. Add credentials in the editor first.","设置访问角色：":"Set access roles: ","保存":"Save","已保存":"Saved",
 "文档抽取":"Document extraction","文档类型":"Document type","选择文档（图片或 PDF）":"Select document (image or PDF)","抽取字段":"Extract fields","需在编辑器全局配置中填写支持视觉的多模态模型。":"A vision-capable multimodal model must be configured in the editor's global settings.","字段模板":"Field templates","内置":"built-in","（自由抽取键值对）":"(free key-value extraction)","请选择文件":"Please select a file","抽取中，请稍候…":"Extracting, please wait…","抽取失败：":"Extraction failed: ","抽取结果":"Extraction result","校验问题":"Validation issues","页）":" pages)",
 "让 Agent 操作电脑":"Let the Agent operate the computer","目标（越具体越好）":"Goal (the more specific the better)","最大步数":"Max steps","开始执行":"Start","需配置支持视觉的多模态模型。执行期间 Agent 会真实操作本机鼠标键盘，请勿干扰。":"A vision model is required. During execution the Agent really controls this machine's mouse/keyboard — do not interfere.","历史会话":"Past sessions","暂无会话":"No sessions","请填写目标":"Please enter a goal","Agent 将真实操作本机，确认开始？":"The Agent will really control this machine. Start?","执行中，可能需要一段时间…":"Running, this may take a while…","执行失败：":"Execution failed: ","动作历史":"Action history"," 步":" steps","步 · ":" steps · ",
+"急停":"Stop","已请求停止，将在下一步前终止":"Stop requested; will terminate before the next step",
 "执行记录 JSON 数组":"Execution records (JSON array)","分析":"Analyze","JSON 格式错误":"Invalid JSON format","分析失败：":"Analysis failed: ","轨迹数":"Traces","路径变体":"Variants","总步数":"Total steps","瓶颈步骤":"Bottleneck steps",
 "全局权限强制":"Global permission enforcement","开启后，远程访问需登录并具备权限（本机豁免，编辑器照常用）":"When enabled, remote access requires login and permissions (local machine exempt; editor works as usual)","SSO / 企业目录":"SSO / Enterprise directory","配置 JSON（各渠道 enabled/参数）":"Config JSON (per-provider enabled/params)","保存 SSO 配置":"Save SSO config","修改我的口令":"Change my password","原口令":"Old password","新口令":"New password","修改":"Change","已修改":"Changed","需要 rbac.manage 权限":"Requires rbac.manage permission","需要 audit.view 权限":"Requires audit.view permission","需要 credential.view 权限":"Requires credential.view permission",
 "优先级 ":"priority ","描述":"description",
@@ -276,13 +277,13 @@ async function vCua(){
  let h='<div class="card"><h3 style="margin-top:0">让 Agent 操作电脑</h3><div class="frm">'
  +'<label>目标（越具体越好）</label><textarea id="cgoal" rows="2" placeholder="例如：打开记事本并输入 hello"></textarea>'
  +'<label>最大步数</label><input id="csteps" type="number" value="15" min="1" max="40"/>'
- +'<button class="act" onclick="cuaRun()">开始执行</button></div>'
+ +'<div class="inline"><button class="act" onclick="cuaRun()">开始执行</button><button class="act bad" onclick="cuaStop()">急停</button></div></div>'
  +'<div class="mut">需配置支持视觉的多模态模型。执行期间 Agent 会真实操作本机鼠标键盘，请勿干扰。</div></div><div id="cuaOut"></div>';
  h+='<h3>历史会话</h3><div class="card">'+(sessions.length?sessions.map(s=>'<div class="row">'+statusTag(s.status==='success'?'success':'failed')+'<div class="flex1"><div class="title">'+esc(s.goal)+'</div><div class="mut">'+(s.steps||0)+' 步 · '+esc(s.reason||'')+'</div></div></div>').join(''):'<div class="empty">暂无会话</div>')+'</div>';
  setView(h);
 }
-async function cuaRun(){const goal=document.getElementById('cgoal').value.trim();const steps=parseInt(document.getElementById('csteps').value)||15;const out=document.getElementById('cuaOut');
- if(!goal){toast('请填写目标');return}if(!confirm('Agent 将真实操作本机，确认开始？'))return;
+async function cuaStop(){try{await api('/computer-use/stop',{method:'POST'});toast('已请求停止，将在下一步前终止')}catch(e){toast(e.message)}}
+async function cuaRun(){const goal=document.getElementById('cgoal').value.trim();const steps=parseInt(document.getElementById('csteps').value)||15;const out=document.getElementById('cuaOut');if(!goal){toast('请填写目标');return}if(!confirm('Agent 将真实操作本机，确认开始？'))return;
  out.innerHTML='<div class="card mut">执行中，可能需要一段时间…</div>';
  try{const r=await api('/computer-use/run',{method:'POST',body:JSON.stringify({goal:goal,max_steps:steps})});
   let hist=(r.history||[]).map((s,i)=>'<div class="field"><span>'+(i+1)+'. '+esc(s.action)+'</span><span class="mut">'+esc(s.reason||'')+'</span></div>').join('');

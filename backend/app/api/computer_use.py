@@ -38,3 +38,10 @@ async def run(req: RunReq, x_webrpa_session: Optional[str] = Header(None)):
 async def list_sessions(limit: int = 30, x_webrpa_session: Optional[str] = Header(None)):
     _actor(x_webrpa_session, "computer_use.run")
     return {"success": True, "sessions": computer_use_agent.list_sessions(limit)}
+
+
+@router.post("/stop")
+async def stop(x_webrpa_session: Optional[str] = Header(None)):
+    """急停：请求终止当前正在运行的 Computer-Use 会话（下一步前生效）。"""
+    _actor(x_webrpa_session, "computer_use.run")
+    return computer_use_agent.request_stop()
