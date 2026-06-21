@@ -18,11 +18,15 @@ from typing import Any, Optional
 
 _DATA_DIR = Path("backend/data")
 _LOG_FILE = _DATA_DIR / "audit_log.jsonl"
+_ARCHIVE_DIR = _DATA_DIR / "audit_archive"
+_CHECKPOINT_FILE = _DATA_DIR / "audit_checkpoint.json"
 _lock = threading.RLock()
 
 _GENESIS = "0" * 64
 # 内存缓存最后一条记录的 (seq, hash)，避免每次写入都全文件扫描（O(n²) → O(1)）
 _last_cache: Optional[tuple[int, str]] = None
+_line_count: Optional[int] = None      # 当前活动日志文件的行数（内存计数，触发轮转）
+MAX_LINES = 50000                       # 当前文件超过此行数自动归档轮转，保持单文件可控
 
 
 def _compute_hash(record: dict[str, Any]) -> str:
@@ -56,23 +60,95 @@ def _last_record() -> Optional[dict[str, Any]]:
     return last
 
 
+def _load_checkpoint() -> Optional[dict[str, Any]]:
+    """读取轮转检查点（记录上次归档时的 last_seq/last_hash，保证跨文件哈希链连续）。"""
+    try:
+        if _CHECKPOINT_FILE.exists():
+            return json.loads(_CHECKPOINT_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return None
+
+
+def _count_lines() -> int:
+    if not _LOG_FILE.exists():
+        return 0
+    n = 0
+    try:
+        with _LOG_FILE.open("r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    n += 1
+    except Exception:
+        return 0
+    return n
+
+
 def _get_prev() -> tuple[int, str]:
-    """返回 (上一条 seq, 上一条 hash)。优先用内存缓存，缓存未命中才回退全文件扫描一次。"""
-    global _last_cache
+    """返回 (上一条 seq, 上一条 hash)。优先用内存缓存；未命中回退：
+    当前文件最后一条 → 轮转检查点 → 创世。同时初始化行数计数。"""
+    global _last_cache, _line_count
     if _last_cache is not None:
         return _last_cache
+    if _line_count is None:
+        _line_count = _count_lines()
     prev = _last_record()
     if prev:
         _last_cache = (prev["seq"], prev["hash"])
     else:
-        _last_cache = (0, _GENESIS)
+        cp = _load_checkpoint()
+        if cp:
+            _last_cache = (int(cp.get("last_seq", 0)), str(cp.get("last_hash", _GENESIS)))
+        else:
+            _last_cache = (0, _GENESIS)
     return _last_cache
+
+
+def _rotate() -> None:
+    """把当前活动日志归档到带时间戳的文件，写检查点保持链连续，再开新文件。"""
+    global _line_count
+    try:
+        if not _LOG_FILE.exists() or _count_lines() == 0:
+            return
+        seq, last_hash = _get_prev()
+        _ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        archive_name = f"audit_{ts}_{seq}.jsonl"
+        # 极端情况下同秒同 seq 冲突再加随机后缀，杜绝覆盖
+        if (_ARCHIVE_DIR / archive_name).exists():
+            import secrets as _secrets
+            archive_name = f"audit_{ts}_{seq}_{_secrets.token_hex(2)}.jsonl"
+        # 移动当前文件到归档
+        import shutil
+        shutil.move(str(_LOG_FILE), str(_ARCHIVE_DIR / archive_name))
+        # 写检查点（新文件首条记录将以此 hash 作为 prev_hash，seq 接续）
+        cp = _load_checkpoint() or {"archived": []}
+        cp["last_seq"] = seq
+        cp["last_hash"] = last_hash
+        cp.setdefault("archived", []).append({"file": archive_name, "until_seq": seq, "at": ts})
+        _CHECKPOINT_FILE.write_text(json.dumps(cp, ensure_ascii=False, indent=2), encoding="utf-8")
+        _line_count = 0
+        print(f"[audit] 审计日志已归档：{archive_name}（截至 seq={seq}）")
+    except Exception as e:
+        print(f"[audit] 归档失败: {e}")
+
+
+def list_archives() -> list[dict[str, Any]]:
+    """列出已归档的审计文件。"""
+    out: list[dict[str, Any]] = []
+    if _ARCHIVE_DIR.exists():
+        for fp in sorted(_ARCHIVE_DIR.glob("audit_*.jsonl")):
+            try:
+                out.append({"file": fp.name, "size_bytes": fp.stat().st_size})
+            except Exception:
+                pass
+    return out
 
 
 def record(actor: str, action: str, target: str = "",
            result: str = "success", detail: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """追加一条审计记录，返回该记录。"""
-    global _last_cache
+    global _last_cache, _line_count
     with _lock:
         _DATA_DIR.mkdir(parents=True, exist_ok=True)
         prev_seq, prev_hash = _get_prev()
@@ -93,6 +169,10 @@ def record(actor: str, action: str, target: str = "",
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
             # 写入成功才推进缓存，失败则保持原值下次重试时重新计算
             _last_cache = (seq, rec["hash"])
+            _line_count = (_line_count or 0) + 1
+            # 超过阈值自动归档轮转（链通过检查点保持连续）
+            if _line_count >= MAX_LINES:
+                _rotate()
         except Exception as e:
             print(f"[audit] 写入失败: {e}")
         return rec
@@ -100,9 +180,10 @@ def record(actor: str, action: str, target: str = "",
 
 def invalidate_cache() -> None:
     """清空内存缓存（数据目录被外部改动或测试切换路径时调用）。"""
-    global _last_cache
+    global _last_cache, _line_count
     with _lock:
         _last_cache = None
+        _line_count = None
 
 
 def query(*, actor: Optional[str] = None, action: Optional[str] = None,
@@ -174,10 +255,13 @@ def export_text(fmt: str = "jsonl", *, actor: Optional[str] = None,
 
 
 def verify_chain() -> dict[str, Any]:
-    """校验哈希链完整性，返回 {valid, count, broken_at?}。"""
+    """校验当前活动日志的哈希链完整性。若发生过轮转，则从检查点的 last_hash 起验，
+    保证轮转后仍可校验（跨文件链连续）。返回 {valid, count, broken_at?}。"""
+    cp = _load_checkpoint()
+    start_hash = str(cp.get("last_hash")) if cp and cp.get("last_hash") else _GENESIS
     if not _LOG_FILE.exists():
         return {"valid": True, "count": 0}
-    prev_hash = _GENESIS
+    prev_hash = start_hash
     count = 0
     try:
         with _LOG_FILE.open("r", encoding="utf-8") as f:

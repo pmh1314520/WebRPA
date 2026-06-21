@@ -55,6 +55,13 @@ async def verify_chain(x_webrpa_session: Optional[str] = Header(None)):
     return {"success": True, "result": audit_log.verify_chain()}
 
 
+@router.get("/archives")
+async def list_archives(x_webrpa_session: Optional[str] = Header(None)):
+    """列出已归档的审计日志文件。"""
+    _require(x_webrpa_session, "audit.view")
+    return {"success": True, "archives": audit_log.list_archives()}
+
+
 @router.get("/stats")
 async def stats(x_webrpa_session: Optional[str] = Header(None)):
     _require(x_webrpa_session, "audit.view")

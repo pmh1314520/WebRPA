@@ -94,6 +94,8 @@ data/sessions.json
 data/.rbac_secret
 data/sso_config.json
 data/audit_log.jsonl
+data/audit_archive/
+data/audit_checkpoint.json
 data/approvals.json
 data/vault_acl.json
 data/robots.json
