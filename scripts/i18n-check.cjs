@@ -26,15 +26,28 @@ function unescapeJs(s) {
           .replace(/\\(['"\\])/g, '$1')
 }
 
-function buildDict(filePath, splitMarker) {
+function buildDict(filePath, dictName, phraseName) {
   const text = fs.readFileSync(filePath, 'utf8')
-  const idx = text.indexOf(splitMarker)
-  const dictPart = idx >= 0 ? text.slice(0, idx) : text
-  const phrasePart = idx >= 0 ? text.slice(idx) : ''
+  // 标记每个赋值区段属于 DICT 还是 PHRASES：按出现位置切分
+  const markerRe = new RegExp(`(?:(?:export\\s+)?const\\s+(${dictName}|${phraseName})\\b)|(?:Object\\.assign\\(\\s*(${dictName}|${phraseName})\\b)`, 'g')
+  const markers = []
+  let mm
+  while ((mm = markerRe.exec(text))) markers.push({ idx: mm.index, name: mm[1] || mm[2] })
+  markers.sort((a, b) => a.idx - b.idx)
   const DICT = {}
-  for (const [k, v] of extractPairs(dictPart)) DICT[k] = v
   const PHRASES = {}
-  for (const [k, v] of extractPairs(phrasePart)) PHRASES[k] = v
+  // 对每对 'k':'v'，归属到其之前最近的 marker
+  const pairRe = /(['"])((?:\\.|(?!\1).)*?)\1\s*:\s*(['"])((?:\\.|(?!\3).)*?)\3/g
+  let p
+  while ((p = pairRe.exec(text))) {
+    const k = p[2]
+    if (!hasCJK(k)) continue
+    let owner = null
+    for (const mk of markers) { if (mk.idx < p.index) owner = mk.name; else break }
+    const key = unescapeJs(k)
+    if (owner === dictName) DICT[key] = p[4]
+    else if (owner === phraseName) PHRASES[key] = p[4]
+  }
   const PHRASE_PAIRS = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
   return { DICT, PHRASE_PAIRS }
 }
@@ -87,11 +100,11 @@ function extractCandidates(code) {
 const target = process.argv[2] || 'editor'
 let dict, dirs, exts
 if (target === 'launcher') {
-  dict = buildDict(path.join(ROOT, 'launcher/src/i18n.js'), 'const PHRASES')
+  dict = buildDict(path.join(ROOT, 'launcher/src/i18n.js'), 'DICT', 'PHRASES')
   dirs = [path.join(ROOT, 'launcher/src')]
   exts = ['.vue', '.js', '.ts']
 } else {
-  dict = buildDict(path.join(ROOT, 'frontend/src/lib/uiI18nDict.ts'), 'export const PHRASES')
+  dict = buildDict(path.join(ROOT, 'frontend/src/lib/uiI18nDict.ts'), 'UI_DICT', 'PHRASES')
   dirs = [path.join(ROOT, 'frontend/src')]
   exts = ['.tsx', '.ts']
 }
