@@ -658,5 +658,5 @@ data_{date}_{seq}.xlsx
 
 - All variables are global
 - A variable set in any module is accessible from others
-- A variable modified inside a loop keeps the modified value outside\`
+- A variable modified inside a loop keeps the modified value outside`
 

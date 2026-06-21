@@ -720,5 +720,3 @@ document.querySelector('#submit').click();
 - You must open a page before injecting
 - Some sites have security restrictions
 - The return value is auto-serialized to JSON`
-
-`
