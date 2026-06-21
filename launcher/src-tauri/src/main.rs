@@ -974,25 +974,46 @@ async fn get_autostart(app: tauri::AppHandle) -> Result<bool, String> {
         .map_err(|e| format!("查询开机自启动状态失败: {}", e))
 }
 
+// 记录 Agent 窗口当前加载的语言（用于"语言变化才重载、否则保留会话"）
+fn agent_lang_cell() -> &'static std::sync::Mutex<String> {
+    static CELL: std::sync::OnceLock<std::sync::Mutex<String>> = std::sync::OnceLock::new();
+    CELL.get_or_init(|| std::sync::Mutex::new(String::new()))
+}
+
+// 构造 Agent 窗口 URL（含 view/lang/backend_port），返回 (url, 规范化后的lang)
+async fn build_agent_url(lang: Option<&str>) -> Result<(String, String), String> {
+    let config = read_config().await?;
+    let lang_q = match lang { Some("en") => "en", _ => "zh" };
+    let url = format!(
+        "http://localhost:{}/?view=assistant&lang={}&backend_port={}",
+        config.frontend.port, lang_q, config.backend.port
+    );
+    Ok((url, lang_q.to_string()))
+}
+
 // 打开小助手「独立原生窗口（系统级 Agent）」：竖屏、无边框、置顶，可贴边自动隐藏
 #[tauri::command]
 async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>) -> Result<(), String> {
-    // 已存在则直接显示并聚焦
+    let (url_str, lang_q) = build_agent_url(lang.as_deref()).await?;
+    // 已存在：语言变了就 navigate 重载（跟随启动器），语言没变则保留当前会话只置前
     if let Some(w) = app.get_webview_window("assistant") {
+        let changed = {
+            let mut g = agent_lang_cell().lock().unwrap();
+            if *g != lang_q { *g = lang_q.clone(); true } else { false }
+        };
+        if changed {
+            if let Ok(parsed) = url::Url::parse(&url_str) {
+                let _ = w.navigate(parsed);
+            }
+        }
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
         return Ok(());
     }
-    let config = read_config().await?;
-    let lang_q = match lang.as_deref() { Some("en") => "en", _ => "zh" };
-    let url_str = format!(
-        "http://localhost:{}/?view=assistant&lang={}&backend_port={}",
-        config.frontend.port, lang_q, config.backend.port
-    );
     let parsed = url::Url::parse(&url_str).map_err(|e| format!("URL 解析失败: {}", e))?;
     let win = tauri::WebviewWindowBuilder::new(&app, "assistant", tauri::WebviewUrl::External(parsed))
-        .title("WebRPA 小助手")
+        .title("WebRPA Agent")
         .inner_size(380.0, 720.0)
         .min_inner_size(340.0, 520.0)
         .decorations(false)
@@ -1002,11 +1023,33 @@ async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>
         .skip_taskbar(false)
         .build()
         .map_err(|e| format!("创建小助手窗口失败: {}", e))?;
+    *agent_lang_cell().lock().unwrap() = lang_q;
     if let Some(icon) = app.default_window_icon() {
         let _ = win.set_icon(icon.clone());
     }
     // 启动基于全局光标的贴边自动隐藏/唤出线程（比前端 4px 条带可靠）
     spawn_agent_autohide(app.clone());
+    Ok(())
+}
+
+// 仅当 Agent 窗口已打开时，同步其语言（启动器切换语言时调用；窗口没开则什么都不做，不会弹出窗口）
+#[tauri::command]
+async fn sync_assistant_agent_lang(app: tauri::AppHandle, lang: Option<String>) -> Result<(), String> {
+    if app.get_webview_window("assistant").is_none() {
+        return Ok(());
+    }
+    let (url_str, lang_q) = build_agent_url(lang.as_deref()).await?;
+    let changed = {
+        let mut g = agent_lang_cell().lock().unwrap();
+        if *g != lang_q { *g = lang_q.clone(); true } else { false }
+    };
+    if changed {
+        if let Some(w) = app.get_webview_window("assistant") {
+            if let Ok(parsed) = url::Url::parse(&url_str) {
+                let _ = w.navigate(parsed);
+            }
+        }
+    }
     Ok(())
 }
 
@@ -1213,7 +1256,8 @@ fn main() {
             open_frontend_log,
             set_autostart,
             get_autostart,
-            open_assistant_agent_window
+            open_assistant_agent_window,
+            sync_assistant_agent_lang
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {

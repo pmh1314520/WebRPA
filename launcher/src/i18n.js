@@ -233,6 +233,10 @@ function detectLang() {
   return nav.indexOf('zh') === 0 ? 'zh' : 'en'
 }
 
+// 模块加载时立即从持久化中检测语言，保证 window.__getLauncherLang() 在 Vue 挂载（onMounted 读取）
+// 之前就已是正确值，避免 uiLang 被锁死在默认 'zh'（导致切换按钮状态错误 + 打开 Agent 传错 lang）。
+curLang = detectLang()
+
 function translateNode(node) {
   const p = node.parentElement
   if (!p) return

@@ -765,6 +765,8 @@ const uiLang = ref('zh')
 const setUiLang = (l) => {
   uiLang.value = l
   try { if (window.__setLauncherLang) window.__setLauncherLang(l) } catch (e) {}
+  // 若 Agent 窗口已打开，实时同步其语言（窗口没开则后端命令为空操作，不会弹窗）
+  try { invoke('sync_assistant_agent_lang', { lang: l }) } catch (e) {}
 }
 // 是否在启动器启动时自动弹出赞助提示（持久化在 localStorage，默认开启）
 const SPONSOR_AUTO_KEY = 'webrpa.launcher.sponsorAutoShow'
@@ -1035,7 +1037,10 @@ const openBrowser = async () => {
 // 打开小助手「独立原生窗口 / 系统级 Agent」（Tauri 原生窗口，支持置顶/拖动/贴边隐藏）
 const openAssistantAgent = async () => {
   try {
-    await invoke('open_assistant_agent_window', { lang: uiLang.value })
+    // 用实时权威语言（i18n.js 的 curLang），避免 uiLang ref 偶发不同步导致 Agent 语言传错
+    let lang = uiLang.value
+    try { if (window.__getLauncherLang) lang = window.__getLauncherLang() } catch (e) {}
+    await invoke('open_assistant_agent_window', { lang })
   } catch (error) {
     showToast(`打开小助手失败: ${error}`, 'error')
   }
