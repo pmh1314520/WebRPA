@@ -67,8 +67,8 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:6px}
 const SESS_KEY='webrpa_ent_session';
 let session=localStorage.getItem(SESS_KEY)||'';
 let me=null;
-const TABS={cluster:'集群控制中心',rbac:'用户与角色',audit:'审计日志',approvals:'审批中心',vault:'凭据保险库',idp:'文档智能',cua:'电脑Agent',mining:'流程挖掘',settings:'系统设置'};
-let tab='cluster';
+const TABS={overview:'总览',cluster:'集群控制中心',rbac:'用户与角色',audit:'审计日志',approvals:'审批中心',vault:'凭据保险库',idp:'文档智能',cua:'电脑Agent',mining:'流程挖掘',settings:'系统设置'};
+let tab='overview';
 const V=document.getElementById('view');
 function setView(h){V.innerHTML=h}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600)}
@@ -83,7 +83,8 @@ let LANG=localStorage.getItem('webrpa_ent_lang')||((navigator.language||'zh').to
 const DICT={
 "WebRPA 企业控制中心":"WebRPA Enterprise Console","退出":"Logout","刷新":"Refresh","加载中…":"Loading…","加载失败：":"Load failed: ",
 "会话已过期，请重新登录":"Session expired, please log in again","需要登录：请在 x-webrpa-session 头携带有效会话令牌":"Login required: provide a valid session token in the x-webrpa-session header",
-"集群控制中心":"Cluster Center","用户与角色":"Users & Roles","审计日志":"Audit Log","审批中心":"Approvals","凭据保险库":"Credential Vault","文档智能":"Document IDP","电脑Agent":"Computer Agent","流程挖掘":"Process Mining","系统设置":"Settings",
+"集群控制中心":"Cluster Center","用户与角色":"Users & Roles","审计日志":"Audit Log","审批中心":"Approvals","凭据保险库":"Credential Vault","文档智能":"Document IDP","电脑Agent":"Computer Agent","流程挖掘":"Process Mining","系统设置":"Settings","总览":"Overview",
+"在线执行机":"Online robots","集群利用率":"Cluster utilization","待审批":"Pending approvals","审计记录":"Audit records","审计链":"Audit chain","完整":"Intact","异常":"Broken","凭据数":"Credentials","受限凭据":"Restricted creds","用户数":"Users","角色数":"Roles","权限强制":"Enforcement","已开启":"Enabled","未开启":"Off","欢迎，":"Welcome, ","以下是你有权查看的平台概览。":"Here is the platform overview you may view.","暂无可展示的概览（权限不足）":"Nothing to show (insufficient permissions)","点击上方导航进入各功能模块。":"Use the navigation above to enter each module.",
 "成功":"Success","失败":"Failed","已分配":"Assigned","运行中":"Running","排队":"Queued","待处理":"Pending","已批准":"Approved","已驳回":"Rejected","在线":"Online","离线":"Offline","停用":"Disabled",
 "登录企业控制中心":"Log in to Enterprise Console","登录失败：":"Login failed: ","登录失败":"Login failed","SSO 登录失败":"SSO login failed","用户名":"Username","口令":"Password","登录":"Login","SSO 登录":"SSO Login","授权 code":"Authorization code","请输入用户名和口令":"Please enter username and password","请输入用户名":"Please enter username",
 "首次使用：后端启动日志会打印初始管理员 admin 的随机口令。":"First use: the backend startup log prints the random password for the initial admin user.",
@@ -144,11 +145,29 @@ async function ssoLogin(){const prov=document.getElementById('ssop').value;let p
 
 // ---------- 导航 ----------
 function buildNav(){const n=document.getElementById('nav');n.innerHTML='';Object.keys(TABS).forEach(k=>{const b=document.createElement('button');b.textContent=TABS[k];if(k===tab)b.className='on';b.onclick=()=>{tab=k;buildNav();refresh()};n.appendChild(b)});n.style.display='flex'}
-async function refresh(){try{const fn={cluster:vCluster,rbac:vRbac,audit:vAudit,approvals:vApprovals,vault:vVault,idp:vIdp,cua:vCua,mining:vMining,settings:vSettings}[tab];await fn()}catch(e){setView('<div class="empty">加载失败：'+esc(e.message)+'</div>')}}
+async function refresh(){try{const fn={overview:vOverview,cluster:vCluster,rbac:vRbac,audit:vAudit,approvals:vApprovals,vault:vVault,idp:vIdp,cua:vCua,mining:vMining,settings:vSettings}[tab];await fn()}catch(e){setView('<div class="empty">加载失败：'+esc(e.message)+'</div>')}}
 async function boot(){try{const r=await api('/rbac/me');me=r.user;document.getElementById('who').textContent=me.display_name+' ('+me.roles.join(',')+')';document.getElementById('logoutBtn').style.display='';buildNav();await refresh()}catch(e){doLogout()}}
 if(session){boot()}else{renderLogin()}
 
-// ---------- 集群控制中心 ----------
+// ---------- 总览 ----------
+async function vOverview(){
+ const r=await api('/enterprise/overview');const s=r.sections||{};
+ let cards='';
+ if(s.cluster)cards+='<div class="stat"><div class="n">'+(s.cluster.nodes_online||0)+'/'+(s.cluster.nodes_total||0)+'</div><div class="l">在线执行机</div></div>'
+   +'<div class="stat"><div class="n">'+Math.round((s.cluster.utilization||0)*100)+'%</div><div class="l">集群利用率</div></div>';
+ if(s.approvals)cards+='<div class="stat"><div class="n" style="color:var(--warn)">'+(s.approvals.pending||0)+'</div><div class="l">待审批</div></div>';
+ if(s.audit)cards+='<div class="stat"><div class="n">'+(s.audit.total||0)+'</div><div class="l">审计记录</div></div>'
+   +'<div class="stat"><div class="n" style="color:var(--'+(s.audit.chain_valid?'ok':'bad')+')">'+(s.audit.chain_valid?'完整':'异常')+'</div><div class="l">审计链</div></div>';
+ if(s.vault)cards+='<div class="stat"><div class="n">'+(s.vault.credentials||0)+'</div><div class="l">凭据数</div></div>'
+   +'<div class="stat"><div class="n">'+(s.vault.restricted||0)+'</div><div class="l">受限凭据</div></div>';
+ if(s.rbac)cards+='<div class="stat"><div class="n">'+(s.rbac.users||0)+'</div><div class="l">用户数</div></div>'
+   +'<div class="stat"><div class="n">'+(s.rbac.roles||0)+'</div><div class="l">角色数</div></div>'
+   +'<div class="stat"><div class="n" style="color:var(--'+(s.rbac.enforcement?'ok':'mut')+')">'+(s.rbac.enforcement?'已开启':'未开启')+'</div><div class="l">权限强制</div></div>';
+ let h='<div class="card"><div class="mut">欢迎，'+esc((r.user&&r.user.username)||'')+'。以下是你有权查看的平台概览。</div></div>';
+ h+='<div class="grid">'+(cards||'<div class="empty">暂无可展示的概览（权限不足）</div>')+'</div>';
+ h+='<div class="card"><div class="mut">点击上方导航进入各功能模块。</div></div>';
+ setView(h);
+}
 async function vCluster(){
  const ov=await api('/orchestrator/overview');const o=ov.overview||{};
  const nodes=(await api('/orchestrator/nodes')).nodes||[];
