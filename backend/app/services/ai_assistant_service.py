@@ -933,6 +933,15 @@ async def chat_once(
     if extra_prompt_sections:
         system_text = system_text + "\n\n" + "\n\n".join(extra_prompt_sections)
 
+    # 4-ter. 注入当前任务计划（多步骤长任务进度追踪，跨"继续"不丢进度）
+    try:
+        from app.services.ai_assistant_skills_v7 import get_task_plan_summary_for_prompt
+        _plan_section = get_task_plan_summary_for_prompt()
+        if _plan_section:
+            system_text = system_text + "\n\n" + _plan_section
+    except Exception:
+        pass
+
     # 4b. 给 system_text 追加可用 client_action 完整列表（让 LLM 不必反复猜测名称）
     if config.enable_tools:
         client_actions_hint = (

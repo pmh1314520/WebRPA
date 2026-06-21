@@ -4162,6 +4162,7 @@ _EXTENSION_MODULES = [
     "app.services.ai_assistant_skills_v4",   # 通用增强（HTTP/文件/Excel/二维码/时间/系统/正则…）
     "app.services.ai_assistant_skills_v5",   # 插件中心：浏览/安装/启停/卸载/从工作流开发/校验/导出/发布/评分
     "app.services.ai_assistant_skills_v6",   # 联网搜索 / 网页正文阅读 / 一站式研究（DuckDuckGo 免 Key）
+    "app.services.ai_assistant_skills_v7",   # 任务计划追踪（set/update/get/clear_task_plan）
     "app.services.ai_assistant_skills_mcp",  # MCP 服务器配置/管理
 ]
 _skills_loaded = False

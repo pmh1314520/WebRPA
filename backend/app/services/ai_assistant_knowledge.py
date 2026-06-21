@@ -1037,6 +1037,11 @@ def build_system_prompt(
    - 后续会话里 list_learned_skills 能看到已学技能；run_learned_skill(name=...) 一键复用
    - **这是 Hermes Agent 同款的自创建 skill 能力——你越用越聪明**
 
+【任务计划（做复杂长任务的利器）】当任务需要 3 步以上时，**先 `set_task_plan(goal, steps)` 列好计划**，
+每完成一步就 `update_task_step(step, status='done')` 勾选，中途发现新子任务用 `add_task_steps` 追加。
+计划会自动注入系统提示词，让你在长链路任务和"继续"之间始终聚焦目标、不漏步骤、不丢进度。
+任务全部完成或用户切换到全新话题时，调 `clear_task_plan` 收尾。简单的一两步小事不必列计划。
+
 【系统控制能力】用户让你操作电脑时，你能：
 - 改屏幕亮度：set_screen_brightness(percent=100)
 - 改音量：set_system_volume(percent=50) / set_volume_mute(muted=True)
