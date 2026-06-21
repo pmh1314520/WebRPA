@@ -617,9 +617,12 @@ fn kill_processes_by_port(port: u16) -> Result<(), String> {
 
 // 停止服务
 #[tauri::command]
-async fn stop_services(state: tauri::State<'_, AppState>) -> Result<(), String> {
+async fn stop_services(app: tauri::AppHandle, state: tauri::State<'_, AppState>) -> Result<(), String> {
     let config = read_config().await?;
-    
+
+    // 停止服务时连带关闭独立 Agent 窗口（后端都停了，Agent 也没必要继续存活）
+    close_agent_window(&app);
+
     if let Some(pid) = state.backend_pid.lock().unwrap().take() {
         kill_process_tree(pid);
     }
@@ -936,8 +939,17 @@ async fn open_browser(url: String) -> Result<(), String> {
     Ok(())
 }
 
+// 关闭独立 Agent 窗口（后端/服务停止时连带关掉它，后端都没了 Agent 也用不了）
+fn close_agent_window(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("assistant") {
+        let _ = w.close();
+    }
+}
+
 // 统一停止前后端服务（窗口关闭、托盘退出共用）
 fn shutdown_services(app: &tauri::AppHandle) {
+    // 先关掉 Agent 窗口（后端即将停止，Agent 没有存在意义）
+    close_agent_window(app);
     if let Some(state) = app.try_state::<AppState>() {
         if let Some(pid) = state.backend_pid.lock().unwrap().take() {
             kill_process_tree(pid);

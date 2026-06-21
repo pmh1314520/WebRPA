@@ -34,7 +34,6 @@ import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { useAiActionLogStore } from '@/store/aiActionLogStore'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { aiAssistantApi } from '@/services/aiAssistantApi'
-import { getBackendUrl } from '@/services/api'
 import {
   bindAssistantSocketEvents,
   buildWorkflowContext,
@@ -400,29 +399,6 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
     const iv = setInterval(load, 4000)
     return () => { cancelled = true; clearInterval(iv) }
   }, [standalone, updateAIAssistantConfig])
-
-  // 独立 Agent 窗口：后端健康巡检——后端不可达（后端/启动器已关闭）连续多次后，Agent 自行关闭窗口
-  useEffect(() => {
-    if (!standalone || !isTauriRuntime()) return
-    let fails = 0
-    let closing = false
-    const check = async () => {
-      if (closing) return
-      try {
-        // 任意 HTTP 响应（哪怕 4xx/5xx）都说明后端进程还活着；只有 fetch 抛错才算不可达
-        await fetch(`${getBackendUrl()}/api/ai-assistant/skills`, { method: 'GET', cache: 'no-store' })
-        fails = 0
-      } catch {
-        fails += 1
-        if (fails >= 3) {
-          closing = true
-          try { await agentClose() } catch { /* ignore */ }
-        }
-      }
-    }
-    const iv = setInterval(check, 3000)
-    return () => { closing = true; clearInterval(iv) }
-  }, [standalone])
 
   const resolvedConfig = (() => {
     const a = aiAssistantConfig

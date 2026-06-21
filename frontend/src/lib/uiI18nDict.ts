@@ -93,6 +93,17 @@ Object.assign(UI_DICT, {
   '快速开始': 'Quick start', '使用建议': 'Tips',
   '尚未配置模型': 'No model configured', '未配置': 'Not configured', '已配置': 'Configured',
   '请先在全局配置中配置模型': 'Configure a model in Global Settings first',
+  '告诉我你想做什么…（可粘贴/拖拽/上传图片或文档，Enter 发送，Shift+Enter 换行）':
+    'Tell me what you want to do… (paste/drag/upload images or documents, Enter to send, Shift+Enter for a new line)',
+  '小助手正在工作中…再次发送会先停止它': 'The assistant is working… sending again will stop it first',
+  // Agent / 小助手面板按钮与提示的 title（hover 提示也需英文）
+  'AI 操作时间线（可一键回退）': 'AI action timeline (one-click revert)',
+  '窗口置顶': 'Pin window', '取消置顶': 'Unpin window',
+  '最小化': 'Minimize', '关闭': 'Close', '移除': 'Remove', '切换模型': 'Switch model',
+  '回退到这一步操作之前的画布状态': 'Revert the canvas to before this step',
+  '拖拽调整输入框高度': 'Drag to resize the input box',
+  '上传图片或文档（pdf/word/excel/csv/txt/md/html 等）发给 AI 分析，也可直接粘贴/拖拽':
+    'Upload an image or document (pdf/word/excel/csv/txt/md/html, etc.) for the AI to analyze; you can also paste or drag it in',
   '请先在「全局配置 → 小助手」中填写 API 地址和模型': 'Please set the API URL and model in Settings → Assistant first',
   'Skills 已启用': 'Skills enabled', 'Skills 已禁用': 'Skills disabled',
   '我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；不止于此，我还能直接操作你的电脑—— 打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。':
