@@ -1696,6 +1696,25 @@ export function Toolbar() {
               <BookOpen className="w-4 h-4 mr-2 text-[hsl(var(--brand-600))]" />
               教学文档
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={async () => {
+                const base = getBackendBaseUrl()
+                const url = `${base}/console/enterprise`
+                try {
+                  await fetch(`${base}/api/system/open-url`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url }),
+                  })
+                } catch {
+                  window.open(url, '_blank')
+                }
+              }}
+            >
+              <Globe className="w-4 h-4 mr-2 text-[hsl(var(--violet-600))]" />
+              企业控制中心
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
