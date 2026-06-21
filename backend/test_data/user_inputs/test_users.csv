@@ -1,0 +1,11 @@
+user_id,username,real_name,email,phone,role,department,status,created_at,last_login,avatar_url,score
+U001,zhangsan,张三,zhangsan@example.com,13800138001,admin,技术研发部,active,2026-01-15,2026-06-20,https://api.example.com/avatars/u001.jpg,98.5
+U002,lisi,李四,lisi@example.com,13800138002,editor,产品部,active,2026-02-20,2026-06-21,https://api.example.com/avatars/u002.jpg,85.2
+U003,wangwu,王五,wangwu@example.com,13800138003,viewer,市场部,active,2026-03-10,2026-06-18,https://api.example.com/avatars/u003.jpg,72.0
+U004,zhaoliu,赵六,zhaoliu@example.com,13800138004,editor,技术研发部,inactive,2026-04-05,2026-05-01,https://api.example.com/avatars/u004.jpg,91.3
+U005,sunqi,孙七,sunqi@example.com,13800138005,admin,运维部,active,2026-01-01,2026-06-21,https://api.example.com/avatars/u005.jpg,95.7
+U006,zhouba,周八,zhouba@example.com,13800138006,viewer,人事部,active,2026-05-12,2026-06-19,https://api.example.com/avatars/u006.jpg,68.4
+U007,wujiu,吴九,wujiu@example.com,13800138007,editor,财务部,active,2026-06-01,2026-06-21,https://api.example.com/avatars/u007.jpg,88.1
+U008,zhengshi,郑十,zhengshi@example.com,13800138008,viewer,市场部,suspended,2026-02-14,2026-04-10,https://api.example.com/avatars/u008.jpg,45.6
+U009,,空名用户,,13800138009,viewer,未分配,active,2026-06-20,2026-06-20,,0.0
+U010,edge_user,Edge 🎭,edge@example.com,,admin,技术研发部,active,2026-06-21,2026-06-21,https://api.example.com/avatars/u010.jpg,100.0

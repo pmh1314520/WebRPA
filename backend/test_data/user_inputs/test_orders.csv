@@ -1,0 +1,11 @@
+order_id,customer_name,product,quantity,unit_price,total_amount,currency,status,payment_method,shipping_address,order_date,delivery_date
+ORD-20260601-001,张三,WebRPA Pro 年费版,1,2999.00,2999.00,CNY,paid,alipay,江苏省盐城市亭湖区XX路1号,2026-06-01,2026-06-03
+ORD-20260602-001,李四,WebRPA 标准版,2,999.00,1998.00,CNY,paid,wechat,北京市朝阳区XX大厦,2026-06-02,2026-06-05
+ORD-20260603-001,王五,WebRPA 插件包-AI增强,5,199.00,995.00,CNY,shipping,credit_card,上海市浦东新区XX路,2026-06-03,2026-06-07
+ORD-20260604-001,赵六,WebRPA Pro 月费版,1,299.00,299.00,CNY,pending,alipay,广州市天河区XX街,2026-06-04,
+ORD-20260605-001,孙七,WebRPA Enterprise,1,9999.00,9999.00,CNY,paid,bank_transfer,深圳市南山区XX科技园,2026-06-05,2026-06-08
+ORD-20260606-001,周八,WebRPA 标准版,1,999.00,999.00,USD,refunded,credit_card,123 Main St, New York,2026-06-06,
+ORD-20260607-001,吴九,WebRPA Pro 年费版,3,2999.00,8997.00,CNY,cancelled,paypal,杭州市西湖区XX路,2026-06-07,
+ORD-20260608-001,郑十,WebRPA 插件包-桌面自动化,10,149.00,1490.00,CNY,paid,wechat,成都市锦江区XX巷,2026-06-08,2026-06-12
+ORD-20260609-001,张三,WebRPA 插件包-数据采集,1,249.00,249.00,CNY,paid,alipay,江苏省盐城市亭湖区XX路1号,2026-06-09,2026-06-11
+ORD-20260610-001,,未知客户,WebRPA 标准版,1,999.00,999.00,CNY,pending,,未填写,2026-06-10,

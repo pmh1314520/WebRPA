@@ -1,0 +1,302 @@
+{
+  "_description": "API Mock 响应数据集 - 用于 WebRPA 工作流中 api_request 模块的测试",
+  "_version": "1.0.0",
+
+  "mock_responses": {
+    "openai_chat": {
+      "success": {
+        "url_pattern": "*/v1/chat/completions",
+        "status": 200,
+        "response": {
+          "id": "chatcmpl-test-001",
+          "object": "chat.completion",
+          "created": 1750473600,
+          "model": "gpt-4o",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "你好！我是 WebRPA AI 助手，很高兴为你服务。有什么我可以帮助你的吗？"
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 25,
+            "completion_tokens": 32,
+            "total_tokens": 57
+          }
+        }
+      },
+      "rate_limited": {
+        "status": 429,
+        "response": {
+          "error": {
+            "message": "Rate limit exceeded",
+            "type": "rate_limit_error",
+            "code": "rate_limit_exceeded"
+          }
+        }
+      },
+      "auth_failed": {
+        "status": 401,
+        "response": {
+          "error": {
+            "message": "Invalid API key",
+            "type": "authentication_error",
+            "code": "invalid_api_key"
+          }
+        }
+      },
+      "streaming": {
+        "url_pattern": "*/v1/chat/completions",
+        "status": 200,
+        "headers": { "Content-Type": "text/event-stream" },
+        "response_chunks": [
+          "data: {\"id\":\"chatcmpl-test-001\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"你好\"},\"index\":0}]}\n\n",
+          "data: {\"id\":\"chatcmpl-test-001\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"！\"},\"index\":0}]}\n\n",
+          "data: {\"id\":\"chatcmpl-test-001\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"世界\"},\"index\":0}]}\n\n",
+          "data: [DONE]\n\n"
+        ]
+      }
+    },
+
+    "weather_api": {
+      "success": {
+        "url_pattern": "*/api/weather*",
+        "status": 200,
+        "response": {
+          "city": "盐城",
+          "province": "江苏",
+          "country": "中国",
+          "current": {
+            "temperature": 28.5,
+            "feels_like": 31.2,
+            "humidity": 72,
+            "wind_speed": 12.3,
+            "wind_direction": "东南风",
+            "weather": "多云",
+            "weather_icon": "partly_cloudy",
+            "visibility": 10,
+            "pressure": 1013,
+            "uv_index": 6
+          },
+          "forecast": [
+            { "date": "2026-06-22", "high": 32, "low": 24, "weather": "晴",   "rain_chance": 10 },
+            { "date": "2026-06-23", "high": 30, "low": 23, "weather": "多云", "rain_chance": 30 },
+            { "date": "2026-06-24", "high": 27, "low": 21, "weather": "小雨", "rain_chance": 80 },
+            { "date": "2026-06-25", "high": 29, "low": 22, "weather": "阴",   "rain_chance": 40 },
+            { "date": "2026-06-26", "high": 31, "low": 23, "weather": "晴",   "rain_chance": 5 }
+          ],
+          "updated_at": "2026-06-21T10:00:00+08:00"
+        }
+      },
+      "city_not_found": {
+        "status": 404,
+        "response": {
+          "error": "city_not_found",
+          "message": "未找到指定城市"
+        }
+      }
+    },
+
+    "user_api": {
+      "list_users": {
+        "url_pattern": "*/api/users",
+        "status": 200,
+        "response": {
+          "total": 10,
+          "page": 1,
+          "page_size": 10,
+          "data": [
+            { "id": 1, "user_id": "U001", "name": "张三", "email": "zhangsan@example.com", "role": "admin",   "status": "active" },
+            { "id": 2, "user_id": "U002", "name": "李四", "email": "lisi@example.com",     "role": "editor", "status": "active" },
+            { "id": 3, "user_id": "U003", "name": "王五", "email": "wangwu@example.com",   "role": "viewer", "status": "active" },
+            { "id": 4, "user_id": "U004", "name": "赵六", "email": "zhaoliu@example.com",  "role": "editor", "status": "inactive" },
+            { "id": 5, "user_id": "U005", "name": "孙七", "email": "sunqi@example.com",    "role": "admin",  "status": "active" }
+          ]
+        }
+      },
+      "get_user_detail": {
+        "url_pattern": "*/api/users/U001",
+        "status": 200,
+        "response": {
+          "id": 1,
+          "user_id": "U001",
+          "username": "zhangsan",
+          "real_name": "张三",
+          "email": "zhangsan@example.com",
+          "phone": "13800138001",
+          "role": "admin",
+          "department": "技术研发部",
+          "status": "active",
+          "score": 98.5,
+          "created_at": "2026-01-15T00:00:00Z",
+          "last_login": "2026-06-20T09:00:00Z",
+          "permissions": ["workflow.create", "workflow.edit", "workflow.delete", "workflow.run", "config.edit", "user.manage"]
+        }
+      },
+      "create_user": {
+        "method": "POST",
+        "url_pattern": "*/api/users",
+        "status": 201,
+        "response": {
+          "id": 11,
+          "user_id": "U011",
+          "message": "用户创建成功"
+        }
+      },
+      "unauthorized": {
+        "status": 403,
+        "response": {
+          "error": "forbidden",
+          "message": "无权限访问"
+        }
+      }
+    },
+
+    "github_api": {
+      "get_repo": {
+        "url_pattern": "*/repos/pmh1314520/WebRPA",
+        "status": 200,
+        "response": {
+          "full_name": "pmh1314520/WebRPA",
+          "description": "一款桌面端可视化 RPA 自动化平台",
+          "html_url": "https://github.com/pmh1314520/WebRPA",
+          "stargazers_count": 1250,
+          "forks_count": 180,
+          "open_issues_count": 12,
+          "language": "JavaScript",
+          "license": { "spdx_id": "MIT" },
+          "created_at": "2026-01-01T00:00:00Z",
+          "updated_at": "2026-06-21T00:00:00Z"
+        }
+      },
+      "rate_limited": {
+        "status": 403,
+        "response": {
+          "message": "API rate limit exceeded",
+          "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+        }
+      }
+    },
+
+    "file_upload": {
+      "success": {
+        "url_pattern": "*/api/upload",
+        "method": "POST",
+        "status": 200,
+        "response": {
+          "file_id": "file-20260621-001",
+          "filename": "test_upload.xlsx",
+          "size": 24576,
+          "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "url": "https://cdn.example.com/uploads/file-20260621-001.xlsx",
+          "uploaded_at": "2026-06-21T10:30:00Z"
+        }
+      },
+      "too_large": {
+        "status": 413,
+        "response": {
+          "error": "payload_too_large",
+          "message": "文件大小超过限制 (最大 10MB)",
+          "max_size_bytes": 10485760
+        }
+      },
+      "invalid_type": {
+        "status": 415,
+        "response": {
+          "error": "unsupported_media_type",
+          "message": "不支持的文件类型",
+          "allowed_types": [".xlsx", ".xls", ".csv", ".pdf", ".docx", ".txt"]
+        }
+      }
+    },
+
+    "webhook_callback": {
+      "success": {
+        "status": 200,
+        "response": {
+          "received": true,
+          "message": "Webhook 处理成功",
+          "processed_at": "2026-06-21T10:30:00Z"
+        }
+      },
+      "retry_later": {
+        "status": 503,
+        "response": {
+          "error": "service_unavailable",
+          "message": "服务暂时不可用，请稍后重试",
+          "retry_after": 30
+        }
+      }
+    },
+
+    "notification_api": {
+      "dingtalk": {
+        "status": 200,
+        "response": { "errcode": 0, "errmsg": "ok" }
+      },
+      "feishu": {
+        "status": 200,
+        "response": { "code": 0, "msg": "success" }
+      },
+      "wechat_work": {
+        "status": 200,
+        "response": { "errcode": 0, "errmsg": "ok" }
+      },
+      "telegram": {
+        "status": 200,
+        "response": { "ok": true, "result": { "message_id": 12345 } }
+      }
+    }
+  },
+
+  "error_scenarios": [
+    {
+      "scenario": "network_timeout",
+      "description": "网络超时",
+      "delay_ms": 30000,
+      "expected_behavior": "timeout_error"
+    },
+    {
+      "scenario": "connection_refused",
+      "description": "连接被拒绝",
+      "status": 0,
+      "expected_behavior": "connection_error"
+    },
+    {
+      "scenario": "dns_resolution_failed",
+      "description": "DNS 解析失败",
+      "hostname": "nonexistent.example.com",
+      "expected_behavior": "dns_error"
+    },
+    {
+      "scenario": "ssl_certificate_error",
+      "description": "SSL 证书错误",
+      "expected_behavior": "ssl_error"
+    },
+    {
+      "scenario": "malformed_json_response",
+      "description": "返回非法 JSON",
+      "status": 200,
+      "raw_response": "{ invalid json }}}",
+      "expected_behavior": "json_parse_error"
+    },
+    {
+      "scenario": "empty_response_body",
+      "description": "空响应体",
+      "status": 200,
+      "raw_response": "",
+      "expected_behavior": "empty_response"
+    },
+    {
+      "scenario": "server_error_500",
+      "description": "服务器内部错误",
+      "status": 500,
+      "response": { "error": "internal_server_error" },
+      "expected_behavior": "server_error"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_description": "工作流测试用的全局变量定义",
+  "variables": [
+    { "name": "search_keyword",     "value": "WebRPA 自动化",     "type": "string",  "scope": "global" },
+    { "name": "test_url",           "value": "https://www.baidu.com", "type": "string",  "scope": "global" },
+    { "name": "max_retry",          "value": "3",                  "type": "number",  "scope": "global" },
+    { "name": "enable_logging",     "value": "true",               "type": "boolean", "scope": "global" },
+    { "name": "api_base_url",       "value": "http://localhost:8080", "type": "string", "scope": "global" },
+    { "name": "output_directory",   "value": "backend/test_data/fixtures/output", "type": "string", "scope": "global" },
+    { "name": "test_user_data",     "value": "[{\"name\":\"张三\",\"age\":28},{\"name\":\"李四\",\"age\":35}]", "type": "string", "scope": "global" },
+    { "name": "expected_results",   "value": "{\"min_score\":60,\"max_score\":100}", "type": "string", "scope": "global" },
+    { "name": "notification_title", "value": "WebRPA 测试通知",     "type": "string",  "scope": "global" },
+    { "name": "test_timeout_ms",    "value": "10000",               "type": "number",  "scope": "global" }
+  ]
+}

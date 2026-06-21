@@ -1,0 +1,56 @@
+{
+  "name": "WebRPA 测试工作流定义",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "node_001",
+      "type": "open_page",
+      "config": { "url": "https://www.baidu.com" },
+      "position": { "x": 250, "y": 0 }
+    },
+    {
+      "id": "node_002",
+      "type": "wait_element",
+      "config": { "selector": "#kw", "state": "visible", "timeout": 10000 },
+      "position": { "x": 250, "y": 150 }
+    },
+    {
+      "id": "node_003",
+      "type": "input_text",
+      "config": { "selector": "#kw", "text": "{search_keyword}" },
+      "position": { "x": 250, "y": 300 }
+    },
+    {
+      "id": "node_004",
+      "type": "click_element",
+      "config": { "selector": "#su" },
+      "position": { "x": 250, "y": 450 }
+    },
+    {
+      "id": "node_005",
+      "type": "wait_element",
+      "config": { "selector": ".result", "state": "visible", "timeout": 10000 },
+      "position": { "x": 250, "y": 600 }
+    },
+    {
+      "id": "node_006",
+      "type": "get_element_info",
+      "config": { "selector": ".result h3", "attribute": "text", "resultVariable": "results" },
+      "position": { "x": 250, "y": 750 }
+    },
+    {
+      "id": "node_007",
+      "type": "print_log",
+      "config": { "message": "搜索结果: {results}", "level": "info" },
+      "position": { "x": 250, "y": 900 }
+    }
+  ],
+  "edges": [
+    { "source": "node_001", "target": "node_002" },
+    { "source": "node_002", "target": "node_003" },
+    { "source": "node_003", "target": "node_004" },
+    { "source": "node_004", "target": "node_005" },
+    { "source": "node_005", "target": "node_006" },
+    { "source": "node_006", "target": "node_007" }
+  ]
+}

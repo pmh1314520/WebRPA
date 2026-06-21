@@ -1,0 +1,248 @@
+{
+  "_description": "WebRPA 工作流测试 - 模拟用户输入数据集",
+  "_version": "1.0.0",
+  "_updated": "2026-06-21",
+
+  "workflow_triggers": [
+    {
+      "trigger_id": "hotkey_001",
+      "type": "hotkey",
+      "description": "全局热键触发 - 启动数据采集",
+      "params": { "hotkey": "ctrl+alt+r" },
+      "expected_action": "start_data_collection"
+    },
+    {
+      "trigger_id": "webhook_001",
+      "type": "webhook",
+      "description": "Webhook 触发 - 外部系统回调",
+      "params": {
+        "path": "/api/trigger/sync",
+        "method": "POST",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "event": "data_ready", "source": "erp_system" }
+      },
+      "expected_action": "start_sync_workflow"
+    },
+    {
+      "trigger_id": "schedule_001",
+      "type": "scheduled_task",
+      "description": "定时任务触发 - 每日 9:00 执行报表",
+      "params": {
+        "cron_expression": "0 9 * * *",
+        "timezone": "Asia/Shanghai"
+      },
+      "expected_action": "generate_daily_report"
+    },
+    {
+      "trigger_id": "file_watcher_001",
+      "type": "file_watcher",
+      "description": "文件监控触发 - 监控上传目录",
+      "params": {
+        "watch_path": "D:/uploads",
+        "pattern": "*.xlsx",
+        "event_type": "created"
+      },
+      "expected_action": "process_uploaded_excel"
+    }
+  ],
+
+  "user_form_inputs": [
+    {
+      "form_id": "login_form_001",
+      "description": "标准登录表单输入",
+      "fields": {
+        "username": "test_user_001",
+        "password": "P@ssw0rd_2026",
+        "remember_me": true
+      },
+      "expected_result": "login_success"
+    },
+    {
+      "form_id": "login_form_002",
+      "description": "登录表单 - 空用户名（应失败）",
+      "fields": {
+        "username": "",
+        "password": "P@ssw0rd_2026",
+        "remember_me": false
+      },
+      "expected_result": "validation_error",
+      "expected_error": "用户名不能为空"
+    },
+    {
+      "form_id": "login_form_003",
+      "description": "登录表单 - 错误密码（应失败）",
+      "fields": {
+        "username": "test_user_001",
+        "password": "wrong_password",
+        "remember_me": false
+      },
+      "expected_result": "auth_failed",
+      "expected_error": "用户名或密码错误"
+    },
+    {
+      "form_id": "registration_form_001",
+      "description": "用户注册表单",
+      "fields": {
+        "real_name": "张三",
+        "email": "zhangsan@example.com",
+        "phone": "13800138000",
+        "password": "SecurePwd!2026",
+        "confirm_password": "SecurePwd!2026",
+        "gender": "male",
+        "birth_date": "1995-06-15",
+        "agreement": true
+      },
+      "expected_result": "registration_success"
+    },
+    {
+      "form_id": "search_form_001",
+      "description": "搜索表单 - 带筛选条件",
+      "fields": {
+        "keyword": "WebRPA",
+        "category": "automation",
+        "date_from": "2026-01-01",
+        "date_to": "2026-06-21",
+        "sort_by": "relevance",
+        "page": 1
+      },
+      "expected_result": "search_results"
+    },
+    {
+      "form_id": "data_entry_001",
+      "description": "数据录入表单 - 批量员工信息",
+      "fields": {
+        "department": "技术研发部",
+        "entries": [
+          { "name": "李明", "position": "高级工程师", "salary": 25000 },
+          { "name": "王芳", "position": "产品经理", "salary": 22000 },
+          { "name": "赵强", "position": "测试工程师", "salary": 18000 }
+        ]
+      },
+      "expected_result": "data_saved"
+    }
+  ],
+
+  "text_processing_inputs": [
+    {
+      "test_id": "text_001",
+      "input": "Hello World! 这是一个测试字符串。",
+      "operations": ["trim", "uppercase", "length"],
+      "expected": { "trimmed": "Hello World! 这是一个测试字符串。", "upper": "HELLO WORLD! 这是一个测试字符串。", "length": 22 }
+    },
+    {
+      "test_id": "text_002",
+      "input": "  2026-06-21T10:30:00+08:00  ",
+      "operations": ["trim", "parse_date"],
+      "expected": { "trimmed": "2026-06-21T10:30:00+08:00", "date": "2026-06-21", "time": "10:30:00" }
+    },
+    {
+      "test_id": "text_003",
+      "input": "订单号：ORD-20260621-001，金额：¥1,234.56，状态：已完成",
+      "operations": ["regex_extract"],
+      "expected": {
+        "order_id": "ORD-20260621-001",
+        "amount": "1234.56",
+        "status": "已完成"
+      }
+    },
+    {
+      "test_id": "text_004",
+      "input": "https://example.com/path?a=1&b=hello world&c=中文",
+      "operations": ["url_encode", "url_decode"],
+      "expected": {
+        "encoded": "https%3A%2F%2Fexample.com%2Fpath%3Fa%3D1%26b%3Dhello%20world%26c%3D%E4%B8%AD%E6%96%87",
+        "decoded": "https://example.com/path?a=1&b=hello world&c=中文"
+      }
+    },
+    {
+      "test_id": "text_005",
+      "input": "user@example.com",
+      "operations": ["validate_email"],
+      "expected": { "is_valid": true }
+    },
+    {
+      "test_id": "text_006",
+      "input": "not-an-email",
+      "operations": ["validate_email"],
+      "expected": { "is_valid": false }
+    }
+  ],
+
+  "json_processing_inputs": [
+    {
+      "test_id": "json_001",
+      "input_string": "{\"name\":\"张三\",\"age\":28,\"skills\":[\"Python\",\"JavaScript\",\"RPA\"]}",
+      "expected_parsed": {
+        "name": "张三",
+        "age": 28,
+        "skills": ["Python", "JavaScript", "RPA"]
+      }
+    },
+    {
+      "test_id": "json_002",
+      "input_string": "[{\"id\":1,\"value\":\"a\"},{\"id\":2,\"value\":\"b\"},{\"id\":3,\"value\":\"c\"}]",
+      "expected_parsed": [
+        { "id": 1, "value": "a" },
+        { "id": 2, "value": "b" },
+        { "id": 3, "value": "c" }
+      ]
+    },
+    {
+      "test_id": "json_003",
+      "input_string": "invalid json {",
+      "expected_parsed": null,
+      "expected_error": "JSONDecodeError"
+    }
+  ],
+
+  "edge_case_inputs": [
+    {
+      "test_id": "edge_001",
+      "description": "空字符串输入",
+      "input": "",
+      "expected_behavior": "graceful_handling"
+    },
+    {
+      "test_id": "edge_002",
+      "description": "超长字符串（10000字符）",
+      "input": "A".repeat(10000),
+      "expected_behavior": "truncated_or_error"
+    },
+    {
+      "test_id": "edge_003",
+      "description": "特殊字符输入",
+      "input": "<script>alert('xss')</script>",
+      "expected_behavior": "escaped_or_rejected"
+    },
+    {
+      "test_id": "edge_004",
+      "description": "SQL 注入尝试",
+      "input": "'; DROP TABLE users; --",
+      "expected_behavior": "sanitized"
+    },
+    {
+      "test_id": "edge_005",
+      "description": "Unicode 全范围测试",
+      "input": "你好世界 🌍 مرحبا العالم Привет мир",
+      "expected_behavior": "preserved_correctly"
+    },
+    {
+      "test_id": "edge_006",
+      "description": "Null 值输入",
+      "input": null,
+      "expected_behavior": "converted_to_empty_or_default"
+    },
+    {
+      "test_id": "edge_007",
+      "description": "纯数字字符串",
+      "input": "1234567890",
+      "expected_behavior": "treated_as_string"
+    },
+    {
+      "test_id": "edge_008",
+      "description": "负数和零",
+      "input": "-42",
+      "expected_behavior": "parsed_as_negative_number"
+    }
+  ]
+}

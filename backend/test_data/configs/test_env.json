@@ -1,0 +1,145 @@
+{
+  "_description": "WebRPA 测试环境配置 - 包含各环境的连接参数和开关",
+  "_version": "1.0.0",
+
+  "environments": {
+    "development": {
+      "name": "开发环境",
+      "base_url": "http://localhost:3000",
+      "api_base": "http://localhost:8080",
+      "database": {
+        "type": "sqlite",
+        "path": "backend/data/test_dev.db"
+      },
+      "browser": {
+        "type": "chromium",
+        "headless": false,
+        "slow_mo": 100,
+        "timeout": 30000
+      },
+      "ai": {
+        "api_url": "http://localhost:11434/v1",
+        "model": "qwen2.5:latest",
+        "api_key": "sk-test-dev-key-not-real",
+        "temperature": 0.7,
+        "max_tokens": 2048
+      },
+      "email": {
+        "smtp_server": "smtp.ethereal.email",
+        "smtp_port": 587,
+        "sender": "test@ethereal.email",
+        "auth_code": "test-password-not-real"
+      },
+      "qq": {
+        "api_url": "http://localhost:3001",
+        "access_token": "test-token-not-real"
+      },
+      "feishu": {
+        "app_id": "cli_test_dev_app_id",
+        "app_secret": "test-secret-not-real"
+      },
+      "logging": {
+        "level": "debug",
+        "verbose": true
+      }
+    },
+
+    "testing": {
+      "name": "测试环境",
+      "base_url": "http://localhost:3000",
+      "api_base": "http://localhost:8080",
+      "database": {
+        "type": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "user": "webrpa_test",
+        "password": "test-password-not-real",
+        "database": "webrpa_test_db",
+        "charset": "utf8mb4"
+      },
+      "browser": {
+        "type": "chromium",
+        "headless": true,
+        "slow_mo": 0,
+        "timeout": 15000
+      },
+      "ai": {
+        "api_url": "https://api.openai.com/v1",
+        "model": "gpt-4o-mini",
+        "api_key": "sk-test-key-not-real",
+        "temperature": 0.3,
+        "max_tokens": 1024
+      },
+      "email": {
+        "smtp_server": "smtp.ethereal.email",
+        "smtp_port": 587,
+        "sender": "webrpa-test@ethereal.email",
+        "auth_code": "test-password-not-real"
+      },
+      "logging": {
+        "level": "info",
+        "verbose": false
+      }
+    },
+
+    "staging": {
+      "name": "预发布环境",
+      "base_url": "https://staging.webrpa.com",
+      "api_base": "https://staging-api.webrpa.com",
+      "database": {
+        "type": "mysql",
+        "host": "staging-db.internal",
+        "port": 3306,
+        "user": "webrpa_staging",
+        "password": "staging-password-not-real",
+        "database": "webrpa_staging",
+        "charset": "utf8mb4"
+      },
+      "browser": {
+        "type": "msedge",
+        "headless": true,
+        "slow_mo": 0,
+        "timeout": 10000
+      },
+      "ai": {
+        "api_url": "https://api.openai.com/v1",
+        "model": "gpt-4o",
+        "api_key": "sk-staging-key-not-real",
+        "temperature": 0.5,
+        "max_tokens": 4096
+      },
+      "logging": {
+        "level": "warn",
+        "verbose": false
+      }
+    }
+  },
+
+  "test_settings": {
+    "timeout": {
+      "default": 10000,
+      "page_load": 20000,
+      "element_wait": 5000,
+      "api_request": 15000,
+      "ai_response": 30000,
+      "file_operation": 5000
+    },
+    "retry": {
+      "max_retries": 3,
+      "retry_delay_ms": 1000,
+      "backoff_multiplier": 2
+    },
+    "browser": {
+      "default_viewport": { "width": 1920, "height": 1080 },
+      "screenshot_on_failure": true,
+      "video_on_failure": false,
+      "trace_on_failure": true
+    },
+    "reporting": {
+      "output_dir": "backend/test_reports",
+      "format": "html",
+      "include_screenshots": true,
+      "include_logs": true
+    }
+  }
+}

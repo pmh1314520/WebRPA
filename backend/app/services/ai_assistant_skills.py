@@ -4165,6 +4165,7 @@ _EXTENSION_MODULES = [
     "app.services.ai_assistant_skills_v7",   # 任务计划追踪（set/update/get/clear_task_plan）
     "app.services.ai_assistant_skills_v8",   # 失败自愈闭环 + 知识库/RAG（self_heal_workflow / kb_*）
     "app.services.ai_assistant_skills_v9",   # 编排/队列/单测/探针 + 多Agent协作 + 自动写文档
+    "app.services.ai_assistant_skills_v10",  # 企业级：Computer-Use/IDP/流程反推挖掘/集群/审计/保险库
     "app.services.ai_assistant_skills_mcp",  # MCP 服务器配置/管理
 ]
 _skills_loaded = False

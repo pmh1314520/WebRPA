@@ -1,0 +1,128 @@
+{
+  "_description": "WebRPA 测试用例 fixtures - 各模块测试场景与预期结果",
+  "_version": "1.0.0",
+
+  "web_modules": {
+    "open_page": [
+      { "name": "打开百度首页", "url": "https://www.baidu.com", "expected": { "status": "success", "title_contains": "百度" } },
+      { "name": "打开无效URL", "url": "https://nonexistent.invalid", "expected": { "status": "error", "error_type": "navigation_error" } },
+      { "name": "打开空URL", "url": "", "expected": { "status": "error", "error_type": "invalid_url" } }
+    ],
+    "click_element": [
+      { "name": "点击百度搜索按钮", "selector": "#su", "expected": { "action": "clicked", "page_changed": true } },
+      { "name": "点击不存在的元素", "selector": "#nonexistent", "expected": { "status": "error", "error_type": "selector_not_found" } },
+      { "name": "点击被遮挡的元素", "selector": ".hidden-btn", "expected": { "status": "error", "error_type": "element_not_clickable" } }
+    ],
+    "input_text": [
+      { "name": "输入搜索关键词", "selector": "#kw", "text": "WebRPA 自动化", "expected": { "value": "WebRPA 自动化" } },
+      { "name": "输入空文本", "selector": "#kw", "text": "", "expected": { "value": "" } },
+      { "name": "输入特殊字符", "selector": "#kw", "text": "<script>alert(1)</script>", "expected": { "value": "<script>alert(1)</script>" } }
+    ],
+    "get_element_info": [
+      { "name": "获取页面标题", "selector": "#title", "attribute": "text", "expected": { "type": "string", "not_empty": true } },
+      { "name": "获取链接href", "selector": "a.main-link", "attribute": "href", "expected": { "type": "string", "starts_with": "http" } }
+    ]
+  },
+
+  "file_modules": {
+    "read_text_file": [
+      { "name": "读取UTF-8文件", "path": "backend/test_data/fixtures/sample.txt", "expected": { "encoding": "utf-8", "not_empty": true } },
+      { "name": "读取不存在的文件", "path": "nonexistent.txt", "expected": { "status": "error", "error_type": "file_not_found" } }
+    ],
+    "write_text_file": [
+      { "name": "写入新文件", "path": "backend/test_data/fixtures/output_test.txt", "content": "测试写入内容\n第二行", "expected": { "status": "success", "lines": 2 } },
+      { "name": "覆写已有文件", "path": "backend/test_data/fixtures/output_test.txt", "content": "覆写内容", "expected": { "status": "success", "content_equals": "覆写内容" } }
+    ],
+    "copy_file": [
+      { "name": "复制文件", "source": "backend/test_data/fixtures/sample.txt", "dest": "backend/test_data/fixtures/sample_copy.txt", "expected": { "status": "success", "hash_match": true } },
+      { "name": "复制到不存在的目录", "source": "backend/test_data/fixtures/sample.txt", "dest": "nonexistent/dir/file.txt", "expected": { "status": "error", "error_type": "directory_not_found" } }
+    ],
+    "list_files": [
+      { "name": "列出目录文件", "path": "backend/test_data/fixtures", "expected": { "min_count": 1, "contains": ["sample.txt"] } },
+      { "name": "列出空目录", "path": "backend/test_data/fixtures/empty", "expected": { "count": 0 } }
+    ]
+  },
+
+  "excel_modules": {
+    "read_excel": [
+      { "name": "读取用户CSV", "path": "backend/test_data/user_inputs/test_users.csv", "expected": { "row_count": 10, "columns": ["user_id", "username", "real_name"] } },
+      { "name": "读取不存在的文件", "path": "nonexistent.xlsx", "expected": { "status": "error" } }
+    ],
+    "write_excel": [
+      { "name": "创建新Excel并写入数据", "path": "backend/test_data/fixtures/output.xlsx", "data": [["姓名", "年龄"], ["张三", 28], ["李四", 35]], "expected": { "status": "success", "rows": 3 } }
+    ]
+  },
+
+  "variable_modules": {
+    "set_variable": [
+      { "name": "设置字符串变量", "variableName": "test_str", "value": "hello", "expected": { "type": "string", "value": "hello" } },
+      { "name": "设置数字变量", "variableName": "test_num", "value": "42", "expected": { "type": "number", "value": 42 } },
+      { "name": "设置布尔变量", "variableName": "test_bool", "value": "true", "expected": { "type": "boolean", "value": true } },
+      { "name": "设置JSON变量", "variableName": "test_json", "value": "{\"key\":\"value\"}", "expected": { "type": "object", "value": {"key": "value"} } }
+    ],
+    "json_parse": [
+      { "name": "解析有效JSON", "jsonText": "{\"a\":1,\"b\":\"hello\"}", "expected": {"a": 1, "b": "hello"} },
+      { "name": "解析无效JSON", "jsonText": "not json", "expected": { "status": "error" } }
+    ]
+  },
+
+  "flow_control_modules": {
+    "condition": [
+      { "name": "真条件", "expression": "10 > 5", "expected_branch": "true" },
+      { "name": "假条件", "expression": "3 > 10", "expected_branch": "false" },
+      { "name": "字符串相等", "expression": "\"abc\" == \"abc\"", "expected_branch": "true" },
+      { "name": "变量条件", "expression": "{count} > 10", "variables": {"count": 15}, "expected_branch": "true" }
+    ],
+    "loop": [
+      { "name": "循环3次", "count": 3, "expected_iterations": 3 },
+      { "name": "循环0次", "count": 0, "expected_iterations": 0 },
+      { "name": "循环1次", "count": 1, "expected_iterations": 1 }
+    ],
+    "foreach": [
+      { "name": "遍历列表", "list": ["a", "b", "c"], "expected_iterations": 3, "expected_items": ["a", "b", "c"] },
+      { "name": "遍历空列表", "list": [], "expected_iterations": 0 }
+    ]
+  },
+
+  "ai_modules": {
+    "ai_chat": [
+      { "name": "简单对话", "prompt": "你好", "expected": { "not_empty": true, "max_length": 500 } },
+      { "name": "翻译任务", "prompt": "请将'你好世界'翻译成英文", "expected": { "contains": "Hello World" } },
+      { "name": "空提示词", "prompt": "", "expected": { "status": "error" } }
+    ],
+    "ai_extract": [
+      {
+        "name": "从文本抽取信息",
+        "text": "张三，男，28岁，北京市海淀区，电话13800138000",
+        "schema": {"name": "string", "gender": "string", "age": "number", "city": "string", "phone": "string"},
+        "expected": {"name": "张三", "gender": "男", "age": 28, "city": "北京市海淀区", "phone": "13800138000"}
+      }
+    ],
+    "ai_translate": [
+      { "name": "中译英", "text": "WebRPA 是一款强大的自动化平台", "target_lang": "English", "expected": { "not_empty": true } }
+    ]
+  },
+
+  "notification_modules": {
+    "system_notification": [
+      { "name": "普通通知", "title": "测试通知", "message": "这是一条测试通知", "expected": { "status": "success" } },
+      { "name": "空标题通知", "title": "", "message": "内容", "expected": { "status": "error" } }
+    ]
+  },
+
+  "pdf_modules": {
+    "pdf_extract_text": [
+      { "name": "提取PDF文本", "path": "backend/test_data/fixtures/sample.pdf", "expected": { "not_empty": true } },
+      { "name": "提取不存在的PDF", "path": "nonexistent.pdf", "expected": { "status": "error" } }
+    ]
+  },
+
+  "media_modules": {
+    "image_ocr": [
+      { "name": "OCR识别图片文字", "image_path": "backend/test_data/fixtures/sample_ocr.png", "expected": { "not_empty": true } }
+    ],
+    "qr_generate": [
+      { "name": "生成二维码", "text": "https://www.pmhs.top", "expected": { "format": "png", "not_empty": true } }
+    ]
+  }
+}

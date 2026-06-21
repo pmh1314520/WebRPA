@@ -136,6 +136,15 @@ from app.api.dashboard import router as dashboard_router
 from app.api.published_workflows import router as published_workflows_router
 from app.api.orchestration import router as orchestration_router
 from app.api.console import router as console_router
+# 企业级平台能力
+from app.api.rbac import router as rbac_router
+from app.api.audit import router as audit_router
+from app.api.approvals import router as approvals_router
+from app.api.vault import router as vault_router
+from app.api.orchestrator import router as orchestrator_router
+from app.api.computer_use import router as computer_use_router
+from app.api.idp import router as idp_router
+from app.api.process_mining import router as process_mining_router
 app.include_router(workflows_router)
 app.include_router(element_picker_router)
 app.include_router(data_assets_router)
@@ -168,6 +177,15 @@ app.include_router(dashboard_router)
 app.include_router(published_workflows_router)
 app.include_router(orchestration_router)
 app.include_router(console_router)
+# 企业级平台能力
+app.include_router(rbac_router)
+app.include_router(audit_router)
+app.include_router(approvals_router)
+app.include_router(vault_router)
+app.include_router(orchestrator_router)
+app.include_router(computer_use_router)
+app.include_router(idp_router)
+app.include_router(process_mining_router)
 
 # 设置 Socket.IO 实例（避免循环导入）
 set_workflows_sio(sio)
