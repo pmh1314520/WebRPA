@@ -1700,3 +1700,43 @@ Object.assign(UI_DICT, {
   'iframe名称': 'iframe name', '例如: iframe.content, #myframe': 'e.g. iframe.content, #myframe', '切换到iframe后，后续的元素操作将在该iframe内执行，直到切换回主页面或切换到其他iframe': 'After switching to an iframe, later element operations run inside it until you switch back or to another iframe', '如果当前不在iframe中，此操作不会产生任何效果': 'If you are not currently in an iframe, this has no effect', '此模块将操作上下文切换回主页面，后续的元素操作将在主页面执行': 'This module switches the context back to the main page; later operations run there', '用于定位iframe的CSS选择器': 'CSS selector to locate the iframe', '页面中第几个iframe（从0开始计数）': 'Which iframe on the page (counting from 0)',
   '前往 GitHub Releases 下载最新 7z 压缩包，解压替换程序所在文件夹中的所有文件即可完成更新。': 'Download the latest 7z archive from GitHub Releases, then extract and replace all files in the program folder to update.', '前往下载': 'Go to download', '暂不更新': 'Not now', '更新方式：': 'Update method:', '最新版本': 'Latest version', '有新版本可用，建议更新以获得最新功能与修复': 'A new version is available; updating is recommended for the latest features and fixes',
 })
+
+// ============================================================
+// 精确整句翻译：剩余小型 UI 文件 + 文档对话框 + 文档短标签
+// ============================================================
+Object.assign(UI_DICT, {
+  // TaskLogsDialog
+  '加载中...': 'Loading...', '失败节点': 'Failed node', '执行节点': 'Executed node', '收集数据': 'Collected data', '暂无执行日志': 'No execution logs', '错误信息:': 'Error:',
+  // SSHModuleConfigs
+  '密钥文件路径（可选）': 'Key file path (optional)', '请输入密码（或使用密钥文件）': 'Enter a password (or use a key file)', '输出变量名': 'Output variable', '远程文件路径': 'Remote file path', '退出码变量名': 'Exit-code variable', '错误变量名': 'Error variable',
+  // CustomModuleConfig
+  '模块不存在': 'Module does not exist', '此模块会执行预定义的工作流逻辑，输入参数会传递给内部工作流，执行完成后输出变量会自动创建。': 'This module runs predefined workflow logic; input parameters are passed to the internal workflow, and output variables are created automatically when it finishes.', '此模块没有输入参数': 'This module has no input parameters', '该自定义模块可能已被删除，请重新选择模块或删除此节点。': 'This custom module may have been deleted; reselect a module or delete this node.',
+  // ExecutionDetailsPanel
+  '执行详情': 'Execution details', '暂无执行记录': 'No execution records', '输入参数:': 'Input parameters:', '输出结果:': 'Output result:',
+  // NoteNode
+  '便签': 'Note', '减小字体': 'Decrease font', '双击编辑内容...': 'Double-click to edit...', '增大字体': 'Increase font', '选择颜色': 'Choose color',
+  // PluginMarketPanel
+  '主页': 'Home', '写下你的使用体验（选填）': 'Write your experience (optional)', '官方': 'Official', '当前显示内置示例插件。在「全局配置」中配置插件市场索引地址后，即可浏览社区上架的插件。开发者可参考官网开发文档制作并上架自己的插件。': 'Showing built-in sample plugins. Set the plugin-market index URL in Global Config to browse community plugins. Developers can build and publish their own plugins per the official docs.', '插件市场索引地址，如 https://your-site.com/plugins.json': 'Plugin-market index URL, e.g. https://your-site.com/plugins.json',
+  // WebDAVSettings
+  'WebDAV 地址，如 https://dav.example.com/webrpa/': 'WebDAV URL, e.g. https://dav.example.com/webrpa/', 'WebDAV 远程存储（NAS / 网盘）': 'WebDAV remote storage (NAS / cloud drive)', '子目录（可选），如 workflows': 'Subdirectory (optional), e.g. workflows', '开启后，工作流的保存与读取都走 WebDAV 远程目录，可在多台设备间共享。': 'When enabled, workflows are saved to and read from the WebDAV remote directory, shareable across devices.', '读取配置…': 'Loading config\u2026',
+  // api.ts
+  '后端服务是否已启动': 'Whether the backend service has started', '无法连接到后端服务，请检查：': 'Cannot connect to the backend service; please check:', '端口配置是否正确': 'Whether the port config is correct', '网络连接是否正常': 'Whether the network connection is working', '连接失败': 'Connection failed',
+  // number-input / variable-input
+  '↑↓ 选择 · Enter 确认 · Esc 关闭': '\u2191\u2193 Select \u00b7 Enter Confirm \u00b7 Esc Close', '暂无可用变量': 'No available variables', '未找到匹配的变量 "': 'No matching variable found "', '请先在"全局变量"面板中添加变量，或在模块中配置"存储变量名"': 'Add variables in the "Global variables" panel first, or set a "Storage variable" in a module',
+  // window-title-input
+  '从已打开的窗口中选择': 'Choose from open windows', '未检测到可见窗口': 'No visible windows detected', '正在枚举窗口…': 'Enumerating windows\u2026', '选择已打开的窗口': 'Select an open window',
+  // CustomModuleList / Manage
+  '创建模块': 'Create module', '创建第一个模块': 'Create your first module', '双击编辑，拖拽到画布使用': 'Double-click to edit, drag to the canvas to use', '收藏': 'Favorite', '导入模块': 'Import module', '搜索模块...': 'Search modules...', '管理自定义模块': 'Manage custom modules', '编辑、复制、导出或删除模块': 'Edit, copy, export or delete modules',
+  // DebugPanel
+  '变量监控': 'Variable monitor', '复制变量值': 'Copy variable value', '对象': 'Object', '搜索变量名...': 'Search variable name...',
+  // QuickModulePicker
+  '图标可收藏': 'Click the icon to favorite', '搜索模块（支持拼音）': 'Search modules (pinyin supported)', '暂无收藏的模块': 'No favorite modules', '点击模块右侧的': 'Click the icon on the right of a module',
+  // DocumentationDialog
+  '下载全部文档为一个文件': 'Download all docs as one file', '搜索文档内容...': 'Search the docs...', '搜索结果': 'Search results', '文档目录': 'Table of contents', '未找到相关内容': 'No relevant content found', '正在加载文档…': 'Loading docs\u2026', '篇 · 内置全文搜索': ' articles \u00b7 built-in full-text search', '试试其他关键词': 'Try other keywords', '返回顶部': 'Back to top', '首次搜索，正在加载文档索引…': 'First search: loading the docs index\u2026',
+  // documentation diagram / short labels
+  '一级菜单': 'Top-level menu', '二级菜单': 'Submenu', '商品': 'Product', '商品1': 'Product 1', '商品2': 'Product 2', '登录': 'Login', '第一段': 'First paragraph', '第二段': 'Second paragraph', '请输入用户名': 'Enter username', '链接': 'Link', '项目1': 'Item 1', '项目2': 'Item 2', '项目3': 'Item 3', '项目4': 'Item 4',
+  '分支A': 'Branch A', '分支B': 'Branch B', '循环开始': 'Loop start', '循环结束': 'Loop end', '执行操作': 'Run action', '条件判断': 'Condition', '继续循环?': 'Continue loop?', '继续执行': 'Continue',
+  '创建变量': 'Create variable', '变量销毁': 'Variable destroyed', '工作流结束': 'Workflow ends', '引用使用': 'Reference & use', '赋值/修改': 'Assign / modify', '需要修改?': 'Need to modify?',
+  '工作流启动': 'Workflow starts', '工作流完成': 'Workflow done', '触发器类型': 'Trigger type', '触发条件满足': 'Trigger condition met',
+  '元素HTML': 'Element HTML', '元素HTML2': 'Element HTML 2', '兄弟元素HTML': 'Sibling element HTML', '北京': 'Beijing', '段落': 'Paragraph',
+})
