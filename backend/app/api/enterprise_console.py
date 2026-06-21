@@ -57,6 +57,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:6px}
 <header>
   <h1>WebRPA 企业控制中心</h1>
   <span class="who" id="who"></span>
+  <button class="act gray" id="langBtn" onclick="toggleLang()">EN</button>
   <button class="act gray" id="logoutBtn" style="display:none" onclick="logout()">退出</button>
 </header>
 <nav id="nav" style="display:none"></nav>
@@ -76,6 +77,44 @@ function hdr(extra){return Object.assign({'Content-Type':'application/json','x-w
 async function api(path,opt){opt=opt||{};opt.headers=Object.assign(hdr(),opt.headers||{});const r=await fetch('/api'+path,opt);let j={};try{j=await r.json()}catch(e){}if(r.status===401){doLogout();throw new Error('会话已过期，请重新登录')}if(!r.ok){throw new Error(j.detail||('HTTP '+r.status))}return j}
 function fmtMs(ms){ms=ms||0;return ms<1000?ms+'ms':(ms/1000).toFixed(1)+'s'}
 function statusTag(s){const m={success:['ok','成功'],failed:['bad','失败'],assigned:['run','已分配'],running:['run','运行中'],queued:['warn','排队'],pending:['warn','待处理'],approved:['ok','已批准'],rejected:['bad','已驳回'],online:['ok','在线'],offline:['bad','离线'],disabled:['warn','停用']};const a=m[s]||['warn',s||'?'];return '<span class="tag '+a[0]+'">'+a[1]+'</span>'}
+
+// ---------- 国际化（中/英，自包含运行时翻译）----------
+let LANG=localStorage.getItem('webrpa_ent_lang')||((navigator.language||'zh').toLowerCase().indexOf('zh')===0?'zh':'en');
+const DICT={
+"WebRPA 企业控制中心":"WebRPA Enterprise Console","退出":"Logout","刷新":"Refresh","加载中…":"Loading…","加载失败：":"Load failed: ",
+"会话已过期，请重新登录":"Session expired, please log in again","需要登录：请在 x-webrpa-session 头携带有效会话令牌":"Login required: provide a valid session token in the x-webrpa-session header",
+"集群控制中心":"Cluster Center","用户与角色":"Users & Roles","审计日志":"Audit Log","审批中心":"Approvals","凭据保险库":"Credential Vault","文档智能":"Document IDP","电脑Agent":"Computer Agent","流程挖掘":"Process Mining","系统设置":"Settings",
+"成功":"Success","失败":"Failed","已分配":"Assigned","运行中":"Running","排队":"Queued","待处理":"Pending","已批准":"Approved","已驳回":"Rejected","在线":"Online","离线":"Offline","停用":"Disabled",
+"登录企业控制中心":"Log in to Enterprise Console","登录失败：":"Login failed: ","登录失败":"Login failed","SSO 登录失败":"SSO login failed","用户名":"Username","口令":"Password","登录":"Login","SSO 登录":"SSO Login","授权 code":"Authorization code","请输入用户名和口令":"Please enter username and password","请输入用户名":"Please enter username",
+"首次使用：后端启动日志会打印初始管理员 admin 的随机口令。":"First use: the backend startup log prints the random password for the initial admin user.",
+"企业目录登录（需先在系统设置配置 SSO）":"Enterprise directory login (configure SSO in Settings first)","钉钉":"DingTalk","企业微信":"WeCom","飞书":"Feishu",
+"在线节点":"Online nodes","负载/容量":"Load/Capacity","利用率":"Utilization","运行中任务":"Running tasks","派发集群任务":"Dispatch cluster task","工作流文件名":"Workflow file name","标签约束（逗号分隔，可空）":"Tag constraints (comma-separated, optional)","能力约束（逗号分隔，可空）":"Capability constraints (comma-separated, optional)","派发":"Dispatch","执行机节点":"Robot nodes","暂无执行机。执行机可调用 /api/orchestrator/nodes/register 注册":"No robots yet. Robots register via /api/orchestrator/nodes/register","集群任务":"Cluster tasks","暂无任务":"No tasks","移除":"Remove","负载 ":"Load ","标签[":"tags[","能力[":"caps[","节点 ":"node ","尝试 ":"attempts ","已派发：":"Dispatched: ","请填写工作流文件名":"Please enter a workflow file name","确定移除该节点？":"Remove this node?","已移除":"Removed",
+"需要 ":"Requires ","新建用户":"Create user","角色":"Roles","创建":"Create","用户":"Users","删除":"Delete","预置":"preset","权限：":"permissions: ","请填写用户名和口令":"Please fill in username and password","请至少选一个角色":"Select at least one role","已创建":"Created","删除用户 ":"Delete user ","已删除":"Deleted","角色[":"roles[",
+"校验哈希链完整性":"Verify hash-chain integrity","共 ":"Total ","条审计记录":" audit records","暂无审计记录":"No audit records","链完整，共 ":"Chain intact, total ","条":" records","检测到篡改！断裂于 #":"Tampering detected! Broken at #",
+"批准":"Approve","驳回":"Reject","发起 ":"by ","审批人 ":"approver ","暂无审批单":"No approval requests","驳回意见（可空）：":"Rejection comment (optional):","（已签发执行令牌）":" (grant token issued)",
+"凭据值始终加密存储，此处仅管理「哪些角色可取用」，绝不显示明文。":"Credential values are always encrypted; here you only manage which roles can access them. Plaintext is never shown.","仅特权可取":"privileged only","允许角色：":"Allowed roles: ","（未授权普通角色）":"(no normal roles authorized)","设置":"Configure","凭据库为空。请先在编辑器凭据库新增凭据。":"Vault is empty. Add credentials in the editor first.","设置访问角色：":"Set access roles: ","保存":"Save","已保存":"Saved",
+"文档抽取":"Document extraction","文档类型":"Document type","选择文档（图片或 PDF）":"Select document (image or PDF)","抽取字段":"Extract fields","需在编辑器全局配置中填写支持视觉的多模态模型。":"A vision-capable multimodal model must be configured in the editor's global settings.","字段模板":"Field templates","内置":"built-in","（自由抽取键值对）":"(free key-value extraction)","请选择文件":"Please select a file","抽取中，请稍候…":"Extracting, please wait…","抽取失败：":"Extraction failed: ","抽取结果":"Extraction result","校验问题":"Validation issues","页）":" pages)",
+"让 Agent 操作电脑":"Let the Agent operate the computer","目标（越具体越好）":"Goal (the more specific the better)","最大步数":"Max steps","开始执行":"Start","需配置支持视觉的多模态模型。执行期间 Agent 会真实操作本机鼠标键盘，请勿干扰。":"A vision model is required. During execution the Agent really controls this machine's mouse/keyboard — do not interfere.","历史会话":"Past sessions","暂无会话":"No sessions","请填写目标":"Please enter a goal","Agent 将真实操作本机，确认开始？":"The Agent will really control this machine. Start?","执行中，可能需要一段时间…":"Running, this may take a while…","执行失败：":"Execution failed: ","动作历史":"Action history"," 步":" steps","步 · ":" steps · ",
+"执行记录 JSON 数组":"Execution records (JSON array)","分析":"Analyze","JSON 格式错误":"Invalid JSON format","分析失败：":"Analysis failed: ","轨迹数":"Traces","路径变体":"Variants","总步数":"Total steps","瓶颈步骤":"Bottleneck steps",
+"全局权限强制":"Global permission enforcement","开启后，远程访问需登录并具备权限（本机豁免，编辑器照常用）":"When enabled, remote access requires login and permissions (local machine exempt; editor works as usual)","SSO / 企业目录":"SSO / Enterprise directory","配置 JSON（各渠道 enabled/参数）":"Config JSON (per-provider enabled/params)","保存 SSO 配置":"Save SSO config","修改我的口令":"Change my password","原口令":"Old password","新口令":"New password","修改":"Change","已修改":"Changed","需要 rbac.manage 权限":"Requires rbac.manage permission","需要 audit.view 权限":"Requires audit.view permission","需要 credential.view 权限":"Requires credential.view permission",
+"优先级 ":"priority ","描述":"description",
+"例如 demo.json":"e.g. demo.json","例如：打开记事本并输入 hello":"e.g. open Notepad and type hello","次":" times","请填写":"Please fill in","示例":"Example","打开":"open",
+"未登录或会话已过期":"Not logged in or session expired","缺少权限：":"Missing permission: ","无权访问该凭据":"Not authorized to access this credential","凭据不存在":"Credential not found","审批单不存在":"Approval request not found","不能审批自己发起的请求":"Cannot approve your own request","目标不能为空":"Goal cannot be empty","节点不存在":"Node not found","任务不存在":"Task not found","用户已存在":"User already exists","用户不存在":"User not found","口令至少 6 位":"Password must be at least 6 characters","原口令错误":"Old password is incorrect","新口令至少 6 位":"New password must be at least 6 characters","目标用户名已存在":"Target username already exists","禁止删除内置 admin 用户":"Cannot delete built-in admin user","禁止删除预置角色":"Cannot delete preset role","文件为空":"File is empty","未知文档类型：":"Unknown document type: ","无法解析该文档（不支持的格式或文件损坏）":"Cannot parse this document (unsupported format or corrupted)","模型调用失败：":"Model call failed: ","未配置多模态 AI 模型":"Multimodal AI model not configured","请在全局配置填写支持视觉的模型":"please configure a vision-capable model in global settings","无法使用 Computer-Use":"cannot use Computer-Use","无法进行文档抽取":"cannot extract document","未配置 AI 模型，无法反推工作流":"AI model not configured; cannot infer workflow","请在全局配置填写模型 API":"please configure the model API in global settings","录制事件为空":"Recording events are empty","token 无效":"invalid token","节点未注册":"Node not registered","角色不存在：":"Role not found: ","未知权限：":"Unknown permission: ",
+"（":"(","）":")","，":", ","、":", ","：":": "
+};
+const DKEYS=Object.keys(DICT).sort((a,b)=>b.length-a.length);
+function trText(s){if(LANG!=='en'||!s)return s;let out=s;for(const k of DKEYS){if(out.indexOf(k)>=0)out=out.split(k).join(DICT[k])}return out}
+let _obs=null;
+function applyLang(root){if(LANG!=='en')return;root=root||document.body;
+ const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);const ns=[];while(tw.nextNode())ns.push(tw.currentNode);
+ ns.forEach(n=>{const v=n.nodeValue;if(v&&v.trim()){const t=trText(v);if(t!==v)n.nodeValue=t}});
+ root.querySelectorAll&&root.querySelectorAll('[placeholder]').forEach(e=>{const t=trText(e.getAttribute('placeholder'));if(t!==e.getAttribute('placeholder'))e.setAttribute('placeholder',t)});}
+function startObserver(){if(LANG!=='en')return;if(_obs)return;
+ _obs=new MutationObserver(()=>{_obs.disconnect();applyLang(document.body);_obs.observe(document.body,{childList:true,subtree:true,characterData:true})});
+ _obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
+function toggleLang(){LANG=(LANG==='en')?'zh':'en';localStorage.setItem('webrpa_ent_lang',LANG);location.reload()}
+function initLang(){document.getElementById('langBtn').textContent=(LANG==='en')?'中文':'EN';if(LANG==='en'){document.documentElement.lang='en';document.title='WebRPA Enterprise Console';applyLang(document.body);startObserver()}}
+initLang();
 
 // ---------- 认证 ----------
 function can(p){return me&&(me.permissions.indexOf('*')>=0||me.permissions.indexOf(p)>=0)}

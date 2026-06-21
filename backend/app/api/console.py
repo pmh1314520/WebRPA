@@ -50,6 +50,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-size:12px;background:#0b1220;
 <header>
   <h1>WebRPA 控制台</h1>
   <input id="tok" placeholder="访问令牌(可选)"/>
+  <button class="act gray" id="langBtn" onclick="toggleLang()">EN</button>
   <button class="act" onclick="location.href='/console/enterprise'">企业控制中心</button>
   <button class="act" onclick="refresh()">刷新</button>
 </header>
@@ -58,6 +59,25 @@ pre{white-space:pre-wrap;word-break:break-all;font-size:12px;background:#0b1220;
 <script>
 const T={dash:'仪表盘',runs:'运行历史',api:'已发布API',queue:'运行队列',probes:'健康探针'};
 let tab='dash';
+// ---------- 国际化（中/英，自包含运行时翻译）----------
+let LANG=localStorage.getItem('webrpa_ent_lang')||((navigator.language||'zh').toLowerCase().indexOf('zh')===0?'zh':'en');
+const DICT={
+"WebRPA 控制台":"WebRPA Console","访问令牌(可选)":"Access token (optional)","企业控制中心":"Enterprise Console","刷新":"Refresh","加载中…":"Loading…","加载失败：":"Load failed: ",
+"仪表盘":"Dashboard","运行历史":"Run history","已发布API":"Published APIs","运行队列":"Run queue","健康探针":"Health probes",
+"7天运行数":"7-day runs","成功率":"Success rate","失败次数":"Failures","平均耗时":"Avg duration","失败 TOP":"Top failures","失败 ":"failed ","次 · 失败率 ":" times · fail rate ","暂无失败记录":"No failures","最慢 TOP":"Slowest top","平均 ":"avg ","暂无数据":"No data","暂无运行历史":"No run history",
+"调用 ":"calls ","次":" times","需token":"token required","触发":"Trigger","暂无已发布的工作流 API":"No published workflow APIs","触发中…":"Triggering…","该端点需要 token：":"This endpoint requires a token:","成功":"Success","失败":"Failed","停止":"Stopped","运行中":"Running","排队":"Queued","取消":"Canceled","状态=":"status=","数据 ":"data ","行":" rows","触发失败：":"Trigger failed: ",
+"运行中":"Running","排队中":"Queued","最大并发":"Max concurrency","队列为空":"Queue is empty","优先级 ":"priority ","每":"every ","启用":"enabled","停用":"disabled","连续失败":"consecutive failures","暂无健康探针":"No health probes","探活":"Probe","暂无":"None"
+};
+const DKEYS=Object.keys(DICT).sort((a,b)=>b.length-a.length);
+function trText(s){if(LANG!=='en'||!s)return s;let out=s;for(const k of DKEYS){if(out.indexOf(k)>=0)out=out.split(k).join(DICT[k])}return out}
+let _obs=null;
+function applyLang(root){if(LANG!=='en')return;root=root||document.body;
+ const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);const ns=[];while(tw.nextNode())ns.push(tw.currentNode);
+ ns.forEach(n=>{const v=n.nodeValue;if(v&&v.trim()){const t=trText(v);if(t!==v)n.nodeValue=t}});
+ root.querySelectorAll&&root.querySelectorAll('[placeholder]').forEach(e=>{const t=trText(e.getAttribute('placeholder'));if(t!==e.getAttribute('placeholder'))e.setAttribute('placeholder',t)});}
+function startObserver(){if(LANG!=='en'||_obs)return;_obs=new MutationObserver(()=>{_obs.disconnect();applyLang(document.body);_obs.observe(document.body,{childList:true,subtree:true,characterData:true})});_obs.observe(document.body,{childList:true,subtree:true,characterData:true})}
+function toggleLang(){LANG=(LANG==='en')?'zh':'en';localStorage.setItem('webrpa_ent_lang',LANG);location.reload()}
+(function initLang(){const b=document.getElementById('langBtn');if(b)b.textContent=(LANG==='en')?'中文':'EN';if(LANG==='en'){document.documentElement.lang='en';document.title='WebRPA Console';applyLang(document.body);startObserver()}})();
 const tokEl=document.getElementById('tok');
 tokEl.value=localStorage.getItem('webrpa_token')||'';
 tokEl.onchange=()=>localStorage.setItem('webrpa_token',tokEl.value.trim());
