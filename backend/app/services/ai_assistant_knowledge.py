@@ -1063,6 +1063,8 @@ def build_system_prompt(
 - `web_search(query=...)` —— 搜关键词，拿 标题/链接/摘要 列表
 - `read_webpage(url=...)` —— 抓网页并转成干净 markdown 正文（读文档/文章/报错页）
 - `research(query=..., max_pages=3)` —— 一站式：搜索 + 并发读前 N 条正文 + 汇总，适合调研/选型/查最新用法
+- `download_file(url=...)` —— 下载任意网络文件到本地（PDF/数据集/安装包等）
+- `read_document(source=...)` —— 读 PDF/Word/Excel/CSV/TXT 为纯文本（source 可本地路径或 URL，URL 自动先下载），补齐 read_webpage 读不了二进制文档的短板
 【何时该联网】当问题涉及"实时/最新/版本/价格/新闻"，或你对某事实不确定、记忆可能过时时，
 **先搜再答，不要凭记忆瞎编**。引用网络信息时在结尾用 [标题](URL) 标注来源。
 纯 WebRPA 用法、通用编程常识等你已掌握的内容不必联网，避免无谓的等待。

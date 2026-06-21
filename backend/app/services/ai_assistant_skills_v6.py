@@ -514,5 +514,244 @@ def _register_v6() -> None:
         handler=skill_research,
     ))
 
+    registry.register(Skill(
+        name="download_file",
+        description=(
+            "下载任意网络文件到本地（流式，支持 PDF/数据集/安装包等）。"
+            "save_path 留空则自动存到临时目录。常配合 read_document 使用：先下载再读正文。"
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "文件地址"},
+                "save_path": {"type": "string", "description": "本地保存路径，留空自动生成"},
+                "timeout": {"type": "integer", "default": 60},
+                "max_mb": {"type": "integer", "default": 100, "description": "大小上限(MB)，超过则中止"},
+            },
+            "required": ["url"],
+        },
+        handler=skill_download_file,
+    ))
+
+    registry.register(Skill(
+        name="read_document",
+        description=(
+            "读取文档为纯文本，支持 PDF / Word(docx) / Excel(xlsx/xls) / CSV / TXT 等。"
+            "source 可以是本地路径或网络 URL（URL 会先自动下载再解析）。"
+            "补齐 read_webpage 读不了二进制文档的短板——读下载来的 PDF 论文/手册、本地 Excel 报表等用它。"
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "source": {"type": "string", "description": "本地路径或网络 URL"},
+                "max_chars": {"type": "integer", "default": 20000, "description": "正文最多保留字数"},
+                "timeout": {"type": "integer", "default": 60},
+            },
+            "required": ["source"],
+        },
+        handler=skill_read_document,
+    ))
+
+
+# =============================================================================
+# 文件下载 & 文档读取（让研究能力延伸到 PDF/Word/Excel）
+# =============================================================================
+
+async def skill_download_file(
+    url: str,
+    save_path: str = "",
+    timeout: int = 60,
+    max_mb: int = 100,
+    **_: Any,
+) -> dict[str, Any]:
+    """下载任意网络文件到本地（流式，适合 PDF/数据集/安装包等）。
+
+    save_path 留空则自动按 URL 文件名存到系统临时目录。返回本地路径与大小。
+    """
+    u = (url or "").strip()
+    if not u:
+        return {"error": "url 不能为空"}
+    if not re.match(r"^https?://", u, re.IGNORECASE):
+        u = "https://" + u
+    try:
+        import httpx
+    except ImportError:
+        return {"error": "需要 httpx：pip install httpx"}
+
+    import os
+    import tempfile
+    from urllib.parse import urlparse as _up
+
+    dest = (save_path or "").strip()
+    if not dest:
+        name = os.path.basename(_up(u).path) or "download.bin"
+        if "." not in name:
+            name += ".bin"
+        dest = os.path.join(tempfile.gettempdir(), "webrpa_dl", name)
+    os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+
+    limit = max(1, int(max_mb or 100)) * 1024 * 1024
+    headers = {"User-Agent": _UA}
+    written = 0
+    try:
+        async with httpx.AsyncClient(timeout=int(timeout or 60), follow_redirects=True, headers=headers) as client:
+            async with client.stream("GET", u) as resp:
+                if resp.status_code >= 400:
+                    return {"error": f"HTTP {resp.status_code}", "url": u}
+                with open(dest, "wb") as f:
+                    async for chunk in resp.aiter_bytes(65536):
+                        written += len(chunk)
+                        if written > limit:
+                            f.close()
+                            try:
+                                os.remove(dest)
+                            except Exception:
+                                pass
+                            return {"error": f"文件超过 {max_mb}MB 上限，已中止下载"}
+                        f.write(chunk)
+                ctype = resp.headers.get("content-type", "")
+    except Exception as e:
+        return {"error": f"下载失败：{e}", "url": u}
+
+    return {
+        "success": True,
+        "path": dest,
+        "size_bytes": written,
+        "size_human": f"{written / 1024 / 1024:.2f} MB" if written >= 1024 * 1024 else f"{written / 1024:.1f} KB",
+        "content_type": ctype,
+    }
+
+
+def _extract_document_text(path: str, ext: str, max_chars: int) -> str:
+    """从本地文档文件提取纯文本（pdf/docx/xlsx/xls/csv/txt 等）。"""
+    ext = (ext or "").lower()
+
+    def _clip(t: str) -> str:
+        t = t or ""
+        if len(t) > max_chars:
+            return t[:max_chars] + f"\n…（内容过长，已截断，仅保留前 {max_chars} 字）"
+        return t
+
+    # 纯文本类
+    if ext in (".txt", ".md", ".markdown", ".csv", ".tsv", ".log", ".json", ".xml",
+               ".yaml", ".yml", ".ini", ".html", ".htm"):
+        for enc in ("utf-8", "utf-8-sig", "gbk", "gb18030", "utf-16", "latin-1"):
+            try:
+                with open(path, "r", encoding=enc) as f:
+                    return _clip(f.read())
+            except Exception:
+                continue
+        with open(path, "rb") as f:
+            return _clip(f.read().decode("utf-8", errors="ignore"))
+
+    if ext == ".pdf":
+        try:
+            import pdfplumber
+            parts: list[str] = []
+            with pdfplumber.open(path) as pdf:
+                for i, page in enumerate(pdf.pages):
+                    if i >= 50:
+                        parts.append("…（页数过多，仅解析前 50 页）")
+                        break
+                    parts.append(page.extract_text() or "")
+            return _clip("\n".join(parts))
+        except Exception:
+            from pypdf import PdfReader
+            reader = PdfReader(path)
+            parts = [(p.extract_text() or "") for p in reader.pages[:50]]
+            return _clip("\n".join(parts))
+
+    if ext == ".docx":
+        from docx import Document
+        doc = Document(path)
+        parts = [p.text for p in doc.paragraphs]
+        for tbl in doc.tables:
+            for row in tbl.rows:
+                parts.append("\t".join(c.text for c in row.cells))
+        return _clip("\n".join(parts))
+
+    if ext == ".xlsx":
+        import openpyxl
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        out: list[str] = []
+        for ws in wb.worksheets:
+            out.append(f"# 工作表: {ws.title}")
+            for ri, row in enumerate(ws.iter_rows(values_only=True)):
+                if ri >= 500:
+                    out.append("…（行数过多，仅解析前 500 行）")
+                    break
+                out.append("\t".join("" if c is None else str(c) for c in row))
+        wb.close()
+        return _clip("\n".join(out))
+
+    if ext == ".xls":
+        import xlrd
+        wb = xlrd.open_workbook(path)
+        out = []
+        for ws in wb.sheets():
+            out.append(f"# 工作表: {ws.name}")
+            for ri in range(min(ws.nrows, 500)):
+                out.append("\t".join(str(v) for v in ws.row_values(ri)))
+        return _clip("\n".join(out))
+
+    if ext == ".doc":
+        raise RuntimeError("暂不支持旧版 .doc（请另存为 .docx）")
+
+    # 兜底当文本
+    with open(path, "rb") as f:
+        return _clip(f.read().decode("utf-8", errors="ignore"))
+
+
+async def skill_read_document(
+    source: str,
+    max_chars: int = 20000,
+    timeout: int = 60,
+    **_: Any,
+) -> dict[str, Any]:
+    """读取文档为纯文本，支持 PDF / Word(docx) / Excel(xlsx/xls) / CSV / TXT 等。
+
+    source 可以是**本地路径**，也可以是**网络 URL**（会先自动下载到临时目录再解析）。
+    用于"读下载来的 PDF 论文/手册""读本地 Excel 报表"等，补齐 read_webpage 读不了二进制文档的短板。
+    """
+    import os
+    import tempfile
+
+    src = (source or "").strip()
+    if not src:
+        return {"error": "source 不能为空"}
+
+    tmp_to_clean = ""
+    try:
+        if re.match(r"^https?://", src, re.IGNORECASE):
+            dl = await skill_download_file(url=src, timeout=timeout)
+            if dl.get("error"):
+                return {"error": f"下载失败：{dl['error']}", "source": src}
+            path = dl["path"]
+            tmp_to_clean = path
+        else:
+            path = src
+            if not os.path.exists(path):
+                return {"error": f"文件不存在：{path}"}
+
+        ext = os.path.splitext(path)[1].lower()
+        try:
+            text = _extract_document_text(path, ext, int(max_chars or 20000))
+        except Exception as e:
+            return {"error": f"解析失败：{type(e).__name__}: {e}", "source": src, "ext": ext}
+
+        return {
+            "source": src,
+            "ext": ext,
+            "chars": len(text),
+            "content": text,
+        }
+    finally:
+        # 只清理我们临时下载的文件，不动用户的本地文件
+        if tmp_to_clean and tempfile.gettempdir() in tmp_to_clean:
+            try:
+                os.remove(tmp_to_clean)
+            except Exception:
+                pass
+
 
 _register_v6()
