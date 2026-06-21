@@ -598,6 +598,9 @@ _ENFORCE_FILE = _DATA_DIR / "rbac_enforce.json"
 
 # 路径前缀 → 所需权限（用于全局强制时的粗粒度 authz）
 # 说明：方法敏感的端点用 (method, prefix) 细分；其余按前缀归类。
+# 注意：自鉴权的企业端点（orchestrator/rbac/audit/approvals/vault/idp/computer-use/
+# process-mining）刻意不在此映射——中间件仅要求登录，细粒度权限由各端点自身校验，
+# 避免与端点级 cluster.*/credential.* 等专属权限冲突。
 _PATH_PERM_RULES: list[tuple[str, str, str]] = [
     # (method 前缀匹配 '*'=任意, 路径前缀, 所需权限)
     ("GET", "/api/credentials", "credential.view"),
@@ -607,6 +610,28 @@ _PATH_PERM_RULES: list[tuple[str, str, str]] = [
     ("*", "/api/workflows", "workflow.edit"),
     ("*", "/api/local-workflows", "workflow.edit"),
     ("*", "/api/scheduled-tasks", "workflow.edit"),
+    # 工作流创作/扩展相关端点：读=查看，写=编辑（防只读用户远程篡改）
+    ("GET", "/api/plugins", "workflow.view"),
+    ("*", "/api/plugins", "workflow.edit"),
+    ("GET", "/api/custom-modules", "workflow.view"),
+    ("*", "/api/custom-modules", "workflow.edit"),
+    ("GET", "/api/triggers", "workflow.view"),
+    ("*", "/api/triggers", "workflow.edit"),
+    ("*", "/api/recorder", "workflow.edit"),
+    ("*", "/api/desktop-recorder", "workflow.edit"),
+    ("*", "/api/desktop-picker", "workflow.edit"),
+    ("*", "/api/element-picker", "workflow.edit"),
+    ("GET", "/api/workflow-versions", "workflow.view"),
+    ("*", "/api/workflow-versions", "workflow.edit"),
+    ("GET", "/api/data-assets", "workflow.view"),
+    ("*", "/api/data-assets", "workflow.edit"),
+    ("GET", "/api/image-assets", "workflow.view"),
+    ("*", "/api/image-assets", "workflow.edit"),
+    # 系统级操作（执行命令/宏/鼠标键盘/媒体）属于"运行"能力，至少需 operator
+    ("*", "/api/system", "workflow.run"),
+    ("*", "/api/system-macro", "workflow.run"),
+    ("*", "/api/system-mouse", "workflow.run"),
+    ("*", "/api/phone", "workflow.run"),
 ]
 
 # 这些路径即使在强制模式下也不需要会话（执行机用节点 token / 公共接口 / 登录）
