@@ -48,11 +48,14 @@ function translate(zh, DICT, PHRASE_PAIRS) {
   return out.replace(/[ \t]{2,}/g, ' ')
 }
 
-// 去掉注释，降低误报
+// 去掉注释 + console.* 调试输出（不渲染，避免误报），降低噪声
 function stripComments(code) {
-  return code
+  let out = code
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1') // 避免误伤 http://
+  // 去掉 console.log/info/warn/error/debug(...) 整段调用（含跨行参数，尽量贪婪到行尾分号）
+  out = out.replace(/console\.(log|info|warn|error|debug)\s*\([\s\S]*?\)\s*;?/g, '')
+  return out
 }
 
 function walkFiles(dir, exts, out) {
@@ -68,25 +71,16 @@ function walkFiles(dir, exts, out) {
   }
 }
 
-// 提取候选中文串：仅捕获真正会渲染的文本（JSX 文本 + 目标属性 + 简单引号字面量）
+// 提取候选中文串：仅捕获真正会渲染的可见文本（JSX 文本 + 目标属性）
 function extractCandidates(code) {
   const set = new Set()
   // JSX 文本节点（不含大括号表达式/标签）
   const jsxRe = />\s*([^<>{}]*?[\u4e00-\u9fff][^<>{}]*?)\s*</g
   let m
   while ((m = jsxRe.exec(code))) { const t = m[1].trim(); if (t && hasCJK(t)) set.add(t) }
-  // 目标属性
+  // 目标属性（占位符/标题/标签等）
   const attrRe = /(?:placeholder|title|data-tip|aria-label|alt|label|tip|tooltip)\s*=\s*(['"])((?:\\.|(?!\1).)*?)\1/g
   while ((m = attrRe.exec(code))) { const t = m[2].trim(); if (t && hasCJK(t)) set.add(t) }
-  // 简单引号字符串字面量（仅单/双引号、单行、长度受限，排除明显的代码/类名）
-  const litRe = /(['"])((?:\\.|(?!\1)[^\n])*?)\1/g
-  while ((m = litRe.exec(code))) {
-    const t = m[2].trim()
-    if (!t || !hasCJK(t)) continue
-    if (t.length > 80) continue
-    if (/[<>]|=>|className|http/.test(t)) continue
-    set.add(t)
-  }
   return [...set]
 }
 
@@ -107,38 +101,28 @@ console.log(`[${target}] DICT entries: ${Object.keys(dict.DICT).length}, PHRASES
 const files = []
 for (const d of dirs) walkFiles(d, exts, files)
 
-const gaps = new Map() // residual-original -> Set(files)
+const gaps = new Map() // file -> Set(original)
 for (const fp of files) {
   let code = fs.readFileSync(fp, 'utf8')
-  // 跳过字典文件自身与本脚本
   if (/uiI18nDict\.ts$|i18n\.js$/.test(fp)) continue
   code = stripComments(code)
   for (const cand of extractCandidates(code)) {
-    const out = translate(cand, dict.DICT, dict.PHRASE_PAIRS)
-    if (hasCJK(out)) {
-      if (!gaps.has(cand)) gaps.set(cand, new Set())
-      gaps.get(cand).add(path.relative(ROOT, fp))
-    }
+    // 可见文本：只要没有“整句精确”英文译文，就列为待翻译（不靠短语兜底拼凑）
+    if (dict.DICT[cand.trim()] !== undefined) continue
+    const rel = path.relative(ROOT, fp)
+    if (!gaps.has(rel)) gaps.set(rel, new Set())
+    gaps.get(rel).add(cand)
   }
 }
 
-const sorted = [...gaps.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-const lines = [`[${target}] 残留中文候选: ${sorted.length} 条`, '']
-for (const [k, files] of sorted) {
-  lines.push(`「${k}」  <-  ${[...files].slice(0, 2).join(', ')}`)
+const fileEntries = [...gaps.entries()].sort((a, b) => b[1].size - a[1].size)
+let total = 0
+const lines = []
+for (const [rel, set] of fileEntries) {
+  total += set.size
+  lines.push(`\n### ${rel}  (${set.size})`)
+  for (const s of [...set].sort()) lines.push(`「${s}」`)
 }
 const outPath = path.join(ROOT, `scripts/i18n-gaps-${target}.txt`)
-fs.writeFileSync(outPath, lines.join('\n'), 'utf8')
-
-// 统计翻译后仍残留的单个汉字（用于补齐字符级兜底，确保零残留）
-const charCount = new Map()
-for (const [k] of gaps) {
-  const out = translate(k, dict.DICT, dict.PHRASE_PAIRS)
-  for (const ch of out) {
-    if (/[\u3400-\u9fff\uf900-\ufaff]/.test(ch)) charCount.set(ch, (charCount.get(ch) || 0) + 1)
-  }
-}
-const chars = [...charCount.entries()].sort((a, b) => b[1] - a[1])
-const charPath = path.join(ROOT, `scripts/i18n-chars-${target}.txt`)
-fs.writeFileSync(charPath, `残留汉字种类: ${chars.length}\n\n` + chars.map(([c, n]) => `${c}\t${n}`).join('\n'), 'utf8')
-console.log(`[${target}] residual=${sorted.length}; uniqueChars=${chars.length}; written to ${path.relative(ROOT, outPath)} & i18n-chars-${target}.txt`)
+fs.writeFileSync(outPath, `可见待翻译(无精确英文)总数: ${total}\n` + lines.join('\n'), 'utf8')
+console.log(`[${target}] visibleNeedingExact=${total}; files=${fileEntries.length}; written to ${path.relative(ROOT, outPath)}`)

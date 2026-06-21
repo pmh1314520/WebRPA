@@ -25,6 +25,7 @@ import {
   ShieldQuestion,
   Pin,
   Minus,
+  PanelRightClose,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAIAssistantStore, type ChatMessage, type RollbackSnapshot } from '@/store/aiAssistantStore'
@@ -90,6 +91,14 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
 
   // 独立 Agent 窗口（Tauri）置顶状态
   const [agentPinned, setAgentPinned] = useState(true)
+  // 贴边自动隐藏提示（仅独立窗口首次显示，可手动关闭并记忆）
+  const [showEdgeHint, setShowEdgeHint] = useState(() => {
+    try { return localStorage.getItem('webrpa.agent.edgeHintDismissed') !== '1' } catch { return true }
+  })
+  const dismissEdgeHint = () => {
+    setShowEdgeHint(false)
+    try { localStorage.setItem('webrpa.agent.edgeHintDismissed', '1') } catch { /* ignore */ }
+  }
 
   const [input, setInput] = useState('')
 
@@ -949,6 +958,23 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           )}
         </div>
       </div>
+
+      {/* 贴边自动隐藏提示：仅独立 Agent 原生窗口显示，告诉用户把窗口拖到屏幕边缘可自动收起 */}
+      {standalone && isTauriRuntime() && showEdgeHint && (
+        <div className="flex items-start gap-2 px-3 py-2 bg-[hsl(var(--brand-50))] border-b border-[hsl(var(--brand-500)/0.2)] flex-shrink-0 animate-fade-in-down">
+          <PanelRightClose className="w-3.5 h-3.5 text-[hsl(var(--brand-600))] flex-shrink-0 mt-0.5" />
+          <span className="text-[11px] leading-snug text-[hsl(var(--brand-700))] flex-1">
+            将窗口拖到屏幕左右边缘可自动收起，鼠标移到边缘即可重新唤出
+          </span>
+          <button
+            onClick={dismissEdgeHint}
+            title="知道了"
+            className="flex-shrink-0 p-0.5 rounded text-[hsl(var(--brand-600))] hover:bg-[hsl(var(--brand-100))] transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* 会话列表抽屉 */}
       {showSessions && (

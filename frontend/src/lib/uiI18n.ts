@@ -7,7 +7,6 @@
    - 防抖 MutationObserver 覆盖 React 重渲染；跳过输入框/代码编辑器/画布以保护编辑与性能
    ============================================================ */
 import { UI_DICT, PHRASES } from './uiI18nDict'
-import { pinyin } from 'pinyin-pro'
 
 const LS_KEY = 'webrpa.editor.lang'
 const origText = new WeakMap<Text, string>()
@@ -20,24 +19,6 @@ let pending = false
 const PHRASE_PAIRS: [string, string][] = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
 const ATTRS = ['placeholder', 'title', 'aria-label', 'data-tip', 'alt']
 const hasCJK = (s: string) => /[\u4e00-\u9fa5]/.test(s)
-// 任意 CJK 字符（含扩展区/兼容区），用于残留兜底判断
-const hasAnyCJK = (s: string) => /[\u3400-\u9fff\uf900-\ufaff]/.test(s)
-
-// 最终兜底：把字典/短语翻译后仍残留的中文片段转为拼音（无声调、首字母大写），
-// 确保切换英文后界面绝不出现任何中文字符（常见词已由字典译为正式英文，此处只兜底长尾）
-function romanizeResidual(s: string): string {
-  const out = s.replace(/[\u3400-\u9fff\uf900-\ufaff]+/g, (seg) => {
-    try {
-      const arr = pinyin(seg, { toneType: 'none', type: 'array' }) as unknown as string[]
-      if (!arr || !arr.length) return ''
-      return arr.map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : '')).join(' ')
-    } catch {
-      return ''
-    }
-  })
-  // 终极保险：清除 pinyin-pro 也无法识别的任何残余 CJK 字符
-  return out.replace(/[\u3400-\u9fff\uf900-\ufaff]/g, '')
-}
 
 export function detectLang(): 'zh' | 'en' {
   // URL ?lang= 优先（Agent 独立窗口由启动器传入，使其语言跟随启动器）
@@ -65,13 +46,11 @@ function translateString(zh: string): string {
   // 1) 整句精确匹配
   if (UI_DICT[key] !== undefined) return zh.replace(key, UI_DICT[key])
   // 2) 短语级替换（覆盖动态拼接，如日志）
-  if (!hasCJK(zh) && !hasAnyCJK(zh)) return zh
+  if (!hasCJK(zh)) return zh
   let out = zh
   for (const [zhP, enP] of PHRASE_PAIRS) {
     if (out.indexOf(zhP) !== -1) out = out.split(zhP).join(enP)
   }
-  // 3) 最终拼音兜底：清除一切残留中文字符
-  if (hasAnyCJK(out)) out = romanizeResidual(out)
   // 收敛多余空格
   return out.replace(/[ \t]{2,}/g, ' ')
 }
@@ -79,7 +58,7 @@ function translateString(zh: string): string {
 function shouldSkip(el: Element | null): boolean {
   if (!el) return true
   return !!el.closest(
-    '.react-flow__renderer, .react-flow__viewport, .monaco-editor, input, textarea, [contenteditable="true"], #langToggleBtn'
+    '.react-flow__renderer, .react-flow__viewport, .monaco-editor, input, textarea, [contenteditable="true"], #langToggleBtn, [data-no-i18n]'
   )
 }
 
@@ -106,7 +85,7 @@ function translateAttrs(el: Element) {
     if (!bak) { bak = {}; origAttr.set(el, bak) }
     if (bak[attr] === undefined) bak[attr] = cur
     const zh = bak[attr]
-    if (!hasCJK(zh) && !hasAnyCJK(zh)) continue
+    if (!hasCJK(zh)) continue
     const next = curLang === 'en' ? translateString(zh) : zh
     if (el.getAttribute(attr) !== next) el.setAttribute(attr, next)
   }
