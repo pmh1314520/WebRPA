@@ -45,6 +45,9 @@ function translateString(zh: string): string {
   const key = zh.trim()
   // 1) 整句精确匹配
   if (UI_DICT[key] !== undefined) return zh.replace(key, UI_DICT[key])
+  // 1b) 折叠内部空白后再尝试整句匹配（覆盖 JSX 多行文本：换行+缩进会被渲染为空格）
+  const collapsed = key.replace(/\s+/g, ' ')
+  if (collapsed !== key && UI_DICT[collapsed] !== undefined) return UI_DICT[collapsed]
   // 2) 短语级替换（覆盖动态拼接，如日志）
   if (!hasCJK(zh)) return zh
   let out = zh

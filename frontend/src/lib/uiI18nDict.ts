@@ -1740,3 +1740,51 @@ Object.assign(UI_DICT, {
   '工作流启动': 'Workflow starts', '工作流完成': 'Workflow done', '触发器类型': 'Trigger type', '触发条件满足': 'Trigger condition met',
   '元素HTML': 'Element HTML', '元素HTML2': 'Element HTML 2', '兄弟元素HTML': 'Sibling element HTML', '北京': 'Beijing', '段落': 'Paragraph',
 })
+
+// ============================================================
+// 精确整句翻译：收尾批次（零散项 + 多行折叠键 + 流程图短标签）
+// ============================================================
+Object.assign(UI_DICT, {
+  'WebRPA 截图工具': 'WebRPA Screenshot Tool', '取消 (ESC)': 'Cancel (ESC)', '拖动鼠标选择区域，按 Enter 确认，按 ESC 取消': 'Drag to select an area; Enter to confirm, ESC to cancel', '确认 (Enter)': 'Confirm (Enter)',
+  '移除': 'Remove', '参数': 'Parameters',
+  '失败时通知': 'Notify on failure', '成功时通知': 'Notify on success', '执行通知': 'Execution notifications',
+  'Ctrl+左键确认坐标，Ctrl+右键取消': 'Ctrl+left-click to confirm, Ctrl+right-click to cancel', '拾取中': 'Picking', '点击「拾取」后，按 Ctrl+左键 确认坐标，Ctrl+右键 或 ESC 取消': 'After clicking "Pick", press Ctrl+left-click to confirm, Ctrl+right-click or ESC to cancel', 'Ctrl+左键确认坐标': 'Ctrl+left-click to confirm coordinates',
+  '完成搜索': 'Search done', '打开网页': 'Open page', '点击元素': 'Click element',
+  '暂无 Excel 文件': 'No Excel files', '点击上传或将 Excel 拖拽到此处': 'Click to upload or drag Excel here', '点击上方按钮上传 .xlsx 或 .xls 文件': 'Click the button above to upload a .xlsx or .xls file', '请先上传文件': 'Please upload a file first',
+  '您可以安全地关闭此页面，或者它将在几秒后尝试自动关闭。': 'You can safely close this page, or it will try to close automatically in a few seconds.', '计划任务执行完毕': 'Scheduled task finished',
+  '自定义颜色': 'Custom color', '预设颜色': 'Preset colors',
+  '请先上传图像': 'Please upload an image first', '输入图片路径或从资源选择': 'Enter an image path or pick from assets',
+  '该 Excel 模块暂无可配置项': 'This Excel module has no configurable options', '当前选择：': 'Current selection:', '确认选择': 'Confirm selection',
+  '点击排序（升序 / 降序 / 取消）': 'Click to sort (ascending / descending / clear)', '筛选数据（任意列包含）…': 'Filter data (any column contains)\u2026',
+  '单步': 'Step', '命中断点已暂停': 'Paused at breakpoint',
+  '类型': 'Type', '提示：导出后可重新通过工作流仓库或本地文件再次打开': 'Tip: after export, you can reopen it via the Workflow Hub or a local file', '选择最合适的格式分享或备份': 'Choose the most suitable format to share or back up',
+  '完成': 'Done', '跳转到子流程定义': 'Jump to subflow definition', '⬇️ 连接到子流程的第一个模块': '\u2b07\ufe0f Connect to the subflow\u2019s first module', '子流程定义': 'Subflow definition',
+  '点击变量名可重命名，Delete 键可删除': 'Click a variable name to rename; press Delete to remove', '点击编辑变量名': 'Click to edit the variable name',
+  '视频转码中，请稍候...': 'Transcoding video, please wait...',
+  'WebRPA 小助手 · Agent': 'WebRPA Assistant \u00b7 Agent', 'WebRPA 小助手 (Ctrl+K)': 'WebRPA Assistant (Ctrl+K)',
+  '例如: ctrl+shift+f1': 'e.g. ctrl+shift+f1', '输入或选择QQ号/群号': 'Enter or select a QQ/group number', '流程中的网址': 'URL in the flow', '仅改此处': 'Change here only', '刷新状态': 'Refresh status',
+  '默认值（可选）': 'Default value (optional)', '自动': 'Auto', '清空': 'Clear', '流程图渲染失败': 'Failed to render the diagram', '子流程': 'Subflow', '个模块': ' module(s)', '对方': 'Peer', '发现新版本': 'New version available', '当前工作流': 'Current workflow',
+  '输入好友昵称、备注名或群名称（需能通过搜索找到）': 'Enter a friend\u2019s nickname, alias or group name (must be findable by search)',
+  // —— 多行文本（折叠空白后匹配）——
+  '执行后会显示局域网访问地址（如 http://192.168.x.x:端口），同局域网设备可用浏览器实时观看屏幕画面。 共享服务会持续运行直到工作流结束或手动停止。': 'After running, a LAN address (e.g. http://192.168.x.x:port) is shown; devices on the same LAN can watch the screen in real time via a browser. The share keeps running until the workflow ends or you stop it manually.',
+  '执行后会显示真实的局域网访问地址（如 http://192.168.x.x:端口），同局域网设备可用浏览器访问。 共享服务会持续运行直到工作流结束或手动停止。': 'After running, the real LAN address (e.g. http://192.168.x.x:port) is shown; devices on the same LAN can access it via a browser. The share keeps running until the workflow ends or you stop it manually.',
+  '硬件按键只会进入当前前台窗口。填写后会在发送前把标题包含该文字的窗口激活到前台， 避免按键被打进 WebRPA 自己的窗口。留空则发往当前前台窗口。': 'Hardware key events only reach the current foreground window. When set, the window whose title contains this text is brought to the foreground before sending, to avoid typing into WebRPA\u2019s own window. Leave blank to send to the current foreground window.',
+  '本模块会"等待"到设定的时间点 / 延迟结束后，再继续往下执行（用于流程内定时门控）。 若要把整条工作流注册成周期计划任务，请用底栏的「计划任务」面板。': 'This module "waits" until the set time / end of the delay before continuing (an in-flow time gate). To register the whole workflow as a recurring scheduled task, use the "Scheduled tasks" panel in the bottom bar.',
+  '此配置仅控制轮询间隔，实际响应时间还包含 NapCat API 处理耗时（约1秒，无法优化）。 因此实际总间隔约为 1-1.5 秒。': 'This only controls the polling interval; actual response time also includes NapCat API processing (about 1s, not optimizable). So the real total interval is about 1-1.5s.',
+  '，  然后在后续模块中使用此选择器即可遍历所有相似元素。': ', then use this selector in later modules to iterate over all similar elements.',
+  '，  然后在后续模块中使用此选择器即可遍历所有相似元素。 ': ', then use this selector in later modules to iterate over all similar elements.',
+  '创建应用，获取 AK / SK。 文件ID 与表ID 可在多维表格的分享链接 / API 设置中查看。': 'Create an app to get AK / SK. The file ID and table ID can be found in the Bitable share link / API settings.',
+  '启动手机屏幕镜像后，您可以在电脑上查看和操作手机屏幕。 镜像窗口会自动置顶显示，方便您同时使用电脑和手机。': 'After starting screen mirroring, you can view and operate the phone screen on your computer. The mirror window stays on top so you can use both at once.',
+  '已为你拦截这次错误（不会白屏）。通常是某个模块配置异常或工作流文件含损坏数据。 可以点「清空画布」恢复使用，已保存的工作流不会受影响；也可以让 AI 小助手帮你诊断原因。': 'This error was caught (no blank screen). It is usually a misconfigured module or corrupted workflow data. Click "Clear canvas" to recover (saved workflows are unaffected), or let the AI assistant diagnose it.',
+  '让你接入第三方工具到 WebRPA 小助手。 支持': 'Connect third-party tools to the WebRPA assistant. Supports',
+  '（远程服务）。 配置格式与 Claude Desktop 兼容。': '(remote service). The config format is compatible with Claude Desktop.',
+  '我了解 WebRPA 的方方面面，能帮你搭建工作流、运行任务、答疑解惑；不止于此，我还能直接操作你的电脑—— 打开软件、管理文件、执行命令、控制鼠标键盘等都不在话下。': 'I know WebRPA inside out and can help you build workflows, run tasks and answer questions. Beyond that, I can operate your computer directly \u2014 opening software, managing files, running commands, controlling mouse and keyboard, and more.',
+  '，能直接操作你的电脑—— 打开/关闭软件、管理文件、运行命令与脚本、看屏截图、控制鼠标键盘、联网查资料，自己规划步骤、自己执行、自己验证。 当然，我也能顺手帮你操作 WebRPA、搭建并运行自动化工作流。': ', and can operate your computer directly \u2014 opening/closing software, managing files, running commands and scripts, taking screenshots, controlling mouse and keyboard, searching online, and planning, executing and verifying steps on its own. Of course, I can also help you operate WebRPA and build and run automation workflows.',
+})
+
+// 收尾：相似选择器多行折叠键 + 编辑自定义模块标签 + 流程图边标签
+Object.assign(UI_DICT, {
+  '， 然后在后续模块中使用此选择器即可遍历所有相似元素。': ', then use this selector in later modules to iterate over all similar elements.',
+  '标签（用逗号分隔）': 'Tags (comma-separated)',
+  '|否| D["': '|No| D["', '|条件为假| D["': '|Condition false| D["', '|条件为真| C["': '|Condition true| C["', '|否| E["': '|No| E["',
+})

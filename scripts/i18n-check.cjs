@@ -55,6 +55,8 @@ function buildDict(filePath, dictName, phraseName) {
 function translate(zh, DICT, PHRASE_PAIRS) {
   const key = zh.trim()
   if (DICT[key] !== undefined) return zh.replace(key, DICT[key])
+  const collapsed = key.replace(/\s+/g, ' ')
+  if (collapsed !== key && DICT[collapsed] !== undefined) return DICT[collapsed]
   if (!hasCJK(zh)) return zh
   let out = zh
   for (const [z, e] of PHRASE_PAIRS) { if (out.indexOf(z) !== -1) out = out.split(z).join(e) }
@@ -121,7 +123,9 @@ for (const fp of files) {
   code = stripComments(code)
   for (const cand of extractCandidates(code)) {
     // 可见文本：只要没有“整句精确”英文译文，就列为待翻译（不靠短语兜底拼凑）
-    if (dict.DICT[cand.trim()] !== undefined) continue
+    const k = cand.trim()
+    if (dict.DICT[k] !== undefined) continue
+    if (dict.DICT[k.replace(/\s+/g, ' ')] !== undefined) continue
     const rel = path.relative(ROOT, fp)
     if (!gaps.has(rel)) gaps.set(rel, new Set())
     gaps.get(rel).add(cand)
