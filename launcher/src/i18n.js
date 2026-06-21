@@ -118,6 +118,21 @@ Object.assign(DICT, {
   '官网 / 后台 / Web 应用': 'Website / admin / web app',
 })
 
+// 追加：之前遗漏的页脚 / 设置 / 群信息 / 动态关闭文案
+Object.assign(DICT, {
+  '青云制作_彭明航 版权所有': 'QingYun Studio_Peng Minghang · All rights reserved',
+  '版权所有': 'All rights reserved',
+  'QQ 群': 'QQ Group',
+  '入群答案': 'Join answer',
+  '界面语言 / Language': 'Language',
+  '显示语言': 'Display language',
+  '切换启动器中英文；Agent 独立窗口语言会跟随此设置': 'Switch launcher language; the Agent window follows this setting',
+  '正在关闭服务，请稍候…': 'Closing services, please wait…',
+  '已开启开机自启动': 'Auto-start on boot enabled',
+  '已关闭开机自启动': 'Auto-start on boot disabled',
+  '设置开机自启动失败': 'Failed to set auto-start',
+})
+
 if (typeof window !== 'undefined') window.__WEBRPA_LAUNCHER_DICT = DICT
 
 // 短语级字典：覆盖动态拼接文本/日志（整句未命中时按长度降序逐个替换）
@@ -145,10 +160,14 @@ const PHRASES = {
   '已': '', '正在': '', '请': 'please ', '了': '', '的': ' ',
   '微信': 'WeChat', '支付宝': 'Alipay', '联系': 'contact', '备注': 'note',
   '免费': 'free', '开源': 'open source', '本地': 'local', '浏览器': 'browser',
+  '版权所有': 'All rights reserved', '群': 'group', '答案': 'answer',
+  '显示': 'display', '界面': 'UI', '语言': 'language', '稍候': 'wait', '请稍候': 'please wait',
+  '中英文': 'language', '独立窗口': 'standalone window', '跟随': 'follows', '此设置': 'this setting',
 }
 const PHRASE_PAIRS = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
 const hasCJK = (s) => /[\u4e00-\u9fa5]/.test(s)
-const ATTRS = ['placeholder', 'title']
+// data-tip：自定义 Tooltip 指令把 title 搬到 data-tip，必须一并翻译
+const ATTRS = ['placeholder', 'title', 'data-tip', 'aria-label', 'alt']
 
 function translateStr(zh) {
   const key = zh.trim()
@@ -212,7 +231,7 @@ function walkAndTranslate(root) {
   let n
   while ((n = walker.nextNode())) translateNode(n)
   if (root.querySelectorAll) {
-    root.querySelectorAll('[placeholder],[title]').forEach((el) => translateAttrs(el))
+    root.querySelectorAll('[placeholder],[title],[data-tip],[aria-label],[alt]').forEach((el) => translateAttrs(el))
     if (root.nodeType === 1) translateAttrs(root)
   }
 }

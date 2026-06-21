@@ -17,7 +17,7 @@ let pending = false
 
 // 短语按长度降序，避免短词先替换破坏长词
 const PHRASE_PAIRS: [string, string][] = Object.entries(PHRASES).sort((a, b) => b[0].length - a[0].length)
-const ATTRS = ['placeholder', 'title', 'aria-label']
+const ATTRS = ['placeholder', 'title', 'aria-label', 'data-tip', 'alt']
 const hasCJK = (s: string) => /[\u4e00-\u9fa5]/.test(s)
 
 export function detectLang(): 'zh' | 'en' {
@@ -100,7 +100,7 @@ function walk(root: Node) {
   if (root instanceof Element || root === document.body) {
     const base = root instanceof Element ? root : document.body
     translateAttrs(base as Element)
-    const els = (base as Element).querySelectorAll('[placeholder],[title],[aria-label]')
+    const els = (base as Element).querySelectorAll('[placeholder],[title],[aria-label],[data-tip],[alt]')
     els.forEach((el) => translateAttrs(el))
   }
 }
