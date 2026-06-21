@@ -570,7 +570,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             # 记录执行历史 + 失败告警（异常隔离，不影响主流程）
             try:
                 from app.services.execution_history import record_run as _record_run
-                from app.services.alert_center import dispatch_alert as _dispatch_alert
+                from app.services.alert_center import dispatch_alert_async as _dispatch_alert
                 _wf_name = getattr(workflow, 'name', '') or workflow_id
                 _rec = _record_run(
                     workflow_name=_wf_name,
@@ -583,7 +583,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
                     source='editor',
                     started_at=_run_start_ts,
                 )
-                _dispatch_alert(_rec)
+                await _dispatch_alert(_rec)
             except Exception as _he:
                 print(f"[run_execution] 记录执行历史/告警失败: {_he}")
 
@@ -665,7 +665,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             # 记录失败历史 + 告警（异常隔离）
             try:
                 from app.services.execution_history import record_run as _record_run
-                from app.services.alert_center import dispatch_alert as _dispatch_alert
+                from app.services.alert_center import dispatch_alert_async as _dispatch_alert
                 _wf_name = getattr(workflow, 'name', '') or workflow_id
                 _rec = _record_run(
                     workflow_name=_wf_name,
@@ -676,7 +676,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
                     error=str(e)[:500],
                     source='editor',
                 )
-                _dispatch_alert(_rec)
+                await _dispatch_alert(_rec)
             except Exception as _he:
                 print(f"[run_execution] 记录失败历史/告警失败: {_he}")
 

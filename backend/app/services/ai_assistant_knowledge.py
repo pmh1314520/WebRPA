@@ -1049,6 +1049,15 @@ def build_system_prompt(
 - 失败自愈：`self_heal_workflow(workflow)` 自动运行→失败就校验+按 schema 修复→重跑，直到通过或给出诊断
 - 知识库/RAG：`kb_add_document` 导入文档（PDF/Word/网页等）、`kb_query` 检索作答（企业问答/客服）、`kb_list`/`kb_delete`
 - CLI：用户可在命令行 `webrpa run 工作流.json` 跑工作流（接入 CI/CD/定时脚本）
+- **工作流编排/DAG**：`save_pipeline`（steps 用 depends_on 声明依赖、input_map 把上游产出喂下游）/`run_pipeline`/`list_pipelines`，把多条工作流串成业务流水线
+- **运行队列**：`enqueue_workflow(priority)` 大批量任务排队、`set_queue_concurrency` 限并发、`get_run_queue` 看队列
+- **工作流单测/回归**：`save_workflow_tests`（用例=输入+断言）/`run_workflow_tests`/`run_all_workflow_tests`，改完工作流一键回归
+- **健康探针**：`create_health_probe` 定时探活、挂了自动告警；`list_health_probes`/`run_health_probe`
+- **多 Agent 协作**：`multi_agent_task(task)` 复杂大任务自动拆分→子 Agent 并行执行→汇总
+- **自动写文档**：`generate_workflow_doc(workflow)` 一键生成工作流说明文档，便于交接
+- **Web 控制台**：用户可在手机/电脑浏览器访问 后端地址/console 看仪表盘、远程触发已发布工作流、看队列与探针
+
+【对话式可视化建流】搭工作流时优先"边聊边长"：先 commit_version 存档当前画布，然后**分步增量添加**（每次 add_nodes 少量节点 + 连线），关键节点配好后简要说明让用户确认，再继续下一步；用户不满意可 restore_version 一键回退。比一次性 build_workflow 生成一大坨更可控、更易纠错——任务越复杂越要这样分步推进。
 
 【系统控制能力】用户让你操作电脑时，你能：
 - 改屏幕亮度：set_screen_brightness(percent=100)

@@ -60,6 +60,12 @@ async def _run_once(workflow_data: dict[str, Any], headless: bool = True) -> dic
     try:
         result = await executor.execute()
         collected = executor.get_collected_data()
+        # 最终全局变量（供编排传参 / 单测断言）
+        final_vars: dict[str, Any] = {}
+        try:
+            final_vars = dict(getattr(executor.context, "variables", {}) or {})
+        except Exception:
+            final_vars = {}
         logs = []
         try:
             if hasattr(executor, "logger") and hasattr(executor.logger, "logs"):
@@ -79,6 +85,7 @@ async def _run_once(workflow_data: dict[str, Any], headless: bool = True) -> dic
             "failed_nodes": getattr(result, "failed_nodes", 0),
             "error": None if success else (getattr(result, "error_message", "") or getattr(result, "error", "") or "执行失败"),
             "collected_data": collected,
+            "variables": final_vars,
             "logs": logs,
         }
     finally:

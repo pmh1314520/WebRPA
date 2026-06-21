@@ -134,6 +134,8 @@ from app.api.retention import router as retention_router
 from app.api.workflow_bundle import router as workflow_bundle_router
 from app.api.dashboard import router as dashboard_router
 from app.api.published_workflows import router as published_workflows_router
+from app.api.orchestration import router as orchestration_router
+from app.api.console import router as console_router
 app.include_router(workflows_router)
 app.include_router(element_picker_router)
 app.include_router(data_assets_router)
@@ -164,6 +166,8 @@ app.include_router(retention_router)
 app.include_router(workflow_bundle_router)
 app.include_router(dashboard_router)
 app.include_router(published_workflows_router)
+app.include_router(orchestration_router)
+app.include_router(console_router)
 
 # 设置 Socket.IO 实例（避免循环导入）
 set_workflows_sio(sio)
@@ -232,6 +236,13 @@ async def startup_event():
             print(f"[Startup] MCP 初始化失败: {e}")
 
     asyncio.create_task(_init_mcp())
+
+    # 启动健康探针后台循环（定时跑探活工作流，失败走告警中心）
+    try:
+        from app.services.health_probes import start_probe_loop
+        start_probe_loop()
+    except Exception as e:
+        print(f"[Startup] 健康探针循环启动失败: {e}")
     
     # 启动留存清理（录像/采集数据滚动清理，避免磁盘膨胀）
     try:

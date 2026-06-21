@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "notify_on": "failure",
+  "channels": [
+    {
+      "type": "webhook",
+      "enabled": true,
+      "url": "http://localhost:5241/api/dashboard/stats"
+    }
+  ],
+  "retry": {
+    "enabled": true,
+    "max_retries": 1,
+    "delay_seconds": 2
+  }
+}

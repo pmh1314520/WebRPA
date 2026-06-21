@@ -123,3 +123,20 @@ def test_alert() -> dict[str, Any]:
     results = notify_all(channels, "【WebRPA】告警测试", "这是一条来自 WebRPA 告警中心的测试消息，收到即说明渠道配置正确。")
     ok = sum(1 for r in results if r.get("success"))
     return {"sent": True, "channels": len(channels), "ok": ok, "results": results}
+
+
+# ---- async 包装：渠道发送底层是阻塞式 requests，在 async 上下文中必须放到线程里跑，
+#      否则会阻塞 FastAPI 事件循环（甚至自请求时死锁）。----
+
+async def dispatch_alert_async(record: dict[str, Any]) -> dict[str, Any]:
+    import asyncio
+    try:
+        return await asyncio.to_thread(dispatch_alert, record)
+    except Exception as e:
+        print(f"[alert_center] async 发送告警异常: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+async def test_alert_async() -> dict[str, Any]:
+    import asyncio
+    return await asyncio.to_thread(test_alert)

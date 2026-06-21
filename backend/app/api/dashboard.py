@@ -51,4 +51,4 @@ async def api_save_alert_config(req: AlertConfigRequest):
 @router.post("/alerts/test")
 async def api_test_alert():
     """发送一条测试告警，验证渠道配置。"""
-    return alerts.test_alert()
+    return await alerts.test_alert_async()
