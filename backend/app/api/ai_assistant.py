@@ -135,6 +135,44 @@ async def api_cancel_session(session_id: str):
     return {"success": ok, "session_id": session_id}
 
 
+# ---------- 共享配置（跨上下文：编辑器在系统浏览器、Agent 在 Tauri WebView2，
+#            两者 localStorage 隔离，故小助手配置经后端共享，让独立 Agent 窗口也能读到） ----------
+
+def _shared_config_path():
+    from app.services.ai_assistant_skills import _get_data_folder  # type: ignore
+    folder = _get_data_folder() / "ai_assistant"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder / "shared_config.json"
+
+
+@router.get("/config")
+async def api_get_shared_config():
+    """读取共享的小助手配置（供独立 Agent 窗口启动时拉取）。"""
+    import json as _json
+    p = _shared_config_path()
+    if not p.exists():
+        return {"config": None}
+    try:
+        return {"config": _json.loads(p.read_text(encoding="utf-8"))}
+    except Exception:
+        return {"config": None}
+
+
+class SaveSharedConfigRequest(BaseModel):
+    config: dict
+
+
+@router.put("/config")
+async def api_save_shared_config(req: SaveSharedConfigRequest):
+    """保存共享的小助手配置（编辑器在配置变化时推送，Agent 窗口随后拉取生效）。"""
+    import json as _json
+    if not isinstance(req.config, dict):
+        raise HTTPException(400, "config 必须是 JSON 对象")
+    p = _shared_config_path()
+    p.write_text(_json.dumps(req.config, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"success": True}
+
+
 # ---------- 连通性测试 ----------
 
 class TestConnectionRequest(BaseModel):

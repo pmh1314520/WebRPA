@@ -665,7 +665,7 @@ Object.assign(UI_DICT, {
   '我知道了': 'Got it', '或': 'or', '大': 'Large', '小': 'Small',
   '密码': 'Password', '端口': 'Port', '用户名': 'Username', '字符集': 'Charset',
   '重置全部': 'Reset all', '配置已保存': 'Settings saved', '添加': 'Add',
-  '将窗口拖到屏幕右边缘可自动收起，鼠标移至边缘可重新唤出': 'Drag the window to the right screen edge to auto-hide it; move your mouse to the edge to bring it back',
+  '将窗口拖到屏幕左右边缘可自动收起，鼠标移至边缘可重新唤出': 'Drag the window to the left or right screen edge to auto-hide it; move your mouse to the edge to bring it back',
   '知道了': 'Got it',
 })
 

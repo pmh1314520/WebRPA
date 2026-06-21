@@ -60,14 +60,6 @@ const AGENT_QUICK_PROMPTS = [
   { text: '查找并打开电脑上的某个程序', icon: ListTree, color: 'icon-chip-warning' },
 ]
 
-// 常驻快捷指令（有对话时显示在输入框上方）：借助已有 skills 让 AI 执行
-const QUICK_ACTIONS: { label: string; prompt: string }[] = [
-  { label: '整流程体检', prompt: '请对我当前画布上的整个工作流做一次体检：检查未连线的孤立节点、未定义/未赋值就被使用的变量、缺失的必填项、可能的死循环或逻辑问题，逐条列出问题并给出具体修复建议。' },
-  { label: '排查报错', prompt: '请读取最近的执行日志，找出工作流运行失败或报错的根本原因，并给出具体可操作的修复方案。' },
-  { label: '优化建议', prompt: '请审查我当前的工作流，从性能、健壮性、错误处理、可读性几个方面指出可优化之处，并给出改进建议。' },
-  { label: '变量链路', prompt: '请分析我当前工作流的变量传递链路：每个变量由哪个模块产生、被哪些模块使用，是否存在未使用或未定义的变量。' },
-]
-
 export function AIAssistantPanel({ standalone = false }: { standalone?: boolean } = {}) {
   const isOpen = useAIAssistantStore((s) => s.isPanelOpen)
   const setOpen = useAIAssistantStore((s) => s.setPanelOpen)
@@ -379,6 +371,34 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       }
     })
   }, [setOpen])
+
+  // 编辑器：把小助手配置推送到后端，供独立 Agent 窗口跨上下文读取
+  // （编辑器在系统浏览器、Agent 在 Tauri WebView2，localStorage 互相隔离，必须经后端共享）
+  useEffect(() => {
+    if (standalone) return
+    const t = setTimeout(() => {
+      aiAssistantApi.saveSharedConfig({ aiAssistant: aiAssistantConfig, ai: aiFallbackConfig }).catch(() => {})
+    }, 400)
+    return () => clearTimeout(t)
+  }, [standalone, aiAssistantConfig, aiFallbackConfig])
+
+  // 独立 Agent 窗口：从后端拉取共享配置并水合（首次 + 每 4 秒轮询，编辑器改了配置后自动跟上）
+  useEffect(() => {
+    if (!standalone) return
+    let cancelled = false
+    const load = () => {
+      aiAssistantApi.getSharedConfig().then((res) => {
+        if (cancelled) return
+        const cfg = (res.success ? res.data?.config : null) as { aiAssistant?: any; ai?: any } | null
+        if (!cfg) return
+        if (cfg.aiAssistant) updateAIAssistantConfig(cfg.aiAssistant)
+        if (cfg.ai) useGlobalConfigStore.getState().updateAIConfig(cfg.ai)
+      }).catch(() => {})
+    }
+    load()
+    const iv = setInterval(load, 4000)
+    return () => { cancelled = true; clearInterval(iv) }
+  }, [standalone, updateAIAssistantConfig])
 
   const resolvedConfig = (() => {
     const a = aiAssistantConfig
@@ -968,7 +988,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
         <div className="flex items-start gap-2 px-3 py-2 bg-[hsl(var(--brand-50))] border-b border-[hsl(var(--brand-500)/0.2)] flex-shrink-0 animate-fade-in-down">
           <PanelRightClose className="w-3.5 h-3.5 text-[hsl(var(--brand-600))] flex-shrink-0 mt-0.5" />
           <span className="text-[11px] leading-snug text-[hsl(var(--brand-700))] flex-1">
-            将窗口拖到屏幕右边缘可自动收起，鼠标移至边缘可重新唤出
+            将窗口拖到屏幕左右边缘可自动收起，鼠标移至边缘可重新唤出
           </span>
           <button
             onClick={dismissEdgeHint}
@@ -1260,22 +1280,6 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           <div className="mb-2 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-[hsl(var(--slate-700))] px-1 font-semibold">
             <Info className="w-3 h-3 mt-[2px] flex-shrink-0 text-[hsl(var(--warning-600))]" />
             <span>小助手仅作为辅助工具，它并不能完全替代人工！</span>
-          </div>
-        )}
-        {/* 快捷指令芯片（有对话时显示）：一键体检/排错/优化/变量链路 */}
-        {messages.length > 0 && configReady && (
-          <div className="mb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-            {QUICK_ACTIONS.map((q) => (
-              <button
-                key={q.label}
-                type="button"
-                disabled={isSending}
-                onClick={() => handleSend(q.prompt)}
-                className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border border-[hsl(var(--brand-500)/0.3)] bg-[hsl(var(--brand-50))] text-[hsl(var(--brand-700))] hover:bg-[hsl(var(--brand-100))] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Zap className="w-2.5 h-2.5" /> {q.label}
-              </button>
-            ))}
           </div>
         )}
         {/* 待发送附件预览：图片缩略图 + 文档芯片 */}

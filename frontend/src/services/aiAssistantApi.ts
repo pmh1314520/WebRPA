@@ -91,4 +91,14 @@ export const aiAssistantApi = {
 
   deleteMemory: (id: string) =>
     apiRequest(`/ai-assistant/memories/${id}`, { method: 'DELETE' }),
+
+  // 共享配置：跨上下文同步小助手配置（编辑器推送 / Agent 窗口拉取）
+  getSharedConfig: () =>
+    apiRequest<{ config: any | null }>('/ai-assistant/config'),
+
+  saveSharedConfig: (config: any) =>
+    apiRequest<{ success: boolean }>('/ai-assistant/config', {
+      method: 'PUT',
+      body: JSON.stringify({ config }),
+    }),
 }

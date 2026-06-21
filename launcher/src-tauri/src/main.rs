@@ -1027,8 +1027,6 @@ async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>
     if let Some(icon) = app.default_window_icon() {
         let _ = win.set_icon(icon.clone());
     }
-    // 启动基于全局光标的贴边自动隐藏/唤出线程（比前端 4px 条带可靠）
-    spawn_agent_autohide(app.clone());
     Ok(())
 }
 
@@ -1088,7 +1086,14 @@ fn spawn_agent_autohide(app: tauri::AppHandle) {
             std::thread::sleep(std::time::Duration::from_millis(120));
             let win = match app.get_webview_window("assistant") {
                 Some(w) => w,
-                None => return, // 窗口已关闭，线程退出
+                None => {
+                    // 窗口未打开（或已关闭）：重置贴边状态，继续轮询等待下次打开，线程常驻不退出
+                    docked = 0;
+                    hidden = false;
+                    leave_at = None;
+                    std::thread::sleep(std::time::Duration::from_millis(400));
+                    continue;
+                }
             };
             if win.is_minimized().unwrap_or(false) { continue; }
             let outer = match win.outer_position() { Ok(p) => p, Err(_) => continue };
@@ -1117,8 +1122,11 @@ fn spawn_agent_autohide(app: tauri::AppHandle) {
                     let ms = mon.size();
                     let (mx, my, mw) = (mp.x, mp.y, ms.width as i32);
                     let th = 20i32;
-                    // 仅在屏幕右边缘贴边自动隐藏（与界面提示文案保持一致）
-                    let new_dock = if wx + ww >= mx + mw - th { 2 } else { 0 };
+                    // 左 / 右 / 上 三个屏幕边缘都可贴边自动隐藏
+                    let new_dock = if wx <= mx + th { 1 }
+                        else if wx + ww >= mx + mw - th { 2 }
+                        else if wy <= my + th { 3 }
+                        else { 0 };
                     docked = new_dock;
                     if docked != 0 { dmx = mx; dmy = my; dmw = mw; }
                 }
@@ -1208,6 +1216,9 @@ fn main() {
                     let _ = window.set_icon(icon.clone());
                 }
             }
+
+            // 常驻启动 Agent 窗口贴边自动隐藏线程（窗口没开时空转等待，开了就接管，确保始终生效）
+            spawn_agent_autohide(app.handle().clone());
 
             // 系统托盘：最小化时隐藏到托盘，点击托盘图标或菜单可恢复
             let show_item = MenuItem::with_id(app, "tray_show", "显示主窗口", true, None::<&str>)?;
