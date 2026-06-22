@@ -149,6 +149,7 @@ Object.assign(UI_DICT, {
   '打包完成': 'Packaging complete',
   '打包失败': 'Packaging failed',
   '打开输出目录': 'Open output folder',
+  '程序图标 (.ico 绝对路径，可选)': 'App icon (.ico absolute path, optional)',
   '一键安装打包工具': 'Install packaging tool',
   '安装中…': 'Installing…',
   '手机镜像': 'Phone Mirror',

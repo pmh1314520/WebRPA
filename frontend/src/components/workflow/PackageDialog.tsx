@@ -22,6 +22,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [headless, setHeadless] = useState(false)
   const [showConsole, setShowConsole] = useState(true)
   const [slim, setSlim] = useState(true)
+  const [iconPath, setIconPath] = useState('')
   const [toolchain, setToolchain] = useState<{ installed: boolean; version?: string } | null>(null)
   const [installing, setInstalling] = useState(false)
   const [building, setBuilding] = useState(false)
@@ -69,7 +70,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       const content = wf.content || wf.workflow || wf
       const r = await fetch(`${base()}/api/workflow-package/build`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workflow: content, output_name: outName, mode, headless, show_console: showConsole, slim }),
+        body: JSON.stringify({ workflow: content, output_name: outName, mode, headless, show_console: showConsole, slim, icon_path: iconPath.trim() || null }),
       })
       const d = await r.json()
       if (!r.ok) { setJob({ status: 'failed', error: d.detail || '启动失败' }); setBuilding(false); return }
@@ -133,6 +134,12 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
               <label className="flex items-center gap-2"><input type="checkbox" checked={showConsole} onChange={e => setShowConsole(e.target.checked)} /> 显示运行控制台</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={slim} onChange={e => setSlim(e.target.checked)} disabled={mode !== 'portable'} /> 按需裁剪（瘦身）</label>
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-[hsl(var(--muted-foreground))]">程序图标 (.ico 绝对路径，可选)</label>
+            <input className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+              value={iconPath} onChange={e => setIconPath(e.target.value)} placeholder="例如 C:\icons\app.ico（留空用默认图标）" />
           </div>
 
           <div className="text-xs px-3 py-2 rounded-md bg-[hsl(var(--muted))]">

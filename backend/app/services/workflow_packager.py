@@ -283,23 +283,35 @@ def _build_ignore(slim: bool, needed_groups: set[str]):
 
 
 def _copy_assets(workflow: dict[str, Any], runtime_dir: Path) -> int:
-    """把工作流可能用到的本地资源（图片/数据资产/自定义模块）拷进运行时的 backend/data，
-    保证打包后这些模块仍能按 cwd 相对路径找到资源（不含任何敏感凭据）。"""
-    src_data = _project_root() / "backend" / "data"
-    if not src_data.exists():
-        return 0
-    dst_data = runtime_dir / "backend" / "data"
+    """把工作流可能用到的本地资源拷进运行时，保证打包后这些模块仍能找到资源：
+    - Excel 数据资源 / 图片资源：实际存放在 backend/uploads/{excel,images}，
+      执行器按模块文件 __file__ 解析为 runtime/uploads/{excel,images}（导入时扫描登记）。
+    - 自定义模块：执行器按 cwd 相对路径 backend/data/custom_modules 解析 → runtime/backend/data/custom_modules。
+    （不含任何敏感凭据）"""
+    root = _project_root()
     copied = 0
-    # 仅复制资产类子目录，显式排除一切敏感/运行时数据
-    SAFE_SUBDIRS = ["image_assets", "data_assets", "custom_modules"]
-    for sub in SAFE_SUBDIRS:
-        s = src_data / sub
-        if s.exists() and s.is_dir():
-            try:
-                shutil.copytree(s, dst_data / sub, dirs_exist_ok=True)
-                copied += 1
-            except Exception:
-                pass
+    # 1) uploads：Excel / 图片资源
+    uploads = root / "backend" / "uploads"
+    if uploads.exists():
+        for sub in ("excel", "images"):
+            s = uploads / sub
+            if s.is_dir():
+                try:
+                    shutil.copytree(s, runtime_dir / "uploads" / sub,
+                                    dirs_exist_ok=True,
+                                    ignore=shutil.ignore_patterns("__pycache__"))
+                    copied += 1
+                except Exception as e:
+                    print(f"[packager] 复制 uploads/{sub} 失败: {e}")
+    # 2) 自定义模块（cwd 相对解析）
+    cm = root / "backend" / "data" / "custom_modules"
+    if cm.is_dir():
+        try:
+            shutil.copytree(cm, runtime_dir / "backend" / "data" / "custom_modules",
+                            dirs_exist_ok=True)
+            copied += 1
+        except Exception as e:
+            print(f"[packager] 复制 custom_modules 失败: {e}")
     return copied
 
 
