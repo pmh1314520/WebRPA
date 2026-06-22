@@ -114,6 +114,27 @@ async def permissions(x_webrpa_session: Optional[str] = Header(None)):
     return {"success": True, "permissions": rbac.all_permissions()}
 
 
+@router.get("/sessions")
+async def list_sessions(x_webrpa_session: Optional[str] = Header(None)):
+    """列出当前有效会话（不含完整令牌）。"""
+    _require(x_webrpa_session, "rbac.manage")
+    return {"success": True, "sessions": rbac.list_active_sessions()}
+
+
+class RevokeReq(BaseModel):
+    username: str
+
+
+@router.post("/sessions/revoke")
+async def revoke_sessions(req: RevokeReq, x_webrpa_session: Optional[str] = Header(None)):
+    """强制吊销某用户的所有会话（立即下线）。"""
+    s = _require(x_webrpa_session, "rbac.manage")
+    n = rbac.revoke_user_sessions(req.username)
+    audit_log.record(s["username"], "rbac.role_change", req.username,
+                     result="sessions_revoked", detail={"revoked": n})
+    return {"success": True, "revoked": n}
+
+
 # ---------- 用户管理（需 rbac.manage）----------
 @router.get("/users")
 async def list_users(x_webrpa_session: Optional[str] = Header(None)):

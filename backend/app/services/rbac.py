@@ -190,7 +190,8 @@ def issue_session(username: str) -> dict[str, Any]:
     with _lock:
         exp = int(time.time()) + SESSION_TTL
         body = base64.urlsafe_b64encode(
-            json.dumps({"u": username, "exp": exp}, ensure_ascii=False).encode("utf-8")
+            json.dumps({"u": username, "exp": exp, "jti": secrets.token_hex(8)},
+                       ensure_ascii=False).encode("utf-8")
         ).decode("ascii").rstrip("=")
         token = f"{body}.{_sign(body)}"
         sess = _load_sessions()
@@ -253,6 +254,37 @@ def revoke_session(token: str) -> bool:
             _save_sessions(sess)
             return True
         return False
+
+
+def list_active_sessions() -> list[dict[str, Any]]:
+    """列出当前有效（未过期）的会话（不含令牌本身）。"""
+    with _lock:
+        sess = _load_sessions()
+        now = time.time()
+        out = []
+        for token, info in sess.items():
+            if info.get("expires_at", 0) < now:
+                continue
+            out.append({
+                "username": info.get("username", ""),
+                "created_at": info.get("created_at"),
+                "expires_at": info.get("expires_at"),
+                "token_tail": token[-6:] if token else "",  # 仅尾部用于区分，不泄露完整令牌
+            })
+        out.sort(key=lambda x: x.get("created_at") or 0, reverse=True)
+        return out
+
+
+def revoke_user_sessions(username: str) -> int:
+    """吊销某用户的所有会话（强制下线）。返回吊销数量。"""
+    with _lock:
+        sess = _load_sessions()
+        victims = [t for t, i in sess.items() if i.get("username") == username]
+        for t in victims:
+            sess.pop(t, None)
+        if victims:
+            _save_sessions(sess)
+        return len(victims)
 
 
 # ---------- 权限判定 ----------
@@ -530,6 +562,9 @@ def update_user(username: str, *, roles: Optional[list[str]] = None,
                 return {"success": False, "error": "口令至少 6 位"}
             user["password"] = _hash_password(new_password)
         _save(data)
+        # 禁用或改口令后，强制吊销该用户所有现存会话
+        if disabled or new_password:
+            revoke_user_sessions(username)
         return {"success": True}
 
 
@@ -542,6 +577,7 @@ def delete_user(username: str) -> dict[str, Any]:
             return {"success": False, "error": "用户不存在"}
         data["users"].pop(username, None)
         _save(data)
+        revoke_user_sessions(username)  # 删除用户后强制下线其所有会话
         return {"success": True}
 
 
