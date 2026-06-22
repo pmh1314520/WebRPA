@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import threading
 import time
@@ -137,6 +138,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)            # 让 import app.* 生效
 os.chdir(HERE)                       # 资源/相对路径基于运行时目录
 os.environ["WEBRPA_PACKAGED"] = "1"  # 标记打包运行：交互模块改用原生弹窗，不依赖前端
+
+# 自带浏览器/OCR模型时，指向打包内的缓存（离线可用）；未自带则回退系统 Edge / 首次联网下载
+_pw = os.path.join(HERE, "ms-playwright")
+if os.path.isdir(_pw):
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = _pw
+_pdx = os.path.join(HERE, ".paddlex")
+if os.path.isdir(_pdx):
+    os.environ.setdefault("PADDLE_PDX_CACHE_HOME", HERE)
+_easyocr = os.path.join(HERE, ".EasyOCR")
+if os.path.isdir(_easyocr):
+    os.environ.setdefault("EASYOCR_MODULE_PATH", _easyocr)
 
 if sys.platform == "win32":
     try:
@@ -315,6 +327,41 @@ def _copy_assets(workflow: dict[str, Any], runtime_dir: Path) -> int:
     return copied
 
 
+def _bundle_heavy_runtimes(runtime_dir: Path, needed: set[str], job: dict[str, Any]) -> None:
+    """portable 模式下，按工作流需要把浏览器内核 / OCR 模型缓存打进包，保证离线也能跑。"""
+    home = Path(os.path.expanduser("~"))
+    local = Path(os.environ.get("LOCALAPPDATA", str(home / "AppData" / "Local")))
+
+    # 浏览器内核（Playwright）：网页类工作流默认用系统 Edge，无需内核；但若用户用了内置 Chromium
+    # 则需自带。这里只要检测到 browser 依赖就尽量打包内核，保证任意浏览器配置离线可用。
+    if "browser" in needed:
+        src = local / "ms-playwright"
+        if src.is_dir():
+            try:
+                _set(job, step="打包浏览器内核（Playwright）")
+                shutil.copytree(src, runtime_dir / "ms-playwright", dirs_exist_ok=True,
+                                ignore=shutil.ignore_patterns("__pycache__"))
+            except Exception as e:
+                print(f"[packager] 复制浏览器内核失败: {e}")
+
+    # OCR 模型缓存（PaddleX / PaddleOCR）
+    if "ocr" in needed:
+        pdx = home / ".paddlex"
+        if pdx.is_dir():
+            try:
+                _set(job, step="打包 OCR 模型（PaddleOCR）")
+                shutil.copytree(pdx, runtime_dir / ".paddlex", dirs_exist_ok=True,
+                                ignore=shutil.ignore_patterns("__pycache__"))
+            except Exception as e:
+                print(f"[packager] 复制 OCR 模型失败: {e}")
+        easyocr = home / ".EasyOCR"
+        if easyocr.is_dir():
+            try:
+                shutil.copytree(easyocr, runtime_dir / ".EasyOCR", dirs_exist_ok=True)
+            except Exception as e:
+                print(f"[packager] 复制 EasyOCR 模型失败: {e}")
+
+
 def package(workflow_source: Any, output_name: str, *, mode: str = "portable",
             headless: bool = False, show_console: bool = True,
             slim: bool = True, icon_path: Optional[str] = None) -> dict[str, Any]:
@@ -376,7 +423,10 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
             if not src_py.exists():
                 raise RuntimeError("找不到 WebRPA Python 运行时目录")
             shutil.copytree(src_py, runtime / "python", ignore=_build_ignore(slim, needed))
-            _set(job, progress=70, step="Python 运行时复制完成")
+            _set(job, progress=68, step="Python 运行时复制完成")
+            # 按需打包浏览器内核 / OCR 模型，保证重型模块离线可用
+            _bundle_heavy_runtimes(runtime, needed, job)
+            _set(job, progress=72, step="重型依赖打包完成")
         else:
             # shared：写一个指向本机 WebRPA 安装的引导，python 用本机的
             (runtime / "WEBRPA_HOME.txt").write_text(str(_project_root()), encoding="utf-8")
