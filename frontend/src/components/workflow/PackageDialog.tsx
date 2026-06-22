@@ -21,7 +21,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [mode, setMode] = useState<'portable' | 'shared'>('portable')
   const [headless, setHeadless] = useState(false)
   const [showConsole, setShowConsole] = useState(true)
-  const [slim, setSlim] = useState(true)
+  const [slim, setSlim] = useState(false)
   const [iconPath, setIconPath] = useState('')
   const [toolchain, setToolchain] = useState<{ installed: boolean; version?: string } | null>(null)
   const [installing, setInstalling] = useState(false)

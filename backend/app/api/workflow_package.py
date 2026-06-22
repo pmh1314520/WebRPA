@@ -15,7 +15,7 @@ class BuildReq(BaseModel):
     mode: str = "portable"             # portable（自包含）/ shared（依赖本机WebRPA）
     headless: bool = False
     show_console: bool = True
-    slim: bool = True
+    slim: bool = False                 # 默认携带完整运行时，保证任何模块都不缺依赖
     icon_path: Optional[str] = None
 
 

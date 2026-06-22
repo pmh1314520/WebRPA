@@ -364,12 +364,12 @@ def _bundle_heavy_runtimes(runtime_dir: Path, needed: set[str], job: dict[str, A
 
 def package(workflow_source: Any, output_name: str, *, mode: str = "portable",
             headless: bool = False, show_console: bool = True,
-            slim: bool = True, icon_path: Optional[str] = None) -> dict[str, Any]:
+            slim: bool = False, icon_path: Optional[str] = None) -> dict[str, Any]:
     """启动一个打包任务（后台执行）。返回 {job_id}。
     - workflow_source: 本地工作流文件名 / 路径 / 完整 dict
     - output_name: 输出程序名（即 exe 名）
     - mode: portable（自包含，拷贝运行时）/ shared（依赖本机已装的 WebRPA 运行时，包很小）
-    - slim: portable 模式下按工作流用到的模块裁剪重型依赖
+    - slim: 默认 False（携带完整运行时，保证任何模块都不缺依赖）；True 时按工作流用到的模块裁剪重型依赖以瘦身
     """
     from app.services.workflow_runner import load_workflow_dict
     job = _new_job()

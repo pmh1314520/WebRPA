@@ -24,7 +24,7 @@ async def skill_analyze_package(workflow: str, **_: Any) -> dict[str, Any]:
 
 async def skill_package_workflow(workflow: str, output_name: str | None = None,
                                  mode: str = "portable", headless: bool = False,
-                                 show_console: bool = True, slim: bool = True, **_: Any) -> dict[str, Any]:
+                                 show_console: bool = True, slim: bool = False, **_: Any) -> dict[str, Any]:
     """把本地工作流打包成独立程序（后台任务）。返回 job_id，用 get_package_status 查进度。"""
     from app.services import workflow_packager
     name = output_name or (workflow.rsplit(".", 1)[0] if workflow else "WebRPA自动化")
