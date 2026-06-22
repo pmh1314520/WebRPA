@@ -54,6 +54,19 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // 关键修复（编辑器白屏根因）：Vite 注入的 __vitePreload 辅助模块（preload-helper）
+          // 以及 commonjs 互操作 helper 必须固定并入 vendor 这种"启动时一定加载"的 chunk。
+          // 否则 Rollup 可能把这些共享 helper 分配到 monaco-editor 等"仅懒加载"的 chunk 里，
+          // 导致 vendor 反向 `import ... from "./monaco-editor-xxx.js"`，使 monaco 在启动时
+          // 就被静态加载执行，触发 "Cannot read properties of undefined (reading 'create')" 整页白屏。
+          if (
+            id.includes('vite/preload-helper') ||
+            id.includes('vite/modulepreload-polyfill') ||
+            id.includes('commonjsHelpers') ||
+            id.includes('commonjs-dynamic-modules')
+          ) {
+            return 'vendor'
+          }
           if (!id.includes('node_modules')) return
           if (id.includes('monaco-editor') || id.includes('@monaco-editor')) return 'monaco-editor'
           // reactflow 必须在 react 判断之前（名字含 react）
