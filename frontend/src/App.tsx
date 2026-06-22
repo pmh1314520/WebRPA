@@ -264,6 +264,34 @@ function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [customShortcuts])
 
+  // 将自定义快捷键注册为「系统级全局热键」：聚焦其它软件时也能触发（与内置 F5 等一致）
+  useEffect(() => {
+    const map = customShortcuts || {}
+    const push = () => {
+      import('@/services/api').then(({ systemApi }) => {
+        systemApi.setCustomHotkeys(map).catch(() => {})
+      }).catch(() => {})
+    }
+    push()
+    // socket 重连后（如后端重启）重新下发，确保热键恢复
+    const onReconnect = () => push()
+    window.addEventListener('socket:reconnected', onReconnect)
+    return () => window.removeEventListener('socket:reconnected', onReconnect)
+  }, [customShortcuts])
+
+  // 接收后端全局热键触发事件，执行对应功能（即便 WebRPA 未聚焦也能触发）
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const actionId = (e as CustomEvent).detail?.actionId
+      if (!actionId) return
+      const { SHORTCUT_ACTION_MAP } = await import('@/lib/customShortcuts')
+      const action = SHORTCUT_ACTION_MAP[actionId]
+      if (action) action.run()
+    }
+    window.addEventListener('hotkey:custom_action', handler)
+    return () => window.removeEventListener('hotkey:custom_action', handler)
+  }, [])
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
       <WorkflowErrorBoundary>

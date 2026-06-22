@@ -732,6 +732,12 @@ class SocketService {
       window.dispatchEvent(new CustomEvent('hotkey:screenshot'))
       console.log('[Socket] 已触发 window 的 hotkey:screenshot 事件')
     })
+
+    // 用户自定义全局热键触发
+    this.socket.on('hotkey:custom_action', (data: { actionId: string }) => {
+      console.log('[Socket] 收到 hotkey:custom_action 事件', data)
+      window.dispatchEvent(new CustomEvent('hotkey:custom_action', { detail: data }))
+    })
   }
 
   disconnect() {

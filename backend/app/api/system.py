@@ -15,6 +15,22 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 mouse_picker_process = None
 
 
+class CustomHotkeysRequest(BaseModel):
+    """用户自定义全局热键：{action_id: combo}，如 {"run_workflow": "Ctrl+Alt+R"}"""
+    shortcuts: dict = {}
+
+
+@router.post("/custom-hotkeys")
+async def set_custom_hotkeys(req: CustomHotkeysRequest):
+    """注册用户自定义全局热键（系统级，聚焦其它软件也能触发）。前端在配置变更/启动时调用。"""
+    try:
+        from app.services.global_hotkey import get_hotkey_service
+        get_hotkey_service().update_custom_hotkeys(req.shortcuts or {})
+        return {"success": True, "count": len([v for v in (req.shortcuts or {}).values() if v])}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"注册自定义全局热键失败: {e}")
+
+
 # 注：/open-url 已移至 system_dialog.py，避免路由冲突
 # 注：/mouse-position 已移至 system_mouse.py，避免路由冲突
 

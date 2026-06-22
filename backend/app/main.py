@@ -383,6 +383,7 @@ async def startup_event():
             on_macro_stop=on_hotkey_macro_stop,
             on_screenshot=on_hotkey_screenshot
         )
+        hotkey_service.set_custom_callback(on_hotkey_custom_action)
         hotkey_service.start()
         print("[Startup] 全局热键服务已启动 (F5=运行, Shift+F5=停止)")
     except Exception as e:
@@ -720,6 +721,15 @@ async def on_hotkey_screenshot():
         print(f"[GlobalHotkey] 发送截图事件失败: {e}")
         import traceback
         traceback.print_exc()
+
+
+async def on_hotkey_custom_action(action_id: str):
+    """用户自定义全局热键触发：通知前端执行对应功能。"""
+    print(f"[GlobalHotkey] on_hotkey_custom_action 被调用: {action_id}")
+    try:
+        await sio.emit('hotkey:custom_action', {'actionId': action_id})
+    except Exception as e:
+        print(f"[GlobalHotkey] 发送自定义热键事件失败: {e}")
 
 
 # Socket.IO事件处理

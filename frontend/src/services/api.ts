@@ -170,6 +170,8 @@ export const systemApi = {
     }),
   openUrl: (url: string) =>
     apiRequest('/system/open-url', { method: 'POST', body: JSON.stringify({ url }) }),
+  setCustomHotkeys: (shortcuts: Record<string, string>) =>
+    apiRequest('/system/custom-hotkeys', { method: 'POST', body: JSON.stringify({ shortcuts }) }),
   getMousePosition: () => apiRequest('/system/mouse-position'),
   takeScreenshot: (params?: any) =>
     apiRequest('/system/screenshot', { method: 'POST', body: JSON.stringify(params || {}) }),

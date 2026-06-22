@@ -1766,16 +1766,20 @@ export function WorkflowEditor() {
             {canvasWidgets?.controls !== false && <Controls />}
             {canvasWidgets?.minimap !== false && <MiniMap 
               nodeColor={(node) => {
-                // 分组/便签等特殊节点用各自颜色；普通模块直接用其真实分类色，
-                // 保证缩略图里的小方块颜色与画布上模块颜色完全一致。
-                if (node.type === 'noteNode') {
-                  const c = (node.data as Record<string, unknown>)?.color
-                  return typeof c === 'string' && c ? c : '#fcd34d'
-                }
-                if (node.type === 'groupNode') return '#94a3b8'
+                // 分组/便签是“容器/背景”节点，在缩略图里用半透明填充，
+                // 这样即使它绘制在内部子模块之上，子模块也能透出来显示（不被灰色盖住）。
+                if (node.type === 'noteNode') return 'rgba(252, 211, 77, 0.25)'
+                if (node.type === 'groupNode') return 'rgba(148, 163, 184, 0.22)'
                 const data = node.data as NodeData
                 return getModuleHexColor(data?.moduleType)
               }}
+              nodeStrokeColor={(node) => {
+                // 容器节点用描边勾出范围；普通模块不描边
+                if (node.type === 'groupNode') return '#94a3b8'
+                if (node.type === 'noteNode') return '#fcd34d'
+                return 'transparent'
+              }}
+              nodeStrokeWidth={3}
               zoomable
               pannable
               onClick={handleMiniMapClick}

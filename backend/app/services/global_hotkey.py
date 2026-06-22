@@ -12,13 +12,80 @@ MOD_ALT = 0x0001
 MOD_CONTROL = 0x0002
 MOD_SHIFT = 0x0004
 MOD_WIN = 0x0008
+MOD_NOREPEAT = 0x4000
 WM_HOTKEY = 0x0312
+WM_APP_RELOAD_CUSTOM = 0x8001  # 自定义消息：通知热键线程重新注册自定义热键
+WM_QUIT = 0x0012
 
 # 虚拟键码
 VK_F5 = 0x74
 VK_F9 = 0x78
 VK_F10 = 0x79
 VK_F12 = 0x7B
+
+# 自定义热键 id 从 100 起，避免与内置(1-5)冲突
+_CUSTOM_HOTKEY_ID_BASE = 100
+
+
+def _combo_to_vk(combo: str):
+    """把组合键字符串（如 'Ctrl+Alt+R' / 'Shift+F5' / 'Ctrl+Space'）解析为 (modifiers, vk_code)。
+    解析失败返回 None。与前端 eventToCombo 产出的格式对齐。"""
+    if not combo or not isinstance(combo, str):
+        return None
+    parts = [p.strip() for p in combo.split('+') if p.strip()]
+    if not parts:
+        return None
+    mods = 0
+    key = None
+    for p in parts:
+        low = p.lower()
+        if low in ('ctrl', 'control'):
+            mods |= MOD_CONTROL
+        elif low == 'alt':
+            mods |= MOD_ALT
+        elif low == 'shift':
+            mods |= MOD_SHIFT
+        elif low in ('meta', 'win', 'cmd', 'super'):
+            mods |= MOD_WIN
+        else:
+            key = p  # 主键（最后一个非修饰键）
+    if not key:
+        return None
+    vk = _key_to_vk(key)
+    if vk is None:
+        return None
+    return (mods | MOD_NOREPEAT, vk)
+
+
+def _key_to_vk(key: str):
+    """单个主键名 → Windows 虚拟键码。"""
+    if not key:
+        return None
+    k = key
+    if len(k) == 1:
+        ch = k.upper()
+        if 'A' <= ch <= 'Z' or '0' <= ch <= '9':
+            return ord(ch)
+        sym = {
+            '-': 0xBD, '=': 0xBB, '[': 0xDB, ']': 0xDD, '\\': 0xDC,
+            ';': 0xBA, "'": 0xDE, ',': 0xBC, '.': 0xBE, '/': 0xBF, '`': 0xC0,
+        }
+        return sym.get(k)
+    ku = k.lower()
+    named = {
+        'space': 0x20, 'enter': 0x0D, 'return': 0x0D, 'tab': 0x09,
+        'esc': 0x1B, 'escape': 0x1B, 'backspace': 0x08, 'delete': 0x2E, 'del': 0x2E,
+        'insert': 0x2D, 'home': 0x24, 'end': 0x23, 'pageup': 0x21, 'pagedown': 0x22,
+        'arrowup': 0x26, 'arrowdown': 0x28, 'arrowleft': 0x25, 'arrowright': 0x27,
+        'up': 0x26, 'down': 0x28, 'left': 0x25, 'right': 0x27,
+    }
+    if ku in named:
+        return named[ku]
+    if ku.startswith('f') and ku[1:].isdigit():
+        n = int(ku[1:])
+        if 1 <= n <= 24:
+            return 0x70 + (n - 1)
+    return None
 
 
 class GlobalHotkeyService:
@@ -49,6 +116,12 @@ class GlobalHotkeyService:
         self._on_macro_start: Optional[Callable[[], None]] = None  # F9 - 开始录制宏
         self._on_macro_stop: Optional[Callable[[], None]] = None   # F10 - 停止录制宏
         self._on_screenshot: Optional[Callable[[], None]] = None   # Ctrl+Shift+F12 - 截图
+        self._on_custom: Optional[Callable[[str], None]] = None    # 自定义热键触发 (action_id)
+
+        # 自定义热键：期望注册的映射 {action_id: combo}；已注册的 {hotkey_id: action_id}
+        self._pending_custom: dict = {}
+        self._custom_registered: dict = {}
+        self._custom_lock = threading.Lock()
         
         # 热键ID
         self._hotkey_ids = {
@@ -86,6 +159,59 @@ class GlobalHotkeyService:
         """启用/禁用热键"""
         self._enabled = enabled
         print(f"[GlobalHotkey] 热键已{'启用' if enabled else '禁用'}")
+
+    def set_custom_callback(self, on_custom: Optional[Callable[[str], None]]):
+        """设置自定义热键触发回调：fn(action_id)。"""
+        self._on_custom = on_custom
+
+    def update_custom_hotkeys(self, mapping: dict):
+        """更新用户自定义全局热键（{action_id: combo}）。线程安全：实际注册在热键线程完成。"""
+        clean = {}
+        for aid, combo in (mapping or {}).items():
+            if aid and combo and isinstance(combo, str) and combo.strip():
+                clean[str(aid)] = combo.strip()
+        with self._custom_lock:
+            self._pending_custom = clean
+        print(f"[GlobalHotkey] 收到 {len(clean)} 个自定义全局热键，准备注册")
+        # 通知热键线程在它自己的线程上重新注册（RegisterHotKey 有线程亲和性）
+        if self._running and self._thread:
+            try:
+                self.user32.PostThreadMessageW(self._thread.ident, WM_APP_RELOAD_CUSTOM, 0, 0)
+            except Exception as e:
+                print(f"[GlobalHotkey] 通知重载自定义热键失败: {e}")
+
+    def _register_custom(self):
+        """在热键线程上：注销旧的自定义热键，按 _pending_custom 重新注册。"""
+        # 先注销已注册的
+        for hid in list(self._custom_registered.keys()):
+            try:
+                self.user32.UnregisterHotKey(None, hid)
+            except Exception:
+                pass
+        self._custom_registered = {}
+        with self._custom_lock:
+            pending = dict(self._pending_custom)
+        next_id = _CUSTOM_HOTKEY_ID_BASE
+        ok = 0
+        for action_id, combo in pending.items():
+            parsed = _combo_to_vk(combo)
+            if not parsed:
+                print(f"[GlobalHotkey] 自定义热键解析失败，跳过: {action_id} = {combo}")
+                continue
+            mods, vk = parsed
+            hid = next_id
+            next_id += 1
+            try:
+                if self.user32.RegisterHotKey(None, hid, mods, vk):
+                    self._custom_registered[hid] = action_id
+                    ok += 1
+                    print(f"[GlobalHotkey] ✅ 自定义热键注册成功: {combo} -> {action_id}")
+                else:
+                    err = ctypes.get_last_error()
+                    print(f"[GlobalHotkey] ❌ 自定义热键注册失败({combo}, 错误码 {err})，可能与系统/其它程序冲突")
+            except Exception as e:
+                print(f"[GlobalHotkey] 自定义热键注册异常({combo}): {e}")
+        print(f"[GlobalHotkey] 自定义全局热键注册完成: {ok}/{len(pending)}")
     
     def _register_hotkeys(self):
         """注册所有热键"""
@@ -139,6 +265,11 @@ class GlobalHotkeyService:
                 print(f"[GlobalHotkey] ❌ F10 热键注册失败 (错误码: {error_code})")
             
             print(f"[GlobalHotkey] 热键注册完成: {success_count}/5 个热键注册成功")
+            # 注册用户自定义全局热键（首次启动若已有则一并注册）
+            try:
+                self._register_custom()
+            except Exception as e:
+                print(f"[GlobalHotkey] 注册自定义热键出错: {e}")
             return success_count > 0
         except Exception as e:
             print(f"[GlobalHotkey] 注册热键失败: {e}")
@@ -172,13 +303,29 @@ class GlobalHotkeyService:
                 
                 if result == 0 or result == -1:
                     break
-                
+
+                # 自定义消息：在热键线程上重新注册用户自定义热键
+                if msg.message == WM_APP_RELOAD_CUSTOM:
+                    try:
+                        self._register_custom()
+                    except Exception as e:
+                        print(f"[GlobalHotkey] 重载自定义热键失败: {e}")
+                    continue
+
                 if msg.message == WM_HOTKEY:
                     hotkey_id = msg.wParam
                     
                     if not self._enabled:
                         continue
-                    
+
+                    # 自定义热键（id >= 100）
+                    if hotkey_id >= _CUSTOM_HOTKEY_ID_BASE:
+                        action_id = self._custom_registered.get(hotkey_id)
+                        if action_id:
+                            print(f"[GlobalHotkey] 检测到自定义热键 -> {action_id}")
+                            self._trigger_custom(action_id)
+                        continue
+
                     # 根据热键ID触发相应的回调
                     if hotkey_id == self._hotkey_ids['run']:
                         print("[GlobalHotkey] 检测到运行热键: F5")
@@ -258,6 +405,23 @@ class GlobalHotkeyService:
                 self._main_loop
             )
             print("[GlobalHotkey] 截图回调已提交到事件循环")
+
+    def _trigger_custom(self, action_id: str):
+        """触发自定义热键回调"""
+        if self._on_custom and self._main_loop:
+            asyncio.run_coroutine_threadsafe(
+                self._async_custom_callback(action_id),
+                self._main_loop
+            )
+
+    async def _async_custom_callback(self, action_id: str):
+        if self._on_custom:
+            try:
+                result = self._on_custom(action_id)
+                if asyncio.iscoroutine(result):
+                    await result
+            except Exception as e:
+                print(f"[GlobalHotkey] 自定义热键回调异常: {e}")
     
     async def _async_run_callback(self):
         """异步执行运行回调"""
