@@ -718,7 +718,7 @@ _ENFORCE_EXEMPT_PREFIXES = (
     "/api/rbac/login", "/api/rbac/sso/login", "/api/security/",
     "/api/orchestrator/nodes/register", "/api/orchestrator/nodes/heartbeat",
     "/api/orchestrator/nodes/claim", "/api/orchestrator/nodes/report",
-    "/health", "/api/config", "/docs", "/redoc", "/openapi.json", "/console",
+    "/health", "/api/config", "/docs", "/redoc", "/openapi.json", "/console", "/metrics",
 )
 
 

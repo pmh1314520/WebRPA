@@ -190,6 +190,7 @@ from app.api.computer_use import router as computer_use_router
 from app.api.idp import router as idp_router
 from app.api.process_mining import router as process_mining_router
 from app.api.enterprise_overview import router as enterprise_overview_router
+from app.api.metrics import router as metrics_router
 app.include_router(workflows_router)
 app.include_router(element_picker_router)
 app.include_router(data_assets_router)
@@ -233,6 +234,7 @@ app.include_router(computer_use_router)
 app.include_router(idp_router)
 app.include_router(process_mining_router)
 app.include_router(enterprise_overview_router)
+app.include_router(metrics_router)
 
 # 设置 Socket.IO 实例（避免循环导入）
 set_workflows_sio(sio)
