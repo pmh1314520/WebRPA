@@ -5,6 +5,7 @@ import { Circle, Square, X, MousePointerClick, Type, Keyboard, Wand2, Pause, Pla
 import { desktopRecorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface DeskEvent {
   type: 'click' | 'type' | 'hotkey'
@@ -223,11 +224,11 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
         <span>记录鼠标键盘操作，自动生成节点</span>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap" title="按真实操作间隔插入等待节点，保留你录制时的节奏">
-            <input type="checkbox" checked={autoWait} onChange={(e) => setAutoWait(e.target.checked)} disabled={recording} />
+            <Checkbox checked={autoWait} onCheckedChange={(c) => setAutoWait(c)} disabled={recording} className="h-3.5 w-3.5" />
             自动等待
           </label>
           <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap" title="开启后优先用控件名/类型语义定位（换分辨率仍可用），取不到控件时回退坐标">
-            <input type="checkbox" checked={semantic} onChange={(e) => setSemantic(e.target.checked)} disabled={recording} />
+            <Checkbox checked={semantic} onCheckedChange={(c) => setSemantic(c)} disabled={recording} className="h-3.5 w-3.5" />
             语义优先
           </label>
         </div>

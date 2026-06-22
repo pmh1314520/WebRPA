@@ -1,5 +1,6 @@
 import type { NodeData } from '@/store/workflowStore'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { NumberInput } from '@/components/ui/number-input'
 import { SelectNative as Select } from '@/components/ui/select-native'
 import { VariableInput } from '@/components/ui/variable-input'
@@ -896,12 +897,10 @@ export function DownloadM3U8Config({ data, onChange }: { data: NodeData; onChang
         </div>
         
         <div className="flex items-center gap-2 pt-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="autoSelect"
             checked={(data.autoSelect as boolean) ?? true}
-            onChange={(e) => onChange('autoSelect', e.target.checked)}
-            className="rounded"
+            onCheckedChange={(c) => onChange('autoSelect', c)}
           />
           <Label htmlFor="autoSelect" className="text-sm cursor-pointer">自动选择最佳画质</Label>
         </div>
@@ -945,12 +944,10 @@ export function DownloadM3U8Config({ data, onChange }: { data: NodeData; onChang
         <h3 className="text-sm font-medium mb-3">代理与解密</h3>
         
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="useSystemProxy"
             checked={(data.useSystemProxy as boolean) ?? true}
-            onChange={(e) => onChange('useSystemProxy', e.target.checked)}
-            className="rounded"
+            onCheckedChange={(c) => onChange('useSystemProxy', c)}
           />
           <Label htmlFor="useSystemProxy" className="text-sm cursor-pointer">使用系统代理</Label>
         </div>
@@ -1107,12 +1104,10 @@ export function VideoSpeedConfig({ data, onChange }: { data: NodeData; onChange:
       <div className="space-y-2">
         <Label htmlFor="adjustAudio">同步调整音频速度</Label>
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="adjustAudio"
             checked={(data.adjustAudio as boolean) ?? true}
-            onChange={(e) => onChange('adjustAudio', e.target.checked)}
-            className="w-4 h-4"
+            onCheckedChange={(c) => onChange('adjustAudio', c)}
           />
           <span className="text-sm">
             {(data.adjustAudio as boolean) ?? true ? '已启用' : '已禁用'}
@@ -1406,12 +1401,10 @@ export function ResizeVideoConfig({ data, onChange }: { data: NodeData; onChange
       <div className="space-y-2">
         <Label htmlFor="keepAspect">保持宽高比</Label>
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="keepAspect"
             checked={(data.keepAspect as boolean) ?? true}
-            onChange={(e) => onChange('keepAspect', e.target.checked)}
-            className="w-4 h-4"
+            onCheckedChange={(c) => onChange('keepAspect', c)}
           />
           <span className="text-sm">
             {(data.keepAspect as boolean) ?? true ? '已启用' : '已禁用'}

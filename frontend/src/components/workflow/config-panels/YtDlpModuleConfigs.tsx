@@ -1,5 +1,6 @@
 import type { NodeData } from '@/store/workflowStore'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { NumberInput } from '@/components/ui/number-input'
 import { SelectNative as Select } from '@/components/ui/select-native'
 import { VariableInput } from '@/components/ui/variable-input'
@@ -31,12 +32,10 @@ function YtDlpCommonNetworkSection({
       </div>
 
       <div className="flex items-center gap-2 mt-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="noProxy"
           checked={(data.noProxy as boolean) ?? false}
-          onChange={(e) => onChange('noProxy', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('noProxy', c)}
         />
         <Label htmlFor="noProxy" className="text-sm cursor-pointer">强制不使用任何代理</Label>
       </div>
@@ -215,45 +214,37 @@ export function YtDlpDownloadConfig({ data, onChange }: { data: NodeData; onChan
         <h3 className="text-sm font-medium mb-3">高级选项</h3>
 
         <div className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="embedThumbnail"
             checked={(data.embedThumbnail as boolean) ?? false}
-            onChange={(e) => onChange('embedThumbnail', e.target.checked)}
-            className="rounded"
+            onCheckedChange={(c) => onChange('embedThumbnail', c)}
           />
           <Label htmlFor="embedThumbnail" className="text-sm cursor-pointer">嵌入封面缩略图</Label>
         </div>
 
         <div className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="writeThumbnail"
             checked={(data.writeThumbnail as boolean) ?? false}
-            onChange={(e) => onChange('writeThumbnail', e.target.checked)}
-            className="rounded"
+            onCheckedChange={(c) => onChange('writeThumbnail', c)}
           />
           <Label htmlFor="writeThumbnail" className="text-sm cursor-pointer">单独保存封面图</Label>
         </div>
 
         <div className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="embedChapters"
             checked={(data.embedChapters as boolean) ?? false}
-            onChange={(e) => onChange('embedChapters', e.target.checked)}
-            className="rounded"
+            onCheckedChange={(c) => onChange('embedChapters', c)}
           />
           <Label htmlFor="embedChapters" className="text-sm cursor-pointer">嵌入章节信息</Label>
         </div>
 
         <div className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="writeInfoJson"
             checked={(data.writeInfoJson as boolean) ?? false}
-            onChange={(e) => onChange('writeInfoJson', e.target.checked)}
-            className="rounded"
+            onCheckedChange={(c) => onChange('writeInfoJson', c)}
           />
           <Label htmlFor="writeInfoJson" className="text-sm cursor-pointer">同时输出 .info.json 元数据</Label>
         </div>
@@ -378,23 +369,19 @@ export function YtDlpDownloadAudioConfig({ data, onChange }: { data: NodeData; o
       </div>
 
       <div className="flex items-center gap-2 pt-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="embedThumbnail"
           checked={(data.embedThumbnail as boolean) ?? false}
-          onChange={(e) => onChange('embedThumbnail', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('embedThumbnail', c)}
         />
         <Label htmlFor="embedThumbnail" className="text-sm cursor-pointer">嵌入封面到音频</Label>
       </div>
 
       <div className="flex items-center gap-2 mt-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="embedMetadata"
           checked={(data.embedMetadata as boolean) ?? true}
-          onChange={(e) => onChange('embedMetadata', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('embedMetadata', c)}
         />
         <Label htmlFor="embedMetadata" className="text-sm cursor-pointer">嵌入标题/作者元数据</Label>
       </div>
@@ -589,12 +576,10 @@ export function YtDlpDownloadSubtitleConfig({ data, onChange }: { data: NodeData
       </div>
 
       <div className="flex items-center gap-2 pt-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="autoSubtitle"
           checked={(data.autoSubtitle as boolean) ?? true}
-          onChange={(e) => onChange('autoSubtitle', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('autoSubtitle', c)}
         />
         <Label htmlFor="autoSubtitle" className="text-sm cursor-pointer">同时尝试下载自动生成字幕</Label>
       </div>
@@ -726,12 +711,10 @@ export function YtDlpDownloadPlaylistConfig({ data, onChange }: { data: NodeData
       </div>
 
       <div className="flex items-center gap-2 pt-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="audioOnly"
           checked={(data.audioOnly as boolean) ?? false}
-          onChange={(e) => onChange('audioOnly', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('audioOnly', c)}
         />
         <Label htmlFor="audioOnly" className="text-sm cursor-pointer">仅下载音频</Label>
       </div>
@@ -755,12 +738,10 @@ export function YtDlpDownloadPlaylistConfig({ data, onChange }: { data: NodeData
       ) : null}
 
       <div className="flex items-center gap-2 mt-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="skipExisting"
           checked={(data.skipExisting as boolean) ?? true}
-          onChange={(e) => onChange('skipExisting', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('skipExisting', c)}
         />
         <Label htmlFor="skipExisting" className="text-sm cursor-pointer">跳过已存在文件（断点续传）</Label>
       </div>

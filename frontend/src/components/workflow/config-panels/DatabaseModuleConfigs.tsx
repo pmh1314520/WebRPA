@@ -1,4 +1,5 @@
 ﻿import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { NumberInput } from '@/components/ui/number-input'
 import { VariableInput } from '@/components/ui/variable-input'
 import { VariableNameInput } from '@/components/ui/variable-name-input'
@@ -146,12 +147,10 @@ export function DbQueryConfig({ data, onChange }: ConfigProps) {
       </div>
       
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="singleRow"
           checked={(data.singleRow as boolean) || false}
-          onChange={(e) => onChange('singleRow', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('singleRow', c)}
         />
         <Label htmlFor="singleRow" className="cursor-pointer">仅返回单行数据</Label>
       </div>

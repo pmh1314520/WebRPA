@@ -2,6 +2,7 @@ import type React from 'react'
 import { useEffect } from 'react'
 import type { NodeData } from '@/store/workflowStore'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { NumberInput } from '@/components/ui/number-input'
 import { SelectNative as Select } from '@/components/ui/select-native'
 import { VariableInput } from '@/components/ui/variable-input'
@@ -748,12 +749,11 @@ export function FirecrawlScrapeConfig({ data, onChange }: { data: NodeData; onCh
         <Label htmlFor="formats">返回格式</Label>
         <div className="space-y-1">
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.formats as string[] || ['markdown']).includes('markdown')}
-              onChange={(e) => {
+              onCheckedChange={(c) => {
                 const formats = (data.formats as string[] || ['markdown'])
-                if (e.target.checked) {
+                if (c) {
                   onChange('formats', [...formats, 'markdown'])
                 } else {
                   onChange('formats', formats.filter(f => f !== 'markdown'))
@@ -763,12 +763,11 @@ export function FirecrawlScrapeConfig({ data, onChange }: { data: NodeData; onCh
             <span className="text-sm">Markdown</span>
           </label>
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.formats as string[] || []).includes('html')}
-              onChange={(e) => {
+              onCheckedChange={(c) => {
                 const formats = (data.formats as string[] || ['markdown'])
-                if (e.target.checked) {
+                if (c) {
                   onChange('formats', [...formats, 'html'])
                 } else {
                   onChange('formats', formats.filter(f => f !== 'html'))
@@ -778,12 +777,11 @@ export function FirecrawlScrapeConfig({ data, onChange }: { data: NodeData; onCh
             <span className="text-sm">HTML</span>
           </label>
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.formats as string[] || []).includes('screenshot')}
-              onChange={(e) => {
+              onCheckedChange={(c) => {
                 const formats = (data.formats as string[] || ['markdown'])
-                if (e.target.checked) {
+                if (c) {
                   onChange('formats', [...formats, 'screenshot'])
                 } else {
                   onChange('formats', formats.filter(f => f !== 'screenshot'))
@@ -1011,12 +1009,11 @@ export function FirecrawlCrawlConfig({ data, onChange }: { data: NodeData; onCha
         <Label htmlFor="formats">返回格式</Label>
         <div className="space-y-1">
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.formats as string[] || ['markdown']).includes('markdown')}
-              onChange={(e) => {
+              onCheckedChange={(c) => {
                 const formats = (data.formats as string[] || ['markdown'])
-                if (e.target.checked) {
+                if (c) {
                   onChange('formats', [...formats, 'markdown'])
                 } else {
                   onChange('formats', formats.filter(f => f !== 'markdown'))
@@ -1026,12 +1023,11 @@ export function FirecrawlCrawlConfig({ data, onChange }: { data: NodeData; onCha
             <span className="text-sm">Markdown</span>
           </label>
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.formats as string[] || []).includes('html')}
-              onChange={(e) => {
+              onCheckedChange={(c) => {
                 const formats = (data.formats as string[] || ['markdown'])
-                if (e.target.checked) {
+                if (c) {
                   onChange('formats', [...formats, 'html'])
                 } else {
                   onChange('formats', formats.filter(f => f !== 'html'))

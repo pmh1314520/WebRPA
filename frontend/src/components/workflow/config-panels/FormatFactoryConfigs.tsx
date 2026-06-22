@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { VariableInput } from '@/components/ui/variable-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ImagePathInput } from '@/components/ui/image-path-input'
 
 interface BaseConfigProps {
@@ -515,12 +516,10 @@ export function BatchFormatConvertConfig({ config, onChange }: BaseConfigProps) 
       </div>
 
       <div className="flex items-center space-x-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="recursive"
           checked={config.recursive || false}
-          onChange={(e) => onChange({ ...config, recursive: e.target.checked })}
-          className="rounded"
+          onCheckedChange={(c) => onChange({ ...config, recursive: c })}
         />
         <Label htmlFor="recursive">递归搜索子文件夹</Label>
       </div>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectNative as Select } from '@/components/ui/select-native'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ColorPicker } from '@/components/ui/color-picker'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { useCustomModuleStore } from '@/store/customModuleStore'
@@ -439,11 +440,10 @@ export function CreateCustomModuleDialog({ open, onClose, editingModule }: Creat
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={param.required}
-                        onChange={(e) => updateParameter(index, 'required', e.target.checked)}
-                        className="rounded"
+                        onCheckedChange={(c) => updateParameter(index, 'required', c)}
+                        className="h-3.5 w-3.5"
                       />
                       <Label className="text-xs">必填</Label>
                     </div>
@@ -534,11 +534,10 @@ export function CreateCustomModuleDialog({ open, onClose, editingModule }: Creat
                   </p>
                   <p>当前画布包含 <span className="font-medium">{nodes.length}</span> 个节点</p>
                   <label className="flex items-start gap-2 text-xs cursor-pointer pt-1">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={reuseCanvas}
-                      onChange={(e) => setReuseCanvas(e.target.checked)}
-                      className="mt-0.5 rounded"
+                      onCheckedChange={(c) => setReuseCanvas(c)}
+                      className="mt-0.5 h-3.5 w-3.5"
                     />
                     <span>
                       <span className="font-medium">用当前画布工作流替换该模块的内部实现</span>

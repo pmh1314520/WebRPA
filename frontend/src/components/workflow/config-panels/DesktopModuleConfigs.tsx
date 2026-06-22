@@ -1,4 +1,5 @@
 ﻿import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { SelectNative as Select } from '@/components/ui/select-native'
 import { VariableInput } from '@/components/ui/variable-input'
@@ -1152,10 +1153,9 @@ export function DesktopFindControlSmartConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={(data.fuzzyMatch as boolean) ?? false}
-          onChange={(e) => onChange('fuzzyMatch', e.target.checked)}
+          onCheckedChange={(c) => onChange('fuzzyMatch', c)}
         />
         <span className="text-sm">启用模糊匹配（name 不一致也能找到相似的）</span>
       </label>
@@ -1171,10 +1171,9 @@ export function DesktopFindControlSmartConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={(data.returnAll as boolean) ?? false}
-          onChange={(e) => onChange('returnAll', e.target.checked)}
+          onCheckedChange={(c) => onChange('returnAll', c)}
         />
         <span className="text-sm">返回所有候选（数组形式）</span>
       </label>
@@ -1256,10 +1255,9 @@ export function DesktopExtractTableConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={(data.scrollToLoad as boolean) ?? false}
-          onChange={(e) => onChange('scrollToLoad', e.target.checked)}
+          onCheckedChange={(c) => onChange('scrollToLoad', c)}
         />
         <span className="text-sm">滚动加载（虚拟列表场景）</span>
       </label>
@@ -1297,10 +1295,9 @@ export function DesktopGetAppStateConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={(data.includeInvisible as boolean) ?? false}
-          onChange={(e) => onChange('includeInvisible', e.target.checked)}
+          onCheckedChange={(c) => onChange('includeInvisible', c)}
         />
         <span className="text-sm">包含不可见控件</span>
       </label>

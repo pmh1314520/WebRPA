@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { DatePicker, TimePicker } from '@/components/ui/date-time-picker'
 import { useScheduledTaskStore, type ScheduledTask, type ScheduledTaskTrigger, type NotifyChannel } from '@/store/scheduledTaskStore'
 import { localWorkflowApi } from '@/services/api'
 import { Clock, Zap, Power, Repeat, X, Play, Square, Webhook } from 'lucide-react'
@@ -526,28 +527,25 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>开始日期</Label>
-                      <Input
-                        type="date"
+                      <DatePicker
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(v) => setStartDate(v)}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>开始时间</Label>
-                      <Input
-                        type="time"
-                        step="1"
+                      <TimePicker
+                        withSeconds
                         value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
+                        onChange={(v) => setStartTime(v)}
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>结束日期（可选）</Label>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
+                      onChange={(v) => setEndDate(v)}
                     />
                   </div>
                 </>
@@ -556,11 +554,10 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
               {scheduleType === 'daily' && (
                 <div className="space-y-2">
                   <Label>执行时间</Label>
-                  <Input
-                    type="time"
-                    step="1"
+                  <TimePicker
+                    withSeconds
                     value={dailyTime}
-                    onChange={(e) => setDailyTime(e.target.value)}
+                    onChange={(v) => setDailyTime(v)}
                   />
                 </div>
               )}
@@ -585,11 +582,10 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
                   </div>
                   <div className="space-y-2">
                     <Label>执行时间</Label>
-                    <Input
-                      type="time"
-                      step="1"
+                    <TimePicker
+                      withSeconds
                       value={weeklyTime}
-                      onChange={(e) => setWeeklyTime(e.target.value)}
+                      onChange={(v) => setWeeklyTime(v)}
                     />
                   </div>
                 </>
@@ -609,11 +605,10 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
                   </div>
                   <div className="space-y-2">
                     <Label>执行时间</Label>
-                    <Input
-                      type="time"
-                      step="1"
+                    <TimePicker
+                      withSeconds
                       value={monthlyTime}
-                      onChange={(e) => setMonthlyTime(e.target.value)}
+                      onChange={(v) => setMonthlyTime(v)}
                     />
                   </div>
                 </>

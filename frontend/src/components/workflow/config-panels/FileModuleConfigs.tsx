@@ -1,5 +1,6 @@
 import type { NodeData } from '@/store/workflowStore'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { SelectNative as Select } from '@/components/ui/select-native'
 import { VariableInput } from '@/components/ui/variable-input'
 import { VariableNameInput } from '@/components/ui/variable-name-input'
@@ -104,12 +105,10 @@ export function CopyFileConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="overwrite"
           checked={(data.overwrite as boolean) || false}
-          onChange={(e) => onChange('overwrite', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('overwrite', c)}
         />
         <Label htmlFor="overwrite" className="cursor-pointer">如果目标文件已存在则覆盖</Label>
       </div>
@@ -141,12 +140,10 @@ export function MoveFileConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="overwrite"
           checked={(data.overwrite as boolean) || false}
-          onChange={(e) => onChange('overwrite', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('overwrite', c)}
         />
         <Label htmlFor="overwrite" className="cursor-pointer">如果目标文件已存在则覆盖</Label>
       </div>
@@ -188,12 +185,10 @@ export function CreateFolderConfig({ data, onChange }: ConfigProps) {
         />
       </div>
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="createParents"
           checked={(data.createParents as boolean) ?? true}
-          onChange={(e) => onChange('createParents', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('createParents', c)}
         />
         <Label htmlFor="createParents" className="cursor-pointer">自动创建父级目录</Label>
       </div>
