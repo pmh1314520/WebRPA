@@ -103,9 +103,17 @@ export class WorkflowErrorBoundary extends React.Component<{ children: React.Rea
     if (!this.state.hasError) return this.props.children
     const err = this.state.error
     const aiReady = this.isAIConfigured()
+    // 已发起 AI 诊断后，把错误卡片收缩到左下角小窗，让出右侧 AI 小助手面板（否则全屏遮罩会挡住回复）
+    const compact = this.state.diagnosing
+    const outerCls = compact
+      ? 'fixed bottom-4 left-4 z-[2147483646] w-[min(92vw,30rem)] pointer-events-none'
+      : 'fixed inset-0 z-[2147483646] flex items-center justify-center bg-[hsl(var(--background))] p-8 overflow-auto'
+    const cardCls = compact
+      ? 'w-full bg-[hsl(var(--card))] rounded-2xl p-5 border border-[hsl(var(--danger-500)/0.3)] shadow-pop-xl pointer-events-auto max-h-[72vh] overflow-auto'
+      : 'max-w-2xl w-full bg-[hsl(var(--card))] rounded-2xl p-8 border border-[hsl(var(--danger-500)/0.3)] shadow-pop-lg my-auto'
     return (
-      <div className="fixed inset-0 z-[2147483646] flex items-center justify-center bg-[hsl(var(--background))] p-8 overflow-auto">
-        <div className="max-w-2xl w-full bg-[hsl(var(--card))] rounded-2xl p-8 border border-[hsl(var(--danger-500)/0.3)] shadow-pop-lg my-auto">
+      <div className={outerCls}>
+        <div className={cardCls}>
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-[hsl(var(--danger-500)/0.12)] flex items-center justify-center shrink-0">
               <svg className="w-6 h-6 text-[hsl(var(--danger-500))]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +124,7 @@ export class WorkflowErrorBoundary extends React.Component<{ children: React.Rea
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-bold text-[hsl(var(--foreground))] mb-1">WebRPA 遇到了一个问题</h2>
               <p className="text-sm text-[hsl(var(--slate-600))] mb-4">
-                已为你拦截这次错误（不会白屏）。通常是某个模块配置异常或工作流文件含损坏数据。
+                已为您拦截此次报错。通常是某个模块配置异常或工作流文件含损坏数据。
                 可以点「清空画布」恢复使用，已保存的工作流不会受影响；也可以让 AI 小助手帮你诊断原因。
               </p>
               {err && (
@@ -157,8 +165,8 @@ export class WorkflowErrorBoundary extends React.Component<{ children: React.Rea
                 </button>
               </div>
               <div className="mt-4 pt-3 border-t border-[hsl(var(--border))] text-[11.5px] text-[hsl(var(--muted-foreground))] leading-relaxed">
-                若该问题反复出现，欢迎把上方报错信息反馈给开发者彭明航，帮助 WebRPA 变得更稳健：
-                <span className="font-mono text-[hsl(var(--slate-700))]"> QQ 2124691573 · 微信 QyPmh20061026</span>
+                若该问题反复出现，欢迎把上方报错信息反馈给开发者，帮助 WebRPA 变得更稳健
+                <span className="block mt-1 font-mono text-[hsl(var(--slate-700))]">QQ 2124691573 · 微信 QyPmh20061026</span>
                 {!aiReady && (
                   <span className="block mt-1">（在「全局配置 → 小助手」中配置 API Key 后，这里会出现「AI 诊断」按钮，可自动分析报错原因）</span>
                 )}

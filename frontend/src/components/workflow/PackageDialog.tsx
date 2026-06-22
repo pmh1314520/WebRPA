@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBackendBaseUrl } from '@/services/config'
+import { systemApi } from '@/services/api'
 import { SelectNative } from '@/components/ui/select-native'
 import { Checkbox } from '@/components/ui/checkbox'
 import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen, Ban, Square } from 'lucide-react'
@@ -48,6 +49,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [job, setJob] = useState<any>(null)
   const [cancelling, setCancelling] = useState(false)
   const [elapsed, setElapsed] = useState(0)
+  const [pickingIcon, setPickingIcon] = useState(false)
   const pollRef = useRef<any>(null)
   const startRef = useRef<number>(0)
   const logScrollRef = useRef<HTMLDivElement>(null)
@@ -72,6 +74,11 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       .then(d => setToolchain({ installed: d.installed, version: d.version })).catch(() => {})
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [isOpen, currentName])
+
+  // 日志区自动滚到底部（必须在任何提前 return 之前声明，避免条件 hook）
+  useEffect(() => {
+    if (logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight
+  }, [job?.logs?.length])
 
   if (!isOpen) return null
 
@@ -123,10 +130,16 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
     } catch { /* ignore */ }
   }
 
-  // 日志区自动滚到底部
-  useEffect(() => {
-    if (logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight
-  }, [job?.logs?.length])
+  // 可视化选择 .ico 图标文件
+  const pickIcon = async () => {
+    setPickingIcon(true)
+    try {
+      const res = await systemApi.selectFile('选择程序图标 (.ico)', undefined, [['图标文件', '*.ico']])
+      if (res.data?.success && res.data.path) setIconPath(res.data.path)
+    } catch { /* ignore */ } finally {
+      setPickingIcon(false)
+    }
+  }
 
   const openFolder = () => {
     if (!job?.output_dir) return
@@ -176,8 +189,20 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
 
           <div>
             <label className="text-xs text-[hsl(var(--muted-foreground))]">程序图标 (.ico 绝对路径，可选)</label>
-            <input className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
-              value={iconPath} onChange={e => setIconPath(e.target.value)} placeholder="例如 C:\icons\app.ico（留空用默认图标）" />
+            <div className="flex gap-2 mt-1">
+              <input className="flex-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+                value={iconPath} onChange={e => setIconPath(e.target.value)} placeholder="例如 C:\icons\app.ico（留空用默认图标）" />
+              <button
+                type="button"
+                onClick={pickIcon}
+                disabled={pickingIcon}
+                title="浏览选择 .ico 图标文件"
+                className="px-2.5 py-1.5 rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] inline-flex items-center gap-1.5 text-sm disabled:opacity-60"
+              >
+                {pickingIcon ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />}
+                浏览
+              </button>
+            </div>
           </div>
 
           <div className="text-xs px-3 py-2 rounded-md bg-[hsl(var(--muted))]">
