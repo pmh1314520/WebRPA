@@ -32,8 +32,6 @@ struct BackendConfig {
 struct FrontendConfig {
     host: String,
     port: u16,
-    #[serde(default, rename = "fastStart")]
-    fast_start: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -354,13 +352,10 @@ async fn start_frontend(_window: Window, state: tauri::State<'_, AppState>) -> R
     
     #[cfg(target_os = "windows")]
     let mut child = {
-        // 极速启动模式：若开启且已有构建产物 dist，则用 vite preview 静态托管（秒级启动，无 HMR）；
-        // 否则回退到 npm run dev（开发模式，有热更新但冷启动慢）
-        let dist_index = frontend_dir.join("dist").join("index.html");
-        let use_fast = config.frontend.fast_start && dist_index.exists();
-        let port_str = config.frontend.port.to_string();
-        let host_str = if config.frontend.host.trim().is_empty() { "0.0.0.0".to_string() } else { config.frontend.host.clone() };
-        let mode_desc = if use_fast { "npm run preview (极速静态托管)" } else { "npm run dev (开发模式)" };
+        // 始终以开发服务方式启动前端（npm run dev）。
+        // 注：此前的「极速启动模式」(vite preview 静态托管 dist) 已移除，
+        // 因为生产构建分包在静态托管下偶发编辑器白屏，统一用 dev 方式更稳。
+        let mode_desc = "npm run dev";
 
         let start_log = format!("[{}] 正在启动前端服务...\n[{}] npm路径: {}\n[{}] 工作目录: {}\n[{}] 执行命令: {}\n", 
             chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
@@ -384,11 +379,7 @@ async fn start_frontend(_window: Window, state: tauri::State<'_, AppState>) -> R
             return Err(format!("npm.cmd文件不存在或不是文件: {}", npm_cmd.display()));
         }
         
-        let args: Vec<&str> = if use_fast {
-            vec!["run", "preview", "--", "--host", host_str.as_str(), "--port", port_str.as_str(), "--strictPort"]
-        } else {
-            vec!["run", "dev"]
-        };
+        let args: Vec<&str> = vec!["run", "dev"];
         let mut cmd = Command::new(&npm_cmd);
         cmd.args(&args)
             .current_dir(&frontend_dir)

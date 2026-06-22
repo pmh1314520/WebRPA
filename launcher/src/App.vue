@@ -664,16 +664,6 @@
                 <label>端口号</label>
                 <input type="number" v-model.number="configForm.frontend.port" class="cfg-input" min="1024" max="65535" placeholder="5921"/>
               </div>
-              <div class="cfg-row cfg-row-toggle">
-                <div class="cfg-toggle-text">
-                  <div class="cfg-toggle-title">极速启动模式</div>
-                  <div class="cfg-toggle-sub">静态托管已构建的前端（秒级启动）。修改前端代码后需重新构建才生效；开发调试请关闭此项</div>
-                </div>
-                <label class="cfg-switch" :class="{ on: configForm.frontend.fastStart }">
-                  <input type="checkbox" v-model="configForm.frontend.fastStart" />
-                  <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
-                </label>
-              </div>
             </div>
 
             <div class="cfg-block">
@@ -887,7 +877,7 @@ const showQQAnswer = ref(false)
 
 const configForm = ref({
   backend: { host: '0.0.0.0', port: 5241, reload: false },
-  frontend: { host: '0.0.0.0', port: 5921, fastStart: false },
+  frontend: { host: '0.0.0.0', port: 5921 },
 })
 
 // 自定义下拉框状态
@@ -1168,10 +1158,6 @@ const loadConfig = async () => {
   try {
     const config = await invoke('read_config')
     const parsed = JSON.parse(JSON.stringify(config))
-    // 兜底：旧配置可能没有 fastStart 字段
-    if (parsed.frontend && typeof parsed.frontend.fastStart !== 'boolean') {
-      parsed.frontend.fastStart = false
-    }
     suppressAutoSave = true   // 加载赋值不触发自动保存
     configForm.value = parsed
     // 等本次响应式更新的 watch 回调跑完后再放开

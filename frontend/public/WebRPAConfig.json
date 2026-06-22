@@ -6,7 +6,6 @@
   },
   "frontend": {
     "host": "0.0.0.0",
-    "port": 5921,
-    "fastStart": false
+    "port": 5921
   }
 }

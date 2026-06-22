@@ -41,8 +41,6 @@ Object.assign(DICT, {
   '后端服务': 'Backend service', '前端服务': 'Frontend service',
   '监听地址': 'Host', '端口号': 'Port',
   '127.0.0.1（仅本机）': '127.0.0.1 (local only)', '0.0.0.0（允许局域网访问）': '0.0.0.0 (allow LAN access)',
-  '极速启动模式': 'Fast-start mode',
-  '静态托管已构建的前端（秒级启动）。修改前端代码后需重新构建才生效；开发调试请关闭此项': 'Serve the prebuilt frontend statically (instant start). Rebuild after editing frontend code; turn off for development.',
   '启动器偏好': 'Launcher preferences',
   '开机自启动': 'Start on boot',
   '开机登录 Windows 后自动启动 WebRPA 启动器（可配合下方"自动启动服务"实现开机即用）': 'Auto-launch the WebRPA launcher after Windows login (combine with auto-start services below for ready-on-boot).',
