@@ -158,7 +158,28 @@ def _load() -> dict[str, Any]:
             "disabled": False,
         }
         changed = True
-        print(f"[rbac] 已创建初始管理员 admin，初始口令：{init_pw}（请尽快登录修改）")
+        _banner = (
+            "\n"
+            "\n" + "*" * 72 + "\n"
+            "*" + " " * 70 + "*\n"
+            "*    >>>>>>  WebRPA 首次启动 · 初始管理员账号  <<<<<<" + " " * 16 + "*\n"
+            "*" + " " * 70 + "*\n"
+            "*        用户名 (account) : admin" + " " * 37 + "*\n"
+            f"*        初始口令 (password): {init_pw}" + " " * max(0, 42 - len(init_pw)) + "*\n"
+            "*" + " " * 70 + "*\n"
+            "*    请立即登录并在「全局配置 → 安全」中修改口令；此口令仅显示这一次！" + " " * 2 + "*\n"
+            "*" + " " * 70 + "*\n"
+            + "*" * 72 + "\n"
+        )
+        print(_banner, flush=True)
+        # 同时落一份到文件，避免日志刷屏后找不到（登录改密后可手动删除）
+        try:
+            (_DATA_DIR / "INITIAL_ADMIN_PASSWORD.txt").write_text(
+                f"WebRPA 初始管理员\n用户名: admin\n初始口令: {init_pw}\n"
+                f"（请登录后立即修改口令，并删除本文件）\n",
+                encoding="utf-8")
+        except Exception:
+            pass
     _cache = data
     if changed:
         _save(data)

@@ -222,7 +222,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-[hsl(var(--success-600))]"><CheckCircle2 className="w-4 h-4" /> 打包完成（{job.size_mb} MB · 用时 {fmtElapsed(elapsed)}）</div>
                   <div className="text-xs text-[hsl(var(--muted-foreground))] break-all">{job.output_dir}</div>
-                  <button className="mt-1 inline-flex items-center gap-1 text-xs underline text-[hsl(var(--brand-600))]" onClick={openFolder}><FolderOpen className="w-3.5 h-3.5" /> 打开输出目录</button>
+                  <button className="mt-1 inline-flex items-center gap-1 text-xs underline text-[hsl(var(--brand-600))] cursor-pointer" onClick={openFolder}><FolderOpen className="w-3.5 h-3.5" /> 打开输出目录</button>
                 </div>
               ) : job.status === 'failed' ? (
                 <div className="flex items-start gap-2 text-[hsl(var(--destructive))]"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /> <span className="break-all">打包失败：{job.error}</span></div>

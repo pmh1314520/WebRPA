@@ -216,6 +216,17 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* 可点击元素统一显示手型光标（裸 <button> 默认是 default 光标，体验不一致） */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+label[for],
+summary {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* button 元素由 Tailwind preflight 处理；不在此处重置，避免覆盖
    设计系统的 bg-/border- token */
 

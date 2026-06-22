@@ -1399,7 +1399,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             onPaste={handlePaste}
             placeholder={configReady ? (isSending ? '小助手正在工作中…再次发送会先停止它' : '告诉我你想做什么…（可粘贴/拖拽/上传图片或文档，Enter 发送，Shift+Enter 换行）') : '请先在全局配置中配置模型'}
             disabled={!configReady}
-            style={{ height: composerHeight }}
+            style={{ height: composerHeight, outline: 'none', boxShadow: 'none' }}
             className="w-full bg-transparent text-[13px] resize-none outline-none placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60 px-3 pt-2.5 pb-1 leading-relaxed overflow-y-auto"
           />
           <input
