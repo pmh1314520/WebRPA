@@ -1516,7 +1516,11 @@ class PlayMusicExecutor(ModuleExecutor):
         return "play_music"
 
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_play_music_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_play_music_sync
+        else:
+            from app.main import request_play_music_sync
 
         audio_url = context.resolve_value(config.get("audioUrl", ""))
         wait_for_end_raw = config.get("waitForEnd", True)
@@ -1575,7 +1579,11 @@ class PlayVideoExecutor(ModuleExecutor):
         return "play_video"
 
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_play_video_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_play_video_sync
+        else:
+            from app.main import request_play_video_sync
 
         video_url = context.resolve_value(config.get("videoUrl", ""))
         wait_for_end_raw = config.get("waitForEnd", True)
@@ -1634,7 +1642,11 @@ class ViewImageExecutor(ModuleExecutor):
         return "view_image"
 
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_view_image_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_view_image_sync
+        else:
+            from app.main import request_view_image_sync
 
         image_url = context.resolve_value(config.get("imageUrl", ""))
         auto_close_raw = config.get("autoClose", False)
@@ -1687,7 +1699,11 @@ class InputPromptExecutor(ModuleExecutor):
         return "input_prompt"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_input_prompt_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_input_prompt_sync
+        else:
+            from app.main import request_input_prompt_sync
         
         variable_name = config.get('variableName', '')
         prompt_title = context.resolve_value(config.get('promptTitle', '输入'))
@@ -2041,7 +2057,11 @@ class TextToSpeechExecutor(ModuleExecutor):
         return "text_to_speech"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_tts_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_tts_sync
+        else:
+            from app.main import request_tts_sync
         
         text = context.resolve_value(config.get('text', ''))
         lang = context.resolve_value(config.get('lang', 'zh-CN'))  # 支持变量引用
@@ -2088,7 +2108,11 @@ class JsScriptExecutor(ModuleExecutor):
         return "js_script"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_js_script_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_js_script_sync
+        else:
+            from app.main import request_js_script_sync
         
         code = context.resolve_value(config.get('code', ''))  # 支持变量引用
         result_variable = config.get('resultVariable', '')

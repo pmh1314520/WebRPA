@@ -77,7 +77,11 @@ class JsScriptExecutor(ModuleExecutor):
         return "js_script"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_js_script_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_js_script_sync
+        else:
+            from app.main import request_js_script_sync
         
         code = context.resolve_value(config.get('code', ''))
         result_variable = config.get('resultVariable', '')
@@ -122,7 +126,11 @@ class InputPromptExecutor(ModuleExecutor):
         return "input_prompt"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        from app.main import request_input_prompt_sync
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            from app.services.packaged_ui import request_input_prompt_sync
+        else:
+            from app.main import request_input_prompt_sync
         import json
         
         variable_name = config.get('variableName', '')

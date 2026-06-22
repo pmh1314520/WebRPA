@@ -136,6 +136,7 @@ import sys, os, json, asyncio
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)            # 让 import app.* 生效
 os.chdir(HERE)                       # 资源/相对路径基于运行时目录
+os.environ["WEBRPA_PACKAGED"] = "1"  # 标记打包运行：交互模块改用原生弹窗，不依赖前端
 
 if sys.platform == "win32":
     try:
