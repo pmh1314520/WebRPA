@@ -291,6 +291,14 @@ async def startup_event():
     loop = asyncio.get_event_loop()
     set_main_loop(loop)
 
+    # 启动时主动初始化账号体系：首次启动会创建初始管理员 admin 并打印随机口令横幅
+    # （否则 RBAC 是懒加载的，只有访问企业/安全接口时才创建，用户在启动日志里看不到口令）
+    try:
+        from app.services import rbac
+        rbac.ensure_bootstrap()
+    except Exception as e:
+        print(f"[Startup] 账号体系初始化失败: {e}")
+
     # OCR 模型改为「按需加载」：不在启动时预热，避免 PaddleOCR/EasyOCR/torch
     # 一启动就常驻几百 MB 内存。用户首次运行 OCR 相关模块（点击文本/悬停文本/
     # 图像识别等）时会通过 get_ocr_instance()/get_easyocr_reader() 懒加载并缓存，

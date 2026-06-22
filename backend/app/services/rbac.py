@@ -194,6 +194,13 @@ def _save(data: dict[str, Any]) -> None:
         print(f"[rbac] 保存失败: {e}")
 
 
+def ensure_bootstrap() -> None:
+    """显式触发账号体系初始化（首次启动创建初始管理员并打印口令横幅）。
+    供应用启动时调用，避免 RBAC 懒加载导致用户在启动日志里看不到初始口令。"""
+    with _lock:
+        _load()
+
+
 def _load_sessions() -> dict[str, Any]:
     global _sess_cache
     if _sess_cache is not None:
