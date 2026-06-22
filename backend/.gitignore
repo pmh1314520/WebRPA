@@ -103,4 +103,5 @@ data/cluster_tasks.json
 data/idp_templates.json
 data/computer_use_sessions.json
 data/rbac_enforce.json
+data/health_inspect.json
 data/cluster_node_identity.json

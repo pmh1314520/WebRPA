@@ -102,108 +102,92 @@ async def skill_get_cluster_enrollment(**_: Any) -> dict[str, Any]:
 async def skill_platform_health_check(days: int = 7, **_: Any) -> dict[str, Any]:
     """平台体检：一键巡检集群健康、失败 TOP、待审批积压、审计链完整性、异常会话、
     健康探针与告警配置，生成中文巡检报告 + 分级问题清单。管家主动发现风险用。"""
-    findings: list[dict[str, str]] = []
+    from app.services import health_inspector
+    return health_inspector.run_inspection(days)
 
-    def add(level: str, item: str, detail: str):
-        findings.append({"level": level, "item": item, "detail": detail})
 
-    # 1. 集群
+async def skill_get_auto_inspect(**_: Any) -> dict[str, Any]:
+    """查询定时自动体检配置（是否开启/间隔/通知级别）。"""
+    from app.services import health_inspector
+    return {"config": health_inspector.get_config()}
+
+
+async def skill_set_auto_inspect(enabled: bool | None = None, interval_minutes: int | None = None,
+                                 notify_on: str | None = None, **_: Any) -> dict[str, Any]:
+    """设置定时自动体检：是否开启、间隔分钟(>=5)、通知级别(error/warning)。开启后异常自动推送告警。"""
+    from app.services import health_inspector
+    patch: dict[str, Any] = {}
+    if enabled is not None:
+        patch["enabled"] = bool(enabled)
+    if interval_minutes is not None:
+        patch["interval_minutes"] = int(interval_minutes)
+    if notify_on is not None:
+        patch["notify_on"] = notify_on
+    return {"config": health_inspector.set_config(patch)}
+
+
+async def skill_query_runs(days: int = 7, group_by: str = "workflow",
+                           metric: str = "count", status: str | None = None,
+                           top: int = 10, order: str = "desc", **_: Any) -> dict[str, Any]:
+    """灵活查询/聚合工作流运行历史，用于精准回答数据问题。
+    - days: 统计近 N 天；status: 仅统计某状态(success/failed/stopped)
+    - group_by: workflow(按工作流) / source(按来源) / day(按日期)
+    - metric: count(次数) / success_rate(成功率%) / avg_ms(平均耗时) / total_ms / max_ms / failed(失败数)
+    - top/order: 取前 N，desc 降序 asc 升序
+    例："上周哪个工作流最费时" → days=7, group_by=workflow, metric=avg_ms, top=1。
+    """
+    import time as _t
+    from app.services import execution_history
     try:
-        from app.services import orchestrator
-        ov = orchestrator.fleet_overview()
-        nodes = orchestrator.list_nodes()
-        offline = [n["name"] for n in nodes if n.get("status") == "offline"]
-        tasks = ov.get("tasks", {})
-        if nodes and ov.get("nodes_online", 0) == 0:
-            add("error", "集群", f"已注册 {len(nodes)} 台执行机但全部离线")
-        elif offline:
-            add("warning", "集群", f"{len(offline)} 台执行机离线：{', '.join(offline[:5])}")
-        if (ov.get("utilization") or 0) >= 0.9:
-            add("warning", "集群", f"集群利用率高达 {round(ov['utilization']*100)}%，可能需扩容")
-        if tasks.get("failed"):
-            add("warning", "集群", f"{tasks['failed']} 个集群任务处于失败终态")
-        if not nodes:
-            add("info", "集群", "尚未接入任何执行机")
+        runs = execution_history.list_runs(limit=100000)
+        runs = runs.get("runs", runs) if isinstance(runs, dict) else runs
     except Exception as e:
-        add("warning", "集群", f"巡检异常：{e}")
+        return {"error": f"读取运行历史失败：{e}"}
+    cutoff = _t.time() - days * 86400
+    groups: dict[str, dict[str, Any]] = {}
+    for r in (runs or []):
+        # 时间过滤（started_at 优先，否则用 ts 字符串近似放行）
+        sa = r.get("started_at")
+        if isinstance(sa, (int, float)) and sa < cutoff:
+            continue
+        if status and r.get("status") != status:
+            continue
+        if group_by == "source":
+            key = r.get("source", "?")
+        elif group_by == "day":
+            key = (r.get("ts", "") or "")[:10] or "?"
+        else:
+            key = r.get("workflow_name", "?")
+        g = groups.setdefault(key, {"count": 0, "success": 0, "failed": 0,
+                                    "total_ms": 0, "max_ms": 0})
+        g["count"] += 1
+        st = r.get("status")
+        if st == "success":
+            g["success"] += 1
+        elif st == "failed":
+            g["failed"] += 1
+        dms = int(r.get("duration_ms", 0) or 0)
+        g["total_ms"] += dms
+        g["max_ms"] = max(g["max_ms"], dms)
 
-    # 2. 执行历史 / 失败 TOP
-    try:
-        from app.services import execution_history
-        st = execution_history.get_stats(days=days)
-        ovr = st.get("overview", {})
-        sr = ovr.get("success_rate")
-        if sr is not None and ovr.get("total", 0) > 0 and sr < 80:
-            add("error" if sr < 50 else "warning", "执行成功率",
-                f"近 {days} 天成功率仅 {sr}%（{ovr.get('failed', 0)}/{ovr.get('total', 0)} 失败）")
-        ftop = st.get("failure_top", [])
-        if ftop:
-            top = ftop[0]
-            add("warning", "失败 TOP",
-                f"最不稳定：{top.get('workflow_name')} 失败 {top.get('failed')}/{top.get('runs')} 次")
-    except Exception as e:
-        add("info", "执行历史", f"暂无统计或异常：{e}")
+    def _metric(g: dict[str, Any]) -> float:
+        if metric == "success_rate":
+            return round(g["success"] / g["count"] * 100, 1) if g["count"] else 0
+        if metric == "avg_ms":
+            return round(g["total_ms"] / g["count"], 1) if g["count"] else 0
+        if metric == "total_ms":
+            return g["total_ms"]
+        if metric == "max_ms":
+            return g["max_ms"]
+        if metric == "failed":
+            return g["failed"]
+        return g["count"]
 
-    # 3. 待审批积压
-    try:
-        from app.services import approval_center
-        pending = approval_center.list_requests("pending")
-        if len(pending) >= 5:
-            add("warning", "审批", f"待审批积压 {len(pending)} 条，请尽快处理")
-        elif pending:
-            add("info", "审批", f"有 {len(pending)} 条待审批")
-    except Exception as e:
-        add("info", "审批", f"巡检异常：{e}")
-
-    # 4. 审计链
-    try:
-        from app.services import audit_log
-        chain = audit_log.verify_chain()
-        if chain.get("valid") is False:
-            add("error", "审计", f"审计哈希链异常（疑似被篡改），断裂于 #{chain.get('broken_at')}")
-    except Exception as e:
-        add("info", "审计", f"巡检异常：{e}")
-
-    # 5. 会话
-    try:
-        from app.services import rbac
-        sess = rbac.list_active_sessions()
-        if len(sess) >= 50:
-            add("warning", "会话", f"当前活动会话多达 {len(sess)} 个，留意异常登录")
-    except Exception:
-        pass
-
-    # 6. 健康探针
-    try:
-        from app.services import health_probes
-        probes = health_probes.list_probes().get("probes", [])
-        bad = [p for p in probes if p.get("consecutive_failures") or p.get("last_status") == "failed"]
-        if bad:
-            add("error", "健康探针",
-                f"{len(bad)} 个探针处于失败状态：{', '.join(p.get('name', '?') for p in bad[:5])}")
-    except Exception:
-        pass
-
-    # 7. 告警配置
-    try:
-        from app.services import alert_center
-        if not (alert_center.get_config() or {}).get("enabled"):
-            add("info", "告警", "失败告警未启用，建议在告警中心配置渠道，跑批失败可第一时间感知")
-    except Exception:
-        pass
-
-    errors = [f for f in findings if f["level"] == "error"]
-    warns = [f for f in findings if f["level"] == "warning"]
-    health = "异常" if errors else ("需关注" if warns else "良好")
-    icon = {"error": "[严重]", "warning": "[注意]", "info": "[提示]"}
-    lines = [f"# WebRPA 平台体检报告", f"总体健康：{health}（{len(errors)} 严重 / {len(warns)} 注意）", ""]
-    if findings:
-        for f in findings:
-            lines.append(f"- {icon.get(f['level'], '')} 【{f['item']}】{f['detail']}")
-    else:
-        lines.append("- 未发现明显问题，平台运行良好。")
-    return {"health": health, "errors": len(errors), "warnings": len(warns),
-            "findings": findings, "report_markdown": "\n".join(lines)}
+    rows = [{"group": k, "value": _metric(v), **v} for k, v in groups.items()]
+    rows.sort(key=lambda x: x["value"], reverse=(order != "asc"))
+    return {"days": days, "group_by": group_by, "metric": metric,
+            "status_filter": status, "total_groups": len(rows),
+            "results": rows[:max(1, int(top))]}
 
 
 # ============ 变更类（需审批确认） ============
@@ -327,8 +311,18 @@ def _register_v11() -> None:
     _q("get_cluster_enrollment", "查询集群是否已开启入网密钥校验。", skill_get_cluster_enrollment)
     _q("platform_health_check", "平台体检：一键巡检集群健康/失败TOP/待审批积压/审计链完整性/异常会话/健康探针/告警配置，生成中文巡检报告与分级问题清单。用户问'平台状态/有没有问题/体检一下'时调它。",
        skill_platform_health_check, {"days": {"type": "integer", "default": 7}})
+    _q("get_auto_inspect", "查询定时自动体检配置（是否开启/间隔分钟/通知级别）。", skill_get_auto_inspect)
+    _q("query_runs", "灵活聚合查询运行历史以精准回答数据问题。group_by=workflow/source/day，metric=count/success_rate/avg_ms/total_ms/max_ms/failed，可按 days/status 过滤、取 top、排序。例：'上周哪个工作流最费时'→days=7,group_by=workflow,metric=avg_ms,top=1。",
+       skill_query_runs, {"days": {"type": "integer", "default": 7},
+                          "group_by": {"type": "string", "enum": ["workflow", "source", "day"]},
+                          "metric": {"type": "string", "enum": ["count", "success_rate", "avg_ms", "total_ms", "max_ms", "failed"]},
+                          "status": {"type": "string"}, "top": {"type": "integer", "default": 10},
+                          "order": {"type": "string", "enum": ["desc", "asc"]}})
 
     # 变更（需审批确认）
+    _m("set_auto_inspect", "开启/关闭定时自动体检，设置间隔(分钟,>=5)与通知级别(error/warning)。开启后平台异常自动推送告警。",
+       skill_set_auto_inspect, {"enabled": {"type": "boolean"}, "interval_minutes": {"type": "integer"},
+                                "notify_on": {"type": "string", "enum": ["error", "warning"]}})
     _m("create_user", "创建平台用户。username/password/roles 必填，roles 取自 list_roles。",
        skill_create_user, {"username": {"type": "string"}, "password": {"type": "string"},
                            "roles": {"type": "array", "items": {"type": "string"}},

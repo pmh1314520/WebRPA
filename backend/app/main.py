@@ -315,6 +315,13 @@ async def startup_event():
         start_reaper_loop()
     except Exception as e:
         print(f"[Startup] 集群任务自动转移循环启动失败: {e}")
+
+    # 启动平台自动体检循环（按配置定时巡检，异常经告警中心推送）
+    try:
+        from app.services.health_inspector import start_inspector_loop
+        start_inspector_loop()
+    except Exception as e:
+        print(f"[Startup] 平台自动体检循环启动失败: {e}")
     
     # 启动留存清理（录像/采集数据滚动清理，避免磁盘膨胀）
     try:
