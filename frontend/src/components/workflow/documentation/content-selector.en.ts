@@ -1,6 +1,6 @@
-export const selectorGuideContentEn = `# 🎯 Complete Selector Guide
+export const selectorGuideContentEn = `# 🎯 Complete Selector Guide (CSS + XPath)
 
-CSS selectors are a core skill for web automation. This chapter covers selectors from basics to mastery.
+Selectors are a core skill for web automation. This chapter covers both **CSS selectors** and **XPath selectors** from basics to mastery, including their syntax, pros and cons, and practical tips.
 
 ---
 
@@ -325,6 +325,122 @@ Modal container: .modal or [role="dialog"]
 Close button: .modal .close or .modal-close
 Confirm button: .modal .btn-confirm
 \`\`\`
+
+---
+
+## 🧭 XPath Selectors (advanced locating)
+
+On complex pages CSS alone is often inaccurate or unstable. **XPath** is usually more precise in these cases. WebRPA fully supports manually entering XPath: every "element selector" input can switch to XPath mode with one click.
+
+### What is XPath?
+
+XPath (XML Path Language) is a language that locates nodes in an HTML/XML document tree using "path expressions". It is more powerful than CSS: besides matching by tag and attribute, it can **locate by text content**, **walk up to parents/ancestors**, and **filter by position/logical conditions**.
+
+### How to use XPath in WebRPA
+
+1. At the top-right of any "element selector" input there is a **CSS / XPath** toggle button
+2. Click it to switch between **CSS mode** and **XPath mode** (it works even when the input is empty)
+3. After switching to XPath mode, just paste or type the XPath expression, e.g. \`//button[text()="Submit"]\`
+4. The value is automatically prefixed with \`xpath=\` under the hood (you don't type the prefix), and the engine locates via the XPath engine
+
+> Tip: you can also paste an expression starting with \`/\` or \`//\` directly in CSS mode — WebRPA detects it as XPath and adds the prefix, so it won't be mis-parsed as CSS.
+
+### XPath basic syntax
+
+| Expression | Meaning | Example |
+|------------|---------|---------|
+| \`/\` | Select from root (absolute path) | \`/html/body/div\` |
+| \`//\` | Select from anywhere (relative, most used) | \`//div\` |
+| \`.\` | Current node | \`.//span\` |
+| \`..\` | Parent node | \`//input/..\` |
+| \`@\` | Select attribute | \`//a[@href]\` |
+| \`*\` | Match any element | \`//div/*\` |
+
+### Locate by attribute
+
+\`\`\`
+//input[@id="username"]          → input whose id is username
+//button[@class="btn primary"]   → class exactly equals "btn primary"
+//a[@href="https://x.com"]       → specific link
+//div[@data-id="123"]            → custom attribute
+\`\`\`
+
+### Locate by text (XPath's unique strength)
+
+\`\`\`
+//button[text()="Submit"]              → button whose text is exactly "Submit"
+//button[contains(text(),"Submit")]    → text contains "Submit"
+//a[contains(.,"Next")]                → link whose descendant text contains "Next"
+//span[normalize-space()="OK"]         → equals "OK" after trimming whitespace
+\`\`\`
+
+### Fuzzy matching and functions
+
+\`\`\`
+//input[contains(@class,"form")]        → class contains form
+//a[starts-with(@href,"https")]         → href starts with https
+//img[contains(@src,".png")]            → src contains .png
+//div[@class="a" and @data-type="b"]    → both conditions
+//div[@class="a" or @class="b"]         → either condition
+//input[not(@disabled)]                 → no disabled attribute
+\`\`\`
+
+### Locate by position
+
+\`\`\`
+//ul/li[1]              → first li (XPath index starts at 1)
+//ul/li[last()]         → last li
+//ul/li[position()<=3]  → first three li
+//table//tr[2]/td[3]    → row 2, column 3 cell
+\`\`\`
+
+### Axis locating (traverse tree relationships, impossible in CSS)
+
+\`\`\`
+//label[text()="Account"]/following-sibling::input   → input after the "Account" label
+//input[@id="x"]/ancestor::form                      → the form containing this input
+//td[text()="Name"]/parent::tr                        → the whole row containing the "Name" cell
+//h2/preceding-sibling::p                             → all p before the h2
+\`\`\`
+
+### CSS vs XPath cheat sheet
+
+| Goal | CSS | XPath |
+|------|-----|-------|
+| By ID | \`#username\` | \`//*[@id="username"]\` |
+| By class | \`.btn\` | \`//*[contains(@class,"btn")]\` |
+| By tag | \`button\` | \`//button\` |
+| By attribute | \`[name="user"]\` | \`//*[@name="user"]\` |
+| nth element | \`li:nth-child(2)\` | \`//li[2]\` |
+| Descendant | \`.box .item\` | \`//*[contains(@class,"box")]//*[contains(@class,"item")]\` |
+| By text | ❌ not supported | \`//button[text()="Submit"]\` |
+| Find parent | ❌ not supported | \`//span/..\` |
+
+### Pros and cons of XPath
+
+**✅ Pros**
+
+- **Locate by text content**: great when there is no stable id/class — match by button text or label text
+- **Walk up / sideways**: supports parent, ancestor, sibling axes — "find an anchor element, then locate a target near it"
+- **Powerful filtering**: and/or/not, contains, starts-with, position functions and more
+- **More precise on complex structures**: often more reliable than CSS on deeply nested pages with dynamic classes
+
+**❌ Cons**
+
+- **More complex syntax**: expressions are longer than CSS, with a slightly higher learning curve
+- **Absolute paths are fragile**: something like \`/html/body/div[3]/div[2]/...\` breaks once the structure changes slightly (avoid it — prefer \`//\` relative paths with attributes/text)
+- **Slightly less readable**: long XPath is less intuitive than concise CSS
+- **Slightly slower**: extremely complex XPath can be a bit slower than equivalent CSS on huge pages (unnoticeable in normal cases)
+
+### When to use XPath?
+
+- Element **has a stable id/class** → prefer **CSS** (more concise)
+- Need to **locate by text** (e.g. "click the button whose text is 'OK'") → use **XPath**
+- Need to **find a parent/sibling from an element** (e.g. "the value to the right of the 'Price' label") → use **XPath**
+- Page classes are **random/dynamic** and CSS is unstable → use **XPath with attribute-contains or text**
+- Combine multiple filter conditions → use **XPath** and/or/not
+
+> Best practice: use CSS when a stable id is available; when locating fails or is unstable, switch to XPath using "attribute-contains + text + relative axes" and avoid absolute paths. You can toggle between the two modes anytime and verify quickly with the "Test locate" button on the right.
 
 ---
 

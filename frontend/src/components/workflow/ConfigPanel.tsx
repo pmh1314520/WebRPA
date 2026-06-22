@@ -585,6 +585,8 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
   const [isPicking, setIsPicking] = useState(false)
   const [pickingField, setPickingField] = useState<string | null>(null)
   const [testingField, setTestingField] = useState<string | null>(null)
+  // 选择器类型偏好（CSS/XPath）。用于在选择器值为空时也能正确切换模式，避免污染数据
+  const [selectorTypeOverride, setSelectorTypeOverride] = useState<Record<string, 'css' | 'xpath'>>({})
   const [showUrlDialog, setShowUrlDialog] = useState(false)
   const [pickerUrl, setPickerUrl] = useState('')
   const [pendingField, setPendingField] = useState<string | null>(null)
@@ -666,6 +668,8 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
       // 关闭可能残留的 URL 输入对话框
       setShowUrlDialog(false)
       setPendingField(null)
+      // 切换节点时重置选择器类型偏好，避免上一个节点的偏好串到新节点
+      setSelectorTypeOverride({})
       if (isDesktopPicking) {
         desktopPickerApi.stop().catch(() => {})
         setIsDesktopPicking(false)
@@ -1030,20 +1034,26 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
 
   const renderSelectorInput = (id: string, label: string, placeholder: string) => {
     const rawValue = (nodeData[id] as string) || ''
-    const isXPath = rawValue.startsWith('xpath=')
-    const displayValue = isXPath ? rawValue.slice(6) : rawValue
+    // 显示值始终去掉 xpath= 前缀
+    const displayValue = rawValue.startsWith('xpath=') ? rawValue.slice(6) : rawValue
+    // 类型判断：优先采用用户手动切换的偏好；否则根据值的前缀推断
+    const override = selectorTypeOverride[id]
+    const isXPath = override ? override === 'xpath' : rawValue.startsWith('xpath=')
     const selectorType = isXPath ? 'xpath' : 'css'
 
     const handleSelectorChange = (v: string) => {
-      const currentIsXPath = ((nodeData[id] as string) || '').startsWith('xpath=')
-      handleChange(id, currentIsXPath ? (v ? 'xpath=' + v : '') : v)
+      // 根据当前模式写入：XPath 模式带前缀（空值仍存空字符串，不污染数据）
+      handleChange(id, isXPath ? (v ? 'xpath=' + v : '') : v)
     }
 
     const toggleSelectorType = () => {
-      if (isXPath) {
-        handleChange(id, displayValue)
+      const nextType = isXPath ? 'css' : 'xpath'
+      setSelectorTypeOverride((prev) => ({ ...prev, [id]: nextType }))
+      // 同步重写当前值（空值时不写前缀，避免产生无效的 'xpath=' 空选择器）
+      if (nextType === 'xpath') {
+        handleChange(id, displayValue ? 'xpath=' + displayValue : '')
       } else {
-        handleChange(id, rawValue ? 'xpath=' + rawValue : '')
+        handleChange(id, displayValue)
       }
     }
 

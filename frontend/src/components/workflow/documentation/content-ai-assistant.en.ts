@@ -74,6 +74,31 @@ The assistant has **top-level privileges** and can perform all of the following 
 
 ---
 
+## 🧰 WebRPA steward capabilities (ops / enterprise / packaging)
+
+The assistant is not only a workflow builder but a "steward" for WebRPA: anything AI can solve, operate, or look up across the platform can be handed to it.
+
+### Capability introspection
+- \`list_my_capabilities\`: have the assistant list all skill categories and counts it currently masters — just ask "what can you do"
+
+### Platform health check
+- \`run_platform_health_check\`: one-click self-check of platform health, producing a graded \`[Critical]/[Warning]/[Info]\` report (dependencies, config, runtime, data integrity, etc.) to quickly spot issues
+
+### Run-data aggregation query
+- Aggregate recent workflow runs: success/failure counts, durations, failed nodes, collected-data volume, etc.
+- Just ask "which flows failed recently and why" — the assistant summarizes execution history into conclusions
+
+### One-click package to EXE
+- Tell the assistant "package the current workflow into an exe named XXX" and it invokes the packaging capability, auto-including global variables, Excel/image assets and custom modules, producing a standalone Windows program (see the "Platform Features" doc)
+
+### Enterprise platform management (if the enterprise module is enabled)
+- Query/manage robot clusters, orchestration tasks, approval flows, audit logs, RBAC roles and the credential vault
+- Drive the enterprise "create → approve → execute" closed loop with natural language
+
+> All of these are governed by the 3-level "AI permissions" (per-action confirm / smart auto / full access); high-risk actions ask for approval first.
+
+---
+
 ## 💬 Examples
 
 ### Example 1: let the assistant build a workflow for you

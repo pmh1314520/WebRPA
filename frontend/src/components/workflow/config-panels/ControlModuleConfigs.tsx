@@ -10,7 +10,7 @@ interface ConfigProps {
 }
 
 // 条件判断配置
-export function ConditionConfig({ data, onChange }: ConfigProps) {
+export function ConditionConfig({ data, onChange, renderSelectorInput }: ConfigProps) {
   const conditionType = (data.conditionType as string) || 'variable'
   const operator = (data.operator as string) || '=='
 
@@ -146,14 +146,18 @@ export function ConditionConfig({ data, onChange }: ConfigProps) {
 
       {/* 元素存在/可见判断 */}
       {(conditionType === 'element_exists' || conditionType === 'element_visible') && (
-        <div className="space-y-2">
-          <Label htmlFor="leftValue">元素选择器</Label>
-          <VariableInput
-            value={(data.leftValue as string) || ''}
-            onChange={(v) => onChange('leftValue', v)}
-            placeholder="输入 CSS 选择器或 XPath"
-          />
-        </div>
+        renderSelectorInput ? (
+          renderSelectorInput('leftValue', '元素选择器', '输入 CSS 选择器或 XPath')
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="leftValue">元素选择器</Label>
+            <VariableInput
+              value={(data.leftValue as string) || ''}
+              onChange={(v) => onChange('leftValue', v)}
+              placeholder="输入 CSS 选择器或 XPath"
+            />
+          </div>
+        )
       )}
     </div>
   )
@@ -501,7 +505,7 @@ export function SubflowConfig({ data, onChange }: ConfigProps) {
 
 
 // 断言/检查点配置（流程稳定性工程）
-export function AssertCheckpointConfig({ data, onChange }: ConfigProps) {
+export function AssertCheckpointConfig({ data, onChange, renderSelectorInput }: ConfigProps) {
   const checkType = (data.checkType as string) || 'variable'
   const operator = (data.operator as string) || '=='
   const elementCheck = (data.elementCheck as string) || 'exists'
@@ -567,14 +571,18 @@ export function AssertCheckpointConfig({ data, onChange }: ConfigProps) {
 
       {checkType === 'element' && (
         <>
-          <div className="space-y-2">
-            <Label htmlFor="selector">元素选择器</Label>
-            <VariableInput
-              value={(data.selector as string) || ''}
-              onChange={(v) => onChange('selector', v)}
-              placeholder="#id / .class / xpath，支持 {变量名}"
-            />
-          </div>
+          {renderSelectorInput ? (
+            renderSelectorInput('selector', '元素选择器', '#id / .class / xpath，支持 {变量名}')
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="selector">元素选择器</Label>
+              <VariableInput
+                value={(data.selector as string) || ''}
+                onChange={(v) => onChange('selector', v)}
+                placeholder="#id / .class / xpath，支持 {变量名}"
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="elementCheck">元素检查</Label>
             <Select id="elementCheck" value={elementCheck} onChange={(e) => onChange('elementCheck', e.target.value)}>

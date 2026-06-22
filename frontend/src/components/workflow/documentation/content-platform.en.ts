@@ -6,6 +6,7 @@ This chapter gathers WebRPA's platform-level capabilities: export workflows as s
 
 ## 🆕 Recently added — quick look
 
+- **One-click package to standalone EXE**: compile any workflow into a Windows executable that runs on double-click — the recipient needs neither WebRPA nor Python. Supports custom name, icon and portable/shared modes; see below.
 - **Version history (with global variables)**: Git-style local snapshots recording nodes, edges and **global variables**; restore/compare anytime. The AI assistant auto-snapshots before big changes.
 - **WebDAV remote storage**: configure WebDAV under Global settings → Storage; workflows can save/read to NAS, Nextcloud, Jianguoyun, etc. for multi-device sharing.
 - **Auto-copy for same-name workflows**: when on, saving over a same-name workflow auto-saves a timestamped copy instead of overwriting.
@@ -69,6 +70,60 @@ Top bar "More" → "Import bundle" → choose a .bundle.json
 - Auto-restores the dependent custom modules and images (skips existing ones, keeping original ids)
 - The workflow loads onto the canvas with references intact
 \`\`\`
+
+---
+
+## 🚀 One-click package to standalone EXE (delivery made easy)
+
+Many RPA tools can compile an automation flow into a Windows executable for direct delivery to clients/colleagues who don't have the tool installed. WebRPA now **fully supports** this: package any workflow into a custom \`.exe\` that runs on double-click — no Python, browser, or WebRPA needed on the target machine.
+
+### Entry
+
+\`\`\`
+Editor top toolbar → "Package to EXE" button → packaging dialog
+\`\`\`
+
+### Two packaging modes
+
+| Mode | Description | Size | Best for |
+|------|-------------|------|----------|
+| **Portable** | Bundles a full Python runtime, browser kernel, OCR models, etc. — the target machine needs nothing | Large (~2GB+) | Clean machines / client delivery |
+| **Shared** | Reuses the WebRPA runtime already installed on the target machine; packages only the workflow and launcher | Tiny | Internal teams with WebRPA installed |
+
+> Portable mode is recommended by default: it carries the full runtime so no module ever fails for missing dependencies.
+
+### Customizable options
+
+- **Program name**: the generated exe file name (e.g. \`DailyReport.exe\`)
+- **Program icon**: upload a \`.ico\` icon to make the exe look professional (falls back to a launch script if absent)
+- **Packaging mode**: portable / shared
+- Automatically includes the workflow's **global variables, Excel assets, image assets, and custom modules (including recursive subflows)**
+
+### What the packaged EXE can do
+
+Packaging **reuses WebRPA's real execution engine** (the same workflow_runner and all executors), so **any built-in or custom module behaves exactly as in the editor**:
+
+- Web automation, OCR, image processing, Excel, files, AI chat, desktop/mouse-keyboard, notifications and all other modules run normally
+- Modules using **front-end interaction** such as user-input dialogs fall back to native dialogs (input box / TTS / view image / play audio & video) for a seamless experience
+- Modules using **global config parameters** (AI, QQ automation, etc.) carry the relevant config into the package
+
+### Boundaries (honest notes)
+
+- **External absolute-path files** (e.g. \`D:\\xxx\\a.xlsx\`) are not packaged; ensure that path exists on the target machine
+- The **encrypted credential vault** is not packaged for security; flows using credentials must be reconfigured on the target machine
+- Modules depending on external services like **QQ / NapCat** require those services running on the target machine
+
+### Steps
+
+\`\`\`
+1. Open the workflow to deliver
+2. Click "Package to EXE" in the toolbar
+3. Enter the program name, (optionally) upload a .ico icon, choose a mode
+4. Click "Start packaging" and wait for compilation
+5. Get the exe in the output directory (for portable mode you can copy the whole folder to distribute)
+\`\`\`
+
+> You can also let the **AI assistant** package for you: just tell it "package the current workflow into an exe named XXX".
 
 ---
 

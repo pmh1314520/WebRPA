@@ -232,7 +232,7 @@ export const documents: DocumentItem[] = [
     id: 'selector-guide',
     title: '🎯 选择器完全指南',
     icon: Target,
-    description: 'CSS选择器从入门到精通',
+    description: 'CSS 与 XPath 选择器从入门到精通',
   },
   {
     id: 'notifications-guide',

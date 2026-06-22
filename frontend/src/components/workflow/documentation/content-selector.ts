@@ -1,6 +1,6 @@
-export const selectorGuideContent = `# 🎯 选择器完全指南
+export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath）
 
-CSS选择器是网页自动化的核心技能。本章从入门到精通，全面讲解选择器的使用方法。
+选择器是网页自动化的核心技能。本章从入门到精通，全面讲解 **CSS 选择器** 与 **XPath 选择器** 的使用方法、优缺点与实战技巧。
 
 ---
 
@@ -325,6 +325,122 @@ document.querySelectorAll('你的选择器').length
 关闭按钮：.modal .close 或 .modal-close
 确认按钮：.modal .btn-confirm
 \`\`\`
+
+---
+
+## 🧭 XPath 选择器（进阶定位利器）
+
+很多复杂页面光靠 CSS 定位不准、不稳，这时 **XPath** 往往更精准。WebRPA 已完美支持手动填写 XPath，所有"元素选择器"输入框都能一键切换到 XPath 模式。
+
+### 什么是 XPath？
+
+XPath（XML Path Language）是一套用"路径表达式"在 HTML/XML 文档树中定位节点的语言。它比 CSS 更强大：不仅能按标签、属性定位，还能**按文本内容定位**、**向上找父级/祖先**、**按位置/逻辑条件筛选**。
+
+### 在 WebRPA 中如何使用 XPath
+
+1. 在任意"元素选择器"输入框右上角，有一个 **CSS / XPath** 切换按钮
+2. 点击它即可在 **CSS 模式** 与 **XPath 模式** 之间切换（输入框为空时也能切换）
+3. 切到 XPath 模式后，直接粘贴或手写 XPath 表达式即可，例如 \`//button[text()="提交"]\`
+4. 底层会自动给值加上 \`xpath=\` 前缀（你无需手动输入前缀），执行引擎据此用 XPath 引擎定位
+
+> 小贴士：你也可以直接在 CSS 模式下粘贴以 \`/\` 或 \`//\` 开头的表达式，WebRPA 会自动识别为 XPath 并补全前缀，确保不会被当成 CSS 误解析。
+
+### XPath 基础语法
+
+| 表达式 | 说明 | 示例 |
+|--------|------|------|
+| \`/\` | 从根节点选取（绝对路径） | \`/html/body/div\` |
+| \`//\` | 从任意位置选取（相对路径，最常用） | \`//div\` |
+| \`.\` | 当前节点 | \`.//span\` |
+| \`..\` | 父节点 | \`//input/..\` |
+| \`@\` | 选取属性 | \`//a[@href]\` |
+| \`*\` | 匹配任意元素 | \`//div/*\` |
+
+### 按属性定位
+
+\`\`\`
+//input[@id="username"]          → id 为 username 的输入框
+//button[@class="btn primary"]   → class 完全等于 "btn primary"
+//a[@href="https://x.com"]       → 指定链接
+//div[@data-id="123"]            → 自定义属性
+\`\`\`
+
+### 按文本定位（XPath 独有优势）
+
+\`\`\`
+//button[text()="提交"]              → 文本正好是"提交"的按钮
+//button[contains(text(),"提交")]    → 文本包含"提交"
+//a[contains(.,"下一页")]            → 后代文本含"下一页"的链接
+//span[normalize-space()="确定"]     → 去除首尾空白后等于"确定"
+\`\`\`
+
+### 模糊匹配与函数
+
+\`\`\`
+//input[contains(@class,"form")]        → class 包含 form
+//a[starts-with(@href,"https")]         → href 以 https 开头
+//img[contains(@src,".png")]            → src 含 .png
+//div[@class="a" and @data-type="b"]    → 同时满足两个条件
+//div[@class="a" or @class="b"]         → 满足任一条件
+//input[not(@disabled)]                 → 没有 disabled 属性
+\`\`\`
+
+### 按位置定位
+
+\`\`\`
+//ul/li[1]              → 第一个 li（XPath 下标从 1 开始）
+//ul/li[last()]         → 最后一个 li
+//ul/li[position()<=3]  → 前三个 li
+//table//tr[2]/td[3]    → 第二行第三列单元格
+\`\`\`
+
+### 轴定位（沿文档树关系查找，CSS 做不到）
+
+\`\`\`
+//label[text()="账号"]/following-sibling::input   → "账号"标签后面的输入框
+//input[@id="x"]/ancestor::form                   → 该输入框所在的表单
+//td[text()="姓名"]/parent::tr                     → 含"姓名"单元格的整行
+//h2/preceding-sibling::p                          → h2 前面的所有 p
+\`\`\`
+
+### CSS 与 XPath 对照速查
+
+| 目标 | CSS | XPath |
+|------|-----|-------|
+| 按 ID | \`#username\` | \`//*[@id="username"]\` |
+| 按 class | \`.btn\` | \`//*[contains(@class,"btn")]\` |
+| 按标签 | \`button\` | \`//button\` |
+| 按属性 | \`[name="user"]\` | \`//*[@name="user"]\` |
+| 第 n 个 | \`li:nth-child(2)\` | \`//li[2]\` |
+| 后代 | \`.box .item\` | \`//*[contains(@class,"box")]//*[contains(@class,"item")]\` |
+| 按文本 | ❌ 不支持 | \`//button[text()="提交"]\` |
+| 找父级 | ❌ 不支持 | \`//span/..\` |
+
+### XPath 的优点与缺点
+
+**✅ 优点**
+
+- **能按文本内容定位**：页面没有稳定 id/class 时，按按钮文字、标签文字定位非常实用
+- **能向上/横向查找**：支持父级、祖先、兄弟等"轴"，可以"先找到一个锚点元素，再定位它附近的目标"
+- **筛选能力强**：支持 and/or/not、contains、starts-with、位置函数等复杂条件
+- **对复杂结构更精准**：层级深、动态 class 的页面往往比 CSS 更可靠
+
+**❌ 缺点**
+
+- **语法更复杂**：表达式比 CSS 长，初学者上手门槛略高
+- **绝对路径很脆**：像 \`/html/body/div[3]/div[2]/...\` 这种一旦页面结构微调就失效（务必避免，多用 \`//\` 相对路径 + 属性/文本）
+- **可读性略差**：长 XPath 不如简洁的 CSS 直观
+- **性能略低**：极端复杂的 XPath 在超大页面上比等价 CSS 稍慢（一般场景无感）
+
+### 选择建议：什么时候用 XPath？
+
+- 元素**有稳定 id/class** → 优先用 **CSS**（更简洁）
+- 需要**按文本定位**（如"点击文字为'确定'的按钮"）→ 用 **XPath**
+- 需要**从一个元素找它的父级/兄弟**（如"找到'价格'标签右边的数值"）→ 用 **XPath**
+- 页面 class 是**随机/动态生成**、CSS 不稳 → 用 **XPath 按文本或属性包含** 定位
+- 多个条件组合筛选 → 用 **XPath** 的 and/or/not
+
+> 最佳实践：能用稳定 id 就用 CSS；定位不到或不稳时，切到 XPath 用"属性包含 + 文本 + 相对轴"组合，避免写绝对路径。两种模式可随时一键切换，配合右侧「测试定位」按钮即可快速验证。
 
 ---
 
