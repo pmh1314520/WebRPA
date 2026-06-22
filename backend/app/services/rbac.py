@@ -28,6 +28,8 @@ _DATA_DIR = Path("backend/data")
 _RBAC_FILE = _DATA_DIR / "rbac.json"
 _SESS_FILE = _DATA_DIR / "sessions.json"
 _SECRET_FILE = _DATA_DIR / ".rbac_secret"
+# 初始管理员明文口令提示文件：存在 = admin 尚未改密，启动时据此重复提醒；改密后自动删除
+_INIT_PW_FILE = _DATA_DIR / "INITIAL_ADMIN_PASSWORD.txt"
 
 _lock = threading.RLock()
 _cache: Optional[dict[str, Any]] = None
@@ -158,25 +160,13 @@ def _load() -> dict[str, Any]:
             "disabled": False,
         }
         changed = True
-        _banner = (
-            "\n"
-            "\n" + "*" * 72 + "\n"
-            "*" + " " * 70 + "*\n"
-            "*    >>>>>>  WebRPA 首次启动 · 初始管理员账号  <<<<<<" + " " * 16 + "*\n"
-            "*" + " " * 70 + "*\n"
-            "*        用户名 (account) : admin" + " " * 37 + "*\n"
-            f"*        初始口令 (password): {init_pw}" + " " * max(0, 42 - len(init_pw)) + "*\n"
-            "*" + " " * 70 + "*\n"
-            "*    请立即登录并在「全局配置 → 安全」中修改口令；此口令仅显示这一次！" + " " * 2 + "*\n"
-            "*" + " " * 70 + "*\n"
-            + "*" * 72 + "\n"
-        )
-        print(_banner, flush=True)
-        # 同时落一份到文件，避免日志刷屏后找不到（登录改密后可手动删除）
+        # 落一份明文口令到文件：作为「尚未改密」的标记，启动时据此重复提醒，
+        # 用户改密后会自动删除（见 _clear_initial_admin_file）。
         try:
-            (_DATA_DIR / "INITIAL_ADMIN_PASSWORD.txt").write_text(
+            _DATA_DIR.mkdir(parents=True, exist_ok=True)
+            _INIT_PW_FILE.write_text(
                 f"WebRPA 初始管理员\n用户名: admin\n初始口令: {init_pw}\n"
-                f"（请登录后立即修改口令，并删除本文件）\n",
+                f"（请登录后立即修改口令；改密后本文件会自动删除）\n",
                 encoding="utf-8")
         except Exception:
             pass
@@ -194,11 +184,57 @@ def _save(data: dict[str, Any]) -> None:
         print(f"[rbac] 保存失败: {e}")
 
 
+def _read_initial_pw() -> Optional[str]:
+    """从初始口令提示文件读取明文口令（尚未改密时存在）。"""
+    try:
+        if _INIT_PW_FILE.exists():
+            for line in _INIT_PW_FILE.read_text(encoding="utf-8").splitlines():
+                if line.startswith("初始口令:"):
+                    return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+    return None
+
+
+def _clear_initial_admin_file() -> None:
+    """admin 改密后调用：删除初始口令提示文件，启动时不再提醒。"""
+    try:
+        _INIT_PW_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _print_admin_banner(init_pw: str) -> None:
+    """打印醒目的初始管理员账号横幅（仅左侧 / 上下边框，避免中文宽度导致右边框错位）。"""
+    bar = "*" * 72
+    lines = [
+        "",
+        "",
+        bar,
+        "  >>>>>>  WebRPA 初始管理员账号（请尽快登录改密）  <<<<<<",
+        "",
+        "      用户名 (account) : admin",
+        f"      初始口令 (password): {init_pw}",
+        "",
+        "  请登录并在「全局配置 → 安全」中修改口令。",
+        "  改密前，此口令会保存在 backend/data/INITIAL_ADMIN_PASSWORD.txt，",
+        "  并在每次后端启动时重复显示；改密后自动停止提示。",
+        bar,
+        "",
+    ]
+    print("\n".join(lines), flush=True)
+
+
 def ensure_bootstrap() -> None:
-    """显式触发账号体系初始化（首次启动创建初始管理员并打印口令横幅）。
-    供应用启动时调用，避免 RBAC 懒加载导致用户在启动日志里看不到初始口令。"""
+    """显式触发账号体系初始化（供应用启动调用）。
+    - 首次启动：创建初始管理员并落盘明文口令提示文件。
+    - 只要 admin 尚未改密（提示文件仍在），每次启动都重新打印口令横幅，避免用户错过。
+    """
     with _lock:
         _load()
+    pw = _read_initial_pw()
+    if pw:
+        _print_admin_banner(pw)
 
 
 def _load_sessions() -> dict[str, Any]:
@@ -417,6 +453,8 @@ def change_password(username: str, old_password: str, new_password: str) -> dict
             return {"success": False, "error": "新口令至少 6 位"}
         user["password"] = _hash_password(new_password)
         _save(data)
+        if username == "admin":
+            _clear_initial_admin_file()
         return {"success": True}
 
 
@@ -632,6 +670,8 @@ def update_user(username: str, *, roles: Optional[list[str]] = None,
             if len(new_password) < 6:
                 return {"success": False, "error": "口令至少 6 位"}
             user["password"] = _hash_password(new_password)
+            if username == "admin":
+                _clear_initial_admin_file()
         _save(data)
         # 禁用或改口令后，强制吊销该用户所有现存会话
         if disabled or new_password:
