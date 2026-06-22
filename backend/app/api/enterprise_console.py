@@ -51,6 +51,8 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:6px}
 .login-wrap{max-width:360px;margin:60px auto}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0b1220;border:1px solid var(--bd);padding:10px 16px;border-radius:10px;z-index:50;font-size:13px;max-width:90%}
 .field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--bd)}
+.filepick{display:flex;align-items:center;gap:10px;margin:4px 0;background:#0b1220;border:1px solid var(--bd);border-radius:8px;padding:6px 8px}
+.filepick .filename,.filepick .mut{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -95,7 +97,7 @@ const DICT={
 "批准":"Approve","驳回":"Reject","发起 ":"by ","审批人 ":"approver ","暂无审批单":"No approval requests","驳回意见（可空）：":"Rejection comment (optional):","（已签发执行令牌）":" (grant token issued)","执行":"Execute"," · 已执行":" · executed","确认执行该已批准的危险操作？":"Execute this approved dangerous operation?","已执行：":"Executed: ",
 "发起审批申请":"Submit approval request","危险操作":"Dangerous operation","删除工作流":"Delete workflow","移除集群节点":"Remove cluster node","批量派发任务":"Bulk dispatch tasks","申请理由":"Reason","说明为什么需要此操作":"Explain why this operation is needed","提交申请":"Submit","工作流文件名（逗号分隔）":"Workflow file names (comma-separated)","节点 ID":"Node ID","请填写节点 ID":"Please enter node ID","已提交申请":"Submitted"," 个工作流":" workflows",
 "凭据值始终加密存储，此处仅管理「哪些角色可取用」，绝不显示明文。":"Credential values are always encrypted; here you only manage which roles can access them. Plaintext is never shown.","仅特权可取":"privileged only","允许角色：":"Allowed roles: ","（未授权普通角色）":"(no normal roles authorized)","设置":"Configure","凭据库为空。请先在编辑器凭据库新增凭据。":"Vault is empty. Add credentials in the editor first.","设置访问角色：":"Set access roles: ","保存":"Save","已保存":"Saved",
-"文档抽取":"Document extraction","文档类型":"Document type","选择文档（图片或 PDF）":"Select document (image or PDF)","抽取字段":"Extract fields","需在编辑器全局配置中填写支持视觉的多模态模型。":"A vision-capable multimodal model must be configured in the editor's global settings.","字段模板":"Field templates","内置":"built-in","（自由抽取键值对）":"(free key-value extraction)","请选择文件":"Please select a file","抽取中，请稍候…":"Extracting, please wait…","抽取失败：":"Extraction failed: ","抽取结果":"Extraction result","校验问题":"Validation issues","页）":" pages)",
+"文档抽取":"Document extraction","文档类型":"Document type","选择文档（图片或 PDF）":"Select document (image or PDF)","抽取字段":"Extract fields","需在编辑器全局配置中填写支持视觉的多模态模型。":"A vision-capable multimodal model must be configured in the editor's global settings.","字段模板":"Field templates","内置":"built-in","（自由抽取键值对）":"(free key-value extraction)","请选择文件":"Please select a file","选择文件":"Choose file","未选择文件":"No file selected","抽取中，请稍候…":"Extracting, please wait…","抽取失败：":"Extraction failed: ","抽取结果":"Extraction result","校验问题":"Validation issues","页）":" pages)",
 "让 Agent 操作电脑":"Let the Agent operate the computer","目标（越具体越好）":"Goal (the more specific the better)","最大步数":"Max steps","开始执行":"Start","需配置支持视觉的多模态模型。执行期间 Agent 会真实操作本机鼠标键盘，请勿干扰。":"A vision model is required. During execution the Agent really controls this machine's mouse/keyboard — do not interfere.","历史会话":"Past sessions","暂无会话":"No sessions","请填写目标":"Please enter a goal","Agent 将真实操作本机，确认开始？":"The Agent will really control this machine. Start?","执行中，可能需要一段时间…":"Running, this may take a while…","执行失败：":"Execution failed: ","动作历史":"Action history"," 步":" steps","步 · ":" steps · ",
 "急停":"Stop","已请求停止，将在下一步前终止":"Stop requested; will terminate before the next step",
 "执行记录 JSON 数组":"Execution records (JSON array)","分析":"Analyze","JSON 格式错误":"Invalid JSON format","分析失败：":"Analysis failed: ","轨迹数":"Traces","路径变体":"Variants","总步数":"Total steps","瓶颈步骤":"Bottleneck steps",
@@ -278,7 +280,9 @@ async function vIdp(){
  const tpls=(await api('/idp/templates')).templates||[];
  let h='<div class="card"><h3 style="margin-top:0">文档抽取</h3><div class="frm">'
  +'<label>文档类型</label><select id="idt">'+tpls.map(t=>'<option value="'+esc(t.key)+'">'+esc(t.label)+'</option>').join('')+'</select>'
- +'<label>选择文档（图片或 PDF）</label><input type="file" id="idf" accept="image/*,.pdf"/>'
+ +'<label>选择文档（图片或 PDF）</label>'
+ +'<input type="file" id="idf" accept="image/*,.pdf" style="display:none" onchange="idfShow()"/>'
+ +'<div class="filepick"><button type="button" class="act gray" onclick="document.getElementById(\'idf\').click()">选择文件</button><span id="idfName" class="mut">未选择文件</span></div>'
  +'<button class="act" onclick="idpExtract()">抽取字段</button></div>'
  +'<div class="mut">需在编辑器全局配置中填写支持视觉的多模态模型。</div></div><div id="idpOut"></div>';
  h+='<h3>字段模板</h3><div class="card">'+tpls.map(t=>'<div class="row"><div class="flex1"><div class="title">'+esc(t.label)+' <span class="mut">'+esc(t.key)+(t.builtin?' · 内置':'')+'</span></div><div class="mut">'+esc((t.fields||[]).map(f=>f.label+(f.required?'*':'')).join('、')||'（自由抽取键值对）')+'</div></div></div>').join('')+'</div>';
@@ -292,6 +296,8 @@ async function idpExtract(){const f=document.getElementById('idf').files[0];cons
   let rows=(j.fields||[]).map(fl=>'<div class="field"><span>'+esc(fl.name)+'</span><span>'+esc(typeof fl.value==='object'?JSON.stringify(fl.value):fl.value)+(fl.confidence!=null?' <span class="mut">('+fl.confidence+')</span>':'')+'</span></div>').join('');
   let issues=(j.issues||[]).map(i=>'<div class="mut" style="color:var(--'+(i.level==='error'?'bad':'warn')+')">'+esc(i.label||i.field)+'：'+esc(i.message)+'</div>').join('');
   out.innerHTML='<div class="card">'+(j.valid?statusTag('success'):statusTag('failed'))+' <b>抽取结果</b>（'+esc(j.doc_type)+'，'+(j.pages||1)+'页）'+rows+(issues?('<h3>校验问题</h3>'+issues):'')+'</div>'}catch(e){out.innerHTML='<div class="card">抽取失败：'+esc(e.message)+'</div>'}}
+
+function idfShow(){const f=document.getElementById('idf').files[0];const el=document.getElementById('idfName');if(el)el.textContent=f?f.name:'未选择文件'}
 
 // ---------- 计算机使用 Agent ----------
 async function vCua(){
