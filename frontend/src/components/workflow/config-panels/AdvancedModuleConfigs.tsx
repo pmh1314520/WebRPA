@@ -2487,8 +2487,7 @@ function MacroEditDialog({
 
         {/* 工具栏 */}
         <div className="px-4 py-2 border-b bg-gray-50 flex items-center gap-2 flex-wrap">
-          <select
-            className="text-sm border rounded px-2 py-1"
+          <Select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           >
@@ -2498,7 +2497,7 @@ function MacroEditDialog({
             <option value="mouse_move">仅移动</option>
             <option value="mouse_click">仅点击</option>
             <option value="mouse_scroll">仅滚轮</option>
-          </select>
+          </Select>
           <button
             className="text-sm px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 inline-flex items-center gap-1"
             onClick={() => setShowAddDialog(true)}
@@ -2747,15 +2746,14 @@ function MacroActionEditDialog({
             <>
               <div>
                 <label className="text-sm text-gray-600">按键</label>
-                <select
-                  className="w-full border rounded px-2 py-1 mt-1"
+                <Select
                   value={action.button || 'left'}
                   onChange={(e) => onChange({ ...action, button: e.target.value as 'left' | 'right' | 'middle' })}
                 >
                   <option value="left">左键</option>
                   <option value="right">右键</option>
                   <option value="middle">中键</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm">
@@ -2924,8 +2922,7 @@ function MacroAddActionDialog({
         <div className="space-y-3">
           <div>
             <label className="text-sm text-gray-600">操作类型</label>
-            <select
-              className="w-full border rounded px-2 py-1 mt-1"
+            <Select
               value={actionType}
               onChange={(e) => setActionType(e.target.value as MacroAction['type'])}
             >
@@ -2934,7 +2931,7 @@ function MacroAddActionDialog({
               <option value="mouse_scroll">鼠标滚轮</option>
               <option value="key_press">按键</option>
               <option value="key_char">输入字符</option>
-            </select>
+            </Select>
           </div>
 
           {(actionType === 'mouse_move' || actionType === 'mouse_click') && (
@@ -2988,15 +2985,14 @@ function MacroAddActionDialog({
             <>
               <div>
                 <label className="text-sm text-gray-600">按键</label>
-                <select
-                  className="w-full border rounded px-2 py-1 mt-1"
+                <Select
                   value={action.button || 'left'}
                   onChange={(e) => setAction({ ...action, button: e.target.value as 'left' | 'right' | 'middle' })}
                 >
                   <option value="left">左键</option>
                   <option value="right">右键</option>
                   <option value="middle">中键</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm">

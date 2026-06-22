@@ -1467,7 +1467,7 @@ const moduleCategories = [
     modules: ['screenshot', 'save_image', 'download_file', 'network_capture', 'network_monitor_start', 'network_monitor_wait', 'network_monitor_stop'] as ModuleType[],
   },
   {
-    name: 'DrissionPage 反检测自动化',
+    name: 'DP 反检测自动化',
     color: 'bg-teal-600',
     modules: ['dp_open_page', 'dp_click', 'dp_input', 'dp_get_text', 'dp_get_html', 'dp_run_js', 'dp_wait_element', 'dp_scroll', 'dp_close'] as ModuleType[],
   },

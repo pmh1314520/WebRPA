@@ -1381,7 +1381,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
         )}
         <div
           className={'relative flex flex-col rounded-[10px] border-[1.5px] bg-[hsl(var(--card))] shadow-xs transition-[border-color,box-shadow] duration-150 ' +
-            (isDragOver ? 'border-[hsl(var(--brand-500))] ring-2 ring-[hsl(var(--brand-500)/0.25)]' : 'border-[hsl(var(--border))] focus-within:border-[hsl(var(--brand-500))] focus-within:shadow-ring')}
+            (isDragOver ? 'border-[hsl(var(--brand-500))] ring-2 ring-[hsl(var(--brand-500)/0.25)]' : 'border-[hsl(var(--border))]')}
           onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setIsDragOver(true) } }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false) }}
           onDrop={(e) => { if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { e.preventDefault(); setIsDragOver(false); void addFiles(e.dataTransfer.files) } }}

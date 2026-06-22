@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
+import { SelectNative } from '@/components/ui/select-native'
 import { X, Search, Filter, RefreshCw, Download, Trash2, Clock, Tag, TrendingUp, Eye, EyeOff, Activity } from 'lucide-react'
 
 interface VariableTrackingRecord {
@@ -326,11 +327,9 @@ export const VariableTrackingPanel: React.FC<VariableTrackingPanelProps> = ({
               {/* 变量名过滤 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">变量名</label>
-                <select
+                <SelectNative
                   value={selectedVariable || ''}
                   onChange={(e) => setSelectedVariable(e.target.value || null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                    focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="">全部变量</option>
                   {uniqueVariables.map(variable => (
@@ -338,38 +337,34 @@ export const VariableTrackingPanel: React.FC<VariableTrackingPanelProps> = ({
                       {variable} ({variableStats.get(variable)?.count || 0})
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
 
               {/* 操作类型过滤 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">操作类型</label>
-                <select
+                <SelectNative
                   value={selectedOperation}
                   onChange={(e) => setSelectedOperation(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                    focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="all">全部操作</option>
                   <option value="create">创建</option>
                   <option value="update">更新</option>
-                </select>
+                </SelectNative>
               </div>
 
               {/* 值类型过滤 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">值类型</label>
-                <select
+                <SelectNative
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                    focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="all">全部类型</option>
                   {uniqueTypes.map(type => (
                     <option key={type} value={type}>{type}</option>
                   ))}
-                </select>
+                </SelectNative>
               </div>
             </div>
           )}

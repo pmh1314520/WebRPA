@@ -24,7 +24,7 @@ export const UI_DICT: Record<string, string> = {
   // 模块侧栏分类
   '网页导航': 'Web Navigation', '网页元素交互': 'Web Element Interaction',
   '网页元素查询': 'Web Element Query', '网页数据采集': 'Web Data Scraping',
-  'DrissionPage 反检测自动化': 'DrissionPage Anti-Detection',
+  'DP 反检测自动化': 'DP Anti-Detection',
   '鼠标操作': 'Mouse', '键盘操作': 'Keyboard', '图像识别与点击': 'Image Recognition & Click',
   '屏幕与录制': 'Screen & Recording', '桌面应用控制': 'Desktop App Control', '系统操作': 'System',
   '手机自动化': 'Mobile Automation', '流程控制': 'Flow Control', '触发器': 'Triggers',

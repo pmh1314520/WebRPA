@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SelectNative } from '@/components/ui/select-native'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import { useGlobalConfigStore, type BrowserType, type AIModelProfile, type AssistantScene } from '@/store/globalConfigStore'
@@ -1082,10 +1083,9 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-gray-700">默认LLM提供商</Label>
-                  <select
+                  <SelectNative
                     value={config.aiScraper?.llmProvider || 'ollama'}
                     onChange={(e) => updateAIScraperConfig({ llmProvider: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 bg-white text-black"
                   >
                     <option value="ollama">Ollama (本地免费)</option>
                     <option value="openai">OpenAI</option>
@@ -1095,7 +1095,7 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     <option value="zhipu">智谱 AI (GLM)</option>
                     <option value="deepseek">Deepseek</option>
                     <option value="custom">自定义</option>
-                  </select>
+                  </SelectNative>
                   <p className="text-xs text-gray-500">
                     推荐使用 Ollama 本地运行，完全免费
                   </p>
@@ -2041,7 +2041,7 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                           className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
                         >
                           {/* 类型选择 */}
-                          <select
+                          <SelectNative
                             value={contact.type}
                             onChange={(e) => {
                               const newContacts = [...(config.qq?.contacts || [])]
@@ -2051,11 +2051,11 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                               }
                               updateQQConfig({ contacts: newContacts })
                             }}
-                            className="px-2 py-1.5 text-xs border border-gray-300 rounded bg-white text-black w-20"
+                            className="w-20"
                           >
                             <option value="private">私聊</option>
                             <option value="group">群聊</option>
-                          </select>
+                          </SelectNative>
                           
                           {/* QQ号/群号 */}
                           <Input

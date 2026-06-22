@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBackendBaseUrl } from '@/services/config'
+import { SelectNative } from '@/components/ui/select-native'
 import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen } from 'lucide-react'
 
 interface PackageDialogProps {
@@ -109,11 +110,11 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
         <div className="p-4 space-y-3 text-sm">
           <div>
             <label className="text-xs text-[hsl(var(--muted-foreground))]">选择工作流</label>
-            <select className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
-              value={filename} onChange={e => setFilename(e.target.value)}>
+            <SelectNative className="mt-1" value={filename} onChange={e => setFilename(e.target.value)}
+              placeholder="（请先在编辑器保存工作流）">
               {list.length === 0 && <option value="">（请先在编辑器保存工作流）</option>}
               {list.map(w => <option key={w.filename} value={w.filename}>{w.name}</option>)}
-            </select>
+            </SelectNative>
           </div>
           <div>
             <label className="text-xs text-[hsl(var(--muted-foreground))]">程序名称</label>
@@ -123,11 +124,10 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-[hsl(var(--muted-foreground))]">打包方式</label>
-              <select className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
-                value={mode} onChange={e => setMode(e.target.value as any)}>
+              <SelectNative className="mt-1" value={mode} onChange={e => setMode(e.target.value as any)}>
                 <option value="portable">自包含（拷给任何电脑都能跑，体积大）</option>
                 <option value="shared">轻量（依赖本机已装 WebRPA，体积小）</option>
-              </select>
+              </SelectNative>
             </div>
             <div className="flex flex-col justify-end gap-1.5 pt-4">
               <label className="flex items-center gap-2"><input type="checkbox" checked={headless} onChange={e => setHeadless(e.target.checked)} /> 后台运行（不显示浏览器）</label>
