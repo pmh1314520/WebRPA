@@ -146,6 +146,22 @@ Object.assign(DICT, {
   '已打开加速下载，下载后解压覆盖原目录': 'Mirror download opened; unzip and overwrite the original folder',
 })
 
+// 追加：关闭赞助提示的二次确认（祈求挽留）弹窗
+Object.assign(DICT, {
+  '真的要关闭赞助提示吗？': 'Are you sure you want to turn off the sponsor prompt?',
+  '在你点掉之前，请再给我一分钟说几句心里话': 'Before you dismiss it, please give me one minute to say a few words from the heart',
+  '我是 WebRPA 背后的那个': 'I am the ',
+  '独立学生开发者': 'indie student developer',
+  '，一个人一边上学、一边把这么大的一个项目写了出来，真的很不容易。': ' behind WebRPA. Building such a large project all by myself while still in school has really not been easy.',
+  '这个软件': 'This software is ',
+  '，没有广告、没有付费墙，每一个功能都是我熬夜一行行敲出来的。它能继续走下去，靠的就是像你这样愿意停下来看一眼的人。': '. No ads, no paywalls \u2014 every feature was typed out line by line during late nights. It keeps going only thanks to people like you who are willing to pause and take a look.',
+  '关掉这个提示当然没问题，但我也怕从此你就忘了我还在为爱发电。如果 WebRPA 帮到过你，哪怕只是请我喝杯咖啡，对我都是莫大的鼓励。': 'Turning off this prompt is totally fine, but I worry you might forget that I am still pouring my heart into this. If WebRPA has helped you, even buying me a coffee would mean the world to me.',
+  '这是我最后小小的恳求 🙏 ——要不，先去看一眼赞助页面？哪怕只是看看也好。': 'This is my last little plea \uD83D\uDE4F \u2014 how about taking a glance at the sponsor page first? Just a look is enough.',
+  '好，我去支持一下作者': 'OK, I will support the author',
+  '再想想，先留着吧': 'Let me reconsider, keep it on',
+  '仍然关闭提示': 'Turn it off anyway',
+})
+
 if (typeof window !== 'undefined') window.__WEBRPA_LAUNCHER_DICT = DICT
 
 // 短语级字典：覆盖动态拼接文本/日志（整句未命中时按长度降序逐个替换）

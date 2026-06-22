@@ -403,6 +403,54 @@
       </div>
     </transition>
 
+    <!-- 关闭赞助提示的二次确认（祈求挽留）弹窗 -->
+    <transition name="modal">
+      <div v-if="showSponsorFarewellModal" class="modal-mask" @click="keepSponsorOn">
+        <div class="modal-shell modal-shell-narrow" @click.stop>
+          <div class="modal-banner farewell-banner">
+            <div class="modal-banner-pattern"></div>
+            <div class="modal-banner-content">
+              <div class="modal-banner-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </div>
+              <div class="modal-banner-text">
+                <div class="modal-banner-title">真的要关闭赞助提示吗？</div>
+                <div class="modal-banner-sub">在你点掉之前，请再给我一分钟说几句心里话</div>
+              </div>
+            </div>
+            <button class="modal-close" @click="keepSponsorOn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+                <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="farewell-msg">
+              <p>我是 WebRPA 背后的那个<strong>独立学生开发者</strong>，一个人一边上学、一边把这么大的一个项目写了出来，真的很不容易。</p>
+              <p>这个软件<strong>个人使用完全免费</strong>，没有广告、没有付费墙，每一个功能都是我熬夜一行行敲出来的。它能继续走下去，靠的就是像你这样愿意停下来看一眼的人。</p>
+              <div class="farewell-highlight">
+                <span class="farewell-highlight-bar"></span>
+                <span>关掉这个提示当然没问题，但我也怕从此你就忘了我还在为爱发电。如果 WebRPA 帮到过你，哪怕只是请我喝杯咖啡，对我都是莫大的鼓励。</span>
+              </div>
+              <p class="farewell-beg">这是我最后小小的恳求 🙏 ——要不，先去看一眼赞助页面？哪怕只是看看也好。</p>
+            </div>
+            <div class="farewell-actions">
+              <button class="farewell-btn farewell-btn-primary" @click="gotoSponsorFromFarewell">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                <span>好，我去支持一下作者</span>
+              </button>
+              <button class="farewell-btn farewell-btn-keep" @click="keepSponsorOn">再想想，先留着吧</button>
+              <button class="farewell-btn farewell-btn-ghost" @click="confirmDisableSponsor">仍然关闭提示</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- 接单广告弹窗 -->
     <transition name="modal">
       <div v-if="showHire" class="modal-mask" @click="showHire = false">
@@ -664,7 +712,7 @@
                   <div class="cfg-toggle-sub">关闭后不再每次启动都弹窗，仍可通过右上角"支持作者"打开</div>
                 </div>
                 <label class="cfg-switch" :class="{ on: showSponsorOnStartup }">
-                  <input type="checkbox" v-model="showSponsorOnStartup" />
+                  <input type="checkbox" :checked="showSponsorOnStartup" @change="onSponsorToggle" />
                   <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
                 </label>
               </div>
@@ -757,6 +805,8 @@ let startLockTimer = null
 const backendRunning = ref(false)
 const frontendRunning = ref(false)
 const showSponsorModal = ref(false)
+// 关闭"启动时弹出赞助提示"开关时的二次确认（祈求挽留）弹窗
+const showSponsorFarewellModal = ref(false)
 const showHire = ref(false)
 const enlargedQr = ref('')
 const showConfigModal = ref(false)
@@ -1069,6 +1119,30 @@ const copyQQAnswer = async () => {
   }
 }
 const showSponsor = () => { showSponsorModal.value = true }
+
+// 赞助开关切换：开启直接生效；关闭时先弹挽留弹窗，由用户确认才真正关闭
+const onSponsorToggle = (e) => {
+  const checked = e && e.target ? e.target.checked : false
+  if (checked) {
+    showSponsorOnStartup.value = true
+  } else {
+    // 暂不关闭，先把开关视觉恢复为开，弹出挽留弹窗
+    if (e && e.target) e.target.checked = true
+    showSponsorFarewellModal.value = true
+  }
+}
+// 挽留：保持开启（什么都不改，仅关闭弹窗）
+const keepSponsorOn = () => { showSponsorFarewellModal.value = false }
+// 挽留：去赞助页面
+const gotoSponsorFromFarewell = () => {
+  showSponsorFarewellModal.value = false
+  showSponsorModal.value = true
+}
+// 挽留：用户坚持关闭，真正写入 false
+const confirmDisableSponsor = () => {
+  showSponsorFarewellModal.value = false
+  showSponsorOnStartup.value = false
+}
 
 // 复制接单联系方式
 const copyContact = async (kind) => {
@@ -2455,6 +2529,94 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   background: linear-gradient(180deg, #ec4899, #db2777);
   border-radius: 2px;
 }
+
+/* ============================================================
+   关闭赞助提示挽留弹窗
+   ============================================================ */
+.modal-shell-narrow { max-width: 440px; }
+.farewell-banner {
+  background:
+    radial-gradient(ellipse 380px 200px at 0% 100%, rgba(245, 158, 11, 0.42), transparent 60%),
+    radial-gradient(ellipse 380px 200px at 100% 0%, rgba(236, 72, 153, 0.5), transparent 60%),
+    linear-gradient(135deg, #f97316 0%, #ec4899 55%, #be185d 100%);
+}
+.farewell-msg {
+  font-size: 13px;
+  color: var(--c-text-2);
+  line-height: 1.75;
+  margin-bottom: 18px;
+}
+.farewell-msg p { margin-bottom: 9px; }
+.farewell-msg strong { color: var(--c-text-1); font-weight: 700; }
+.farewell-highlight {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 11px 13px 11px 15px;
+  margin: 12px 0;
+  background: linear-gradient(135deg, var(--c-pink-50, #fdf2f8), #fff1f2);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #9f1239;
+  font-weight: 500;
+  line-height: 1.65;
+}
+.farewell-highlight-bar {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: linear-gradient(180deg, #f59e0b, #db2777);
+  border-radius: 2px;
+}
+.farewell-beg {
+  font-size: 13px;
+  font-weight: 600;
+  color: #be185d;
+  margin-top: 10px;
+}
+.farewell-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.farewell-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms, transform 100ms, background 120ms, border-color 120ms;
+}
+.farewell-btn-primary {
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #db2777);
+  box-shadow: 0 6px 16px rgba(219, 39, 119, 0.32);
+}
+.farewell-btn-primary:hover { filter: brightness(1.06); }
+.farewell-btn-primary:active { transform: scale(0.98); }
+.farewell-btn-keep {
+  border: 1px solid var(--c-border, #e2e8f0);
+  background: #fff;
+  color: var(--c-text-1, #1e293b);
+}
+.farewell-btn-keep:hover { background: #f8fafc; border-color: #cbd5e1; }
+.farewell-btn-ghost {
+  border: none;
+  background: transparent;
+  color: var(--c-text-3, #94a3b8);
+  font-weight: 500;
+  font-size: 12px;
+  padding: 6px;
+}
+.farewell-btn-ghost:hover { color: var(--c-text-2, #64748b); text-decoration: underline; }
 .sponsor-thanks {
   display: flex;
   align-items: flex-start;
