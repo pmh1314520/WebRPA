@@ -194,25 +194,43 @@ if __name__ == "__main__":
 def build_launcher_script(runtime_dirname: str = "webrpa_runtime",
                           show_console: bool = True) -> str:
     """生成 _launcher.py（被 PyInstaller 编译成 <名称>.exe 的极小启动器）。
-    它只负责用运行时 python 启动 run_packaged.py——重活在运行时里，启动器无重依赖、编译快而稳。"""
+    它只负责用运行时 python 启动 run_packaged.py——重活在运行时里，启动器无重依赖、编译快而稳。
+    兼容两种布局：portable（自带 runtime/python）与 shared（读 WEBRPA_HOME.txt 用本机 WebRPA 的 python）。"""
     return f'''# -*- coding: utf-8 -*-
 """WebRPA 打包工作流启动器（极小引导，调用同目录运行时执行工作流）。"""
 import os, sys, subprocess
 
 def _base():
-    # PyInstaller onefile 解包目录不是 exe 所在目录；用 exe 真实所在目录
     if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
+        return os.path.dirname(sys.executable)   # exe 真实所在目录
     return os.path.dirname(os.path.abspath(__file__))
+
+def _resolve_python(rt):
+    # 1) portable：自带运行时 python
+    for exe in ("python.exe", "pythonw.exe"):
+        p = os.path.join(rt, "python", exe)
+        if os.path.exists(p):
+            return p
+    # 2) shared：读 WEBRPA_HOME.txt，用本机 WebRPA 的 Python313
+    home_file = os.path.join(rt, "WEBRPA_HOME.txt")
+    if os.path.exists(home_file):
+        try:
+            with open(home_file, "r", encoding="utf-8") as f:
+                home = f.read().strip()
+            for d in ("Python313", "python313"):
+                p = os.path.join(home, d, "python.exe")
+                if os.path.exists(p):
+                    return p
+        except Exception:
+            pass
+    return None
 
 def main():
     base = _base()
     rt = os.path.join(base, "{runtime_dirname}")
-    py = os.path.join(rt, "python", "python.exe")
     runner = os.path.join(rt, "run_packaged.py")
-    if not os.path.exists(py):
-        py = os.path.join(rt, "python", "pythonw.exe")
-    if not os.path.exists(py) or not os.path.exists(runner):
+    py = _resolve_python(rt)
+    if not py or not os.path.exists(runner):
         print("运行时缺失，无法启动。请确保 {runtime_dirname} 目录与本程序在一起。")
         try:
             input("按回车退出...")
