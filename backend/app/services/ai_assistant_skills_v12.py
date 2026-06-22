@@ -38,6 +38,7 @@ _CATEGORY_RULES: list[tuple[str, list[str]]] = [
     ("凭据保险库", ["credential", "vault"]),
     ("审计", ["audit"]),
     ("平台体检", ["health_check", "auto_inspect", "enterprise_overview"]),
+    ("打包交付", ["package", "packaging"]),
     ("系统控制", ["screen", "volume", "brightness", "system", "macro", "mouse", "keyboard"]),
     ("插件中心", ["plugin"]),
     ("学习与记忆", ["learned_skill", "memory", "lesson", "user_profile", "task_plan"]),

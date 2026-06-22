@@ -702,6 +702,7 @@ _PATH_PERM_RULES: list[tuple[str, str, str]] = [
     ("*", "/api/element-picker", "workflow.edit"),
     ("GET", "/api/workflow-versions", "workflow.view"),
     ("*", "/api/workflow-versions", "workflow.edit"),
+    ("*", "/api/workflow-package", "workflow.edit"),
     ("GET", "/api/data-assets", "workflow.view"),
     ("*", "/api/data-assets", "workflow.edit"),
     ("GET", "/api/image-assets", "workflow.view"),

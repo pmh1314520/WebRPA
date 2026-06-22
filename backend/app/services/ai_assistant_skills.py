@@ -4168,6 +4168,7 @@ _EXTENSION_MODULES = [
     "app.services.ai_assistant_skills_v10",  # 企业级：Computer-Use/IDP/流程反推挖掘/集群/审计/保险库
     "app.services.ai_assistant_skills_v11",  # 企业管家：RBAC/会话/审批/凭据ACL/集群管理/审计导出/总览
     "app.services.ai_assistant_skills_v12",  # 能力自省：按领域列出/搜索小助手全部能力
+    "app.services.ai_assistant_skills_v13",  # 工作流打包：分析/打包为独立EXE/查询进度
     "app.services.ai_assistant_skills_mcp",  # MCP 服务器配置/管理
 ]
 _skills_loaded = False

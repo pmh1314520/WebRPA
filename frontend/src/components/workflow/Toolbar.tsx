@@ -14,6 +14,7 @@ import { GlobalConfigDialog } from './GlobalConfigDialog'
 const DocumentationDialog = lazy(() => import('./documentation').then(m => ({ default: m.DocumentationDialog })))
 import { ExportDialog, type ExportFormat } from './ExportDialog'
 import { EnterpriseDialog } from './EnterpriseDialog'
+import { PackageDialog } from './PackageDialog'
 import { encryptWorkflow } from '@/lib/workflowCrypto'
 import { AutoBrowserDialog } from './AutoBrowserDialog'
 import { RecorderPanel } from './RecorderPanel'
@@ -77,6 +78,7 @@ export function Toolbar() {
   const [showGlobalConfig, setShowGlobalConfig] = useState(false)
   const [showDocumentation, setShowDocumentation] = useState(false)
   const [showEnterprise, setShowEnterprise] = useState(false)
+  const [showPackage, setShowPackage] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showAutoBrowser, setShowAutoBrowser] = useState(false)
   const [showWorkflowHub, setShowWorkflowHub] = useState(false)
@@ -1705,6 +1707,10 @@ export function Toolbar() {
               <Globe className="w-4 h-4 mr-2 text-[hsl(var(--violet-600))]" />
               企业控制中心
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowPackage(true)}>
+              <Package className="w-4 h-4 mr-2 text-[hsl(var(--brand-600))]" />
+              打包为EXE
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -1714,6 +1720,9 @@ export function Toolbar() {
 
       {/* 企业控制中心（内嵌面板） */}
       <EnterpriseDialog isOpen={showEnterprise} onClose={() => setShowEnterprise(false)} />
+
+      {/* 工作流打包为 EXE */}
+      <PackageDialog isOpen={showPackage} onClose={() => setShowPackage(false)} currentName={name} />
       
       {/* 教学文档对话框（懒加载，仅在打开时才挂载/拉取代码；fallback 用骨架，不留白屏） */}
       {showDocumentation && (
