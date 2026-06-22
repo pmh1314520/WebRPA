@@ -428,20 +428,20 @@
           </div>
           <div class="modal-body">
             <div class="farewell-msg">
-              <p>我是 WebRPA 背后的那个<strong>独立学生开发者</strong>，一个人一边上学、一边把这么大的一个项目写了出来，真的很不容易。</p>
-              <p>这个软件<strong>个人使用完全免费</strong>，没有广告、没有付费墙，每一个功能都是我熬夜一行行敲出来的。它能继续走下去，靠的就是像你这样愿意停下来看一眼的人。</p>
+              <p>我是 WebRPA 背后的那位<strong>独立学生开发者</strong>，一个人一边上学、一边把这么大的一个开源项目造了出来，真的很不容易。</p>
+              <p>这个软件<strong>个人使用完全免费</strong>，没有广告、没有付费墙，每一个功能都是我熬了无数的夜才做出来的。它能继续走下去，靠的就是像您这样愿意停下来看一眼的人。</p>
               <div class="farewell-highlight">
                 <span class="farewell-highlight-bar"></span>
-                <span>关掉这个提示当然没问题，但我也怕从此你就忘了我还在为爱发电。如果 WebRPA 帮到过你，哪怕只是请我喝杯咖啡，对我都是莫大的鼓励。</span>
+                <span>关掉赞助弹窗当然没问题，但我也怕从此你就忘了我还在为爱发电。如果 WebRPA 帮到过你，哪怕只是请我喝杯咖啡，对我都是莫大的鼓励。</span>
               </div>
-              <p class="farewell-beg">这是我最后小小的恳求 🙏 ——要不，先去看一眼赞助页面？哪怕只是看看也好。</p>
+              <p class="farewell-beg">这是我最后小小的恳求 🙏 —— 要不，先去看一眼赞助页面？哪怕只是看看也好。</p>
             </div>
             <div class="farewell-actions">
               <button class="farewell-btn farewell-btn-primary" @click="gotoSponsorFromFarewell">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
-                <span>好，我去支持一下作者</span>
+                <span>好，去支持一下作者</span>
               </button>
               <button class="farewell-btn farewell-btn-keep" @click="keepSponsorOn">再想想，先留着吧</button>
               <button class="farewell-btn farewell-btn-ghost" @click="confirmDisableSponsor">仍然关闭提示</button>
@@ -819,7 +819,12 @@ const setUiLang = (l) => {
   try { invoke('sync_assistant_agent_lang', { lang: l }) } catch (e) {}
 }
 // 是否在启动器启动时自动弹出赞助提示（持久化在 localStorage，默认开启）
-const SPONSOR_AUTO_KEY = 'webrpa.launcher.sponsorAutoShow'
+// 注意：使用带版本号的新 key。旧版启动器很多用户已手动关闭（旧 key 存了 '0'），
+// 从本版本起改用新 key，等于"忘掉"旧版关闭数据，所有用户重新默认开启；
+// 除非用户在新版本里再次手动关闭，才会写入新 key 的 '0'。
+const SPONSOR_AUTO_KEY = 'webrpa.launcher.sponsorAutoShow.v2'
+const SPONSOR_AUTO_KEY_LEGACY = 'webrpa.launcher.sponsorAutoShow'
+try { localStorage.removeItem(SPONSOR_AUTO_KEY_LEGACY) } catch {}
 const showSponsorOnStartup = ref(
   (() => {
     try {
@@ -1126,8 +1131,10 @@ const onSponsorToggle = (e) => {
   if (checked) {
     showSponsorOnStartup.value = true
   } else {
-    // 暂不关闭，先把开关视觉恢复为开，弹出挽留弹窗
+    // 暂不关闭，先把开关视觉恢复为开
     if (e && e.target) e.target.checked = true
+    // 关闭设置弹窗，避免挽留弹窗被设置弹窗盖在下一层
+    showConfigModal.value = false
     showSponsorFarewellModal.value = true
   }
 }
