@@ -133,6 +133,7 @@ Object.assign(UI_DICT, {
   '全局配置': 'Global Settings',
   '变量追踪': 'Variable Tracking',
   '企业控制中心': 'Enterprise Console',
+  '在浏览器打开': 'Open in browser',
   '手机镜像': 'Phone Mirror',
   '屏保弹幕': 'Screensaver',
   '计划任务': 'Scheduled Tasks',

@@ -13,6 +13,7 @@ import { GlobalConfigDialog } from './GlobalConfigDialog'
 // 教学文档体积较大（含 mermaid 等依赖），改为 lazy 引入，只有点开"教学文档"才加载
 const DocumentationDialog = lazy(() => import('./documentation').then(m => ({ default: m.DocumentationDialog })))
 import { ExportDialog, type ExportFormat } from './ExportDialog'
+import { EnterpriseDialog } from './EnterpriseDialog'
 import { encryptWorkflow } from '@/lib/workflowCrypto'
 import { AutoBrowserDialog } from './AutoBrowserDialog'
 import { RecorderPanel } from './RecorderPanel'
@@ -75,6 +76,7 @@ export function Toolbar() {
   const [workflowId, setWorkflowId] = useState<string | null>(null)
   const [showGlobalConfig, setShowGlobalConfig] = useState(false)
   const [showDocumentation, setShowDocumentation] = useState(false)
+  const [showEnterprise, setShowEnterprise] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showAutoBrowser, setShowAutoBrowser] = useState(false)
   const [showWorkflowHub, setShowWorkflowHub] = useState(false)
@@ -1698,19 +1700,7 @@ export function Toolbar() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={async () => {
-                const base = getBackendBaseUrl()
-                const url = `${base}/console/enterprise`
-                try {
-                  await fetch(`${base}/api/system/open-url`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url }),
-                  })
-                } catch {
-                  window.open(url, '_blank')
-                }
-              }}
+              onClick={() => setShowEnterprise(true)}
             >
               <Globe className="w-4 h-4 mr-2 text-[hsl(var(--violet-600))]" />
               企业控制中心
@@ -1721,6 +1711,9 @@ export function Toolbar() {
 
       {/* 全局配置对话框 */}
       <GlobalConfigDialog isOpen={showGlobalConfig} onClose={() => setShowGlobalConfig(false)} />
+
+      {/* 企业控制中心（内嵌面板） */}
+      <EnterpriseDialog isOpen={showEnterprise} onClose={() => setShowEnterprise(false)} />
       
       {/* 教学文档对话框（懒加载，仅在打开时才挂载/拉取代码；fallback 用骨架，不留白屏） */}
       {showDocumentation && (
