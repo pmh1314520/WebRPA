@@ -62,6 +62,15 @@ async def get_job(job_id: str):
     return {"success": True, "job": job}
 
 
+@router.post("/jobs/{job_id}/cancel")
+async def cancel_job(job_id: str):
+    """停止正在进行的打包任务（中断复制/编译并清理半成品）。"""
+    res = workflow_packager.request_cancel(job_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "无法停止任务")
+    return res
+
+
 @router.get("/toolchain")
 async def toolchain_status():
     """查询打包工具链（PyInstaller，用于生成 .exe）是否就绪。"""

@@ -48,23 +48,74 @@ _MODULE_DEP_HINTS: dict[str, list[str]] = {
 # ---------- 任务跟踪 ----------
 _jobs: dict[str, dict[str, Any]] = {}
 _lock = threading.RLock()
+# 已请求取消的任务 id 集合
+_cancel: set[str] = set()
+# 正在运行的子进程（PyInstaller 等），用于取消时强制终止：jid -> Popen
+_procs: dict[str, Any] = {}
+
+
+class _Cancelled(Exception):
+    """用户主动停止打包时抛出，用于中断构建流程。"""
+    pass
 
 
 def _new_job() -> dict[str, Any]:
     jid = f"pkg_{uuid.uuid4().hex[:10]}"
     job = {"id": jid, "status": "pending", "progress": 0, "step": "排队中",
+           "output_name": None, "mode": None,
            "created_at": time.time(), "output_dir": None, "exe_path": None,
-           "size_mb": None, "error": None, "logs": []}
+           "size_mb": None, "error": None, "cancel_requested": False, "logs": []}
     with _lock:
         _jobs[jid] = job
     return job
 
 
 def _set(job: dict[str, Any], **kw) -> None:
+    """更新任务状态；带 step 时同时追加一条历史日志。"""
     with _lock:
         job.update(kw)
         if "step" in kw:
             job["logs"].append({"t": time.time(), "msg": kw["step"]})
+
+
+def _progress(job: dict[str, Any], progress: Optional[int] = None, note: Optional[str] = None) -> None:
+    """仅更新进度与当前活动文字（不追加历史日志），用于复制等高频细粒度上报。"""
+    with _lock:
+        if progress is not None:
+            job["progress"] = progress
+        if note is not None:
+            job["step"] = note
+
+
+def _is_cancelled(job: dict[str, Any]) -> bool:
+    with _lock:
+        return job["id"] in _cancel
+
+
+def _check_cancel(job: dict[str, Any]) -> None:
+    if _is_cancelled(job):
+        raise _Cancelled()
+
+
+def request_cancel(jid: str) -> dict[str, Any]:
+    """请求停止某个打包任务：置取消标志并终止其正在运行的子进程。"""
+    with _lock:
+        job = _jobs.get(jid)
+        if not job:
+            return {"success": False, "error": "任务不存在"}
+        if job["status"] in ("success", "failed", "cancelled"):
+            return {"success": False, "error": "任务已结束，无需停止"}
+        _cancel.add(jid)
+        job["cancel_requested"] = True
+        proc = _procs.get(jid)
+    # 锁外终止子进程，避免阻塞
+    if proc is not None:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+    _set(job, step="正在停止打包…")
+    return {"success": True}
 
 
 def get_job(jid: str) -> Optional[dict[str, Any]]:
@@ -76,6 +127,48 @@ def list_jobs(limit: int = 30) -> list[dict[str, Any]]:
     with _lock:
         js = sorted(_jobs.values(), key=lambda j: -j["created_at"])
         return [dict(j) for j in js[:limit]]
+
+
+def _copy_tree_cancellable(src: Path, dst: Path, ignore, job: dict[str, Any],
+                           p0: int, p1: int, label: str) -> None:
+    """带进度、可中断的目录复制（替代 shutil.copytree，用于体积较大的运行时）。
+
+    - 先快速统计需复制的文件总数，再逐个复制；
+    - 每复制若干文件检查一次取消标志（可被用户随时停止）；
+    - 进度在 [p0, p1] 区间内随复制比例推进，让用户看到真实进展。
+    """
+    total = 0
+    for root, dirs, files in os.walk(src):
+        ig = ignore(root, dirs + files) if ignore else set()
+        dirs[:] = [d for d in dirs if d not in ig]
+        total += sum(1 for f in files if f not in ig)
+    total = max(total, 1)
+
+    done = 0
+    last = 0.0
+    dst.mkdir(parents=True, exist_ok=True)
+    for root, dirs, files in os.walk(src):
+        _check_cancel(job)
+        ig = ignore(root, dirs + files) if ignore else set()
+        dirs[:] = [d for d in dirs if d not in ig]
+        target_dir = dst / Path(root).relative_to(src)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        for f in files:
+            if f in ig:
+                continue
+            if done % 100 == 0:
+                _check_cancel(job)
+            try:
+                shutil.copy2(Path(root) / f, target_dir / f)
+            except Exception:
+                pass
+            done += 1
+            now = time.time()
+            if now - last > 0.4:
+                last = now
+                pct = p0 + int((p1 - p0) * done / total)
+                _progress(job, progress=min(pct, p1), note=f"{label} {done}/{total} 个文件")
+    _progress(job, progress=p1, note=f"{label} 完成（{done} 个文件）")
 
 
 # ---------- 路径 ----------
@@ -338,9 +431,12 @@ def _bundle_heavy_runtimes(runtime_dir: Path, needed: set[str], job: dict[str, A
         src = local / "ms-playwright"
         if src.is_dir():
             try:
-                _set(job, step="打包浏览器内核（Playwright）")
-                shutil.copytree(src, runtime_dir / "ms-playwright", dirs_exist_ok=True,
-                                ignore=shutil.ignore_patterns("__pycache__"))
+                _set(job, step="打包浏览器内核（Playwright，可随时点停止）")
+                _copy_tree_cancellable(src, runtime_dir / "ms-playwright",
+                                       shutil.ignore_patterns("__pycache__"), job,
+                                       p0=68, p1=70, label="打包浏览器内核")
+            except _Cancelled:
+                raise
             except Exception as e:
                 print(f"[packager] 复制浏览器内核失败: {e}")
 
@@ -349,15 +445,21 @@ def _bundle_heavy_runtimes(runtime_dir: Path, needed: set[str], job: dict[str, A
         pdx = home / ".paddlex"
         if pdx.is_dir():
             try:
-                _set(job, step="打包 OCR 模型（PaddleOCR）")
-                shutil.copytree(pdx, runtime_dir / ".paddlex", dirs_exist_ok=True,
-                                ignore=shutil.ignore_patterns("__pycache__"))
+                _set(job, step="打包 OCR 模型（PaddleOCR，可随时点停止）")
+                _copy_tree_cancellable(pdx, runtime_dir / ".paddlex",
+                                       shutil.ignore_patterns("__pycache__"), job,
+                                       p0=70, p1=72, label="打包 OCR 模型")
+            except _Cancelled:
+                raise
             except Exception as e:
                 print(f"[packager] 复制 OCR 模型失败: {e}")
         easyocr = home / ".EasyOCR"
         if easyocr.is_dir():
             try:
-                shutil.copytree(easyocr, runtime_dir / ".EasyOCR", dirs_exist_ok=True)
+                _copy_tree_cancellable(easyocr, runtime_dir / ".EasyOCR", None, job,
+                                       p0=72, p1=72, label="打包 EasyOCR 模型")
+            except _Cancelled:
+                raise
             except Exception as e:
                 print(f"[packager] 复制 EasyOCR 模型失败: {e}")
 
@@ -381,6 +483,7 @@ def package(workflow_source: Any, output_name: str, *, mode: str = "portable",
 
     safe_name = "".join(c for c in (output_name or "WebRPA自动化") if c not in '\\/:*?"<>|').strip() or "WebRPA自动化"
     job["output_name"] = safe_name
+    job["mode"] = mode
 
     t = threading.Thread(target=_run_build, args=(job, wf, safe_name, mode, headless,
                                                   show_console, slim, icon_path), daemon=True)
@@ -390,10 +493,12 @@ def package(workflow_source: Any, output_name: str, *, mode: str = "portable",
 
 def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
                headless: bool, show_console: bool, slim: bool, icon_path: Optional[str]) -> None:
+    dist: Optional[Path] = None
     try:
         _set(job, status="running", progress=2, step="分析工作流依赖")
         analysis = analyze_dependencies(wf)
         needed = set(analysis["dep_groups"])
+        _check_cancel(job)
 
         dist = _output_root() / name
         if dist.exists():
@@ -405,6 +510,7 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
         _set(job, progress=8, step="复制执行引擎")
         shutil.copytree(_project_root() / "backend" / "app", runtime / "app",
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        _check_cancel(job)
 
         # 2) 工作流 + 配置 + 资源
         _set(job, progress=15, step="写入工作流与配置")
@@ -415,15 +521,20 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
         (runtime / "run_packaged.py").write_text(build_runner_script(), encoding="utf-8")
         assets = _copy_assets(wf, runtime)
         _set(job, progress=22, step=f"已复制 {assets} 类资源")
+        _check_cancel(job)
 
         # 3) 运行时 python
         if mode == "portable":
-            _set(job, progress=25, step="复制 Python 运行时（较大，请耐心等待）")
+            _set(job, progress=25, step="复制 Python 运行时（较大，可随时点停止）")
             src_py = _runtime_python_dir()
             if not src_py.exists():
                 raise RuntimeError("找不到 WebRPA Python 运行时目录")
-            shutil.copytree(src_py, runtime / "python", ignore=_build_ignore(slim, needed))
+            # 可中断 + 带进度的复制（替代一次性阻塞的 copytree）
+            _copy_tree_cancellable(src_py, runtime / "python",
+                                   _build_ignore(slim, needed), job,
+                                   p0=25, p1=68, label="复制 Python 运行时")
             _set(job, progress=68, step="Python 运行时复制完成")
+            _check_cancel(job)
             # 按需打包浏览器内核 / OCR 模型，保证重型模块离线可用
             _bundle_heavy_runtimes(runtime, needed, job)
             _set(job, progress=72, step="重型依赖打包完成")
@@ -431,19 +542,30 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
             # shared：写一个指向本机 WebRPA 安装的引导，python 用本机的
             (runtime / "WEBRPA_HOME.txt").write_text(str(_project_root()), encoding="utf-8")
             _set(job, progress=70, step="共享模式：使用本机 WebRPA 运行时")
+        _check_cancel(job)
 
         # 4) 启动器（exe 优先，失败回退 bat）
         _set(job, progress=75, step="生成启动器")
         exe_path = _build_launcher(dist, runtime, name, show_console, icon_path, mode, job)
+        _check_cancel(job)
 
         # 5) 收尾
         size = _dir_size_mb(dist)
         _set(job, status="success", progress=100, step="打包完成",
              output_dir=str(dist), exe_path=str(exe_path) if exe_path else None, size_mb=size)
+    except _Cancelled:
+        # 用户主动停止：清理半成品目录，标记为已取消
+        if dist is not None:
+            shutil.rmtree(dist, ignore_errors=True)
+        _set(job, status="cancelled", progress=0, step="打包已被用户停止")
     except Exception as e:
         import traceback
         traceback.print_exc()
         _set(job, status="failed", error=str(e), step=f"打包失败：{e}")
+    finally:
+        with _lock:
+            _cancel.discard(job["id"])
+            _procs.pop(job["id"], None)
 
 
 def _dir_size_mb(d: Path) -> float:
@@ -493,16 +615,29 @@ def _build_launcher(dist: Path, runtime: Path, name: str, show_console: bool,
         if icon_path and Path(icon_path).exists():
             args += ["--icon", str(icon_path)]
         args.append(str(launcher_src))
-        _set(job, step="编译启动器 EXE")
-        r = subprocess.run(args, capture_output=True, timeout=1200, text=True, errors="ignore")
+        _set(job, step="编译启动器 EXE（可随时点停止）")
+        # 用 Popen 以便取消时能终止；注册到 _procs 供 request_cancel 终止
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, errors="ignore")
+        with _lock:
+            _procs[job["id"]] = proc
+        try:
+            out, _ = proc.communicate(timeout=1200)
+        finally:
+            with _lock:
+                _procs.pop(job["id"], None)
+        # 若是被用户取消而终止，向上抛出由 _run_build 统一处理
+        _check_cancel(job)
         exe = dist / f"{name}.exe"
-        if r.returncode == 0 and exe.exists():
+        if proc.returncode == 0 and exe.exists():
             # 清理 PyInstaller 中间产物
             shutil.rmtree(dist / "_build", ignore_errors=True)
             launcher_src.unlink(missing_ok=True)
             bat.unlink(missing_ok=True)  # 有 exe 就不留 bat
             return exe
         _set(job, step="EXE 编译未成功，已回退为 启动.bat（可正常运行）")
+    except _Cancelled:
+        raise
     except Exception as e:
         _set(job, step=f"EXE 编译跳过（{str(e)[:60]}），已生成 启动.bat")
     return None

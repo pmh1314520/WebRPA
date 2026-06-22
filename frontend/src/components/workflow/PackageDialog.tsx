@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getBackendBaseUrl } from '@/services/config'
 import { SelectNative } from '@/components/ui/select-native'
 import { Checkbox } from '@/components/ui/checkbox'
-import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen } from 'lucide-react'
+import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen, Ban, Square } from 'lucide-react'
 
 interface PackageDialogProps {
   isOpen: boolean
@@ -11,6 +11,23 @@ interface PackageDialogProps {
 }
 
 interface WfInfo { filename: string; name: string }
+
+// 用时格式化 mm:ss
+function fmtElapsed(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+// 日志时间戳（后端 epoch 秒）→ HH:MM:SS
+function fmtTime(t: number): string {
+  try {
+    const d = new Date((t || 0) * 1000)
+    return d.toLocaleTimeString('zh-CN', { hour12: false })
+  } catch {
+    return ''
+  }
+}
 
 /**
  * 工作流一键打包为独立 EXE / 分享包
@@ -29,7 +46,11 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [installing, setInstalling] = useState(false)
   const [building, setBuilding] = useState(false)
   const [job, setJob] = useState<any>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
   const pollRef = useRef<any>(null)
+  const startRef = useRef<number>(0)
+  const logScrollRef = useRef<HTMLDivElement>(null)
 
   const base = () => getBackendBaseUrl()
 
@@ -65,7 +86,8 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
 
   const startBuild = async () => {
     if (!filename) return
-    setBuilding(true); setJob(null)
+    setBuilding(true); setJob(null); setCancelling(false); setElapsed(0)
+    startRef.current = Date.now()
     try {
       // 取该工作流 JSON，按内容打包（格式与文件夹无关）
       const wf = await fetch(`${base()}/api/local-workflows/load/${encodeURIComponent(filename)}`).then(r => r.json())
@@ -78,11 +100,12 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       if (!r.ok) { setJob({ status: 'failed', error: d.detail || '启动失败' }); setBuilding(false); return }
       const jobId = d.job_id
       pollRef.current = setInterval(async () => {
+        setElapsed(Math.floor((Date.now() - startRef.current) / 1000))
         try {
           const jr = await fetch(`${base()}/api/workflow-package/jobs/${jobId}`).then(x => x.json())
           setJob(jr.job)
-          if (jr.job?.status === 'success' || jr.job?.status === 'failed') {
-            clearInterval(pollRef.current); setBuilding(false)
+          if (jr.job?.status === 'success' || jr.job?.status === 'failed' || jr.job?.status === 'cancelled') {
+            clearInterval(pollRef.current); setBuilding(false); setCancelling(false)
           }
         } catch { /* keep polling */ }
       }, 1000)
@@ -90,6 +113,20 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       setJob({ status: 'failed', error: String(e?.message || e) }); setBuilding(false)
     }
   }
+
+  // 停止正在进行的打包
+  const cancelBuild = async () => {
+    if (!job?.id) return
+    setCancelling(true)
+    try {
+      await fetch(`${base()}/api/workflow-package/jobs/${job.id}/cancel`, { method: 'POST' })
+    } catch { /* ignore */ }
+  }
+
+  // 日志区自动滚到底部
+  useEffect(() => {
+    if (logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight
+  }, [job?.logs?.length])
 
   const openFolder = () => {
     if (!job?.output_dir) return
@@ -155,27 +192,64 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
           </div>
 
           {job && (
-            <div className="px-3 py-2 rounded-md border border-[hsl(var(--border))]">
+            <div className="px-3 py-2.5 rounded-md border border-[hsl(var(--border))] space-y-2">
               {job.status === 'success' ? (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-[hsl(var(--success-600))]"><CheckCircle2 className="w-4 h-4" /> 打包完成（{job.size_mb} MB）</div>
+                  <div className="flex items-center gap-2 text-[hsl(var(--success-600))]"><CheckCircle2 className="w-4 h-4" /> 打包完成（{job.size_mb} MB · 用时 {fmtElapsed(elapsed)}）</div>
                   <div className="text-xs text-[hsl(var(--muted-foreground))] break-all">{job.output_dir}</div>
                   <button className="mt-1 inline-flex items-center gap-1 text-xs underline text-[hsl(var(--brand-600))]" onClick={openFolder}><FolderOpen className="w-3.5 h-3.5" /> 打开输出目录</button>
                 </div>
               ) : job.status === 'failed' ? (
-                <div className="flex items-center gap-2 text-[hsl(var(--bad,var(--destructive)))]"><AlertCircle className="w-4 h-4" /> 打包失败：{job.error}</div>
+                <div className="flex items-start gap-2 text-[hsl(var(--destructive))]"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /> <span className="break-all">打包失败：{job.error}</span></div>
+              ) : job.status === 'cancelled' ? (
+                <div className="flex items-center gap-2 text-[hsl(var(--muted-foreground))]"><Ban className="w-4 h-4" /> 打包已停止（已清理半成品，可重新打包）</div>
               ) : (
-                <div className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> {job.step}（{job.progress}%）</div>
+                <div className="space-y-2">
+                  {/* 当前步骤 + 进度 + 用时 */}
+                  <div className="flex items-center gap-2 text-[13px]">
+                    <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--brand-600))] flex-shrink-0" />
+                    <span className="flex-1 truncate">{job.step}</span>
+                    <span className="text-[hsl(var(--muted-foreground))] tabular-nums">{job.progress}% · {fmtElapsed(elapsed)}</span>
+                  </div>
+                  {/* 进度条 */}
+                  <div className="h-1.5 w-full rounded-full bg-[hsl(var(--slate-200))] overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--brand-500))] to-[hsl(var(--brand-600))] transition-[width] duration-300"
+                      style={{ width: `${Math.max(2, job.progress || 0)}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {/* 实时日志 */}
+              {Array.isArray(job.logs) && job.logs.length > 0 && (
+                <div ref={logScrollRef} className="max-h-32 overflow-y-auto rounded-[6px] bg-[hsl(var(--slate-900))] p-2 font-mono text-[11px] leading-relaxed text-[hsl(var(--slate-100))]">
+                  {job.logs.map((l: any, i: number) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-[hsl(var(--slate-500))] flex-shrink-0">{fmtTime(l.t)}</span>
+                      <span className="break-all">{l.msg}</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button className="px-3 py-1.5 rounded-md border border-[hsl(var(--border))]" onClick={onClose}>关闭</button>
-            <button className="px-3 py-1.5 rounded-md bg-[hsl(var(--brand-600))] text-white disabled:opacity-50"
-              disabled={building || !filename} onClick={startBuild}>
-              {building ? '打包中…' : '开始打包'}
-            </button>
+            {building ? (
+              <button
+                className="px-3 py-1.5 rounded-md bg-[hsl(var(--destructive))] text-white inline-flex items-center gap-1.5 disabled:opacity-60"
+                disabled={cancelling || !job?.id}
+                onClick={cancelBuild}
+              >
+                {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Square className="w-3.5 h-3.5" />}
+                {cancelling ? '正在停止…' : '停止打包'}
+              </button>
+            ) : (
+              <button className="px-3 py-1.5 rounded-md bg-[hsl(var(--brand-600))] text-white disabled:opacity-50"
+                disabled={!filename} onClick={startBuild}>
+                开始打包
+              </button>
+            )}
           </div>
         </div>
       </div>
