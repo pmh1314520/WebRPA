@@ -1380,7 +1380,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           </div>
         )}
         <div
-          className={'relative flex items-end gap-1.5 rounded-[10px] border-[1.5px] bg-[hsl(var(--card))] shadow-xs transition-[border-color,box-shadow] duration-150 ' +
+          className={'relative flex flex-col rounded-[10px] border-[1.5px] bg-[hsl(var(--card))] shadow-xs transition-[border-color,box-shadow] duration-150 ' +
             (isDragOver ? 'border-[hsl(var(--brand-500))] ring-2 ring-[hsl(var(--brand-500)/0.25)]' : 'border-[hsl(var(--border))] focus-within:border-[hsl(var(--brand-500))] focus-within:shadow-ring')}
           onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setIsDragOver(true) } }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false) }}
@@ -1400,7 +1400,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             placeholder={configReady ? (isSending ? '小助手正在工作中…再次发送会先停止它' : '告诉我你想做什么…（可粘贴/拖拽/上传图片或文档，Enter 发送，Shift+Enter 换行）') : '请先在全局配置中配置模型'}
             disabled={!configReady}
             style={{ height: composerHeight }}
-            className="flex-1 bg-transparent text-[13px] resize-none outline-none placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60 px-3 py-2.5 leading-relaxed overflow-y-auto"
+            className="w-full bg-transparent text-[13px] resize-none outline-none placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60 px-3 pt-2.5 pb-1 leading-relaxed overflow-y-auto"
           />
           <input
             ref={fileInputRef}
@@ -1410,39 +1410,42 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             className="hidden"
             onChange={(e) => { if (e.target.files) { void addFiles(e.target.files); e.target.value = '' } }}
           />
-          <Button
-            onClick={startVoiceRecording}
-            disabled={!configReady || voiceState === 'transcribing'}
-            size="icon-sm"
-            variant={voiceState === 'recording' ? 'destructive' : 'ghost'}
-            title={voiceState === 'recording' ? '停止录音并识别' : (voiceState === 'transcribing' ? '识别中…' : '语音输入（说话指挥）')}
-            className={'!h-8 !w-8 flex-shrink-0 m-1' + (voiceState === 'recording' ? ' animate-pulse' : '')}
-          >
-            <Mic className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={!configReady}
-            size="icon-sm"
-            variant="ghost"
-            title="上传图片或文档（pdf/word/excel/csv/txt/md/html 等）发给 AI 分析，也可直接粘贴/拖拽"
-            className="!h-8 !w-8 flex-shrink-0 m-1"
-          >
-            <Paperclip className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            onClick={() => (isSending ? stopCurrent() : handleSend())}
-            disabled={!isSending && ((!input.trim() && attachedImages.length === 0 && attachedDocs.length === 0) || !configReady)}
-            size="icon-sm"
-            variant={isSending ? 'destructive' : 'default'}
-            className="!h-8 !w-8 flex-shrink-0 m-1"
-          >
-            {isSending ? (
-              <Square className="w-3.5 h-3.5 fill-current" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
-          </Button>
+          {/* 操作按钮行：放在输入框下方，输入框占满整行宽度，不再浪费右侧空间 */}
+          <div className="flex items-center justify-end gap-1 px-1.5 pb-1.5">
+            <Button
+              onClick={startVoiceRecording}
+              disabled={!configReady || voiceState === 'transcribing'}
+              size="icon-sm"
+              variant={voiceState === 'recording' ? 'destructive' : 'ghost'}
+              title={voiceState === 'recording' ? '停止录音并识别' : (voiceState === 'transcribing' ? '识别中…' : '语音输入（说话指挥）')}
+              className={'!h-8 !w-8 flex-shrink-0' + (voiceState === 'recording' ? ' animate-pulse' : '')}
+            >
+              <Mic className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!configReady}
+              size="icon-sm"
+              variant="ghost"
+              title="上传图片或文档（pdf/word/excel/csv/txt/md/html 等）发给 AI 分析，也可直接粘贴/拖拽"
+              className="!h-8 !w-8 flex-shrink-0"
+            >
+              <Paperclip className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              onClick={() => (isSending ? stopCurrent() : handleSend())}
+              disabled={!isSending && ((!input.trim() && attachedImages.length === 0 && attachedDocs.length === 0) || !configReady)}
+              size="icon-sm"
+              variant={isSending ? 'destructive' : 'default'}
+              className="!h-8 !w-8 flex-shrink-0"
+            >
+              {isSending ? (
+                <Square className="w-3.5 h-3.5 fill-current" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+            </Button>
+          </div>
         </div>
         <div className="mt-2 flex items-center justify-between text-[10.5px] text-[hsl(var(--muted-foreground))] px-1">
           <div className="flex items-center gap-1.5">
