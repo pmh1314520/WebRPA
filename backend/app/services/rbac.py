@@ -62,6 +62,31 @@ _PRESET_ROLES = {
 
 SESSION_TTL = 12 * 3600  # 会话有效期 12 小时
 
+# 登录暴力破解防护：同一用户在窗口内失败次数达上限后锁定一段时间
+_LOGIN_MAX_FAILS = 5
+_LOGIN_WINDOW = 300        # 统计窗口（秒）
+_LOGIN_LOCKOUT = 300       # 锁定时长（秒）
+_login_failures: dict[str, list[float]] = {}
+
+
+def _login_locked_until(username: str) -> float:
+    """若该用户当前处于锁定状态，返回解锁时间戳；否则返回 0。"""
+    fails = _login_failures.get(username) or []
+    now = time.time()
+    recent = [t for t in fails if now - t < _LOGIN_WINDOW]
+    _login_failures[username] = recent
+    if len(recent) >= _LOGIN_MAX_FAILS:
+        return max(recent) + _LOGIN_LOCKOUT
+    return 0.0
+
+
+def _record_login_failure(username: str) -> None:
+    _login_failures.setdefault(username, []).append(time.time())
+
+
+def _clear_login_failures(username: str) -> None:
+    _login_failures.pop(username, None)
+
 
 # ---------- 密钥 ----------
 def _get_secret() -> bytes:
@@ -177,6 +202,7 @@ def invalidate_cache() -> None:
     with _lock:
         _cache = None
         _sess_cache = None
+        _login_failures.clear()
 
 
 # ---------- 会话令牌 ----------
@@ -321,15 +347,32 @@ def check_permission(token: Optional[str], permission: str) -> dict[str, Any]:
 
 # ---------- 登录 ----------
 def login(username: str, password: str) -> dict[str, Any]:
-    """本地账号口令登录，成功返回会话令牌。"""
+    """本地账号口令登录，成功返回会话令牌。含暴力破解锁定保护。"""
     with _lock:
-        user = _load()["users"].get((username or "").strip())
+        username = (username or "").strip()
+        # 锁定检查（在校验口令之前，避免被锁账号继续被试）
+        locked_until = _login_locked_until(username)
+        if locked_until > time.time():
+            wait = int(locked_until - time.time())
+            return {"success": False, "error": f"登录失败次数过多，账号已锁定，请 {wait} 秒后再试",
+                    "locked": True}
+        user = _load()["users"].get(username)
         if not user or user.get("disabled"):
+            _record_login_failure(username)
             return {"success": False, "error": "用户不存在或已禁用"}
         if user.get("source") != "local":
             return {"success": False, "error": "该用户为外部目录用户，请使用 SSO 登录"}
         if not _verify_password(password or "", user.get("password", "")):
+            _record_login_failure(username)
+            # 刚好触发锁定时给出审计
+            if _login_locked_until(username) > time.time():
+                try:
+                    from app.services import audit_log
+                    audit_log.record(username, "rbac.login_locked", username, result="locked")
+                except Exception:
+                    pass
             return {"success": False, "error": "用户名或口令错误"}
+        _clear_login_failures(username)
         sess = issue_session(username)
         return {"success": True, **sess, "roles": list(user.get("roles", []))}
 
