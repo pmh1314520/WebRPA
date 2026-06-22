@@ -1,201 +1,117 @@
 # -*- coding: utf-8 -*-
-"""WebRPA 小助手 - v12 自然语言自动化（计划任务）Skills
+"""WebRPA 小助手 - v12 能力自省 Skills
 
-让管家能用一句话把工作流变成定时自动化：
-"每天早上 8 点自动跑签到工作流" / "每周一上午 9 点跑周报" / "每隔 30 分钟跑一次监控"。
-小助手把自然语言转成结构化调度参数，由本技能落地为真实计划任务（APScheduler 调度）。
+让管家"知道自己能做什么"并讲给用户听：按领域归类列出全部技能，或按关键词搜索能力。
+用户问"你能做什么""你会不会 X""有没有管理用户的功能"时，用它给出清晰、分门别类的能力清单，
+帮助用户发现 WebRPA 小助手超出预期的综合能力。
 
-计划任务的创建/删除/启停标记为需审批，避免误配出意料之外的周期执行。
+不重复造轮子：本模块只读 registry，不新增与已有技能重名的能力。
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
-from app.services.ai_assistant_skills import Skill, registry, _get_workflow_folder
+from app.services.ai_assistant_skills import Skill, registry
 
-
-def _norm_time(t: Optional[str], default: str = "09:00:00") -> str:
-    """把 'HH:MM' / 'HH:MM:SS' 规整成 'HH:MM:SS'。"""
-    t = (t or "").strip() or default
-    parts = t.split(":")
-    if len(parts) == 2:
-        return f"{int(parts[0]):02d}:{int(parts[1]):02d}:00"
-    if len(parts) == 3:
-        return f"{int(parts[0]):02d}:{int(parts[1]):02d}:{int(parts[2]):02d}"
-    return default
-
-
-def _build_trigger(schedule_type: str, *, time: Optional[str] = None,
-                   weekly_days: Optional[list] = None, monthly_day: Optional[int] = None,
-                   interval_seconds: Optional[int] = None, date: Optional[str] = None) -> dict[str, Any]:
-    """根据结构化调度参数构造 time 触发器配置 dict。返回 {trigger:dict} 或 {error}。"""
-    st = (schedule_type or "").strip().lower()
-    trig: dict[str, Any] = {"type": "time", "schedule_type": st}
-    if st == "daily":
-        trig["daily_time"] = _norm_time(time)
-    elif st == "weekly":
-        if not weekly_days:
-            return {"error": "weekly 需提供 weekly_days（0=周日,1=周一,…6=周六）"}
-        trig["weekly_days"] = [int(d) for d in weekly_days]
-        trig["weekly_time"] = _norm_time(time)
-    elif st == "monthly":
-        if not monthly_day:
-            return {"error": "monthly 需提供 monthly_day（1-31）"}
-        trig["monthly_day"] = int(monthly_day)
-        trig["monthly_time"] = _norm_time(time)
-    elif st == "interval":
-        if not interval_seconds or int(interval_seconds) < 1:
-            return {"error": "interval 需提供 interval_seconds（>=1）"}
-        trig["interval_seconds"] = int(interval_seconds)
-    elif st == "once":
-        if not date:
-            return {"error": "once 需提供 date（YYYY-MM-DD）"}
-        trig["start_date"] = date
-        trig["start_time"] = _norm_time(time, "09:00:00")
-    else:
-        return {"error": f"不支持的 schedule_type：{schedule_type}（可选 daily/weekly/monthly/interval/once）"}
-    return {"trigger": trig}
+# 能力领域归类：按技能名关键词归入领域（顺序即匹配优先级）
+_CATEGORY_RULES: list[tuple[str, list[str]]] = [
+    ("工作流搭建", ["build_workflow", "build_node", "add_nodes", "connect", "validate", "auto_fix",
+                "analyze_variable", "describe_module", "search_modules", "get_module_schema",
+                "list_module", "template", "subflow", "layout"]),
+    ("工作流运行与调试", ["run_workflow", "self_heal", "dry_run", "probe_page", "client_action",
+                  "execute", "stop"]),
+    ("计划任务/自动化", ["scheduled_task", "schedule", "one_shot", "trigger"]),
+    ("编排与队列", ["pipeline", "queue", "enqueue", "concurrency"]),
+    ("测试与探针", ["workflow_tests", "health_probe", "test_"]),
+    ("仪表盘与历史", ["dashboard", "execution_history", "list_execution", "query_runs"]),
+    ("告警与通知", ["alert", "notify"]),
+    ("发布与CLI", ["publish", "unpublish", "cli"]),
+    ("联网与文档", ["web_search", "read_webpage", "research", "download_file", "read_document"]),
+    ("知识库RAG", ["kb_"]),
+    ("多Agent协作", ["multi_agent", "generate_workflow_doc"]),
+    ("Computer-Use与视觉", ["computer_use", "capture_screen", "vision"]),
+    ("文档智能IDP", ["idp_"]),
+    ("流程挖掘", ["infer_workflow", "mine_process"]),
+    ("集群控制中心", ["cluster", "node"]),
+    ("用户与权限RBAC", ["user", "role", "rbac", "session", "enforcement"]),
+    ("审批中心", ["approval"]),
+    ("凭据保险库", ["credential", "vault"]),
+    ("审计", ["audit"]),
+    ("平台体检", ["health_check", "auto_inspect", "enterprise_overview"]),
+    ("系统控制", ["screen", "volume", "brightness", "system", "macro", "mouse", "keyboard"]),
+    ("插件中心", ["plugin"]),
+    ("学习与记忆", ["learned_skill", "memory", "lesson", "user_profile", "task_plan"]),
+    ("MCP扩展", ["mcp"]),
+]
 
 
-def _resolve_workflow(workflow: str) -> dict[str, Any]:
-    """把工作流名解析为 (filename, display_name)，并校验本地存在。"""
-    name = (workflow or "").strip()
-    if not name:
-        return {"error": "缺少工作流名"}
-    filename = name if name.endswith(".json") else name + ".json"
-    folder = _get_workflow_folder()
-    fp = folder / filename
-    if not fp.exists():
-        available = sorted(p.stem for p in folder.glob("*.json"))[:30]
-        return {"error": f"本地不存在工作流「{name}」", "available": available}
-    return {"filename": filename, "display": fp.stem}
+def _categorize(name: str) -> str:
+    low = name.lower()
+    for cat, kws in _CATEGORY_RULES:
+        if any(k in low for k in kws):
+            return cat
+    return "其他"
 
 
-async def skill_create_scheduled_task(workflow: str, name: str | None = None,
-                                      schedule_type: str = "daily", time: str | None = None,
-                                      weekly_days: list | None = None, monthly_day: int | None = None,
-                                      interval_seconds: int | None = None, date: str | None = None,
-                                      headless: bool = True, **_: Any) -> dict[str, Any]:
-    """把一个本地工作流设为定时自动执行的计划任务。"""
-    wf = _resolve_workflow(workflow)
-    if wf.get("error"):
-        return wf
-    tb = _build_trigger(schedule_type, time=time, weekly_days=weekly_days,
-                        monthly_day=monthly_day, interval_seconds=interval_seconds, date=date)
-    if tb.get("error"):
-        return tb
-    try:
-        from app.models.scheduled_task import ScheduledTask, ScheduledTaskTrigger
-        from app.services.scheduled_task_manager import scheduled_task_manager
-        task = ScheduledTask(
-            name=name or f"{wf['display']} 定时任务",
-            description="由 WebRPA 小助手创建",
-            workflow_id=wf["filename"],          # 执行器按此作为文件名加载工作流
-            workflow_name=wf["display"],
-            trigger=ScheduledTaskTrigger(**tb["trigger"]),
-            enabled=True,
-            headless=bool(headless),
-        )
-        created = scheduled_task_manager.create_task(task)
-        return {"success": True, "task_id": created.id, "name": created.name,
-                "workflow": wf["display"], "schedule": tb["trigger"]}
-    except Exception as e:
-        return {"error": f"创建计划任务失败：{e}"}
+async def skill_list_my_capabilities(category: str | None = None, **_: Any) -> dict[str, Any]:
+    """按领域归类列出我的全部能力。传 category 只看某一领域；不传给出各领域概览。"""
+    grouped: dict[str, list[dict[str, str]]] = {}
+    for name in registry.names():
+        skill = registry.get(name)
+        if not skill:
+            continue
+        cat = _categorize(name)
+        grouped.setdefault(cat, []).append({"name": name, "desc": (skill.description or "")[:80]})
+    total = sum(len(v) for v in grouped.values())
+    if category:
+        items = grouped.get(category)
+        if items is None:
+            return {"error": f"没有「{category}」这个能力领域",
+                    "available_categories": sorted(grouped.keys())}
+        return {"category": category, "count": len(items), "skills": sorted(items, key=lambda x: x["name"])}
+    # 概览：每个领域名 + 数量 + 前几个代表能力
+    overview = []
+    for cat in sorted(grouped.keys(), key=lambda c: -len(grouped[c])):
+        sk = grouped[cat]
+        overview.append({"category": cat, "count": len(sk),
+                         "examples": [s["name"] for s in sk[:6]]})
+    return {"total_skills": total, "categories": overview,
+            "tip": "想看某领域全部能力，传 category 再调一次；想找具体功能用 search_my_capabilities。"}
 
 
-async def skill_list_scheduled_tasks(**_: Any) -> dict[str, Any]:
-    """列出所有计划任务及其调度/启停状态与执行统计。"""
-    try:
-        from app.services.scheduled_task_manager import scheduled_task_manager
-        tasks = scheduled_task_manager.list_tasks()
-        out = []
-        for t in tasks:
-            trig = t.trigger
-            out.append({
-                "task_id": t.id, "name": t.name, "workflow": t.workflow_name or t.workflow_id,
-                "enabled": t.enabled, "schedule_type": getattr(trig, "schedule_type", None),
-                "trigger_type": getattr(trig, "type", None),
-                "total": t.total_executions, "success": t.success_executions,
-                "failed": t.failed_executions, "next": t.next_execution_time,
-            })
-        return {"tasks": out, "count": len(out)}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-async def skill_toggle_scheduled_task(task_id: str, enabled: bool, **_: Any) -> dict[str, Any]:
-    """启用/停用一个计划任务。"""
-    try:
-        from app.services.scheduled_task_manager import scheduled_task_manager
-        t = scheduled_task_manager.update_task(task_id, {"enabled": bool(enabled)})
-        if not t:
-            return {"error": "计划任务不存在"}
-        return {"success": True, "task_id": task_id, "enabled": t.enabled}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-async def skill_delete_scheduled_task(task_id: str, **_: Any) -> dict[str, Any]:
-    """删除一个计划任务（不可恢复）。"""
-    try:
-        from app.services.scheduled_task_manager import scheduled_task_manager
-        ok = scheduled_task_manager.delete_task(task_id)
-        return {"success": bool(ok)} if ok else {"error": "计划任务不存在"}
-    except Exception as e:
-        return {"error": str(e)}
+async def skill_search_my_capabilities(keyword: str, **_: Any) -> dict[str, Any]:
+    """按关键词搜索我的能力（匹配技能名或描述，中英文均可）。"""
+    kw = (keyword or "").strip().lower()
+    if not kw:
+        return {"error": "关键词不能为空"}
+    matches = []
+    for name in registry.names():
+        skill = registry.get(name)
+        if not skill:
+            continue
+        if kw in name.lower() or kw in (skill.description or "").lower():
+            matches.append({"name": name, "category": _categorize(name),
+                            "desc": (skill.description or "")[:120],
+                            "needs_approval": bool(skill.requires_approval)})
+    return {"keyword": keyword, "count": len(matches), "matches": matches[:40]}
 
 
 def _register_v12() -> None:
     registry.register(Skill(
-        name="list_scheduled_tasks",
-        description="列出所有计划任务（名称/关联工作流/调度方式/启停/执行统计/下次执行时间）。",
-        parameters={"type": "object", "properties": {}},
-        handler=skill_list_scheduled_tasks,
-    ))
-    registry.register(Skill(
-        name="create_scheduled_task",
+        name="list_my_capabilities",
         description=(
-            "把本地工作流设为定时自动执行的计划任务。先把用户的自然语言时间转成结构化参数：\n"
-            "- schedule_type: daily(每天)/weekly(每周)/monthly(每月)/interval(每隔)/once(一次)\n"
-            "- time: 'HH:MM'（daily/weekly/monthly/once 用）\n"
-            "- weekly_days: 数组，0=周日 1=周一 … 6=周六（weekly 用）\n"
-            "- monthly_day: 1-31（monthly 用）；interval_seconds: 间隔秒数（interval 用）；date: YYYY-MM-DD（once 用）\n"
-            "例：'每天早上8点跑签到' → workflow='签到', schedule_type='daily', time='08:00'。"
+            "列出我（WebRPA 小助手）的全部能力，按领域归类。用户问'你能做什么/你会不会X/有哪些功能'时调它。"
+            "不传参数给各领域概览；传 category（如'用户与权限RBAC'）看该领域全部能力。"
         ),
-        parameters={
-            "type": "object",
-            "properties": {
-                "workflow": {"type": "string", "description": "本地工作流文件名（不含.json也可）"},
-                "name": {"type": "string", "description": "任务名（可选）"},
-                "schedule_type": {"type": "string", "enum": ["daily", "weekly", "monthly", "interval", "once"]},
-                "time": {"type": "string", "description": "HH:MM"},
-                "weekly_days": {"type": "array", "items": {"type": "integer"}},
-                "monthly_day": {"type": "integer"},
-                "interval_seconds": {"type": "integer"},
-                "date": {"type": "string", "description": "YYYY-MM-DD"},
-                "headless": {"type": "boolean", "default": True},
-            },
-            "required": ["workflow", "schedule_type"],
-        },
-        handler=skill_create_scheduled_task,
-        requires_approval=True,
+        parameters={"type": "object", "properties": {"category": {"type": "string"}}},
+        handler=skill_list_my_capabilities,
     ))
     registry.register(Skill(
-        name="toggle_scheduled_task",
-        description="启用/停用一个计划任务。task_id 取自 list_scheduled_tasks。",
-        parameters={"type": "object", "properties": {
-            "task_id": {"type": "string"}, "enabled": {"type": "boolean"}},
-            "required": ["task_id", "enabled"]},
-        handler=skill_toggle_scheduled_task,
-        requires_approval=True,
-    ))
-    registry.register(Skill(
-        name="delete_scheduled_task",
-        description="删除一个计划任务（不可恢复）。task_id 取自 list_scheduled_tasks。",
-        parameters={"type": "object", "properties": {"task_id": {"type": "string"}},
-                    "required": ["task_id"]},
-        handler=skill_delete_scheduled_task,
-        requires_approval=True,
+        name="search_my_capabilities",
+        description="按关键词搜索我的能力（匹配技能名/描述）。用户描述一个需求时，先用它确认我是否已有对应能力。",
+        parameters={"type": "object", "properties": {"keyword": {"type": "string"}},
+                    "required": ["keyword"]},
+        handler=skill_search_my_capabilities,
     ))
 
 

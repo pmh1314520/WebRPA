@@ -4167,7 +4167,7 @@ _EXTENSION_MODULES = [
     "app.services.ai_assistant_skills_v9",   # 编排/队列/单测/探针 + 多Agent协作 + 自动写文档
     "app.services.ai_assistant_skills_v10",  # 企业级：Computer-Use/IDP/流程反推挖掘/集群/审计/保险库
     "app.services.ai_assistant_skills_v11",  # 企业管家：RBAC/会话/审批/凭据ACL/集群管理/审计导出/总览
-    "app.services.ai_assistant_skills_v12",  # 自然语言自动化：计划任务的创建/列出/启停/删除
+    "app.services.ai_assistant_skills_v12",  # 能力自省：按领域列出/搜索小助手全部能力
     "app.services.ai_assistant_skills_mcp",  # MCP 服务器配置/管理
 ]
 _skills_loaded = False
