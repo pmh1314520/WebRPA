@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectNative } from '@/components/ui/select-native'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
+import { Radio } from '@/components/ui/radio-group'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import { useGlobalConfigStore, type BrowserType, type AIModelProfile, type AssistantScene } from '@/store/globalConfigStore'
@@ -64,7 +68,7 @@ function ModelProfilesManager({
             <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-700 text-xs font-bold flex-shrink-0">{idx + 1}</span>
             <Input value={m.label} onChange={(e) => update(m.id, { label: e.target.value })} placeholder="显示名（如 GPT-4o / DeepSeek）" className="bg-white text-black border-gray-300 h-8 text-sm" />
             <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
-              <input type="radio" name="active-model-radio" checked={activeModelId === m.id} onChange={() => onChange({ activeModelId: m.id })} />
+              <Radio checked={activeModelId === m.id} onSelect={() => onChange({ activeModelId: m.id })} />
               默认
             </label>
             <button onClick={() => remove(m.id)} className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50" title="删除"><Trash2 className="w-4 h-4" /></button>
@@ -79,7 +83,7 @@ function ModelProfilesManager({
               <span className="text-xs text-gray-500">适用场景：</span>
               {SCENE_LABELS.map((s) => (
                 <label key={s.key} className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
-                  <input type="checkbox" checked={(m.scenes || []).includes(s.key)} onChange={() => toggleScene(m.id, s.key)} />
+                  <Checkbox checked={(m.scenes || []).includes(s.key)} onCheckedChange={() => toggleScene(m.id, s.key)} className="h-3.5 w-3.5" />
                   {s.label}
                 </label>
               ))}
@@ -139,7 +143,7 @@ function SecuritySettings() {
             <Label className="text-gray-700 font-medium">启用访问鉴权</Label>
             <p className="text-xs text-gray-500 mt-1">关闭后局域网内任意设备可无凭据访问全部接口（不推荐）</p>
           </div>
-          <input type="checkbox" checked={enabled} disabled={loading || !isLocal} onChange={(e) => toggle(e.target.checked)} className="w-5 h-5" />
+          <Switch checked={enabled} disabled={loading || !isLocal} onCheckedChange={(c) => toggle(c)} />
         </div>
 
         {isLocal ? (
@@ -342,7 +346,7 @@ function RetentionSettings() {
       <div className="space-y-4">
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
           <Label className="text-gray-700 font-medium">启用自动清理</Label>
-          <input type="checkbox" checked={cfg.enabled} onChange={(e) => setCfg({ ...cfg, enabled: e.target.checked })} className="w-5 h-5" />
+          <Switch checked={cfg.enabled} onCheckedChange={(c) => setCfg({ ...cfg, enabled: c })} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           {numField('录像保留天数', 'recordings_max_days', '超过天数的录像会被删除')}
@@ -572,15 +576,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       启动WebRPA时自动检查是否有新版本可用
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={config.system.checkUpdateOnStartup}
-                      onChange={(e) => updateSystemConfig({ checkUpdateOnStartup: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.system.checkUpdateOnStartup}
+                    onCheckedChange={(c) => updateSystemConfig({ checkUpdateOnStartup: c })}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -590,15 +589,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       当剪贴板中有新截图时，自动弹出保存对话框
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={config.system.autoDetectClipboardScreenshot}
-                      onChange={(e) => updateSystemConfig({ autoDetectClipboardScreenshot: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.system.autoDetectClipboardScreenshot}
+                    onCheckedChange={(c) => updateSystemConfig({ autoDetectClipboardScreenshot: c })}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -608,15 +602,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       在编辑器右下角显示AI小助手的浮动按钮（快捷键 Ctrl+K 不受影响）
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={config.system.showAIAssistantButton}
-                      onChange={(e) => updateSystemConfig({ showAIAssistantButton: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.system.showAIAssistantButton}
+                    onCheckedChange={(c) => updateSystemConfig({ showAIAssistantButton: c })}
+                  />
                 </div>
 
                 {/* 画布小组件显示开关 */}
@@ -636,15 +625,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     ] as const).map(([key, label]) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-[13px] text-gray-600">{label}</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={config.system.canvasWidgets?.[key] !== false}
-                            onChange={(e) => updateSystemConfig({ canvasWidgets: { ...config.system.canvasWidgets, [key]: e.target.checked } })}
-                          />
-                          <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
+                        <Switch
+                          checked={config.system.canvasWidgets?.[key] !== false}
+                          onCheckedChange={(c) => updateSystemConfig({ canvasWidgets: { ...config.system.canvasWidgets, [key]: c } })}
+                        />
                       </div>
                     ))}
                   </div>
@@ -779,10 +763,7 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       <Label className="text-sm font-medium text-gray-700">失败自动切换</Label>
                       <p className="text-xs text-gray-500 mt-1">AI 对话模块运行时，某模型请求失败自动换其它已配置模型重试，全部失败才报错。</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={config.ai?.autoFallback ?? false} onChange={(e) => updateAIConfig({ autoFallback: e.target.checked })} />
-                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                    <Switch checked={config.ai?.autoFallback ?? false} onCheckedChange={(c) => updateAIConfig({ autoFallback: c })} />
                   </div>
                 </div>
               </div>
@@ -951,15 +932,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                         关闭后小助手只能进行问答。
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={config.aiAssistant?.enableTools ?? true}
-                        onChange={(e) => updateAIAssistantConfig({ enableTools: e.target.checked })}
-                      />
-                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                    <Switch
+                      checked={config.aiAssistant?.enableTools ?? true}
+                      onCheckedChange={(c) => updateAIAssistantConfig({ enableTools: c })}
+                    />
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex-1">
@@ -968,15 +944,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                         开启后小助手的工具调用会立即执行，无需人工确认。建议熟悉后再开启。
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={config.aiAssistant?.autoApprove ?? false}
-                        onChange={(e) => updateAIAssistantConfig({ autoApprove: e.target.checked })}
-                      />
-                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                    <Switch
+                      checked={config.aiAssistant?.autoApprove ?? false}
+                      onCheckedChange={(c) => updateAIAssistantConfig({ autoApprove: c })}
+                    />
                   </div>
 
                   {/* 操作权限模式（三档） */}
@@ -1032,20 +1003,14 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       <Label className="text-sm font-medium text-gray-700">失败自动切换</Label>
                       <p className="text-xs text-gray-500 mt-1">某模型请求失败时，自动换其它已配置模型重试，全部失败才报错。</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={config.aiAssistant?.autoFallback ?? false} onChange={(e) => updateAIAssistantConfig({ autoFallback: e.target.checked })} />
-                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                    <Switch checked={config.aiAssistant?.autoFallback ?? false} onCheckedChange={(c) => updateAIAssistantConfig({ autoFallback: c })} />
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex-1">
                       <Label className="text-sm font-medium text-gray-700">场景自动选模型</Label>
                       <p className="text-xs text-gray-500 mt-1">按问答场景自动挑选模型：发图片→多模态组、复杂分析→深度思考组、其余→普通对话组（需给模型勾选场景）。</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={config.aiAssistant?.autoSceneRoute ?? false} onChange={(e) => updateAIAssistantConfig({ autoSceneRoute: e.target.checked })} />
-                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                    <Switch checked={config.aiAssistant?.autoSceneRoute ?? false} onCheckedChange={(c) => updateAIAssistantConfig({ autoSceneRoute: c })} />
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex-1">
@@ -1334,15 +1299,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       开启后，工作流的每次编辑都会自动保存到本地，无需手动保存
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.workflow?.autoSave || false}
-                      onChange={(e) => updateWorkflowConfig({ autoSave: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.workflow?.autoSave || false}
+                    onCheckedChange={(c) => updateWorkflowConfig({ autoSave: c })}
+                  />
                 </div>
                 
                 {/* 覆盖提示开关 */}
@@ -1353,15 +1313,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       手动保存工作流时，若本地存在同名文件，是否弹出覆盖确认提示
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.workflow?.showOverwriteConfirm !== false}
-                      onChange={(e) => updateWorkflowConfig({ showOverwriteConfirm: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.workflow?.showOverwriteConfirm !== false}
+                    onCheckedChange={(c) => updateWorkflowConfig({ showOverwriteConfirm: c })}
+                  />
                 </div>
 
                 {/* 同名自动创建副本开关 */}
@@ -1372,15 +1327,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       开启后，手动保存时若已存在同名工作流，将自动另存为带时间戳的副本（不再覆盖原文件），覆盖提示也不再显示
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.workflow?.autoSaveCopy === true}
-                      onChange={(e) => updateWorkflowConfig({ autoSaveCopy: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.workflow?.autoSaveCopy === true}
+                    onCheckedChange={(c) => updateWorkflowConfig({ autoSaveCopy: c })}
+                  />
                 </div>
 
                 {/* WebDAV 远程存储 */}
@@ -1470,15 +1420,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       开启后会在鼠标旁边显示当前坐标位置
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.display?.showMouseCoordinates || false}
-                      onChange={(e) => updateDisplayConfig({ showMouseCoordinates: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.display?.showMouseCoordinates || false}
+                    onCheckedChange={(c) => updateDisplayConfig({ showMouseCoordinates: c })}
+                  />
                 </div>
 
                 {/* 运行状态高亮开关（默认关闭） */}
@@ -1489,15 +1434,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       工作流运行时实时高亮“运行中/成功/失败”的模块。默认关闭：大型工作流高速运行时方块闪烁会导致页面卡顿
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.display?.runStatusHighlight || false}
-                      onChange={(e) => updateDisplayConfig({ runStatusHighlight: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.display?.runStatusHighlight || false}
+                    onCheckedChange={(c) => updateDisplayConfig({ runStatusHighlight: c })}
+                  />
                 </div>
                 
                 {/* 连接点尺寸滑条 */}
@@ -1511,14 +1451,13 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                   </p>
                   <div className="flex items-center gap-3 mt-3">
                     <span className="text-xs text-gray-500 w-8">小</span>
-                    <input
-                      type="range"
-                      min="6"
-                      max="24"
-                      step="1"
-                      value={config.display?.handleSize || 12}
-                      onChange={(e) => updateDisplayConfig({ handleSize: parseInt(e.target.value) })}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    <Slider
+                      min={6}
+                      max={24}
+                      step={1}
+                      value={[config.display?.handleSize || 12]}
+                      onValueChange={(vals) => updateDisplayConfig({ handleSize: vals[0] })}
+                      className="flex-1"
                     />
                     <span className="text-xs text-gray-500 w-8 text-right">大</span>
                   </div>
@@ -1582,13 +1521,11 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
-                        <input
-                          type="radio"
-                          name="browserType"
+                        <Radio
                           value={option.value}
                           checked={(config.browser?.type || 'msedge') === option.value}
-                          onChange={(e) => updateBrowserConfig({ type: e.target.value as BrowserType })}
-                          className="w-4 h-4 text-blue-600"
+                          onSelect={() => updateBrowserConfig({ type: option.value as BrowserType })}
+                          dotOnly
                         />
                         <div className="flex-1">
                           <div className="font-medium text-gray-700">{option.label}</div>
@@ -1751,15 +1688,10 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       开启后浏览器将以最大化窗口启动（占满整个屏幕）
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.browser?.fullscreen ?? false}
-                      onChange={(e) => updateBrowserConfig({ fullscreen: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.browser?.fullscreen ?? false}
+                    onCheckedChange={(c) => updateBrowserConfig({ fullscreen: c })}
+                  />
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div>
@@ -1768,24 +1700,19 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                       开启后工作流执行完成时将自动关闭浏览器窗口
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.browser?.autoCloseBrowser ?? true}
-                      onChange={(e) => {
-                        console.log('[GlobalConfig] 切换 autoCloseBrowser:', e.target.checked)
-                        updateBrowserConfig({ autoCloseBrowser: e.target.checked })
-                        setShowBrowserConfigTip(true)
-                        // 立即验证更新
-                        setTimeout(() => {
-                          const newConfig = useGlobalConfigStore.getState().config
-                          console.log('[GlobalConfig] 更新后的配置:', newConfig.browser?.autoCloseBrowser)
-                        }, 100)
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <Switch
+                    checked={config.browser?.autoCloseBrowser ?? true}
+                    onCheckedChange={(c) => {
+                      console.log('[GlobalConfig] 切换 autoCloseBrowser:', c)
+                      updateBrowserConfig({ autoCloseBrowser: c })
+                      setShowBrowserConfigTip(true)
+                      // 立即验证更新
+                      setTimeout(() => {
+                        const newConfig = useGlobalConfigStore.getState().config
+                        console.log('[GlobalConfig] 更新后的配置:', newConfig.browser?.autoCloseBrowser)
+                      }, 100)
+                    }}
+                  />
                 </div>
                 
                 {/* 浏览器配置更改提示 */}

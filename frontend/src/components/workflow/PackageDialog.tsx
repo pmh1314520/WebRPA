@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBackendBaseUrl } from '@/services/config'
 import { SelectNative } from '@/components/ui/select-native'
+import { Checkbox } from '@/components/ui/checkbox'
 import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen } from 'lucide-react'
 
 interface PackageDialogProps {
@@ -130,9 +131,9 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
               </SelectNative>
             </div>
             <div className="flex flex-col justify-end gap-1.5 pt-4">
-              <label className="flex items-center gap-2"><input type="checkbox" checked={headless} onChange={e => setHeadless(e.target.checked)} /> 后台运行（不显示浏览器）</label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={showConsole} onChange={e => setShowConsole(e.target.checked)} /> 显示运行控制台</label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={slim} onChange={e => setSlim(e.target.checked)} disabled={mode !== 'portable'} /> 按需裁剪（瘦身）</label>
+              <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={headless} onCheckedChange={(c) => setHeadless(c)} /> 后台运行（不显示浏览器）</label>
+              <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={showConsole} onCheckedChange={(c) => setShowConsole(c)} /> 显示运行控制台</label>
+              <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={slim} onCheckedChange={(c) => setSlim(c)} disabled={mode !== 'portable'} /> 按需裁剪（瘦身）</label>
             </div>
           </div>
 

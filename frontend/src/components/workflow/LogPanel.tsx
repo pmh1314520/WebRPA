@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SelectNative as Select } from '@/components/ui/select-native'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { workflowApi } from '@/services/api'
 import { onAssistantUiEvent, emitAssistantUiEvent } from '@/services/aiAssistantSkills'
@@ -826,61 +827,49 @@ export function LogPanel({ onLogClick }: LogPanelProps) {
                       <div className="absolute top-full left-0 mt-2 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[10px] shadow-pop-xl p-1.5 z-50 min-w-[180px] animate-scale-in">
                         <div className="space-y-0.5">
                           <label className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-[hsl(var(--brand-50))] hover:text-[hsl(var(--brand-700))] rounded-[6px] cursor-pointer text-[12px] transition-colors">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={logLevelFilters.size === 5}
-                              onChange={toggleAllFilters}
-                              className="accent-[hsl(var(--brand-600))]"
+                              onCheckedChange={toggleAllFilters}
                             />
                             <span className="font-semibold">全选/取消</span>
                           </label>
                           <div className="h-px bg-[hsl(var(--border))] my-1" />
                           <label className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-[hsl(var(--slate-100))] rounded-[6px] cursor-pointer text-[12px] transition-colors">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={logLevelFilters.has('debug')}
-                              onChange={() => toggleLogLevelFilter('debug')}
-                              className="accent-[hsl(var(--slate-600))]"
+                              onCheckedChange={() => toggleLogLevelFilter('debug')}
                             />
                             <span className="w-2 h-2 rounded-full bg-[hsl(var(--slate-400))]" />
                             <span className="text-[hsl(var(--slate-700))]">调试</span>
                           </label>
                           <label className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-[hsl(var(--info-50))] rounded-[6px] cursor-pointer text-[12px] transition-colors">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={logLevelFilters.has('info')}
-                              onChange={() => toggleLogLevelFilter('info')}
-                              className="accent-[hsl(var(--info-600))]"
+                              onCheckedChange={() => toggleLogLevelFilter('info')}
                             />
                             <span className="w-2 h-2 rounded-full bg-[hsl(var(--info-500))]" />
                             <span className="text-[hsl(var(--info-700))] font-medium">信息</span>
                           </label>
                           <label className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-[hsl(var(--success-50))] rounded-[6px] cursor-pointer text-[12px] transition-colors">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={logLevelFilters.has('success')}
-                              onChange={() => toggleLogLevelFilter('success')}
-                              className="accent-[hsl(var(--success-600))]"
+                              onCheckedChange={() => toggleLogLevelFilter('success')}
                             />
                             <span className="w-2 h-2 rounded-full bg-[hsl(var(--success-500))]" />
                             <span className="text-[hsl(var(--success-700))] font-medium">成功</span>
                           </label>
                           <label className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-[hsl(var(--warning-50))] rounded-[6px] cursor-pointer text-[12px] transition-colors">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={logLevelFilters.has('warning')}
-                              onChange={() => toggleLogLevelFilter('warning')}
-                              className="accent-[hsl(var(--warning-600))]"
+                              onCheckedChange={() => toggleLogLevelFilter('warning')}
                             />
                             <span className="w-2 h-2 rounded-full bg-[hsl(var(--warning-500))]" />
                             <span className="text-[hsl(var(--warning-700))] font-medium">警告</span>
                           </label>
                           <label className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-[hsl(var(--danger-50))] rounded-[6px] cursor-pointer text-[12px] transition-colors">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={logLevelFilters.has('error')}
-                              onChange={() => toggleLogLevelFilter('error')}
-                              className="accent-[hsl(var(--danger-600))]"
+                              onCheckedChange={() => toggleLogLevelFilter('error')}
                             />
                             <span className="w-2 h-2 rounded-full bg-[hsl(var(--danger-500))]" />
                             <span className="text-[hsl(var(--danger-700))] font-medium">错误</span>

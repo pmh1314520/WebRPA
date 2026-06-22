@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
+import { Checkbox } from '@/components/ui/checkbox'
 import { socketService } from '@/services/socket'
 import { X, List, Hash, Type, Lock, AlignLeft, File, Folder, CheckSquare, SlidersHorizontal, ListChecks } from 'lucide-react'
 import { getBackendUrl } from '@/services/api'
@@ -495,28 +497,13 @@ export function InputPromptDialog() {
                       {promptData.maxValue ?? 100}
                     </span>
                   </div>
-                  <div className="relative">
-                    <div className="absolute w-full h-2 bg-[hsl(var(--slate-200))] rounded-full shadow-[inset_0_1px_2px_rgb(15_23_42_/_0.06)]" style={{ top: '50%', transform: 'translateY(-50%)' }}></div>
-                    <div
-                      className="absolute h-2 rounded-full"
-                      style={{
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: `${((sliderValue - (promptData.minValue ?? 0)) / ((promptData.maxValue ?? 100) - (promptData.minValue ?? 0))) * 100}%`,
-                        background: 'linear-gradient(90deg, hsl(var(--brand-500)), hsl(var(--brand-600)))',
-                        boxShadow: '0 2px 6px hsl(var(--brand-500) / 0.4)'
-                      }}
-                    ></div>
-                    <input
-                      type="range"
+                  <div className="relative py-1.5">
+                    <Slider
                       min={promptData.minValue ?? 0}
                       max={promptData.maxValue ?? 100}
                       step={isSliderInt ? 1 : 0.01}
-                      value={sliderValue}
-                      onChange={(e) => setSliderValue(parseFloat(e.target.value))}
-                      className="relative w-full h-2 bg-transparent appearance-none cursor-pointer z-10"
-                      style={{ WebkitAppearance: 'none', appearance: 'none' }}
-                      autoFocus
+                      value={[sliderValue]}
+                      onValueChange={(vals) => setSliderValue(vals[0])}
                     />
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))]">
@@ -536,53 +523,6 @@ export function InputPromptDialog() {
                     </code>
                   </span>
                 </div>
-                <style>{`
-                  input[type="range"]::-webkit-slider-thumb {
-                    -webkit-appearance: none;
-                    appearance: none;
-                    width: 22px;
-                    height: 22px;
-                    border-radius: 50%;
-                    background: hsl(var(--card));
-                    border: 3px solid hsl(var(--brand-500));
-                    cursor: pointer;
-                    box-shadow: 0 2px 8px hsl(var(--brand-500) / 0.45);
-                    transition: all 200ms cubic-bezier(0.25, 1, 0.5, 1);
-                  }
-                  input[type="range"]::-webkit-slider-thumb:hover {
-                    transform: scale(1.18);
-                    box-shadow: 0 4px 14px hsl(var(--brand-500) / 0.6);
-                  }
-                  input[type="range"]::-webkit-slider-thumb:active {
-                    transform: scale(1.1);
-                  }
-                  input[type="range"]::-moz-range-thumb {
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-                    cursor: pointer;
-                    border: none;
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-                    transition: all 0.2s ease;
-                  }
-                  input[type="range"]::-moz-range-thumb:hover {
-                    transform: scale(1.2);
-                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
-                  }
-                  input[type="range"]::-moz-range-thumb:active {
-                    transform: scale(1.1);
-                  }
-                  input[type="range"]:focus {
-                    outline: none;
-                  }
-                  input[type="range"]:focus::-webkit-slider-thumb {
-                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 2px 8px rgba(59, 130, 246, 0.4);
-                  }
-                  input[type="range"]:focus::-moz-range-thumb {
-                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 2px 8px rgba(59, 130, 246, 0.4);
-                  }
-                `}</style>
               </>
             ) : isCheckbox ? (
               <>
@@ -594,13 +534,11 @@ export function InputPromptDialog() {
                       : 'border-[hsl(var(--border))] bg-[hsl(var(--slate-50))] hover:border-[hsl(var(--brand-500)/0.4)] hover:bg-[hsl(var(--brand-50)/0.4)]'
                   }`}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="checkbox-input"
                     checked={checkboxValue}
-                    onChange={(e) => setCheckboxValue(e.target.checked)}
-                    className="w-5 h-5 rounded border-[hsl(var(--slate-300))] accent-[hsl(var(--success-600))] cursor-pointer"
-                    autoFocus
+                    onCheckedChange={(c) => setCheckboxValue(c)}
+                    className="h-5 w-5"
                   />
                   <span className="text-[hsl(var(--slate-800))] cursor-pointer select-none flex-1 text-[13px]">
                     {promptData.message || '请选择'}

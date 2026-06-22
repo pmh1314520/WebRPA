@@ -5,6 +5,7 @@ import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, G
 import { recorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
   type: 'navigate' | 'click' | 'input' | 'select' | 'check' | 'scroll' | 'keypress'
@@ -289,7 +290,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
       <div className="px-4 py-2 border-t border-[hsl(var(--border))] flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))]">
         <span>共 {events.length} 步{recording ? ' · 录制中' : ' · 可拖删/排序后生成'}</span>
         <label className="flex items-center gap-1 cursor-pointer" title="按操作间隔自动插入等待节点">
-          <input type="checkbox" checked={autoWait} onChange={(e) => setAutoWait(e.target.checked)} className="w-3 h-3" />
+          <Checkbox checked={autoWait} onCheckedChange={(c) => setAutoWait(c)} className="h-3.5 w-3.5" />
           <Clock className="w-3 h-3" />自动等待
         </label>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2, Wifi, Save as SaveIcon } from 'lucide-react'
 import { getBackendBaseUrl } from '@/services/config'
+import { Switch } from '@/components/ui/switch'
 
 interface WebDAVConfig {
   enabled: boolean
@@ -64,10 +65,7 @@ export function WebDAVSettings() {
           <label className="text-sm font-medium text-gray-700">WebDAV 远程存储（NAS / 网盘）</label>
           <p className="text-xs text-gray-500 mt-1">开启后，工作流的保存与读取都走 WebDAV 远程目录，可在多台设备间共享。</p>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer flex-none ml-3">
-          <input type="checkbox" className="sr-only peer" checked={cfg.enabled} onChange={(e) => update({ enabled: e.target.checked })} />
-          <div className="w-11 h-6 bg-gray-300 peer-checked:bg-blue-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-        </label>
+        <Switch className="flex-none ml-3" checked={cfg.enabled} onCheckedChange={(c) => update({ enabled: c })} />
       </div>
 
       {loading ? (

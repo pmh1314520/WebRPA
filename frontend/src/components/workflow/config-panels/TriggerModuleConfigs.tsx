@@ -10,6 +10,7 @@ import { VariableInput } from '@/components/ui/variable-input'
 import { VariableNameInput } from '@/components/ui/variable-name-input'
 import { DualCoordinateInput } from '@/components/ui/dual-coordinate-input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
 import { ImagePathInput } from '@/components/ui/image-path-input'
 import { AlertCircle, Copy, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -786,12 +787,10 @@ export function TimerTriggerConfig({
           <div className="space-y-2">
             <Label>是否立即开始</Label>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="immediateStart"
                 checked={(data.immediateStart as boolean) ?? true}
-                onChange={(e) => onChange('immediateStart', e.target.checked)}
-                className="w-4 h-4"
+                onCheckedChange={(c) => onChange('immediateStart', c)}
               />
               <label htmlFor="immediateStart" className="text-sm">
                 立即执行第一次，然后按间隔重复
@@ -831,12 +830,10 @@ export function TimerTriggerConfig({
           <div className="space-y-2">
             <Label>重复设置</Label>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="repeatDaily"
                 checked={(data.repeatDaily as boolean) ?? false}
-                onChange={(e) => onChange('repeatDaily', e.target.checked)}
-                className="w-4 h-4"
+                onCheckedChange={(c) => onChange('repeatDaily', c)}
               />
               <label htmlFor="repeatDaily" className="text-sm">
                 每天重复执行
@@ -1085,14 +1082,12 @@ export function ImageTriggerConfig({
       <div className="space-y-2">
         <Label htmlFor="confidence">匹配置信度</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="confidence"
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>
@@ -1219,14 +1214,12 @@ export function SoundTriggerConfig({
       <div className="space-y-2">
         <Label htmlFor="volumeThreshold">音量阈值 (%)</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="volumeThreshold"
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            value={(data.volumeThreshold as number) || 50}
-            onChange={(e) => onChange('volumeThreshold', parseInt(e.target.value))}
+          <Slider
+            min={0}
+            max={100}
+            step={5}
+            value={[(data.volumeThreshold as number) || 50]}
+            onValueChange={(vals) => onChange('volumeThreshold', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{(data.volumeThreshold as number) || 50}%</span>
@@ -1320,14 +1313,12 @@ export function FaceTriggerConfig({
       <div className="space-y-2">
         <Label htmlFor="tolerance">匹配容差</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="tolerance"
-            type="range"
-            min="0.3"
-            max="0.8"
-            step="0.05"
-            value={(data.tolerance as number) || 0.6}
-            onChange={(e) => onChange('tolerance', parseFloat(e.target.value))}
+          <Slider
+            min={0.3}
+            max={0.8}
+            step={0.05}
+            value={[(data.tolerance as number) || 0.6]}
+            onValueChange={(vals) => onChange('tolerance', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.tolerance as number) || 0.6).toFixed(2)}</span>
@@ -1826,13 +1817,11 @@ export function GestureTriggerConfig({
       <div className="space-y-2">
         <Label htmlFor="confidenceThreshold">识别置信度阈值</Label>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            id="confidenceThreshold"
-            min="0"
-            max="100"
-            value={((data.confidenceThreshold as number) ?? 0.6) * 100}
-            onChange={(e) => onChange('confidenceThreshold', Number(e.target.value) / 100)}
+          <Slider
+            min={0}
+            max={100}
+            value={[((data.confidenceThreshold as number) ?? 0.6) * 100]}
+            onValueChange={(vals) => onChange('confidenceThreshold', vals[0] / 100)}
             className="flex-1"
           />
           <span className="text-sm font-medium w-12 text-right">

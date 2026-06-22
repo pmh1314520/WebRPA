@@ -102,26 +102,22 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                 </div>
               </div>
 
-              {/* 自定义颜色 */}
+              {/* 自定义颜色（纯文本 hex，避免使用浏览器原生取色控件） */}
               <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">自定义颜色</Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      ref={colorInputRef}
-                      type="text"
-                      value={customColor}
-                      onChange={handleCustomColorChange}
-                      placeholder="#000000"
-                      className="font-mono text-sm pr-10"
-                    />
-                    <input
-                      type="color"
-                      value={customColor}
-                      onChange={handleCustomColorChange}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded border-0 cursor-pointer"
-                    />
-                  </div>
+                <Label className="text-xs text-muted-foreground mb-2 block">自定义颜色（输入十六进制）</Label>
+                <div className="flex gap-2 items-center">
+                  <span
+                    className="w-8 h-8 rounded-md border border-gray-300 shrink-0"
+                    style={{ backgroundColor: customColor }}
+                  />
+                  <Input
+                    ref={colorInputRef}
+                    type="text"
+                    value={customColor}
+                    onChange={handleCustomColorChange}
+                    placeholder="#000000"
+                    className="font-mono text-sm flex-1"
+                  />
                 </div>
               </div>
             </div>

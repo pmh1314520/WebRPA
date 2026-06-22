@@ -11,6 +11,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectNative as Select } from '@/components/ui/select-native'
+import { ColorField } from '@/components/ui/color-field'
+import { DateTimePicker } from '@/components/ui/date-time-picker'
+import { Slider } from '@/components/ui/slider'
+import { Checkbox } from '@/components/ui/checkbox'
 import { screensaverApi } from '@/services/api'
 
 interface Props {
@@ -235,47 +239,7 @@ const ColorInput = React.memo(function ColorInput({
   onChange: (v: string) => void
   className?: string
 }) {
-  const [local, setLocal] = useState(value)
-  const debounceRef = useRef<number | null>(null)
-  // 父组件 value 外部变化时同步过来
-  useEffect(() => { setLocal(value) }, [value])
-  // 卸载时清防抖
-  useEffect(() => () => {
-    if (debounceRef.current != null) {
-      window.clearTimeout(debounceRef.current)
-    }
-  }, [])
-
-  const flush = (v: string) => {
-    if (debounceRef.current != null) {
-      window.clearTimeout(debounceRef.current)
-    }
-    debounceRef.current = window.setTimeout(() => {
-      onChange(v)
-      debounceRef.current = null
-    }, 80)
-  }
-
-  return (
-    <input
-      type="color"
-      value={local}
-      onChange={(e) => {
-        const v = e.target.value
-        setLocal(v)
-        flush(v)
-      }}
-      // 弹窗关闭 / 失焦时立即提交（避免最后一次还在防抖里被忽略）
-      onBlur={(e) => {
-        if (debounceRef.current != null) {
-          window.clearTimeout(debounceRef.current)
-          debounceRef.current = null
-        }
-        onChange(e.target.value)
-      }}
-      className={className}
-    />
-  )
+  return <ColorField value={value} onChange={onChange} variant="full" className={className} />
 })
 
 
@@ -754,10 +718,9 @@ export function ScreensaverDialog({ open, onClose }: Props) {
             {config.content_type === 'countdown' && (
               <section className="space-y-2">
                 <Label>倒计时目标时间</Label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={config.countdown_target}
-                  onChange={(e) => update('countdown_target', e.target.value)}
+                  onChange={(v) => update('countdown_target', v)}
                 />
               </section>
             )}
@@ -833,11 +796,9 @@ export function ScreensaverDialog({ open, onClose }: Props) {
                 </div>
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={config.font_italic}
-                      onChange={(e) => update('font_italic', e.target.checked)}
-                      className="accent-[hsl(var(--brand-600))]"
+                      onCheckedChange={(c) => update('font_italic', c)}
                     />
                     斜体
                   </label>
@@ -859,14 +820,13 @@ export function ScreensaverDialog({ open, onClose }: Props) {
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs">背景透明度：{Math.round(config.background_alpha * 100)}%</Label>
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="1"
-                    step="0.05"
-                    value={config.background_alpha}
-                    onChange={(e) => update('background_alpha', Number(e.target.value))}
-                    className="w-full accent-[hsl(var(--brand-600))]"
+                  <Slider
+                    min={0.05}
+                    max={1}
+                    step={0.05}
+                    value={[config.background_alpha]}
+                    onValueChange={(vals) => update('background_alpha', vals[0])}
+                    className="mt-2"
                   />
                 </div>
               </div>
@@ -913,11 +873,9 @@ export function ScreensaverDialog({ open, onClose }: Props) {
                 </div>
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={config.vertical_text}
-                      onChange={(e) => update('vertical_text', e.target.checked)}
-                      className="accent-[hsl(var(--brand-600))]"
+                      onCheckedChange={(c) => update('vertical_text', c)}
                     />
                     竖排文字
                   </label>
@@ -950,11 +908,9 @@ export function ScreensaverDialog({ open, onClose }: Props) {
                     />
                   </div>
                   <div className="col-span-2 flex items-center gap-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={config.scroll_loop}
-                      onChange={(e) => update('scroll_loop', e.target.checked)}
-                      className="accent-[hsl(var(--brand-600))]"
+                      onCheckedChange={(c) => update('scroll_loop', c)}
                     />
                     <Label className="text-sm cursor-pointer">循环滚动</Label>
                   </div>
@@ -967,15 +923,15 @@ export function ScreensaverDialog({ open, onClose }: Props) {
               <Label className="text-sm font-semibold">行为</Label>
               <div className="space-y-1.5 text-sm">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={config.fullscreen} onChange={(e) => update('fullscreen', e.target.checked)} className="accent-[hsl(var(--brand-600))]" />
+                  <Checkbox checked={config.fullscreen} onCheckedChange={(c) => update('fullscreen', c)} />
                   全屏覆盖整个桌面
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={config.click_through} onChange={(e) => update('click_through', e.target.checked)} className="accent-[hsl(var(--brand-600))]" />
+                  <Checkbox checked={config.click_through} onCheckedChange={(c) => update('click_through', c)} />
                   点击穿透到底层（背景会变透明）
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={config.show_close_hint} onChange={(e) => update('show_close_hint', e.target.checked)} className="accent-[hsl(var(--brand-600))]" />
+                  <Checkbox checked={config.show_close_hint} onCheckedChange={(c) => update('show_close_hint', c)} />
                   显示退出快捷键提示
                 </label>
                 <div className="flex items-center gap-2">

@@ -4,6 +4,8 @@ import type { NodeData } from '@/store/workflowStore'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/ui/number-input'
 import { SelectNative as Select } from '@/components/ui/select-native'
+import { Slider } from '@/components/ui/slider'
+import { Radio } from '@/components/ui/radio-group'
 import { VariableInput } from '@/components/ui/variable-input'
 import { VariableNameInput } from '@/components/ui/variable-name-input'
 import { PathInput } from '@/components/ui/path-input'
@@ -762,12 +764,10 @@ export function ShutdownSystemConfig({ data, onChange }: { data: NodeData; onCha
         />
       </div>
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="force"
           checked={(data.force as boolean) ?? false}
-          onChange={(e) => onChange('force', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('force', c)}
         />
         <Label htmlFor="force" className="cursor-pointer">强制执行（不等待程序关闭）</Label>
       </div>
@@ -1268,14 +1268,12 @@ export function ClickImageConfig({ data, onChange }: { data: NodeData; onChange:
       <div className="space-y-2">
         <Label htmlFor="confidence">匹配精度</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="confidence"
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>
@@ -1863,38 +1861,30 @@ export function MacroRecorderConfig({ data, onChange }: { data: NodeData; onChan
         <Label>播放选项</Label>
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.playMouseMove as boolean) ?? true}
-              onChange={(e) => onChange('playMouseMove', e.target.checked)}
-              className="rounded"
+              onCheckedChange={(c) => onChange('playMouseMove', c)}
             />
             播放鼠标移动轨迹
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.playMouseClick as boolean) ?? true}
-              onChange={(e) => onChange('playMouseClick', e.target.checked)}
-              className="rounded"
+              onCheckedChange={(c) => onChange('playMouseClick', c)}
             />
             播放鼠标点击
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.playKeyboard as boolean) ?? true}
-              onChange={(e) => onChange('playKeyboard', e.target.checked)}
-              className="rounded"
+              onCheckedChange={(c) => onChange('playKeyboard', c)}
             />
             播放键盘操作
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.useRelativePosition as boolean) ?? false}
-              onChange={(e) => onChange('useRelativePosition', e.target.checked)}
-              className="rounded"
+              onCheckedChange={(c) => onChange('useRelativePosition', c)}
             />
             使用相对位置（从当前鼠标位置开始）
           </label>
@@ -2167,42 +2157,34 @@ function MacroRecordDialog({
             <Label>录制选项</Label>
             <div className="grid grid-cols-2 gap-2">
               <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={recordOptions.recordMouseMove}
-                  onChange={(e) => setRecordOptions(prev => ({ ...prev, recordMouseMove: e.target.checked }))}
+                  onCheckedChange={(c) => setRecordOptions(prev => ({ ...prev, recordMouseMove: c }))}
                   disabled={isRecording}
-                  className="rounded"
                 />
                 鼠标轨迹
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={recordOptions.recordMouseClick}
-                  onChange={(e) => setRecordOptions(prev => ({ ...prev, recordMouseClick: e.target.checked }))}
+                  onCheckedChange={(c) => setRecordOptions(prev => ({ ...prev, recordMouseClick: c }))}
                   disabled={isRecording}
-                  className="rounded"
                 />
                 鼠标点击
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={recordOptions.recordKeyboard}
-                  onChange={(e) => setRecordOptions(prev => ({ ...prev, recordKeyboard: e.target.checked }))}
+                  onCheckedChange={(c) => setRecordOptions(prev => ({ ...prev, recordKeyboard: c }))}
                   disabled={isRecording}
-                  className="rounded"
                 />
                 键盘操作
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={recordOptions.recordScroll}
-                  onChange={(e) => setRecordOptions(prev => ({ ...prev, recordScroll: e.target.checked }))}
+                  onCheckedChange={(c) => setRecordOptions(prev => ({ ...prev, recordScroll: c }))}
                   disabled={isRecording}
-                  className="rounded"
                 />
                 鼠标滚轮
               </label>
@@ -2757,10 +2739,9 @@ function MacroActionEditDialog({
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={action.pressed ?? true}
-                    onChange={(e) => onChange({ ...action, pressed: e.target.checked })}
+                    onCheckedChange={(c) => onChange({ ...action, pressed: c })}
                   />
                   按下（取消勾选为释放）
                 </label>
@@ -2796,10 +2777,9 @@ function MacroActionEditDialog({
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={action.pressed ?? true}
-                    onChange={(e) => onChange({ ...action, pressed: e.target.checked })}
+                    onCheckedChange={(c) => onChange({ ...action, pressed: c })}
                   />
                   按下（取消勾选为释放）
                 </label>
@@ -2996,10 +2976,9 @@ function MacroAddActionDialog({
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={action.pressed ?? true}
-                    onChange={(e) => setAction({ ...action, pressed: e.target.checked })}
+                    onCheckedChange={(c) => setAction({ ...action, pressed: c })}
                   />
                   按下（取消勾选为释放）
                 </label>
@@ -3035,10 +3014,9 @@ function MacroAddActionDialog({
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={action.pressed ?? true}
-                    onChange={(e) => setAction({ ...action, pressed: e.target.checked })}
+                    onCheckedChange={(c) => setAction({ ...action, pressed: c })}
                   />
                   按下（取消勾选为释放）
                 </label>
@@ -3106,26 +3084,23 @@ export function ExportLogConfig({ data, onChange }: { data: NodeData; onChange: 
         <Label>包含内容</Label>
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.includeTimestamp as boolean) !== false}
-              onChange={(e) => onChange('includeTimestamp', e.target.checked)}
+              onCheckedChange={(c) => onChange('includeTimestamp', c)}
             />
             包含时间戳
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.includeLevel as boolean) !== false}
-              onChange={(e) => onChange('includeLevel', e.target.checked)}
+              onCheckedChange={(c) => onChange('includeLevel', c)}
             />
             包含日志级别
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={(data.includeDuration as boolean) === true}
-              onChange={(e) => onChange('includeDuration', e.target.checked)}
+              onCheckedChange={(c) => onChange('includeDuration', c)}
             />
             包含执行耗时
           </label>
@@ -3279,13 +3254,12 @@ export function HoverImageConfig({ data, onChange }: { data: NodeData; onChange:
       <div className="space-y-2">
         <Label>匹配精度</Label>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>
@@ -3591,13 +3565,12 @@ export function DragImageConfig({ data, onChange }: { data: NodeData; onChange: 
       <div className="space-y-2">
         <Label>匹配精度</Label>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>
@@ -3975,14 +3948,12 @@ export function ImageExistsConfig({ data, onChange }: { data: NodeData; onChange
       <div className="space-y-2">
         <Label htmlFor="confidence">匹配精度</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="confidence"
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>
@@ -3997,33 +3968,29 @@ export function ImageExistsConfig({ data, onChange }: { data: NodeData; onChange
         <Label>识别模式</Label>
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <input
-              type="radio"
+            <Radio
               id="fullScreen"
-              name="recognitionMode"
               checked={useFullScreen}
-              onChange={() => {
+              onSelect={() => {
                 onChange('useFullScreen', true)
                 setUseSearchRegion(false)
                 onChange('searchRegion', null)
               }}
-              className="cursor-pointer"
+              dotOnly
             />
             <Label htmlFor="fullScreen" className="cursor-pointer font-normal">
               全屏识别
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <input
-              type="radio"
+            <Radio
               id="regionSearch"
-              name="recognitionMode"
               checked={!useFullScreen}
-              onChange={() => {
+              onSelect={() => {
                 onChange('useFullScreen', false)
                 setUseSearchRegion(true)
               }}
-              className="cursor-pointer"
+              dotOnly
             />
             <Label htmlFor="regionSearch" className="cursor-pointer font-normal">
               限定区域识别

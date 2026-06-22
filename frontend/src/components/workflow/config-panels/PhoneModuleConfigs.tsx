@@ -8,6 +8,7 @@ import { PathInput } from '@/components/ui/path-input'
 import { PhoneCoordinateInput } from '@/components/ui/phone-coordinate-input'
 import { ImagePathInput } from '@/components/ui/image-path-input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
 import React from 'react'
 import { phoneApi } from '@/services/api'
 import { RefreshCw } from 'lucide-react'
@@ -1740,14 +1741,12 @@ export function PhoneImageExistsConfig({ data, onChange }: { data: NodeData; onC
       <div className="space-y-2">
         <Label htmlFor="confidence">匹配精度</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="confidence"
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>

@@ -13,6 +13,7 @@ import { UrlInput } from '@/components/ui/url-input'
 import { PathInput } from '@/components/ui/path-input'
 import { DualCoordinateInput } from '@/components/ui/dual-coordinate-input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
 import { ImagePathInput } from '@/components/ui/image-path-input'
 import { Code, Upload } from 'lucide-react'
 // 代码编辑器弹窗按需懒加载：Monaco Editor 体积大且在生产构建(极速启动/preview)下
@@ -184,12 +185,10 @@ export function InputTextConfig({
         />
       </div>
       <div className="flex items-center space-x-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="clearBefore"
           checked={(data.clearBefore as boolean) ?? true}
-          onChange={(e) => onChange('clearBefore', e.target.checked)}
-          className="rounded border-gray-300"
+          onCheckedChange={(c) => onChange('clearBefore', c)}
         />
         <Label htmlFor="clearBefore" className="cursor-pointer">
           输入前清空原有内容
@@ -372,14 +371,12 @@ export function WaitImageConfig({
       <div className="space-y-2">
         <Label htmlFor="confidence">匹配度</Label>
         <div className="flex items-center gap-2">
-          <input
-            id="confidence"
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={(data.confidence as number) || 0.8}
-            onChange={(e) => onChange('confidence', parseFloat(e.target.value))}
+          <Slider
+            min={0.5}
+            max={1}
+            step={0.05}
+            value={[(data.confidence as number) || 0.8]}
+            onValueChange={(vals) => onChange('confidence', vals[0])}
             className="flex-1"
           />
           <span className="text-sm w-12 text-right">{((data.confidence as number) || 0.8) * 100}%</span>
@@ -883,12 +880,11 @@ export function InputPromptConfig({ data, onChange }: { data: NodeData; onChange
         <Label htmlFor="defaultValue">默认值</Label>
         {inputMode === 'checkbox' ? (
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <input
-              type="checkbox"
+            <Checkbox
               id="defaultValue"
               checked={(data.defaultValue as string) === 'true' || (data.defaultValue as boolean) === true}
-              onChange={(e) => onChange('defaultValue', e.target.checked ? 'true' : 'false')}
-              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              onCheckedChange={(c) => onChange('defaultValue', c ? 'true' : 'false')}
+              className="h-5 w-5"
             />
             <Label htmlFor="defaultValue" className="cursor-pointer select-none flex-1">
               '默认选中'
@@ -965,12 +961,10 @@ export function InputPromptConfig({ data, onChange }: { data: NodeData; onChange
         </div>
       )}
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="required"
           checked={(data.required as boolean) ?? true}
-          onChange={(e) => onChange('required', e.target.checked)}
-          className="rounded"
+          onCheckedChange={(c) => onChange('required', c)}
         />
         <Label htmlFor="required" className="cursor-pointer">必填</Label>
       </div>
@@ -1011,14 +1005,12 @@ export function TextToSpeechConfig({ data, onChange }: { data: NodeData; onChang
       </div>
       <div className="space-y-2">
         <Label htmlFor="rate">'语速' ({(data.rate as number) || 1}x)</Label>
-        <input
-          id="rate"
-          type="range"
-          min="0.5"
-          max="2"
-          step="0.1"
-          value={(data.rate as number) || 1}
-          onChange={(e) => onChange('rate', parseFloat(e.target.value))}
+        <Slider
+          min={0.5}
+          max={2}
+          step={0.1}
+          value={[(data.rate as number) || 1]}
+          onValueChange={(vals) => onChange('rate', vals[0])}
           className="w-full"
         />
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -1029,14 +1021,12 @@ export function TextToSpeechConfig({ data, onChange }: { data: NodeData; onChang
       </div>
       <div className="space-y-2">
         <Label htmlFor="pitch">'音调' ({(data.pitch as number) || 1})</Label>
-        <input
-          id="pitch"
-          type="range"
-          min="0.5"
-          max="2"
-          step="0.1"
-          value={(data.pitch as number) || 1}
-          onChange={(e) => onChange('pitch', parseFloat(e.target.value))}
+        <Slider
+          min={0.5}
+          max={2}
+          step={0.1}
+          value={[(data.pitch as number) || 1]}
+          onValueChange={(vals) => onChange('pitch', vals[0])}
           className="w-full"
         />
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -1047,14 +1037,12 @@ export function TextToSpeechConfig({ data, onChange }: { data: NodeData; onChang
       </div>
       <div className="space-y-2">
         <Label htmlFor="volume">'音量' ({Math.round(((data.volume as number) || 1) * 100)}%)</Label>
-        <input
-          id="volume"
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={(data.volume as number) || 1}
-          onChange={(e) => onChange('volume', parseFloat(e.target.value))}
+        <Slider
+          min={0}
+          max={1}
+          step={0.1}
+          value={[(data.volume as number) || 1]}
+          onValueChange={(vals) => onChange('volume', vals[0])}
           className="w-full"
         />
         <div className="flex justify-between text-xs text-muted-foreground">

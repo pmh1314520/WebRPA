@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { phoneApi } from '@/services/api'
 import { Smartphone, RefreshCw, Monitor, AlertCircle, CheckCircle, Loader2, X, Crop, Wifi, ChevronDown, ChevronRight as ChevRight } from 'lucide-react'
 import { PhoneScreenshotCropper } from './PhoneScreenshotCropper'
@@ -307,11 +308,9 @@ export function PhoneMirrorDialog({ open, onClose }: PhoneMirrorDialogProps) {
             <div className="flex items-start gap-3">
               <div className="flex-1">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={enablePointerLocation}
-                    onChange={(e) => setEnablePointerLocation(e.target.checked)}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    onCheckedChange={(c) => setEnablePointerLocation(c)}
                   />
                   <span className="font-medium text-amber-900">启动镜像时自动开启"指针位置"</span>
                 </label>
