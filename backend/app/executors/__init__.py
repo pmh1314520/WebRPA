@@ -42,11 +42,15 @@ _SUBMODULES = [
 
 _DIR = _Path(__file__).parent
 _MANIFEST = _DIR / "_registry_manifest.json"
+# 清单格式/构建逻辑版本号：构建逻辑变化时递增，使旧清单失效并重建。
+# v2：清单改为按"最终生效（last-write-wins）的执行器所属模块"反推，
+#     修复重复 module_type 时懒加载与全量导入加载到不同（旧）实现的问题。
+_MANIFEST_VERSION = "2"
 
 
 def _signature() -> str:
     """子模块文件名+修改时间的签名，用于判断清单是否过期"""
-    parts = []
+    parts = [f"v{_MANIFEST_VERSION}"]
     for n in _SUBMODULES:
         try:
             parts.append(f"{n}:{int((_DIR / (n + '.py')).stat().st_mtime)}")
@@ -56,17 +60,35 @@ def _signature() -> str:
 
 
 def _eager_import_all_and_build_manifest():
-    """全量导入所有执行器子模块（原始行为），并记录 类型→子模块 清单以供下次懒加载。"""
-    type_to_sub: dict[str, str] = {}
+    """全量导入所有执行器子模块（原始行为），并记录 类型→子模块 清单以供下次懒加载。
+
+    清单按"最终生效的执行器所属模块"反推：注册表是 last-write-wins，若多个子模块
+    注册了同一 module_type（如单体 media.py 与拆分后的 media_watermark.py），
+    必须让懒加载导入与全量导入"最后生效"的同一个模块，否则懒加载会加载到旧实现。
+    """
     for n in _SUBMODULES:
-        before = set(registry.get_all_types())
         try:
             _importlib.import_module(f".{n}", __name__)
         except Exception as e:
             print(f"[executors] 导入子模块 {n} 失败: {e}")
             continue
-        for t in set(registry.get_all_types()) - before:
-            type_to_sub[t] = n
+
+    type_to_sub: dict[str, str] = {}
+    pkg_prefix = __name__ + "."   # 'app.executors.'
+    _subset = set(_SUBMODULES)
+    for t in registry.get_all_types():
+        try:
+            ex = registry.get(t)
+        except Exception:
+            ex = None
+        if ex is None:
+            continue
+        mod = getattr(ex.__class__, "__module__", "") or ""
+        if mod.startswith(pkg_prefix):
+            sub = mod[len(pkg_prefix):]
+            # 仅映射到清单内的真实子模块；不在清单内则回退到全量导入（返回 False 触发）
+            if sub in _subset:
+                type_to_sub[t] = sub
     try:
         _MANIFEST.write_text(
             _json.dumps({"sig": _signature(), "map": type_to_sub}, ensure_ascii=False),
