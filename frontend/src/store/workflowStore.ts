@@ -3300,11 +3300,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         break
       }
       case 'center': {
-        // 水平居中：所有节点的x坐标对齐到中心
-        const avgX = selectedNodes.reduce((sum, n) => sum + n.position.x, 0) / selectedNodes.length
+        // 水平居中：所有节点的「水平中心」对齐到统一中线。
+        // 模块条宽度不一时，必须按 x + 宽度/2 计算中心，否则只对齐左边缘 x 会变成"左对齐"。
+        const getW = (n: typeof selectedNodes[number]) =>
+          ((n as any).width as number) || (n as any).measured?.width || 0
+        const centerX = selectedNodes.reduce((sum, n) => sum + (n.position.x + getW(n) / 2), 0) / selectedNodes.length
         updatedNodes = updatedNodes.map(node => {
           if (node.selected) {
-            return { ...node, position: { ...node.position, x: avgX } }
+            return { ...node, position: { ...node.position, x: centerX - getW(node) / 2 } }
           }
           return node
         })
@@ -3336,11 +3339,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         break
       }
       case 'middle': {
-        // 垂直居中：所有节点的y坐标对齐到中心
-        const avgY = selectedNodes.reduce((sum, n) => sum + n.position.y, 0) / selectedNodes.length
+        // 垂直居中：所有节点的「垂直中心」对齐到统一中线。
+        // 节点高度不一时，必须按 y + 高度/2 计算中心，否则只对齐上边缘 y 会变成"顶对齐"。
+        const getH = (n: typeof selectedNodes[number]) =>
+          ((n as any).height as number) || (n as any).measured?.height || 0
+        const centerY = selectedNodes.reduce((sum, n) => sum + (n.position.y + getH(n) / 2), 0) / selectedNodes.length
         updatedNodes = updatedNodes.map(node => {
           if (node.selected) {
-            return { ...node, position: { ...node.position, y: avgY } }
+            return { ...node, position: { ...node.position, y: centerY - getH(node) / 2 } }
           }
           return node
         })

@@ -207,10 +207,18 @@ export function QuickModulePicker({
                     const moduleStats = getStats(module.type)
                     const Icon = module.icon
                     return (
-                      <button
+                      <div
                         key={module.type + (module.customModuleId || '')}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleModuleClick(module)}
-                        className="w-full flex items-center gap-2.5 px-2 h-8 rounded text-left hover:bg-[hsl(var(--brand-50))] group transition-colors has-hover-only"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            handleModuleClick(module)
+                          }
+                        }}
+                        className="w-full flex items-center gap-2.5 px-2 h-8 rounded text-left hover:bg-[hsl(var(--brand-50))] group transition-colors has-hover-only cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-500)/0.4)]"
                       >
                         <Icon className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0 group-hover:text-[hsl(var(--brand-600))]" />
                         <span className="flex-1 text-[12.5px] text-[hsl(var(--foreground))] truncate">
@@ -232,7 +240,7 @@ export function QuickModulePicker({
                         >
                           <Star className={cn('w-3.5 h-3.5', moduleStats.isFavorite && 'fill-current')} />
                         </button>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
