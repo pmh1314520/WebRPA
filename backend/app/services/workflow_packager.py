@@ -256,6 +256,16 @@ def _load_cfg():
     except Exception:
         return {}
 
+import re as _re
+def _col(c, fb):
+    """清洗颜色值：仅放行 #rgb/#rrggbb 与纯字母颜色名，其余回退，避免 TclError 崩溃。"""
+    c = str(c or "").strip()
+    if _re.fullmatch(r"#[0-9a-fA-F]{3}", c) or _re.fullmatch(r"#[0-9a-fA-F]{6}", c):
+        return c
+    if _re.fullmatch(r"[a-zA-Z]+", c):
+        return c
+    return fb
+
 async def _run_async(cfg):
     from app.services.workflow_runner import run_workflow
     wf_path = os.path.join(HERE, "workflow.json")
@@ -313,15 +323,29 @@ def _run_with_ui(cfg, ui):
     t = threading.Thread(target=_run_blocking, args=(cfg, holder), daemon=True)
     t.start()
 
-    theme = str(ui.get("themeColor") or "#2563eb")
+    theme = _col(ui.get("themeColor"), "#2563eb")
     title = str(ui.get("title") or "WebRPA 自动化程序")
     subtitle = str(ui.get("subtitle") or "正在为您自动执行任务，请稍候…")
     footer = str(ui.get("footer") or "")
     splash = ui.get("splashImage") or ""
 
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except Exception:
+        try:
+            t.join()
+        except Exception:
+            pass
+        res = holder.get("res") or {}
+        return 0 if res.get("success") else 1
     root.title(title)
     root.configure(bg="#ffffff")
+    # 注册主线程桥接：让后台流程里的「用户输入/选文件夹」等弹窗在主线程渲染，避免跨线程 Tcl 崩溃
+    try:
+        import app.services.packaged_ui as _pui
+        _pui.install_main_thread_bridge(root, tk)
+    except Exception:
+        pass
     try:
         root.geometry("520x360")
         root.eval("tk::PlaceWindow . center")
@@ -436,11 +460,25 @@ def _run_with_layout(cfg, ui, layout):
 
     W = int(layout.get("width", 520) or 520)
     H = int(layout.get("height", 360) or 360)
-    bg = str(layout.get("bg", "#ffffff") or "#ffffff")
+    bg = _col(layout.get("bg"), "#ffffff")
 
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except Exception:
+        try:
+            t.join()
+        except Exception:
+            pass
+        res = holder.get("res") or {}
+        return 0 if res.get("success") else 1
     root.title(str(ui.get("title") or "WebRPA 自动化程序"))
     root.configure(bg=bg)
+    # 注册主线程桥接：让后台流程里的「用户输入/选文件夹」等弹窗在主线程渲染，避免跨线程 Tcl 崩溃
+    try:
+        import app.services.packaged_ui as _pui
+        _pui.install_main_thread_bridge(root, tk)
+    except Exception:
+        pass
     try:
         root.geometry("%dx%d" % (W, H))
         root.eval("tk::PlaceWindow . center")
@@ -459,7 +497,7 @@ def _run_with_layout(cfg, ui, layout):
             x = int(w.get("x", 0)); y = int(w.get("y", 0))
             ww = int(w.get("w", 100)); hh = int(w.get("h", 28))
             if typ == "panel":
-                f = tk.Frame(root, bg=str(w.get("bg") or "#e5e7eb"))
+                f = tk.Frame(root, bg=_col(w.get("bg"), "#e5e7eb"))
                 f.place(x=x, y=y, width=ww, height=hh)
             elif typ == "image":
                 src = w.get("src") or ""
@@ -474,7 +512,7 @@ def _run_with_layout(cfg, ui, layout):
                     _imgs.append(img)
                     tk.Label(root, image=img, bg=bg).place(x=x, y=y, width=ww, height=hh)
             elif typ == "progress":
-                col = str(w.get("bg") or "#2563eb")
+                col = _col(w.get("bg"), "#2563eb")
                 canv = tk.Canvas(root, bg="#e5e7eb", highlightthickness=0)
                 canv.place(x=x, y=y, width=ww, height=hh)
                 bw = max(40, int(ww * 0.28))
@@ -486,7 +524,7 @@ def _run_with_layout(cfg, ui, layout):
                 anc = _anchor_map.get(str(w.get("align") or "left"), "w")
                 if typ == "status":
                     sv = tk.StringVar(value=str(w.get("text") or "正在运行…"))
-                    lbl = tk.Label(root, textvariable=sv, bg=bg, fg=str(w.get("color") or "#334155"), font=fnt, anchor=anc, justify="left")
+                    lbl = tk.Label(root, textvariable=sv, bg=bg, fg=_col(w.get("color"), "#334155"), font=fnt, anchor=anc, justify="left")
                     lbl.place(x=x, y=y, width=ww, height=hh)
                     status_vars.append(sv)
                 elif typ == "button":
@@ -496,12 +534,12 @@ def _run_with_layout(cfg, ui, layout):
                                 root.destroy()
                         return _cmd
                     btn = tk.Button(root, text=str(w.get("text") or "关闭"), command=_mk(),
-                                    bg=str(w.get("bg") or "#2563eb"), fg="#ffffff", relief="flat", font=fnt)
+                                    bg=_col(w.get("bg"), "#2563eb"), fg="#ffffff", relief="flat", font=fnt)
                     btn.place(x=x, y=y, width=ww, height=hh)
                 else:
-                    wbg = str(w.get("bg") or "")
+                    wbg = _col(w.get("bg"), "")
                     lbl = tk.Label(root, text=str(w.get("text") or ""), bg=(wbg if wbg and wbg != "#ffffff" else bg),
-                                   fg=str(w.get("color") or "#111827"), font=fnt, anchor=anc, justify="left")
+                                   fg=_col(w.get("color"), "#111827"), font=fnt, anchor=anc, justify="left")
                     lbl.place(x=x, y=y, width=ww, height=hh)
         except Exception:
             continue
@@ -844,10 +882,10 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
                         except Exception:
                             w["src"] = ""
                     ui_out["layout"] = {
-                        "width": int(layout.get("width", 520) or 520),
-                        "height": int(layout.get("height", 360) or 360),
+                        "width": max(200, min(1920, int(layout.get("width", 520) or 520))),
+                        "height": max(150, min(1200, int(layout.get("height", 360) or 360))),
                         "bg": str(layout.get("bg", "#ffffff") or "#ffffff")[:16],
-                        "widgets": layout["widgets"],
+                        "widgets": layout["widgets"][:200],
                     }
                 _cfg["ui"] = ui_out
         except Exception as _e:

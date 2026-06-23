@@ -255,3 +255,21 @@ async def module_required_fields():
         return {"requiredFields": result, "conditionalRequired": conditional_required_map()}
     except Exception as e:
         return {"requiredFields": {}, "conditionalRequired": {}, "error": str(e)}
+
+
+@router.get("/local-image")
+async def local_image(path: str):
+    """按本地绝对路径返回图片文件（仅限常见图片类型），供 EXE 界面设计器预览用户选择的本地图。
+    浏览器禁止从 http 源直接加载 file:// 本地文件，故由后端读取并回传。"""
+    try:
+        p = Path(path)
+    except Exception:
+        raise HTTPException(status_code=400, detail="路径无效")
+    ext = p.suffix.lower()
+    allowed = {".png": "image/png", ".gif": "image/gif", ".jpg": "image/jpeg",
+               ".jpeg": "image/jpeg", ".webp": "image/webp", ".bmp": "image/bmp", ".ico": "image/x-icon"}
+    if ext not in allowed:
+        raise HTTPException(status_code=400, detail="仅支持图片文件")
+    if not p.is_file():
+        raise HTTPException(status_code=404, detail="文件不存在")
+    return FileResponse(path=str(p), media_type=allowed[ext], filename=p.name)

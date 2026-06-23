@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { systemApi } from '@/services/api'
+import { getBackendBaseUrl } from '@/services/config'
 import { X, Type, Image as ImageIcon, Minus, Square, MousePointerClick, Activity, Trash2, Loader2, FolderOpen, Layers } from 'lucide-react'
 
 /* ============================================================
@@ -206,7 +207,7 @@ export function ExeUiDesigner({ isOpen, initial, onClose, onApply }: Props) {
     }
     if (w.type === 'image') {
       inner = w.src
-        ? <img src={`file:///${String(w.src).replace(/\\/g, '/')}`} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none' }} />
+        ? <img src={`${getBackendBaseUrl()}/api/system/local-image?path=${encodeURIComponent(String(w.src))}`} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none' }} />
         : <span style={{ fontSize: 11, color: '#94a3b8' }}>图片（选择 PNG/GIF）</span>
       return <div key={w.id} style={{ ...common, justifyContent: 'center' }} onMouseDown={(e) => onWidgetMouseDown(e, w)}>{inner}</div>
     }
