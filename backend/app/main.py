@@ -352,12 +352,17 @@ async def startup_event():
         def on_new_image(img: Image.Image):
             """检测到新图片时的回调"""
             try:
+                import time as _time
                 # 通过 WebSocket 通知所有连接的前端
+                # 注意：本回调运行在剪贴板监控的后台线程里，绝不能调用
+                # asyncio.get_event_loop()（Python 3.12+ 在无事件循环的子线程会抛
+                # RuntimeError，导致整个 emit 被吞掉、前端永远收不到通知）。
+                # 时间戳改用线程安全的 time.time()。
                 asyncio.run_coroutine_threadsafe(
                     sio.emit('clipboard:new_image', {
                         'width': img.width,
                         'height': img.height,
-                        'timestamp': asyncio.get_event_loop().time()
+                        'timestamp': _time.time()
                     }, to=None),  # 广播给所有客户端
                     loop
                 )

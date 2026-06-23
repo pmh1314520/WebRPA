@@ -379,7 +379,7 @@ export function ScheduledTaskConfig({ data, onChange }: ConfigProps) {
         </Select>
         <p className="text-xs text-muted-foreground">
           本模块会"等待"到设定的时间点 / 延迟结束后，再继续往下执行（用于流程内定时门控）。
-          若要把整条工作流注册成周期计划任务，请用底栏的「计划任务」面板。
+          若要把整条工作流注册成周期计划任务，请在顶部工具栏「更多」菜单（⋯）中打开「计划任务」面板。
         </p>
       </div>
 
