@@ -628,10 +628,17 @@ def build_launcher_script(runtime_dirname: str = "webrpa_runtime",
                           show_console: bool = True) -> str:
     """生成 _launcher.py（被 PyInstaller 编译成 <名称>.exe 的极小启动器）。
     它只负责用运行时 python 启动 run_packaged.py——重活在运行时里，启动器无重依赖、编译快而稳。
-    兼容两种布局：portable（自带 runtime/python）与 shared（读 WEBRPA_HOME.txt 用本机 WebRPA 的 python）。"""
+    兼容两种布局：portable（自带 runtime/python）与 shared（读 WEBRPA_HOME.txt 用本机 WebRPA 的 python）。
+
+    关键：当隐藏控制台（show_console=False，含自定义界面场景）时，必须用 pythonw.exe
+    （无控制台子系统）并加 CREATE_NO_WINDOW，否则用 python.exe 会被 Windows 另分配一个
+    黑色终端窗口（即使本启动器是 --noconsole）。"""
+    hide_flag = "False" if show_console else "True"
     return f'''# -*- coding: utf-8 -*-
 """WebRPA 打包工作流启动器（极小引导，调用同目录运行时执行工作流）。"""
 import os, sys, subprocess
+
+_HIDE = {hide_flag}
 
 def _base():
     if getattr(sys, "frozen", False):
@@ -639,8 +646,10 @@ def _base():
     return os.path.dirname(os.path.abspath(__file__))
 
 def _resolve_python(rt):
+    # 隐藏控制台时优先 pythonw.exe（无控制台），否则优先 python.exe
+    cands = ("pythonw.exe", "python.exe") if _HIDE else ("python.exe", "pythonw.exe")
     # 1) portable：自带运行时 python
-    for exe in ("python.exe", "pythonw.exe"):
+    for exe in cands:
         p = os.path.join(rt, "python", exe)
         if os.path.exists(p):
             return p
@@ -651,9 +660,10 @@ def _resolve_python(rt):
             with open(home_file, "r", encoding="utf-8") as f:
                 home = f.read().strip()
             for d in ("Python313", "python313"):
-                p = os.path.join(home, d, "python.exe")
-                if os.path.exists(p):
-                    return p
+                for exe in cands:
+                    p = os.path.join(home, d, exe)
+                    if os.path.exists(p):
+                        return p
         except Exception:
             pass
     return None
@@ -664,13 +674,17 @@ def main():
     runner = os.path.join(rt, "run_packaged.py")
     py = _resolve_python(rt)
     if not py or not os.path.exists(runner):
-        print("运行时缺失，无法启动。请确保 {runtime_dirname} 目录与本程序在一起。")
-        try:
-            input("按回车退出...")
-        except Exception:
-            pass
+        if not _HIDE:
+            print("运行时缺失，无法启动。请确保 {runtime_dirname} 目录与本程序在一起。")
+            try:
+                input("按回车退出...")
+            except Exception:
+                pass
         return 1
-    return subprocess.call([py, runner], cwd=rt)
+    creationflags = 0
+    if _HIDE and os.name == "nt":
+        creationflags = 0x08000000   # CREATE_NO_WINDOW：彻底不分配控制台
+    return subprocess.call([py, runner], cwd=rt, creationflags=creationflags)
 
 if __name__ == "__main__":
     sys.exit(main())
@@ -958,17 +972,32 @@ def _build_launcher(dist: Path, runtime: Path, name: str, show_console: bool,
     # 始终生成 bat 兜底（保证可运行）
     py_rel = "webrpa_runtime\\python\\python.exe" if mode == "portable" else None
     bat = dist / "启动.bat"
+    # 隐藏控制台（含自定义界面）时用 pythonw.exe + start，让黑窗不出现
+    pyexe = "pythonw.exe" if not show_console else "python.exe"
     if mode == "portable":
-        bat.write_text(
-            "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n"
-            "\"webrpa_runtime\\python\\python.exe\" \"webrpa_runtime\\run_packaged.py\"\r\n",
-            encoding="utf-8")
+        if show_console:
+            bat.write_text(
+                "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n"
+                "\"webrpa_runtime\\python\\python.exe\" \"webrpa_runtime\\run_packaged.py\"\r\n",
+                encoding="utf-8")
+        else:
+            bat.write_text(
+                "@echo off\r\ncd /d \"%~dp0\"\r\n"
+                "start \"\" \"webrpa_runtime\\python\\pythonw.exe\" \"webrpa_runtime\\run_packaged.py\"\r\n",
+                encoding="utf-8")
     else:
-        bat.write_text(
-            "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n"
-            "for /f \"usebackq delims=\" %%p in (\"webrpa_runtime\\WEBRPA_HOME.txt\") do set WRH=%%p\r\n"
-            "\"%WRH%\\Python313\\python.exe\" \"webrpa_runtime\\run_packaged.py\"\r\n",
-            encoding="utf-8")
+        if show_console:
+            bat.write_text(
+                "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n"
+                "for /f \"usebackq delims=\" %%p in (\"webrpa_runtime\\WEBRPA_HOME.txt\") do set WRH=%%p\r\n"
+                "\"%WRH%\\Python313\\python.exe\" \"webrpa_runtime\\run_packaged.py\"\r\n",
+                encoding="utf-8")
+        else:
+            bat.write_text(
+                "@echo off\r\ncd /d \"%~dp0\"\r\n"
+                "for /f \"usebackq delims=\" %%p in (\"webrpa_runtime\\WEBRPA_HOME.txt\") do set WRH=%%p\r\n"
+                "start \"\" \"%WRH%\\Python313\\pythonw.exe\" \"webrpa_runtime\\run_packaged.py\"\r\n",
+                encoding="utf-8")
 
     # 尝试 PyInstaller（仅当已安装；不在打包流程里自动联网安装，避免长时间卡住）
     try:

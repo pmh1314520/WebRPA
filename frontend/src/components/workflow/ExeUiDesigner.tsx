@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { systemApi } from '@/services/api'
 import { getBackendBaseUrl } from '@/services/config'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { X, Type, Image as ImageIcon, Minus, Square, MousePointerClick, Activity, Trash2, Loader2, FolderOpen, Layers } from 'lucide-react'
 
 /* ============================================================
@@ -264,10 +265,8 @@ export function ExeUiDesigner({ isOpen, initial, onClose, onApply }: Props) {
               <input type="number" className="w-full px-2 py-1 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))] text-[12px]"
                 value={layout.height} onChange={(e) => setLayout((L) => ({ ...L, height: Math.max(150, parseInt(e.target.value) || 360) }))} />
               <label className="text-[11px] text-[hsl(var(--muted-foreground))] px-1">背景色</label>
-              <div className="flex items-center gap-1.5 px-1">
-                <input type="text" className="flex-1 px-2 py-1 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))] text-[12px]"
-                  value={layout.bg} onChange={(e) => setLayout((L) => ({ ...L, bg: e.target.value }))} />
-                <span className="w-6 h-6 rounded border border-[hsl(var(--border))]" style={{ background: layout.bg }} />
+              <div className="px-1">
+                <ColorPicker value={layout.bg} onChange={(v) => setLayout((L) => ({ ...L, bg: v }))} />
               </div>
             </div>
           </div>
@@ -329,21 +328,13 @@ export function ExeUiDesigner({ isOpen, initial, onClose, onApply }: Props) {
                 {(sel.type === 'text' || sel.type === 'status') && (
                   <div>
                     <label className="text-[10.5px] text-[hsl(var(--muted-foreground))]">文字颜色</label>
-                    <div className="flex items-center gap-1.5">
-                      <input type="text" className="flex-1 px-2 py-1 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
-                        value={sel.color || '#111827'} onChange={(e) => updateWidget(sel.id, { color: e.target.value })} />
-                      <span className="w-6 h-6 rounded border border-[hsl(var(--border))]" style={{ background: sel.color }} />
-                    </div>
+                    <ColorPicker value={sel.color || '#111827'} onChange={(v) => updateWidget(sel.id, { color: v })} />
                   </div>
                 )}
                 {(sel.type === 'panel' || sel.type === 'progress' || sel.type === 'button') && (
                   <div>
                     <label className="text-[10.5px] text-[hsl(var(--muted-foreground))]">{sel.type === 'progress' ? '进度条颜色' : sel.type === 'button' ? '按钮颜色' : '填充色'}</label>
-                    <div className="flex items-center gap-1.5">
-                      <input type="text" className="flex-1 px-2 py-1 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
-                        value={sel.bg || '#2563eb'} onChange={(e) => updateWidget(sel.id, { bg: e.target.value })} />
-                      <span className="w-6 h-6 rounded border border-[hsl(var(--border))]" style={{ background: sel.bg }} />
-                    </div>
+                    <ColorPicker value={sel.bg || '#2563eb'} onChange={(v) => updateWidget(sel.id, { bg: v })} />
                   </div>
                 )}
                 {sel.type === 'image' && (

@@ -3,6 +3,7 @@ import { getBackendBaseUrl } from '@/services/config'
 import { systemApi } from '@/services/api'
 import { SelectNative } from '@/components/ui/select-native'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { ExeUiDesigner, type ExeLayout } from './ExeUiDesigner'
 import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen, Ban, Square, Layers } from 'lucide-react'
 
@@ -260,10 +261,8 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
                   </div>
                   <div>
                     <label className="text-xs text-[hsl(var(--muted-foreground))]">主题色</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input type="text" className="flex-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
-                        value={uiTheme} onChange={e => setUiTheme(e.target.value)} placeholder="#2563eb" />
-                      <span className="w-7 h-7 rounded-md border border-[hsl(var(--border))] flex-shrink-0" style={{ background: uiTheme }} />
+                    <div className="mt-1">
+                      <ColorPicker value={uiTheme} onChange={setUiTheme} />
                     </div>
                   </div>
                 </div>
