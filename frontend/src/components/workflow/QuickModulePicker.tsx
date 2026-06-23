@@ -12,6 +12,7 @@ import { X, Search, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModuleStatsStore } from '@/store/moduleStatsStore'
 import { pinyinMatch } from '@/lib/pinyin'
+import { moduleKeywords } from './ModuleSidebar'
 import type { ModuleType } from '@/types'
 
 interface QuickModulePickerProps {
@@ -100,6 +101,7 @@ export function QuickModulePicker({
           (m) =>
             pinyinMatch(m.label, term) ||
             pinyinMatch(m.category, term) ||
+            (moduleKeywords[m.type as ModuleType] || []).some((kw) => pinyinMatch(kw, term)) ||
             m.type.toLowerCase().includes(termLower),
         )
       }

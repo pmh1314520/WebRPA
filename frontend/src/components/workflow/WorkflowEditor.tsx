@@ -25,6 +25,7 @@ import { usePasswordPrompt } from '@/components/ui/password-prompt'
 import { ModuleNode } from './ModuleNode'
 import { QuickModulePicker } from './QuickModulePicker'
 import { getAllAvailableModules } from './ModuleSidebar'
+import { pinyinMatch } from '@/lib/pinyin'
 import { useModuleStatsStore } from '@/store/moduleStatsStore'
 import { GroupNode } from './GroupNode'
 import { SubflowHeaderNode } from './SubflowHeaderNode'
@@ -85,7 +86,7 @@ function ModuleSearch({
       return
     }
 
-    const query = searchQuery.toLowerCase()
+    const query = searchQuery.trim()
     const results = nodes.filter(node => {
       // 排除分组、便签和子流程头节点
       if (node.type === 'groupNode' || node.type === 'noteNode' || node.type === 'subflowHeaderNode') {
@@ -93,12 +94,13 @@ function ModuleSearch({
       }
       
       const data = node.data as NodeData
-      const label = String(data.label || '').toLowerCase()
-      const remark = String(data.remark || '').toLowerCase()
-      const name = String(data.name || '').toLowerCase()
-      const nodeName = String(data.nodeName || '').toLowerCase()
+      const label = String(data.label || '')
+      const remark = String(data.remark || '')
+      const name = String(data.name || '')
+      const nodeName = String(data.nodeName || '')
       
-      return label.includes(query) || remark.includes(query) || name.includes(query) || nodeName.includes(query)
+      // 支持中文 / 拼音全拼 / 拼音首字母 / 英文
+      return pinyinMatch(label, query) || pinyinMatch(remark, query) || pinyinMatch(name, query) || pinyinMatch(nodeName, query)
     })
 
     setSearchResults(results)
