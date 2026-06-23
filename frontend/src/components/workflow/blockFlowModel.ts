@@ -309,6 +309,34 @@ export function createBlock(type: ModuleType, extraData?: Partial<NodeData>): Bl
   return { kind: 'step', id, node }
 }
 
+/**
+ * 深拷贝一个块（含其所有分支/循环体/并行分支），为整棵子树重新生成全新 id。
+ * 用于模块条的复制/粘贴：粘贴出的块与原块完全独立、可重复粘贴而不冲突。
+ * flowStart 一律置为 false —— 粘贴进来的块不应擅自把自己变成新的独立流程起点，
+ * 是否成为流程起点由插入位置决定。
+ */
+export function cloneBlock(b: Block): Block {
+  const newId = nanoid()
+  const node: Node<NodeData> = {
+    ...b.node,
+    id: newId,
+    position: { ...b.node.position },
+    // 深拷贝 data，避免粘贴块与源块共享同一配置对象（改一个连带改另一个）
+    data: JSON.parse(JSON.stringify(b.node.data)) as NodeData,
+    selected: false,
+  }
+  if (b.kind === 'if') {
+    return { kind: 'if', id: newId, node, then: b.then.map(cloneBlock), els: b.els.map(cloneBlock), flowStart: false }
+  }
+  if (b.kind === 'loop') {
+    return { kind: 'loop', id: newId, node, body: b.body.map(cloneBlock), flowStart: false }
+  }
+  if (b.kind === 'parallel') {
+    return { kind: 'parallel', id: newId, node, branches: b.branches.map((br) => br.map(cloneBlock)), flowStart: false }
+  }
+  return { kind: 'step', id: newId, node, flowStart: false }
+}
+
 // ---------- 结构树编辑（纯函数，返回新树） ----------
 
 type Found = { list: Block[]; index: number } | null

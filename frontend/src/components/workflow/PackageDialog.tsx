@@ -216,6 +216,18 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
             )}
           </div>
 
+          {/* 资源引用说明：告诉用户 Excel / 图片等资源在打包后如何被引用，何时需要重打包 */}
+          <div className="text-xs px-3 py-2.5 rounded-md border border-[hsl(var(--brand-500)/0.25)] bg-[hsl(var(--brand-50)/0.5)] space-y-1.5 leading-relaxed">
+            <div className="font-semibold text-[hsl(var(--brand-700))]">关于流程里的资源（Excel / 图片等）打包后如何引用</div>
+            <div className="text-[hsl(var(--slate-600))]">
+              <span className="font-medium text-[hsl(var(--slate-700))]">· 外部绝对路径引用</span>（如 <code className="px-1 rounded bg-[hsl(var(--muted))]">D:\data\报表.xlsx</code>）：exe 运行时直接读该路径的文件，<span className="font-medium">换文件不用重新打包</span>。资源内容会经常变动时，推荐这种方式。
+            </div>
+            <div className="text-[hsl(var(--slate-600))]">
+              <span className="font-medium text-[hsl(var(--slate-700))]">· WebRPA 上传资源</span>（来自「资源 / 图像」面板）：打包时会被一起冻结进程序目录的 <code className="px-1 rounded bg-[hsl(var(--muted))]">runtime/uploads</code> 里。要更新内容时，<span className="font-medium">默认需重新打包</span>；也可免打包——到输出目录的 <code className="px-1 rounded bg-[hsl(var(--muted))]">runtime/uploads</code> 对应子目录里用同名文件覆盖即可（路径不变就生效）。
+            </div>
+            <div className="text-[hsl(var(--slate-500))]">提示：资源会频繁更新就用外部固定路径引用，以后只换文件、永不重打包。</div>
+          </div>
+
           {job && (
             <div className="px-3 py-2.5 rounded-md border border-[hsl(var(--border))] space-y-2">
               {job.status === 'success' ? (

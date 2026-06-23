@@ -16,8 +16,13 @@ import type { ModuleType } from '@/types'
 import {
   parseGraphToBlocks, generateGraphFromBlocks, createBlock,
   insertAfter, insertBefore, insertIntoContainer, removeBlock, moveBlock, moveBlockTo,
+  cloneBlock,
   type Block,
 } from './blockFlowModel'
+
+// 模块条复制粘贴的会话级剪贴板（跨组件重渲染保留；存的是已换新 id 的快照，
+// 每次粘贴时再 clone 一次，保证可重复粘贴且 id 不冲突）
+let blockClipboard: Block[] = []
 
 // 插入目标：在某 block 之前/之后，或插入某容器的分支/循环体
 type PickerTarget =
@@ -232,7 +237,45 @@ export function BlockFlowView() {
     }
   }
 
-  // 键盘操作：↑/↓ 选择，Enter 在下方插入，Delete 删除，Ctrl+/ 折叠当前容器
+  // —— 模块条复制 / 粘贴 ——
+  // 收集"顶层选中块"（若某块的祖先也被选中，则只保留祖先，避免重复复制），按可见顺序
+  const collectTopLevelSelected = (seq: Block[], sel: Set<string>, out: Block[]) => {
+    for (const b of seq) {
+      if (sel.has(b.id)) { out.push(b); continue } // 命中即收，不再深入其子树
+      if (b.kind === 'if') { collectTopLevelSelected(b.then, sel, out); collectTopLevelSelected(b.els, sel, out) }
+      else if (b.kind === 'loop') collectTopLevelSelected(b.body, sel, out)
+      else if (b.kind === 'parallel') b.branches.forEach((br) => collectTopLevelSelected(br, sel, out))
+    }
+  }
+  const handleCopy = () => {
+    const sel: Set<string> = selectedIds.size > 0 ? selectedIds : (selectedNodeId ? new Set([selectedNodeId]) : new Set())
+    if (sel.size === 0) return
+    const picked: Block[] = []
+    collectTopLevelSelected(blocks, sel, picked)
+    if (picked.length === 0) return
+    blockClipboard = picked.map(cloneBlock) // 存独立 id 的快照
+  }
+  const handlePaste = () => {
+    if (blockClipboard.length === 0) return
+    const fresh = blockClipboard.map(cloneBlock) // 每次粘贴再换新 id，可重复粘贴
+    const newIds = fresh.map((b) => b.id)
+    applyEdit((tree) => {
+      let t = tree
+      // 锚点：当前选中块之后（同层）；无选中则追加到顶层末尾
+      let afterId: string | null = selectedNodeId || null
+      for (const blk of fresh) {
+        t = insertAfter(t, afterId, blk)
+        afterId = blk.id
+      }
+      return t
+    })
+    // 选中粘贴出来的块，方便连续操作
+    setSelectedIds(new Set(newIds))
+    const last = newIds[newIds.length - 1]
+    if (last) { selectNode(last); lastClickedRef.current = last }
+  }
+
+  // 键盘操作：↑/↓ 选择，Enter 在下方插入，Delete 删除，Ctrl+/ 折叠当前容器，Ctrl+C/V 复制粘贴
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
@@ -252,6 +295,27 @@ export function BlockFlowView() {
         e.preventDefault()
         const targets = selectedIds.size > 0 ? Array.from(selectedIds) : (selectedNodeId ? [selectedNodeId] : [])
         if (targets.length > 0) toggleNodesDisabled(targets)
+        return
+      }
+      // Ctrl+C 复制选中模块（含其分支/循环体）
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault()
+        handleCopy()
+        return
+      }
+      // Ctrl+V 粘贴到当前选中模块之后（无选中则追加到末尾）
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault()
+        handlePaste()
+        return
+      }
+      // Ctrl+X 剪切 = 复制 + 删除
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
+        e.preventDefault()
+        handleCopy()
+        const targets = selectedIds.size > 0 ? Array.from(selectedIds) : (selectedNodeId ? [selectedNodeId] : [])
+        if (targets.length > 1) handleDeleteMany(targets)
+        else if (targets.length === 1) handleDelete(targets[0])
         return
       }
       if (e.key === 'ArrowDown') {
@@ -603,7 +667,7 @@ export function BlockFlowView() {
               {selectedIds.size > 0 && (
                 <span className="ml-2 text-[11px] font-semibold text-[hsl(var(--brand-600))]">已选 {selectedIds.size}</span>
               )}
-              <span className="hidden lg:inline ml-2 text-[10.5px] text-[hsl(var(--slate-400))]">↑↓ 选择 · Enter 插入 · Ctrl+A 全选 · Ctrl 点选/Shift 范围 · Ctrl+D 禁用 · Delete 删除 · Ctrl+/ 折叠</span>
+              <span className="hidden lg:inline ml-2 text-[10.5px] text-[hsl(var(--slate-400))]">↑↓ 选择 · Enter 插入 · Ctrl+A 全选 · Ctrl 点选/Shift 范围 · Ctrl+C/V 复制粘贴 · Ctrl+X 剪切 · Ctrl+D 禁用 · Delete 删除 · Ctrl+/ 折叠</span>
             </span>
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-1">
