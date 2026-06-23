@@ -237,6 +237,15 @@ export const localWorkflowApi = {
     apiRequest('/local-workflows/import', { method: 'POST', body: JSON.stringify(data) }),
   export: (id: string) => apiRequest(`/local-workflows/${id}/export`),
   getDefaultFolder: () => apiRequest('/local-workflows/default-folder'),
+  // 自愈固化（健康基线）开关
+  getSelfHeal: (filename: string, folder?: string) =>
+    apiRequest<{ success: boolean; enabled: boolean; selfHeal?: any; error?: string }>(
+      `/local-workflows/self-heal/${encodeURIComponent(filename)}${folder ? `?folder=${encodeURIComponent(folder)}` : ''}`
+    ),
+  setSelfHeal: (filename: string, enabled: boolean, folder?: string) =>
+    apiRequest<{ success: boolean; enabled: boolean; error?: string }>(
+      '/local-workflows/self-heal', { method: 'POST', body: JSON.stringify({ filename, enabled, folder }) }
+    ),
 }
 
 // ==================== 执行器 API ====================

@@ -220,6 +220,85 @@ async def list_workflows(config: WorkflowFolderConfig):
 
 
 
+def _preserve_self_heal(filepath: str, content):
+    """编辑器保存会整体覆盖文件，这里把已存在的 selfHeal（自愈固化开关/统计）
+    在新内容缺失该字段时保留下来，避免一保存就把自愈固化设置清掉。"""
+    try:
+        if not isinstance(content, dict):
+            return content
+        if content.get('selfHeal') is not None:
+            return content
+        import os as _os
+        if filepath and _os.path.isfile(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                old = json.load(f)
+            if isinstance(old, dict) and old.get('selfHeal') is not None:
+                content = dict(content)
+                content['selfHeal'] = old['selfHeal']
+    except Exception:
+        pass
+    return content
+
+
+class SelfHealToggleRequest(BaseModel):
+    filename: str
+    enabled: bool
+    folder: str | None = None
+
+
+@router.post("/self-heal")
+async def set_self_heal(request: SelfHealToggleRequest):
+    """开启/关闭某工作流的"自愈固化（健康基线）"。开启后，定时/发布/打包运行时
+    若发生元素选择器自愈，将把修复结果持久化回该工作流文件（保留旧版本+发通知）。"""
+    folder = request.folder if request.folder else DEFAULT_WORKFLOW_FOLDER
+    filename = _sanitize_filename(request.filename)
+    if not filename:
+        return {"success": False, "error": "文件名无效"}
+    if not filename.endswith('.json'):
+        filename += '.json'
+    filepath = _safe_resolve_in_folder(folder, filename)
+    if not filepath:
+        return {"success": False, "error": "文件路径不安全"}
+    import os as _os
+    if not _os.path.isfile(filepath):
+        return {"success": False, "error": "工作流文件不存在"}
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {"success": False, "error": "工作流文件格式异常"}
+        sh = data.get('selfHeal') or {}
+        sh['enabled'] = bool(request.enabled)
+        data['selfHeal'] = sh
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return {"success": True, "enabled": bool(request.enabled), "selfHeal": sh}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.get("/self-heal/{filename:path}")
+async def get_self_heal(filename: str, folder: str = None):
+    """读取某工作流的自愈固化状态。"""
+    fld = folder if folder else DEFAULT_WORKFLOW_FOLDER
+    safe = _sanitize_filename(filename)
+    if not safe:
+        return {"success": False, "error": "文件名无效"}
+    if not safe.endswith('.json'):
+        safe += '.json'
+    filepath = _safe_resolve_in_folder(fld, safe)
+    import os as _os
+    if not filepath or not _os.path.isfile(filepath):
+        return {"success": True, "enabled": False, "selfHeal": {}}
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        sh = (data.get('selfHeal') or {}) if isinstance(data, dict) else {}
+        return {"success": True, "enabled": bool(sh.get('enabled')), "selfHeal": sh}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @router.post("/save")
 async def save_workflow(request: SaveWorkflowRequest):
     """保存工作流到指定文件夹（folder 字段可选）"""
@@ -240,8 +319,9 @@ async def save_workflow(request: SaveWorkflowRequest):
         return {"success": False, "error": "文件路径不安全"}
     
     try:
+        content = _preserve_self_heal(filepath, request.content)
         with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(request.content, f, ensure_ascii=False, indent=2)
+            json.dump(content, f, ensure_ascii=False, indent=2)
         
         return {"success": True, "filepath": filepath, "filename": filename}
     
@@ -285,6 +365,7 @@ async def save_workflow_to_folder(request: SaveWorkflowRequest):
         return {"success": False, "error": "文件路径不安全"}
     
     try:
+        content = _preserve_self_heal(filepath, content)
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(content, f, ensure_ascii=False, indent=2)
         

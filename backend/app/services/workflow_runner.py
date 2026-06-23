@@ -66,6 +66,12 @@ async def _run_once(workflow_data: dict[str, Any], headless: bool = True) -> dic
             final_vars = dict(getattr(executor.context, "variables", {}) or {})
         except Exception:
             final_vars = {}
+        # 运行时锚点自愈得到的选择器修复记录（供"自愈固化"持久化回写）
+        healed_selectors: list = []
+        try:
+            healed_selectors = list(getattr(executor.context, "_healed_selectors", []) or [])
+        except Exception:
+            healed_selectors = []
         logs = []
         try:
             if hasattr(executor, "logger") and hasattr(executor.logger, "logs"):
@@ -87,6 +93,7 @@ async def _run_once(workflow_data: dict[str, Any], headless: bool = True) -> dic
             "collected_data": collected,
             "variables": final_vars,
             "logs": logs,
+            "healed_selectors": healed_selectors,
         }
     finally:
         try:
@@ -144,6 +151,18 @@ async def run_workflow(
     duration_ms = int((time.time() - start_ts) * 1000)
     last["attempts"] = attempts
     last["duration_ms"] = duration_ms
+
+    # 自愈固化：本次运行若发生了锚点自愈（选择器失效→自动重定位成功），
+    # 且工作流开启了"自愈固化（健康基线）"，则把新选择器持久化回工作流文件
+    # （保留旧版本 + 写说明便签 + 发通知），下次运行直接命中、无需再次 AI。
+    # 仅对本地文件来源、非编辑器运行生效（编辑器实时运行走前端回写画布）。
+    try:
+        healed = last.get("healed_selectors") or []
+        if healed and source_tag != "editor":
+            from app.services.self_heal_persist import persist_self_heal
+            persist_self_heal(source, healed, wf_name=wf_name)
+    except Exception as e:
+        print(f"[workflow_runner] 自愈固化失败: {e}")
 
     # 记录历史 + 告警
     if record:

@@ -25,6 +25,8 @@ export function TaskCreateDialog({ open, onClose }: TaskCreateDialogProps) {
   const [description, setDescription] = useState('')
   const [workflowId, setWorkflowId] = useState('')
   const [workflowName, setWorkflowName] = useState('')
+  // 自愈固化（健康基线）：开启后定时运行遇元素失效会自动修复并固化工作流（下次零 AI）
+  const [selfHeal, setSelfHeal] = useState(false)
   
   // 工作流列表
   const [workflows, setWorkflows] = useState<any[]>([])
@@ -98,6 +100,20 @@ export function TaskCreateDialog({ open, onClose }: TaskCreateDialogProps) {
     const workflow = workflows.find(w => w.filename === filename)
     if (workflow) {
       setWorkflowName(workflow.name)
+    }
+    // 读取该工作流当前的"自愈固化"状态
+    setSelfHeal(false)
+    if (filename) {
+      localWorkflowApi.getSelfHeal(filename).then((r) => {
+        if (r?.data?.success) setSelfHeal(!!r.data.enabled)
+      }).catch(() => {})
+    }
+  }
+  // 切换自愈固化：立即写回工作流文件
+  const handleToggleSelfHeal = (v: boolean) => {
+    setSelfHeal(v)
+    if (workflowId) {
+      localWorkflowApi.setSelfHeal(workflowId, v).catch(() => {})
     }
   }
   
@@ -399,6 +415,21 @@ export function TaskCreateDialog({ open, onClose }: TaskCreateDialogProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* 自愈固化（健康基线）—— 这就是比影刀强的地方 */}
+          {workflowId && (
+            <div className="flex items-start justify-between gap-3 p-3 rounded-lg border border-[hsl(var(--brand-500)/0.25)] bg-[hsl(var(--brand-50)/0.5)]">
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-semibold text-[hsl(var(--brand-700))]">自愈固化（健康基线）</div>
+                <div className="text-[11.5px] text-[hsl(var(--slate-500))] mt-0.5 leading-relaxed">
+                  开启后，定时运行时若网站改版导致元素失效，WebRPA 会自动按语义锚点重定位并
+                  <span className="font-medium">把修复结果固化进流程（保留旧版本、发通知、写便签）</span>，
+                  下次运行直接命中、无需每次等 AI。
+                </div>
+              </div>
+              <Switch checked={selfHeal} onCheckedChange={handleToggleSelfHeal} />
+            </div>
+          )}
           
           {/* 触发器类型 */}
           <div className="space-y-2">
