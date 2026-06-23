@@ -417,10 +417,12 @@ button:disabled {
    但 z-index:auto。页面中任何带正 z-index 的定位元素（侧栏/配置面板/画布/弹窗）
    都会盖在它上面，导致"点开下拉却看不到展开内容"。把原生 <select> 换成自定义
    Radix 下拉后此问题暴露（原生下拉由浏览器顶层渲染，不受 z-index 影响）。
-   这里统一给 wrapper 一个极高 z-index，一次性修好全站所有 Radix 浮层。
+   注意：本项目的模态弹窗遮罩用的是接近 int 上限的 z-index（如 2147483646），
+   因此这里必须用 z-index 的最大值 2147483647，才能保证下拉浮层显示在弹窗之上；
+   同为最大值时由 DOM 先后顺序决定（浮层后插入 → 在最上层）。
    ============================================================ */
 [data-radix-popper-content-wrapper] {
-  z-index: 2147483600 !important;
+  z-index: 2147483647 !important;
 }
 /* Radix Select / Popover / DropdownMenu / Tooltip 等内容层兜底 */
 [data-radix-select-content],
@@ -429,7 +431,7 @@ button:disabled {
 [data-radix-menu-content],
 [data-radix-tooltip-content],
 [data-radix-hover-card-content] {
-  z-index: 2147483600 !important;
+  z-index: 2147483647 !important;
 }
 
 /* ============================================================
