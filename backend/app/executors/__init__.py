@@ -24,6 +24,7 @@ _SUBMODULES = [
     'advanced_image', 'advanced_keyboard', 'advanced_pillow', 'control', 'control_extended',
     'math_list_ops', 'list_advanced', 'dict_advanced', 'math_advanced', 'statistics',
     'string_convert', 'captcha', 'data_structure', 'ai', 'ai_tasks', 'ai_firecrawl',
+    'ai_scraper',
     'table', 'subflow', 'database', 'media', 'media_record', 'media_m3u8', 'media_ytdlp',
     'qq', 'wechat', 'pdf_ops', 'pdf_convert', 'document_convert', 'screen_share', 'trigger',
     'utility_tools', 'desktop_automation', 'desktop_advanced', 'format_factory', 'python_script',

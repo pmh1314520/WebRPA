@@ -212,3 +212,50 @@ class AllureGenerateReportExecutor(ModuleExecutor):
             return ModuleResult(success=True, message=f"已生成Allure测试报告: {report_path}", data={"report_path": report_path})
         except Exception as e:
             return ModuleResult(success=False, error=f"生成报告失败: {str(e)}")
+
+
+@register_executor
+class AllureAddAttachmentExecutor(ModuleExecutor):
+    """Allure 添加附件执行器：把本地文件（截图/日志/文本等）附加到当前测试用例，
+    生成报告时会内嵌展示（图片直接预览，文本截取展示）。"""
+
+    @property
+    def module_type(self) -> str:
+        return "allure_add_attachment"
+
+    async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
+        suite_id = context.get_variable("allure_suite_id")
+        if not suite_id or suite_id not in _ALLURE_SUITE_STORE:
+            return ModuleResult(success=False, error="未找到初始化的Allure测试套件，请先调用Allure初始化模块")
+
+        suite = _ALLURE_SUITE_STORE[suite_id]
+        current_test = suite.get("current_test")
+        if not current_test:
+            return ModuleResult(success=False, error="当前没有正在运行的测试用例，请先调用「开始测试用例」")
+
+        file_path = context.resolve_value(config.get("filePath") or config.get("path") or config.get("file") or "")
+        file_path = str(file_path).strip().strip('"')
+        if not file_path:
+            return ModuleResult(success=False, error="未指定附件文件路径")
+        if not os.path.isfile(file_path):
+            return ModuleResult(success=False, error=f"附件文件不存在：{file_path}")
+
+        name = context.resolve_value(config.get("name") or "")
+        name = str(name).strip() or os.path.basename(file_path)
+
+        # 按扩展名推断 MIME（报告生成器按 image/* 内嵌预览、text/* 截取展示）
+        ext = os.path.splitext(file_path)[1].lower()
+        mime_map = {
+            ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".gif": "image/gif", ".bmp": "image/bmp", ".webp": "image/webp",
+            ".txt": "text/plain", ".log": "text/plain", ".json": "text/plain",
+            ".csv": "text/plain", ".xml": "text/plain", ".md": "text/plain",
+            ".html": "text/html", ".htm": "text/html",
+        }
+        mime = mime_map.get(ext, "text/plain")
+
+        # source 直接存绝对路径：报告生成时 results_dir / source 会解析为该绝对路径并读取
+        current_test.setdefault("attachments", []).append({
+            "name": name, "source": file_path, "type": mime,
+        })
+        return ModuleResult(success=True, message=f"已添加附件：{name}")
