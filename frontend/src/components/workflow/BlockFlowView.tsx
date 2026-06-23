@@ -110,6 +110,8 @@ export function BlockFlowView() {
   // 多选（像资源管理器：单击单选 / Ctrl 切换 / Shift 范围 / Ctrl+A 全选）
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const lastClickedRef = useRef<string | null>(null)
+  // 鼠标当前悬停的插入点（用于"粘贴到这两个模块之间"而非永远粘到底部）
+  const hoverTargetRef = useRef<PickerTarget | null>(null)
 
   const blocks = useMemo(() => parseGraphToBlocks(nodes, edges), [nodes, edges])
   const [picker, setPicker] = useState<{ target: PickerTarget; x: number; y: number } | null>(null)
@@ -292,17 +294,27 @@ export function BlockFlowView() {
     if (picked.length === 0) return
     blockClipboard = picked.map(cloneBlock) // 存独立 id 的快照
   }
-  const handlePaste = () => {
+  const handlePaste = (target?: PickerTarget) => {
     if (blockClipboard.length === 0) return
     const fresh = blockClipboard.map(cloneBlock) // 每次粘贴再换新 id，可重复粘贴
     const newIds = fresh.map((b) => b.id)
+    // 插入目标优先级：显式传入 > 鼠标悬停的插入点（粘到两模块之间） > 当前选中块之后 > 顶层末尾
+    const tgt: PickerTarget = target
+      || hoverTargetRef.current
+      || (selectedNodeId ? { mode: 'after', id: selectedNodeId } : { mode: 'after', id: null })
     applyEdit((tree) => {
       let t = tree
-      // 锚点：当前选中块之后（同层）；无选中则追加到顶层末尾
-      let afterId: string | null = selectedNodeId || null
-      for (const blk of fresh) {
-        t = insertAfter(t, afterId, blk)
-        afterId = blk.id
+      if (tgt.mode === 'before') {
+        t = insertBefore(t, tgt.id, fresh[0])
+        let afterId = fresh[0].id
+        for (let i = 1; i < fresh.length; i++) { t = insertAfter(t, afterId, fresh[i]); afterId = fresh[i].id }
+      } else if (tgt.mode === 'into') {
+        t = insertIntoContainer(t, tgt.id, tgt.slot, fresh[0])
+        let afterId = fresh[0].id
+        for (let i = 1; i < fresh.length; i++) { t = insertAfter(t, afterId, fresh[i]); afterId = fresh[i].id }
+      } else {
+        let afterId: string | null = tgt.id
+        for (const blk of fresh) { t = insertAfter(t, afterId, blk); afterId = blk.id }
       }
       return t
     })
@@ -325,6 +337,17 @@ export function BlockFlowView() {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault()
         setSelectedIds(new Set(ids))
+        return
+      }
+      // Ctrl+Z 撤销 / Ctrl+Y(或 Ctrl+Shift+Z) 重做 —— 复用全局工作流历史
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault()
+        useWorkflowStore.getState().undo()
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && ((e.key === 'y' || e.key === 'Y') || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) {
+        e.preventDefault()
+        useWorkflowStore.getState().redo()
         return
       }
       // Ctrl+D 禁用/启用选中模块
@@ -546,6 +569,8 @@ export function BlockFlowView() {
     return (
       <div
         className="relative group/ins flex items-center h-2.5"
+        onMouseEnter={() => { hoverTargetRef.current = target }}
+        onMouseLeave={() => { if (hoverTargetRef.current === target) hoverTargetRef.current = null }}
         onDragOver={(e) => { if (e.dataTransfer.types.includes('application/reactflow') || e.dataTransfer.types.includes('application/blockmove')) { e.preventDefault(); e.stopPropagation(); setOver(true) } }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { setOver(false); handleDropAt(e, target) }}
@@ -567,6 +592,8 @@ export function BlockFlowView() {
     const [over, setOver] = useState(false)
     return (
       <div
+        onMouseEnter={() => { hoverTargetRef.current = target }}
+        onMouseLeave={() => { if (hoverTargetRef.current === target) hoverTargetRef.current = null }}
         onDragOver={(e) => { if (e.dataTransfer.types.includes('application/reactflow') || e.dataTransfer.types.includes('application/blockmove')) { e.preventDefault(); e.stopPropagation(); setOver(true) } }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { setOver(false); handleDropAt(e, target) }}
@@ -718,7 +745,7 @@ export function BlockFlowView() {
               {selectedIds.size > 0 && (
                 <span className="ml-2 text-[11px] font-semibold text-[hsl(var(--brand-600))]">已选 {selectedIds.size}</span>
               )}
-              <span className="hidden lg:inline ml-2 text-[10.5px] text-[hsl(var(--slate-400))]">↑↓ 选择 · Enter 插入 · Ctrl+A 全选 · Ctrl 点选/Shift 范围 · Ctrl+C/V 复制粘贴 · Ctrl+X 剪切 · Ctrl+D 禁用 · Delete 删除 · Ctrl+/ 折叠</span>
+              <span className="hidden lg:inline ml-2 text-[10.5px] text-[hsl(var(--slate-400))]">↑↓ 选择 · Enter 插入 · Ctrl+A 全选 · Ctrl 点选/Shift 范围 · Ctrl+C/V 复制粘贴 · Ctrl+X 剪切 · Ctrl+Z/Y 撤销重做 · Ctrl+D 禁用 · Delete 删除 · Ctrl+/ 折叠</span>
             </span>
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-1">

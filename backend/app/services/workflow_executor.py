@@ -703,7 +703,33 @@ class WorkflowExecutor:
                     timeout_flag = getattr(result, 'is_timeout', False)
                     reason = "超时" if timeout_flag else "报错"
                     print(f"[DEBUG] 节点 {node.type} {reason}，触发异常处理分支")
-                    await self._log(LogLevel.WARNING, f"⚠️ 节点{reason}，触发异常处理流程", node_id=node_id)
+                    # 若错误连线指向"已执行过的上层节点"，说明用户是想用错误边做
+                    # "失败→回到上层模块重新跑"的重试循环（如：点击元素失败→回到打开网页）。
+                    # 此时必须重置「目标→失败点」这段路径的已执行标记，否则上层节点会因
+                    # 去重而不再执行、循环跑不起来。加重试计数防止无限循环。
+                    upstream_targets = [t for t in error_nodes if t in self._executed_node_ids]
+                    if upstream_targets:
+                        try:
+                            _cap = int((node.data or {}).get('maxRetries')
+                                       or ((node.data or {}).get('errorPolicy') or {}).get('maxRetries')
+                                       or 5)
+                        except Exception:
+                            _cap = 5
+                        _cap = max(1, _cap)
+                        _cnt = self._reflow_counts.get(node_id, 0)
+                        if _cnt >= _cap:
+                            await self._log(LogLevel.ERROR, f"✗ 错误重试已达上限（{_cap} 次），停止该分支", node_id=node_id)
+                            return
+                        self._reflow_counts[node_id] = _cnt + 1
+                        async with self._node_lock:
+                            for _t in upstream_targets:
+                                for _nid in self._nodes_between(_t, node_id):
+                                    self._executed_node_ids.discard(_nid)
+                                    self._executing_node_ids.discard(_nid)
+                                    self._pending_nodes.pop(_nid, None)
+                        await self._log(LogLevel.WARNING, f"⚠️ 节点{reason}，按错误连线回到上层重试 ({_cnt + 1}/{_cap})", node_id=node_id)
+                    else:
+                        await self._log(LogLevel.WARNING, f"⚠️ 节点{reason}，触发异常处理流程", node_id=node_id)
                     await self._execute_parallel(error_nodes)
                     return
                 else:
