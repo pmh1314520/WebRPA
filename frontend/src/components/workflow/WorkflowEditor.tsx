@@ -5,6 +5,7 @@ import {
   Controls,
   MiniMap,
   SelectionMode,
+  MarkerType,
   type ReactFlowInstance,
   type Node,
   type Edge,
@@ -1722,13 +1723,39 @@ export function WorkflowEditor() {
                 ...n.data
               }
             })) as Node<NodeData>[]}
-            edges={edges.map(e => ({
+            edges={[
+              ...edges.map(e => ({
               ...e,
               // 大工作流（>200节点）关闭连线流动动画，显著降低渲染开销
               animated: nodes.length > 200 ? false : (e as typeof e & { animated?: boolean }).animated,
               selected: selectedEdgeIds.includes(e.id),
               style: selectedEdgeIds.includes(e.id) ? { stroke: '#ef4444', strokeWidth: 3 } : e.style
-            })) as typeof edges}
+            })),
+              // 由各模块 errorPolicy 派生的「错误回流」可视化连线（红色虚线，只读不可选删）
+              ...nodes.flatMap((n) => {
+                const p = (n.data as NodeData)?.errorPolicy
+                if (p && p.mode === 'retry-from' && p.targetId && nodes.some((t) => t.id === p.targetId)) {
+                  return [{
+                    id: `__reflow-${n.id}`,
+                    source: n.id,
+                    target: p.targetId,
+                    type: 'smoothstep',
+                    animated: nodes.length <= 200,
+                    selectable: false,
+                    deletable: false,
+                    focusable: false,
+                    label: `出错回流 ×${p.maxRetries ?? 1}`,
+                    labelStyle: { fill: '#dc2626', fontSize: 10, fontWeight: 700 },
+                    labelBgStyle: { fill: '#fef2f2', fillOpacity: 0.95 },
+                    labelBgPadding: [4, 2] as [number, number],
+                    labelBgBorderRadius: 4,
+                    style: { stroke: '#dc2626', strokeWidth: 2, strokeDasharray: '5 4' },
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#dc2626' },
+                  }]
+                }
+                return []
+              }),
+            ] as typeof edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}

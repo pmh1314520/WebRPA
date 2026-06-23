@@ -1,4 +1,4 @@
-import { useWorkflowStore, moduleTypeLabels, getModuleDefaultTimeout, type NodeData } from '@/store/workflowStore'
+import { useWorkflowStore, moduleTypeLabels, getModuleDefaultTimeout, type NodeData, type ErrorPolicy } from '@/store/workflowStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useRequiredFields, getMissingRequired } from '@/lib/requiredFields'
@@ -2393,6 +2393,72 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
 
                 {/* 模块特定配置 */}
                 {renderModuleConfig()}
+
+                {/* 错误处理（错误回流 / 重试 / 跳过）——与模块条视图共用同一份 errorPolicy */}
+                {(() => {
+                  const pol: ErrorPolicy = (nodeData.errorPolicy as ErrorPolicy) || { mode: 'stop', maxRetries: 1, interval: 0, onExhausted: 'stop' }
+                  const setPol = (patch: Partial<ErrorPolicy>) => {
+                    const next: ErrorPolicy = { maxRetries: 1, interval: 0, onExhausted: 'stop', ...pol, ...patch }
+                    handleChange('errorPolicy', next.mode === 'stop' ? undefined : next)
+                  }
+                  const cands = nodes
+                    .filter((n) => n.type === 'moduleNode' && n.id !== selectedNodeId)
+                    .map((n) => ({ id: n.id, label: (n.data?.label as string) || moduleTypeLabels[n.data?.moduleType as keyof typeof moduleTypeLabels] || n.id }))
+                  return (
+                    <div className="pt-4 border-t space-y-3">
+                      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">错误处理</h3>
+                      <div className="space-y-2">
+                        <Label>出错时</Label>
+                        <Select value={pol.mode} onChange={(e) => setPol({ mode: e.target.value as ErrorPolicy['mode'] })}>
+                          <option value="stop">失败即停（默认）</option>
+                          <option value="continue">跳过并继续</option>
+                          <option value="retry-self">原地重试当前模块</option>
+                          <option value="retry-from">回流到上层模块重试</option>
+                        </Select>
+                      </div>
+                      {(pol.mode === 'retry-self' || pol.mode === 'retry-from') && (
+                        <>
+                          {pol.mode === 'retry-from' && (
+                            <div className="space-y-2">
+                              <Label>回流目标模块</Label>
+                              <Select value={pol.targetId || ''} placeholder="选择目标模块…" onChange={(e) => setPol({ targetId: e.target.value })}>
+                                {cands.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                              </Select>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <Label>重试次数</Label>
+                              <NumberInput value={pol.maxRetries ?? 1} onChange={(v) => setPol({ maxRetries: Math.max(1, (v as number) || 1) })} min={1} />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>间隔(秒)</Label>
+                              <NumberInput value={pol.interval ?? 0} onChange={(v) => setPol({ interval: Math.max(0, (v as number) || 0) })} min={0} />
+                            </div>
+                          </div>
+                          {pol.mode === 'retry-from' && (
+                            <div className="space-y-2">
+                              <Label>重试用尽后</Label>
+                              <Select value={pol.onExhausted || 'stop'} onChange={(e) => setPol({ onExhausted: e.target.value as 'stop' | 'continue' })}>
+                                <option value="stop">停止流程</option>
+                                <option value="continue">继续往下</option>
+                              </Select>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {pol.mode === 'retry-from'
+                          ? '出错时回到所选模块，从那里重新往下执行；画布上会显示一条红色回流连线。'
+                          : pol.mode === 'retry-self'
+                            ? '出错时原地重跑当前模块，达到次数仍失败则停止。'
+                            : pol.mode === 'continue'
+                              ? '出错时记一条警告并继续执行后续模块。'
+                              : '默认：该模块出错时立即停止流程。'}
+                      </p>
+                    </div>
+                  )
+                })()}
 
                 {/* 高级配置 */}
                 <div className="pt-4 border-t space-y-4">

@@ -286,6 +286,8 @@ class WorkflowExecutor:
         self._executing_node_ids: set[str] = set()
         self._node_lock = asyncio.Lock()
         self._pending_nodes: dict[str, set[str]] = {}
+        # 错误回流（errorPolicy.mode == 'retry-from'）每个失败点已回流重试次数
+        self._reflow_counts: dict[str, int] = {}
         self._last_data_rows_count = 0
         self._sent_data_rows_count = 0
         self._running_tasks: set[asyncio.Task] = set()  # 跟踪所有运行中的任务
@@ -615,6 +617,18 @@ class WorkflowExecutor:
         result = None
         try:
             result = await self._execute_node(node)
+            # 错误策略：原地重试（retry-self）—— 同一节点失败后立即重跑，最多 N 次
+            _selfpol = (node.data or {}).get('errorPolicy') or {}
+            if _selfpol.get('mode') == 'retry-self' and result and not result.success:
+                _maxr = max(0, int(_selfpol.get('maxRetries', 1) or 0))
+                _intv = float(_selfpol.get('interval', 0) or 0)
+                _att = 0
+                while result and not result.success and _att < _maxr and not self.should_stop:
+                    _att += 1
+                    if _intv > 0:
+                        await asyncio.sleep(_intv)
+                    await self._log(LogLevel.WARNING, f"⟳ 节点失败，原地重试 ({_att}/{_maxr})", node_id=node_id)
+                    result = await self._execute_node(node)
         except Exception:
             # 节点执行抛出未处理异常时，标记为已执行（失败），
             # 但仍然需要从 executing 集合中释放
@@ -626,6 +640,9 @@ class WorkflowExecutor:
             async with self._node_lock:
                 self._executed_node_ids.add(node_id)
                 self._executing_node_ids.discard(node_id)
+            # 节点成功：清掉它的回流重试计数，便于循环/后续合法重跑时获得新的重试预算
+            if result and result.success:
+                self._reflow_counts.pop(node_id, None)
         
         if self.should_stop:
             return
@@ -641,22 +658,59 @@ class WorkflowExecutor:
         else:
             next_nodes = self.graph.get_next_nodes(node_id)
         
-        # 如果节点执行失败，检查是否有异常处理分支
+        # 如果节点执行失败，按「错误策略 errorPolicy」处理（回流重试 / 跳过继续），
+        # 否则回退到原有的 error 异常处理分支 / 关键节点停止逻辑。
         if result and not result.success:
-            error_nodes = self.graph.get_error_nodes(node_id)
-            if error_nodes:
-                # 有异常处理分支，执行异常处理流程（报错和超时都走这里）
-                timeout_flag = getattr(result, 'is_timeout', False)
-                reason = "超时" if timeout_flag else "报错"
-                print(f"[DEBUG] 节点 {node.type} {reason}，触发异常处理分支")
-                await self._log(LogLevel.WARNING, f"⚠️ 节点{reason}，触发异常处理流程", node_id=node_id)
-                await self._execute_parallel(error_nodes)
-                return
-            else:
-                # 没有异常处理分支，对于关键节点停止执行
-                if node.type in ('open_page', 'click_element', 'input_text', 'wait_element', 'select_dropdown'):
-                    print(f"[DEBUG] 关键节点 {node.type} 失败，停止后续执行")
+            _pol = (node.data or {}).get('errorPolicy') or {}
+            _mode = _pol.get('mode')
+            _continue_after = False  # 置 True 表示策略要求继续往下执行后继
+            target = _pol.get('targetId')
+            if _mode == 'retry-from' and target and self.graph.get_node(target):
+                # 错误回流：回到上层模块，从那里重新往下跑，最多 N 次
+                _maxr = max(0, int(_pol.get('maxRetries', 1) or 0))
+                _intv = float(_pol.get('interval', 0) or 0)
+                _cnt = self._reflow_counts.get(node_id, 0)
+                if _cnt < _maxr:
+                    self._reflow_counts[node_id] = _cnt + 1
+                    seg = self._nodes_between(target, node_id)
+                    async with self._node_lock:
+                        for nid in seg:
+                            self._executed_node_ids.discard(nid)
+                            self._executing_node_ids.discard(nid)
+                            self._pending_nodes.pop(nid, None)
+                    if _intv > 0:
+                        await asyncio.sleep(_intv)
+                    tgt_label = (self.graph.get_node(target).data or {}).get('label', target)
+                    await self._log(LogLevel.WARNING, f"⟲ 节点失败，回流到上层「{tgt_label}」重试 ({_cnt + 1}/{_maxr})", node_id=node_id)
+                    await self._execute_parallel([target])
                     return
+                else:
+                    await self._log(LogLevel.WARNING, f"回流重试 {_maxr} 次仍失败", node_id=node_id)
+                    if _pol.get('onExhausted') == 'continue':
+                        _continue_after = True
+                    else:
+                        await self._log(LogLevel.ERROR, "✗ 已达回流重试上限，停止该分支", node_id=node_id)
+                        return
+            elif _mode == 'continue':
+                # 失败跳过：记警告并继续往下执行
+                await self._log(LogLevel.WARNING, "⚠️ 节点失败，按策略跳过并继续", node_id=node_id)
+                _continue_after = True
+
+            if not _continue_after:
+                error_nodes = self.graph.get_error_nodes(node_id)
+                if error_nodes:
+                    # 有异常处理分支，执行异常处理流程（报错和超时都走这里）
+                    timeout_flag = getattr(result, 'is_timeout', False)
+                    reason = "超时" if timeout_flag else "报错"
+                    print(f"[DEBUG] 节点 {node.type} {reason}，触发异常处理分支")
+                    await self._log(LogLevel.WARNING, f"⚠️ 节点{reason}，触发异常处理流程", node_id=node_id)
+                    await self._execute_parallel(error_nodes)
+                    return
+                else:
+                    # 没有异常处理分支，对于关键节点停止执行
+                    if node.type in ('open_page', 'click_element', 'input_text', 'wait_element', 'select_dropdown'):
+                        print(f"[DEBUG] 关键节点 {node.type} 失败，停止后续执行")
+                        return
         
         if node.type in ('loop', 'foreach', 'infinite_loop', 'foreach_dict'):
             body_nodes = self.graph.get_loop_body_nodes(node_id)
@@ -665,6 +719,50 @@ class WorkflowExecutor:
         else:
             await self._notify_successors(next_nodes, node_id)
 
+
+    def _full_successors(self, node_id: str) -> list[str]:
+        """聚合一个节点的所有后继（默认边 + 条件分支 + 循环分支 + error 边）"""
+        out: list[str] = list(self.graph.adjacency.get(node_id, []))
+        for tgts in self.graph.condition_branches.get(node_id, {}).values():
+            out.extend(tgts)
+        for tgts in self.graph.loop_branches.get(node_id, {}).values():
+            out.extend(tgts)
+        out.extend(self.graph.error_branches.get(node_id, []))
+        return out
+
+    def _nodes_between(self, start: str, end: str) -> set[str]:
+        """
+        计算从 start 到 end 之间（含两端）的所有节点集合，用于错误回流时
+        精准重置"目标模块→失败模块"这一段的已执行标记，从而能从目标重跑。
+        = 从 start 正向可达 ∩ 能到达 end 的节点。
+        """
+        # 正向可达（含 start）
+        fwd: set[str] = {start}
+        q = [start]
+        while q:
+            c = q.pop(0)
+            for n in self._full_successors(c):
+                if n not in fwd:
+                    fwd.add(n)
+                    q.append(n)
+        if end not in fwd:
+            return {start, end}
+        # 在 fwd 子图内构建反向邻接，反推能到达 end 的节点
+        rev: dict[str, list[str]] = {}
+        for n in fwd:
+            for m in self._full_successors(n):
+                if m in fwd:
+                    rev.setdefault(m, []).append(n)
+        seg: set[str] = {end}
+        q = [end]
+        while q:
+            c = q.pop(0)
+            for p in rev.get(c, []):
+                if p not in seg:
+                    seg.add(p)
+                    q.append(p)
+        seg.add(start)
+        return seg
 
     def _is_node_reachable(self, target_id: str, additional_roots: list[str]) -> bool:
         """

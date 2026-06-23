@@ -165,6 +165,33 @@ Object.assign(UI_DICT, {
   '；也可免打包——到输出目录的': '; or skip re-packaging \u2014 go to the output directory\u2019s',
   ' 对应子目录里用同名文件覆盖即可（路径不变就生效）。': ' matching subfolder and overwrite it with a same-name file (works as long as the path is unchanged).',
   '提示：资源会频繁更新就用外部固定路径引用，以后只换文件、永不重打包。': 'Tip: if resources update frequently, reference them by a fixed external path \u2014 then you only swap files and never re-package.',
+  // —— 错误处理 / 错误回流 ——
+  '出错处理': 'Error handling',
+  '出错时': 'On error',
+  '失败即停': 'Stop on failure',
+  '失败即停（默认）': 'Stop on failure (default)',
+  '跳过继续': 'Skip & continue',
+  '跳过并继续': 'Skip & continue',
+  '原地重试': 'Retry in place',
+  '原地重试当前模块': 'Retry this module in place',
+  '回流上层重试': 'Reflow & retry upstream',
+  '回流到上层模块重试': 'Reflow to an upstream module & retry',
+  '回流目标（出错后回到这里重跑）': 'Reflow target (re-run from here on error)',
+  '回流目标模块': 'Reflow target module',
+  '选择上层模块…': 'Select an upstream module…',
+  '选择目标模块…': 'Select a target module…',
+  '该模块之前没有可回流的模块': 'No upstream module before this one to reflow to',
+  '重试次数': 'Max retries',
+  '间隔(秒)': 'Interval (s)',
+  '重试用尽后': 'After retries exhausted',
+  '停止流程': 'Stop the flow',
+  '继续往下': 'Continue downstream',
+  '默认：该模块出错时立即停止流程。': 'Default: stop the flow immediately when this module errors.',
+  '出错时记一条警告并继续执行后续模块。': 'On error, log a warning and continue with later modules.',
+  '出错时原地重跑当前模块，达到次数仍失败则按默认停止。': 'On error, re-run this module in place; if it still fails after the max retries, stop by default.',
+  '出错时原地重跑当前模块，达到次数仍失败则停止。': 'On error, re-run this module in place; stop if it still fails after the max retries.',
+  '出错时回到所选上层模块，从那里重新往下执行（适合刷新页面/重新登录后重试）。': 'On error, go back to the selected upstream module and re-run downstream from there (good for retry after refresh/re-login).',
+  '出错时回到所选模块，从那里重新往下执行；画布上会显示一条红色回流连线。': 'On error, go back to the selected module and re-run downstream; a red reflow link is shown on the canvas.',
   '手机镜像': 'Phone Mirror',
   '屏保弹幕': 'Screensaver',
   '计划任务': 'Scheduled Tasks',
@@ -180,6 +207,12 @@ Object.assign(UI_DICT, {
 })
 
 export const PHRASES: Record<string, string> = {
+
+  // —— 错误处理 / 错误回流（动态徽标，如"出错重试 3 次"/"出错回流「X」×2"）——
+  '出错回流': 'Reflow on error ',
+  '出错重试': 'Retry on error ',
+  '出错跳过': 'Skip on error',
+  '回流重试': 'Reflow retry',
 
   // —— 日志/执行状态片段 ——
   '正在执行': 'Executing',
