@@ -48,6 +48,8 @@ def request_input_prompt_sync(variable_name: str, title: str, message: str,
 
     widget = None
     listbox = None
+    check_var = None
+    scale_widget = None
     mode = (input_mode or "single").lower()
 
     if mode in ("select_single", "select_multiple") and select_options:
@@ -56,11 +58,51 @@ def request_input_prompt_sync(variable_name: str, title: str, message: str,
         for opt in select_options:
             listbox.insert(tk.END, str(opt))
         listbox.pack(padx=16, pady=4)
-    elif mode == "multiline":
+    elif mode in ("multiline", "list"):
         widget = tk.Text(root, width=46, height=6, font=("Microsoft YaHei", 10))
         if default_value:
             widget.insert("1.0", str(default_value))
         widget.pack(padx=16, pady=4)
+    elif mode in ("file", "folder"):
+        # 选文件 / 选文件夹：输入框 + 浏览按钮（原生文件对话框）
+        var = tk.StringVar(value=str(default_value or ""))
+        row = tk.Frame(root)
+        row.pack(padx=16, pady=4, fill="x")
+        widget = tk.Entry(row, textvariable=var, width=36, font=("Microsoft YaHei", 10))
+        widget.pack(side="left", fill="x", expand=True)
+        widget._var = var  # type: ignore
+
+        def _browse():
+            try:
+                from tkinter import filedialog
+                if mode == "folder":
+                    p = filedialog.askdirectory(title=title or "选择文件夹")
+                else:
+                    p = filedialog.askopenfilename(title=title or "选择文件")
+                if p:
+                    var.set(p)
+            except Exception:
+                pass
+        tk.Button(row, text="浏览…", command=_browse, font=("Microsoft YaHei", 9)).pack(side="left", padx=(6, 0))
+    elif mode == "checkbox":
+        _dv = str(default_value or "").strip().lower()
+        check_var = tk.BooleanVar(value=(_dv in ("1", "true", "yes", "on", "是")))
+        widget = tk.Checkbutton(root, text="勾选表示是 / 取消表示否", variable=check_var, font=("Microsoft YaHei", 10))
+        widget.pack(padx=16, pady=4, anchor="w")
+    elif mode in ("slider_int", "slider_float"):
+        _lo = float(min_value) if min_value is not None else 0.0
+        _hi = float(max_value) if max_value is not None else 100.0
+        if _hi <= _lo:
+            _hi = _lo + 100.0
+        try:
+            _init = float(default_value) if str(default_value or "").strip() not in ("", "None") else _lo
+        except Exception:
+            _init = _lo
+        _res = 1 if mode == "slider_int" else 0.01
+        scale_widget = tk.Scale(root, from_=_lo, to=_hi, orient="horizontal", length=320,
+                                resolution=_res, font=("Microsoft YaHei", 9))
+        scale_widget.set(max(_lo, min(_hi, _init)))
+        scale_widget.pack(padx=16, pady=4)
     else:
         var = tk.StringVar(value=str(default_value or ""))
         show = "*" if mode == "password" else None
@@ -74,7 +116,12 @@ def request_input_prompt_sync(variable_name: str, title: str, message: str,
             if mode == "select_multiple":
                 return ",".join(sel)
             return sel[0] if sel else ""
-        if mode == "multiline":
+        if check_var is not None:
+            return "true" if check_var.get() else "false"
+        if scale_widget is not None:
+            v = scale_widget.get()
+            return str(int(v)) if mode == "slider_int" else str(v)
+        if mode in ("multiline", "list"):
             return widget.get("1.0", "end").rstrip("\n")
         return widget._var.get()  # type: ignore
 
