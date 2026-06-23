@@ -41,18 +41,76 @@ interface Props {
 
 const uid = () => 'w_' + Math.random().toString(36).slice(2, 9)
 
-const DEFAULT_LAYOUT: ExeLayout = {
-  width: 520,
-  height: 360,
-  bg: '#ffffff',
-  widgets: [
-    { id: uid(), type: 'panel', x: 0, y: 0, w: 520, h: 76, bg: '#2563eb' },
-    { id: uid(), type: 'text', x: 20, y: 16, w: 480, h: 30, text: '自动化程序', color: '#ffffff', fontSize: 16, bold: true, align: 'left' },
-    { id: uid(), type: 'text', x: 20, y: 48, w: 480, h: 20, text: '正在为您自动执行任务，请稍候…', color: '#eaf1ff', fontSize: 11, align: 'left' },
-    { id: uid(), type: 'status', x: 20, y: 250, w: 480, h: 24, text: '正在运行…', color: '#334155', fontSize: 12, align: 'center' },
-    { id: uid(), type: 'progress', x: 50, y: 290, w: 420, h: 8, bg: '#2563eb' },
-  ],
-}
+/* ---------- 内置界面模板（一键套用后可再微调）---------- */
+type Template = { key: string; name: string; build: () => ExeLayout }
+
+const TEMPLATES: Template[] = [
+  {
+    key: 'classic', name: '经典蓝',
+    build: () => ({
+      width: 520, height: 360, bg: '#ffffff',
+      widgets: [
+        { id: uid(), type: 'panel', x: 0, y: 0, w: 520, h: 76, bg: '#2563eb' },
+        { id: uid(), type: 'text', x: 20, y: 16, w: 480, h: 30, text: '自动化程序', color: '#ffffff', fontSize: 16, bold: true, align: 'left' },
+        { id: uid(), type: 'text', x: 20, y: 48, w: 480, h: 20, text: '正在为您自动执行任务，请稍候…', color: '#eaf1ff', fontSize: 11, align: 'left' },
+        { id: uid(), type: 'status', x: 20, y: 250, w: 480, h: 24, text: '正在运行…', color: '#334155', fontSize: 12, align: 'center' },
+        { id: uid(), type: 'progress', x: 50, y: 290, w: 420, h: 8, bg: '#2563eb' },
+      ],
+    }),
+  },
+  {
+    key: 'minimal', name: '极简浅色',
+    build: () => ({
+      width: 480, height: 300, bg: '#f8fafc',
+      widgets: [
+        { id: uid(), type: 'panel', x: 0, y: 0, w: 480, h: 4, bg: '#0ea5e9' },
+        { id: uid(), type: 'text', x: 0, y: 64, w: 480, h: 34, text: '任务执行中', color: '#0f172a', fontSize: 20, bold: true, align: 'center' },
+        { id: uid(), type: 'status', x: 0, y: 122, w: 480, h: 22, text: '正在运行…', color: '#64748b', fontSize: 12, align: 'center' },
+        { id: uid(), type: 'progress', x: 80, y: 172, w: 320, h: 6, bg: '#0ea5e9' },
+      ],
+    }),
+  },
+  {
+    key: 'dark', name: '深色科技',
+    build: () => ({
+      width: 540, height: 340, bg: '#0f172a',
+      widgets: [
+        { id: uid(), type: 'text', x: 0, y: 56, w: 540, h: 36, text: 'AUTOMATION', color: '#22d3ee', fontSize: 22, bold: true, align: 'center' },
+        { id: uid(), type: 'text', x: 0, y: 98, w: 540, h: 20, text: '自动化任务运行中', color: '#94a3b8', fontSize: 12, align: 'center' },
+        { id: uid(), type: 'status', x: 0, y: 184, w: 540, h: 24, text: '正在运行…', color: '#e2e8f0', fontSize: 13, align: 'center' },
+        { id: uid(), type: 'progress', x: 90, y: 234, w: 360, h: 8, bg: '#22d3ee' },
+      ],
+    }),
+  },
+  {
+    key: 'brand', name: '品牌大图',
+    build: () => ({
+      width: 520, height: 400, bg: '#ffffff',
+      widgets: [
+        { id: uid(), type: 'image', x: 160, y: 30, w: 200, h: 120, src: '' },
+        { id: uid(), type: 'text', x: 0, y: 168, w: 520, h: 30, text: '公司自动化助手', color: '#111827', fontSize: 18, bold: true, align: 'center' },
+        { id: uid(), type: 'status', x: 0, y: 252, w: 520, h: 22, text: '正在运行…', color: '#64748b', fontSize: 12, align: 'center' },
+        { id: uid(), type: 'progress', x: 60, y: 300, w: 400, h: 8, bg: '#7c3aed' },
+        { id: uid(), type: 'text', x: 0, y: 362, w: 520, h: 18, text: '© 你的公司 · 技术支持', color: '#cbd5e1', fontSize: 9, align: 'center' },
+      ],
+    }),
+  },
+  {
+    key: 'confirm', name: '完成确认',
+    build: () => ({
+      width: 500, height: 340, bg: '#ffffff',
+      widgets: [
+        { id: uid(), type: 'panel', x: 0, y: 0, w: 500, h: 70, bg: '#16a34a' },
+        { id: uid(), type: 'text', x: 20, y: 22, w: 460, h: 28, text: '批处理任务', color: '#ffffff', fontSize: 16, bold: true, align: 'left' },
+        { id: uid(), type: 'status', x: 0, y: 132, w: 500, h: 24, text: '正在运行…', color: '#334155', fontSize: 13, align: 'center' },
+        { id: uid(), type: 'progress', x: 70, y: 178, w: 360, h: 8, bg: '#16a34a' },
+        { id: uid(), type: 'button', x: 190, y: 262, w: 120, h: 36, text: '完成后关闭', bg: '#16a34a', fontSize: 13 },
+      ],
+    }),
+  },
+]
+
+const DEFAULT_LAYOUT: ExeLayout = TEMPLATES[0].build()
 
 const WIDGET_LABELS: Record<ExeWidget['type'], string> = {
   text: '文本', image: '图片', progress: '进度条', status: '状态文字', panel: '色块面板', button: '按钮',
@@ -89,6 +147,11 @@ export function ExeUiDesigner({ isOpen, initial, onClose, onApply }: Props) {
   const delWidget = (id: string) => {
     setLayout((L) => ({ ...L, widgets: L.widgets.filter((w) => w.id !== id) }))
     if (selId === id) setSelId(null)
+  }
+
+  const applyTemplate = (t: Template) => {
+    setLayout(t.build())
+    setSelId(null)
   }
 
   // 拖拽移动
@@ -174,13 +237,23 @@ export function ExeUiDesigner({ isOpen, initial, onClose, onApply }: Props) {
         <div className="flex-1 flex min-h-0">
           {/* 左侧：控件库 */}
           <div className="w-36 border-r border-[hsl(var(--border))] p-2 space-y-1.5 overflow-y-auto">
-            <div className="text-[10.5px] font-semibold text-[hsl(var(--muted-foreground))] uppercase px-1">添加控件</div>
-            {([['text', Type], ['image', ImageIcon], ['progress', Minus], ['status', Activity], ['panel', Square], ['button', MousePointerClick]] as const).map(([t, Icon]) => (
-              <button key={t} onClick={() => addWidget(t)}
+            <div className="text-[10.5px] font-semibold text-[hsl(var(--muted-foreground))] uppercase px-1">快速模板</div>
+            {TEMPLATES.map((t) => (
+              <button key={t.key} onClick={() => applyTemplate(t)}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--brand-50))] text-[12px] text-left">
-                <Icon className="w-3.5 h-3.5 text-[hsl(var(--brand-600))]" /> {WIDGET_LABELS[t]}
+                <span className="w-3 h-3 rounded-sm flex-shrink-0 border border-[hsl(var(--border))]" style={{ background: t.build().bg }} />
+                {t.name}
               </button>
             ))}
+            <div className="pt-2 mt-2 border-t border-[hsl(var(--border))] space-y-1.5">
+              <div className="text-[10.5px] font-semibold text-[hsl(var(--muted-foreground))] uppercase px-1">添加控件</div>
+              {([['text', Type], ['image', ImageIcon], ['progress', Minus], ['status', Activity], ['panel', Square], ['button', MousePointerClick]] as const).map(([t, Icon]) => (
+                <button key={t} onClick={() => addWidget(t)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--brand-50))] text-[12px] text-left">
+                  <Icon className="w-3.5 h-3.5 text-[hsl(var(--brand-600))]" /> {WIDGET_LABELS[t]}
+                </button>
+              ))}
+            </div>
             <div className="pt-2 mt-2 border-t border-[hsl(var(--border))] space-y-1.5">
               <div className="text-[10.5px] font-semibold text-[hsl(var(--muted-foreground))] uppercase px-1">画布</div>
               <label className="text-[11px] text-[hsl(var(--muted-foreground))] px-1">宽</label>

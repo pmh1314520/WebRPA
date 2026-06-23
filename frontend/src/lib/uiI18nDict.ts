@@ -179,6 +179,12 @@ Object.assign(UI_DICT, {
   // —— 打包：自由画布式 EXE 界面设计器 ——
   '想自由摆放控件？用可视化设计器拖拽设计运行界面': 'Want to place controls freely? Use the visual designer to drag-and-drop your runtime UI',
   '设计界面': 'Design UI',
+  '快速模板': 'Templates',
+  '经典蓝': 'Classic blue',
+  '极简浅色': 'Minimal light',
+  '深色科技': 'Dark tech',
+  '品牌大图': 'Brand splash',
+  '完成确认': 'Confirm on finish',
   '清除自定义界面，恢复简单模式': 'Clear custom UI and revert to simple mode',
   'EXE 运行界面设计器（拖拽摆放控件）': 'EXE runtime UI designer (drag to place controls)',
   '添加控件': 'Add control',
