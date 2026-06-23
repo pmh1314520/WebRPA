@@ -386,7 +386,7 @@ export function InputPromptDialog() {
   return (
     <DialogPortal>
     <div className="fixed inset-0 bg-[hsl(217_45%_15%_/_0.55)] backdrop-blur-[3px] flex items-center justify-center p-4 animate-fade-in" style={{ zIndex: 2147483646 }}>
-      <div className="modern-dialog w-full max-w-md p-0 animate-scale-in-bounce">
+      <div className="modern-dialog w-full max-w-md max-h-[90vh] overflow-y-auto p-0 animate-scale-in-bounce">
         <div className="modern-dialog-header">
           <div className="modern-dialog-header-icon">
             {getModeIcon()}

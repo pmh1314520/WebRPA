@@ -41,7 +41,7 @@ export function UpdateDialog({
       className="fixed inset-0 bg-[hsl(217_45%_15%_/_0.55)] backdrop-blur-[3px] flex items-center justify-center p-4 animate-fade-in"
       style={{ zIndex: 2147483640 }}
     >
-      <div className="modern-dialog w-full max-w-md animate-scale-in-bounce">
+      <div className="modern-dialog w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in-bounce">
         {/* 顶部彩色装饰区 */}
         <div
           className="relative p-6 text-white overflow-hidden"

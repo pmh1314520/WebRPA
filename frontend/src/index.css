@@ -1104,11 +1104,19 @@ input[type="range"].slider-thumb::-moz-range-thumb {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
   background: linear-gradient(90deg,
     hsl(var(--brand-500)),
     hsl(var(--brand-400)),
     hsl(var(--info-500)));
 }
+/* 当弹窗外壳自身需要滚动时（直接在 modern-dialog 上加 overflow-auto/overflow-y-auto），
+   必须覆盖上面的 overflow:hidden，否则内容超高会被裁剪且无法滚动。
+   选择器特异性 (0,2,0) 高于 .modern-dialog (0,1,0)，无论样式表顺序都生效。 */
+.modern-dialog.overflow-auto { overflow: auto; }
+.modern-dialog.overflow-y-auto { overflow-y: auto; overflow-x: hidden; }
+.modern-dialog.overflow-scroll { overflow: scroll; }
 
 /* ----- 大型弹窗的标题区 ----- */
 .modern-dialog-header {

@@ -147,7 +147,7 @@ export function ExportDialog({ isOpen, onClose, onExport }: ExportDialogProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 8 }}
           transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-          className="modern-dialog w-full max-w-xl"
+          className="modern-dialog w-full max-w-xl max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* 标题栏 */}
