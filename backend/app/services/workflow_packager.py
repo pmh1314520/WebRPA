@@ -256,20 +256,23 @@ def _load_cfg():
     except Exception:
         return {}
 
-async def _main():
-    cfg = _load_cfg()
+async def _run_async(cfg):
     from app.services.workflow_runner import run_workflow
     wf_path = os.path.join(HERE, "workflow.json")
-    print("=" * 50)
-    print("WebRPA 自动化程序启动...")
-    print("=" * 50)
-    res = await run_workflow(
+    return await run_workflow(
         wf_path,
         headless=bool(cfg.get("headless", False)),
         source_tag="packaged",
         apply_retry=False,
         record=False,
     )
+
+async def _main():
+    cfg = _load_cfg()
+    print("=" * 50)
+    print("WebRPA 自动化程序启动...")
+    print("=" * 50)
+    res = await _run_async(cfg)
     ok = res.get("success")
     print("-" * 50)
     print(("[成功] " if ok else "[失败] ") + "执行" + ("完成" if ok else "失败"))
@@ -279,16 +282,159 @@ async def _main():
         print("错误: %s" % res.get("error"))
     return 0 if ok else 1
 
+
+def _run_blocking(cfg, holder):
+    """在后台线程里跑工作流，结果写入 holder。"""
+    try:
+        if sys.platform == "win32":
+            try:
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            except Exception:
+                pass
+        holder["res"] = asyncio.run(_run_async(cfg))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        holder["res"] = {"success": False, "error": str(e)}
+    finally:
+        holder["done"] = True
+
+
+def _run_with_ui(cfg, ui):
+    """显示用户自定义的品牌运行窗口（启动图/标题/副标题/主题色/页脚 + 实时状态），
+    工作流在后台线程执行，窗口在主线程实时更新；跑完自动收尾。tk 不可用时回退控制台。"""
+    try:
+        import tkinter as tk
+    except Exception:
+        return asyncio.run(_main())
+
+    import threading
+    holder = {"done": False, "res": None}
+    t = threading.Thread(target=_run_blocking, args=(cfg, holder), daemon=True)
+    t.start()
+
+    theme = str(ui.get("themeColor") or "#2563eb")
+    title = str(ui.get("title") or "WebRPA 自动化程序")
+    subtitle = str(ui.get("subtitle") or "正在为您自动执行任务，请稍候…")
+    footer = str(ui.get("footer") or "")
+    splash = ui.get("splashImage") or ""
+
+    root = tk.Tk()
+    root.title(title)
+    root.configure(bg="#ffffff")
+    try:
+        root.geometry("520x360")
+        root.eval("tk::PlaceWindow . center")
+        root.attributes("-topmost", True)
+    except Exception:
+        pass
+
+    # 顶部主题色条 + 标题
+    header = tk.Frame(root, bg=theme, height=78)
+    header.pack(fill="x")
+    header.pack_propagate(False)
+    tk.Label(header, text=title, bg=theme, fg="#ffffff",
+             font=("Microsoft YaHei", 15, "bold")).pack(anchor="w", padx=18, pady=(16, 0))
+    tk.Label(header, text=subtitle, bg=theme, fg="#eaf1ff",
+             font=("Microsoft YaHei", 10)).pack(anchor="w", padx=18)
+
+    body = tk.Frame(root, bg="#ffffff")
+    body.pack(fill="both", expand=True)
+
+    # 自定义启动图
+    _img_ref = {}
+    sp_path = os.path.join(HERE, splash) if splash else ""
+    if sp_path and os.path.isfile(sp_path):
+        try:
+            img = tk.PhotoImage(file=sp_path)
+            # 过大则按整数倍缩小，避免撑爆窗口
+            try:
+                while img.width() > 460 or img.height() > 180:
+                    img = img.subsample(2, 2)
+            except Exception:
+                pass
+            _img_ref["i"] = img
+            tk.Label(body, image=img, bg="#ffffff").pack(pady=(18, 6))
+        except Exception:
+            pass
+
+    status_var = tk.StringVar(value="正在运行…")
+    tk.Label(body, textvariable=status_var, bg="#ffffff", fg="#334155",
+             font=("Microsoft YaHei", 11)).pack(pady=(10, 4))
+
+    # 简易跑马灯进度条
+    canv = tk.Canvas(body, width=420, height=6, bg="#e5e7eb", highlightthickness=0)
+    canv.pack(pady=6)
+    bar = canv.create_rectangle(0, 0, 110, 6, fill=theme, width=0)
+    state = {"x": 0, "dir": 1}
+
+    def _tick():
+        if holder["done"]:
+            return
+        state["x"] += 14 * state["dir"]
+        if state["x"] > 310:
+            state["dir"] = -1
+        elif state["x"] < 0:
+            state["dir"] = 1
+        try:
+            canv.coords(bar, state["x"], 0, state["x"] + 110, 6)
+        except Exception:
+            pass
+        root.after(60, _tick)
+
+    if footer:
+        tk.Label(body, text=footer, bg="#ffffff", fg="#94a3b8",
+                 font=("Microsoft YaHei", 9)).pack(side="bottom", pady=(0, 10))
+
+    def _poll():
+        if holder["done"]:
+            res = holder.get("res") or {}
+            ok = res.get("success")
+            try:
+                canv.coords(bar, 0, 0, 420, 6)
+                canv.itemconfig(bar, fill=("#16a34a" if ok else "#dc2626"))
+            except Exception:
+                pass
+            status_var.set("执行完成，窗口即将关闭" if ok else ("执行失败：" + str(res.get("error") or "")[:60]))
+            root.after(1800 if ok else 4000, root.destroy)
+            return
+        root.after(120, _poll)
+
+    # 运行未结束时禁止手动关闭，避免误杀正在跑的流程
+    def _on_close():
+        if holder["done"]:
+            root.destroy()
+    root.protocol("WM_DELETE_WINDOW", _on_close)
+
+    _tick()
+    _poll()
+    try:
+        root.mainloop()
+    except Exception:
+        pass
+    # 若窗口已关但流程仍在跑，等其结束
+    try:
+        t.join(timeout=3)
+    except Exception:
+        pass
+    res = holder.get("res") or {}
+    return 0 if res.get("success") else 1
+
+
 if __name__ == "__main__":
     code = 1
+    _cfg = _load_cfg()
+    _ui = _cfg.get("ui") or {}
     try:
-        code = asyncio.run(_main())
+        if _ui.get("enabled"):
+            code = _run_with_ui(_cfg, _ui)
+        else:
+            code = asyncio.run(_main())
     except Exception as e:
         import traceback
         traceback.print_exc()
         print("运行异常: %s" % e)
-    cfg = _load_cfg()
-    if cfg.get("pause_on_exit", True):
+    if _cfg.get("pause_on_exit", True) and not _ui.get("enabled"):
         try:
             input("\\n按回车键退出...")
         except Exception:
@@ -466,7 +612,8 @@ def _bundle_heavy_runtimes(runtime_dir: Path, needed: set[str], job: dict[str, A
 
 def package(workflow_source: Any, output_name: str, *, mode: str = "portable",
             headless: bool = False, show_console: bool = True,
-            slim: bool = False, icon_path: Optional[str] = None) -> dict[str, Any]:
+            slim: bool = False, icon_path: Optional[str] = None,
+            ui_config: Optional[dict] = None) -> dict[str, Any]:
     """启动一个打包任务（后台执行）。返回 {job_id}。
     - workflow_source: 本地工作流文件名 / 路径 / 完整 dict
     - output_name: 输出程序名（即 exe 名）
@@ -486,13 +633,14 @@ def package(workflow_source: Any, output_name: str, *, mode: str = "portable",
     job["mode"] = mode
 
     t = threading.Thread(target=_run_build, args=(job, wf, safe_name, mode, headless,
-                                                  show_console, slim, icon_path), daemon=True)
+                                                  show_console, slim, icon_path, ui_config), daemon=True)
     t.start()
     return {"job_id": job["id"], "status": "pending"}
 
 
 def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
-               headless: bool, show_console: bool, slim: bool, icon_path: Optional[str]) -> None:
+               headless: bool, show_console: bool, slim: bool, icon_path: Optional[str],
+               ui_config: Optional[dict] = None) -> None:
     dist: Optional[Path] = None
     try:
         _set(job, status="running", progress=2, step="分析工作流依赖")
@@ -516,8 +664,29 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
         _set(job, progress=15, step="写入工作流与配置")
         (runtime / "workflow.json").write_text(json.dumps(wf, ensure_ascii=False, indent=2),
                                                encoding="utf-8")
-        (runtime / "config.json").write_text(json.dumps(
-            {"headless": headless, "pause_on_exit": show_console}, ensure_ascii=False), encoding="utf-8")
+        # 运行配置 + 用户自定义界面（启动图/标题/副标题/主题色/页脚）
+        _cfg: dict[str, Any] = {"headless": headless, "pause_on_exit": show_console}
+        try:
+            if ui_config and ui_config.get("enabled"):
+                ui_out: dict[str, Any] = {
+                    "enabled": True,
+                    "title": str(ui_config.get("title") or "")[:80],
+                    "subtitle": str(ui_config.get("subtitle") or "")[:160],
+                    "themeColor": str(ui_config.get("themeColor") or "#2563eb")[:16],
+                    "footer": str(ui_config.get("footer") or "")[:120],
+                }
+                # 复制启动图进运行时（仅支持 png/gif，tk 原生可直接显示）
+                sp = ui_config.get("splashImage")
+                if sp and Path(sp).is_file():
+                    ext = Path(sp).suffix.lower()
+                    if ext in (".png", ".gif"):
+                        dst = runtime / ("ui_splash" + ext)
+                        shutil.copy2(sp, dst)
+                        ui_out["splashImage"] = dst.name
+                _cfg["ui"] = ui_out
+        except Exception as _e:
+            print(f"[packager] 写入自定义界面配置失败: {_e}")
+        (runtime / "config.json").write_text(json.dumps(_cfg, ensure_ascii=False), encoding="utf-8")
         (runtime / "run_packaged.py").write_text(build_runner_script(), encoding="utf-8")
         assets = _copy_assets(wf, runtime)
         _set(job, progress=22, step=f"已复制 {assets} 类资源")

@@ -17,6 +17,7 @@ class BuildReq(BaseModel):
     show_console: bool = True
     slim: bool = False                 # 默认携带完整运行时，保证任何模块都不缺依赖
     icon_path: Optional[str] = None
+    ui_config: Optional[dict] = None   # 自定义运行界面：{enabled,title,subtitle,themeColor,footer,splashImage}
 
 
 class AnalyzeReq(BaseModel):
@@ -43,7 +44,8 @@ async def build(req: BuildReq):
         raise HTTPException(status_code=400, detail="mode 仅支持 portable / shared")
     res = workflow_packager.package(
         req.workflow, req.output_name, mode=req.mode, headless=req.headless,
-        show_console=req.show_console, slim=req.slim, icon_path=req.icon_path)
+        show_console=req.show_console, slim=req.slim, icon_path=req.icon_path,
+        ui_config=req.ui_config)
     if res.get("status") == "failed":
         raise HTTPException(status_code=400, detail=res.get("error"))
     return res

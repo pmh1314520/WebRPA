@@ -165,6 +165,19 @@ Object.assign(UI_DICT, {
   '；也可免打包——到输出目录的': '; or skip re-packaging \u2014 go to the output directory\u2019s',
   ' 对应子目录里用同名文件覆盖即可（路径不变就生效）。': ' matching subfolder and overwrite it with a same-name file (works as long as the path is unchanged).',
   '提示：资源会频繁更新就用外部固定路径引用，以后只换文件、永不重打包。': 'Tip: if resources update frequently, reference them by a fixed external path \u2014 then you only swap files and never re-package.',
+  // —— 打包：界面定制 ——
+  '界面定制（自定义启动界面）': 'UI customization (custom launch screen)',
+  '开启后 EXE 运行时显示你设计的品牌窗口（启动图/标题/主题色/实时进度），而非黑色控制台': 'When on, the EXE shows your branded window (splash / title / theme / live progress) at runtime instead of a black console',
+  '启动图（PNG / GIF，可选）': 'Splash image (PNG / GIF, optional)',
+  '留空则只显示标题/主题色': 'Leave blank to show only title / theme color',
+  '窗口标题': 'Window title',
+  '主题色': 'Theme color',
+  '副标题': 'Subtitle',
+  '页脚（可选）': 'Footer (optional)',
+  '提示：开启界面定制后建议把上方「显示运行控制台」关掉，运行时就只显示这个品牌窗口。': 'Tip: after enabling UI customization, turn off "Show run console" above so only this branded window shows at runtime.',
+  '选择启动图 (PNG / GIF)': 'Select splash image (PNG / GIF)',
+  // —— 自愈固化 ——
+  '自愈固化（健康基线）': 'Self-heal & persist (healthy baseline)',
   // —— 错误处理 / 错误回流 ——
   '出错处理': 'Error handling',
   '出错时': 'On error',

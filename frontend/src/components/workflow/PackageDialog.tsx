@@ -50,6 +50,14 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [cancelling, setCancelling] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [pickingIcon, setPickingIcon] = useState(false)
+  // 界面定制（自定义启动/运行窗口）
+  const [uiEnabled, setUiEnabled] = useState(false)
+  const [uiTitle, setUiTitle] = useState('')
+  const [uiSubtitle, setUiSubtitle] = useState('')
+  const [uiTheme, setUiTheme] = useState('#2563eb')
+  const [uiFooter, setUiFooter] = useState('')
+  const [uiSplash, setUiSplash] = useState('')
+  const [pickingSplash, setPickingSplash] = useState(false)
   const pollRef = useRef<any>(null)
   const startRef = useRef<number>(0)
   const logScrollRef = useRef<HTMLDivElement>(null)
@@ -101,7 +109,8 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       const content = wf.content || wf.workflow || wf
       const r = await fetch(`${base()}/api/workflow-package/build`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workflow: content, output_name: outName, mode, headless, show_console: showConsole, slim, icon_path: iconPath.trim() || null }),
+        body: JSON.stringify({ workflow: content, output_name: outName, mode, headless, show_console: showConsole, slim, icon_path: iconPath.trim() || null,
+          ui_config: uiEnabled ? { enabled: true, title: uiTitle.trim(), subtitle: uiSubtitle.trim(), themeColor: uiTheme, footer: uiFooter.trim(), splashImage: uiSplash.trim() || null } : null }),
       })
       const d = await r.json()
       if (!r.ok) { setJob({ status: 'failed', error: d.detail || '启动失败' }); setBuilding(false); return }
@@ -138,6 +147,17 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       if (res.data?.success && res.data.path) setIconPath(res.data.path)
     } catch { /* ignore */ } finally {
       setPickingIcon(false)
+    }
+  }
+
+  // 可视化选择启动图（PNG / GIF，tk 原生可显示）
+  const pickSplash = async () => {
+    setPickingSplash(true)
+    try {
+      const res = await systemApi.selectFile('选择启动图 (PNG / GIF)', undefined, [['图片', '*.png;*.gif']])
+      if (res.data?.success && res.data.path) setUiSplash(res.data.path)
+    } catch { /* ignore */ } finally {
+      setPickingSplash(false)
     }
   }
 
@@ -203,6 +223,59 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
                 浏览
               </button>
             </div>
+          </div>
+
+          {/* 界面定制：自定义 EXE 启动后的运行窗口（启动图 / 标题 / 主题色 / 页脚） */}
+          <div className="rounded-md border border-[hsl(var(--border))]">
+            <label className="flex items-center justify-between gap-2 px-3 py-2 cursor-pointer">
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium">界面定制（自定义启动界面）</div>
+                <div className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">开启后 EXE 运行时显示你设计的品牌窗口（启动图/标题/主题色/实时进度），而非黑色控制台</div>
+              </div>
+              <Checkbox checked={uiEnabled} onCheckedChange={(c) => setUiEnabled(!!c)} />
+            </label>
+            {uiEnabled && (
+              <div className="px-3 pb-3 space-y-2.5 border-t border-[hsl(var(--border))] pt-2.5">
+                <div>
+                  <label className="text-xs text-[hsl(var(--muted-foreground))]">启动图（PNG / GIF，可选）</label>
+                  <div className="flex gap-2 mt-1">
+                    <input className="flex-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+                      value={uiSplash} onChange={e => setUiSplash(e.target.value)} placeholder="留空则只显示标题/主题色" />
+                    <button type="button" onClick={pickSplash} disabled={pickingSplash}
+                      className="px-2.5 py-1.5 rounded-md border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] inline-flex items-center gap-1.5 text-sm disabled:opacity-60">
+                      {pickingSplash ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />}
+                      浏览
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-[hsl(var(--muted-foreground))]">窗口标题</label>
+                    <input className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+                      value={uiTitle} onChange={e => setUiTitle(e.target.value)} placeholder="例如 每日报表机器人" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[hsl(var(--muted-foreground))]">主题色</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="text" className="flex-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+                        value={uiTheme} onChange={e => setUiTheme(e.target.value)} placeholder="#2563eb" />
+                      <span className="w-7 h-7 rounded-md border border-[hsl(var(--border))] flex-shrink-0" style={{ background: uiTheme }} />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[hsl(var(--muted-foreground))]">副标题</label>
+                  <input className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+                    value={uiSubtitle} onChange={e => setUiSubtitle(e.target.value)} placeholder="例如 正在为您自动执行任务，请稍候…" />
+                </div>
+                <div>
+                  <label className="text-xs text-[hsl(var(--muted-foreground))]">页脚（可选）</label>
+                  <input className="w-full mt-1 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))]"
+                    value={uiFooter} onChange={e => setUiFooter(e.target.value)} placeholder="例如 © 你的公司 · 技术支持 xxx" />
+                </div>
+                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">提示：开启界面定制后建议把上方「显示运行控制台」关掉，运行时就只显示这个品牌窗口。</div>
+              </div>
+            )}
           </div>
 
           <div className="text-xs px-3 py-2 rounded-md bg-[hsl(var(--muted))]">
