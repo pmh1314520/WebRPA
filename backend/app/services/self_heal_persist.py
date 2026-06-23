@@ -15,10 +15,15 @@ WebRPA 区别于影刀的关键能力：流程运行时若元素选择器失效�
 from __future__ import annotations
 
 import json
+import os
+import threading
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Optional
+
+# 串行化"读-改-写"，避免定时任务与 API 并发回写同一文件造成数据覆盖/损坏
+_persist_lock = threading.Lock()
 
 
 def _workflow_folder() -> Path:
@@ -51,6 +56,12 @@ def _resolve_file(source: Any) -> Optional[Path]:
 
 
 def persist_self_heal(source: Any, healed_selectors: list, *, wf_name: str = "") -> dict:
+    """把自愈得到的新选择器固化回工作流文件（加锁串行，避免并发覆盖）。"""
+    with _persist_lock:
+        return _persist_self_heal_impl(source, healed_selectors, wf_name=wf_name)
+
+
+def _persist_self_heal_impl(source: Any, healed_selectors: list, *, wf_name: str = "") -> dict:
     """把自愈得到的新选择器固化回工作流文件。返回处理摘要。"""
     try:
         if not healed_selectors:
@@ -121,6 +132,9 @@ def persist_self_heal(source: Any, healed_selectors: list, *, wf_name: str = "")
         note_lines.append(f"旧版本已备份：_self_heal_versions/{backup.name}")
         note_text = "\n".join(note_lines)
 
+        # 移除上一次自愈便签，避免每次运行无限堆积便签节点
+        nodes = [n for n in nodes if not str(n.get("id", "")).startswith("selfheal_note_")]
+
         xs = [(n.get("position") or {}).get("x", 0) for n in nodes if n.get("type") == "moduleNode"]
         ys = [(n.get("position") or {}).get("y", 0) for n in nodes if n.get("type") == "moduleNode"]
         min_x = min(xs) if xs else 0
@@ -140,7 +154,10 @@ def persist_self_heal(source: Any, healed_selectors: list, *, wf_name: str = "")
         data["selfHeal"] = sh
         data["nodes"] = nodes
         try:
-            fp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            # 原子写：先写临时文件再替换，避免写一半崩溃导致工作流 JSON 损坏
+            tmp = fp.with_suffix(fp.suffix + ".tmp")
+            tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            os.replace(str(tmp), str(fp))
         except Exception as e:
             return {"persisted": False, "reason": f"write failed: {e}"}
 

@@ -74,11 +74,12 @@ async def _run_once(workflow_data: dict[str, Any], headless: bool = True) -> dic
             healed_selectors = []
         logs = []
         try:
-            if hasattr(executor, "logger") and hasattr(executor.logger, "logs"):
+            ctx = getattr(executor, "context", None)
+            if ctx is not None and hasattr(ctx, "get_logs"):
                 logs = [
-                    {"level": getattr(l, "level", ""), "message": getattr(l, "message", str(l))}
-                    if not isinstance(l, dict) else l
-                    for l in (executor.logger.logs or [])
+                    {"level": l.get("level", ""), "message": l.get("message", "")}
+                    if isinstance(l, dict) else {"level": "", "message": str(l)}
+                    for l in (ctx.get_logs() or [])
                 ]
         except Exception:
             logs = []

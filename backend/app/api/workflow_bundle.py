@@ -154,6 +154,10 @@ async def import_bundle(req: ImportBundleRequest):
                 target_dir = ia._get_full_path(folder)
                 os.makedirs(target_dir, exist_ok=True)
                 saved_name = img.get("name") or f"{img_id}{img.get('ext', '')}"
+                # 净化文件名，防止整包内构造 ../ 穿越写入到资源目录之外
+                saved_name = os.path.basename(str(saved_name).replace('\\', '/'))
+                if not saved_name or saved_name in ('.', '..'):
+                    continue
                 file_path = os.path.join(target_dir, saved_name)
                 with open(file_path, "wb") as f:
                     f.write(base64.b64decode(img.get("dataB64", "")))

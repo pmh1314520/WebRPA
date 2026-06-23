@@ -37,10 +37,15 @@ class DeleteFolderRequest(BaseModel):
 
 
 def _get_full_path(relative_path: Optional[str] = None) -> str:
-    """获取完整路径"""
+    """获取完整路径，并强制限制在 IMAGE_UPLOAD_DIR 之内（防止 ../ 或绝对路径穿越）。"""
+    base = os.path.realpath(IMAGE_UPLOAD_DIR)
     if not relative_path:
-        return IMAGE_UPLOAD_DIR
-    return os.path.join(IMAGE_UPLOAD_DIR, relative_path.replace('/', os.sep))
+        return base
+    rp = str(relative_path).replace('/', os.sep).replace('\\', os.sep).lstrip(os.sep)
+    full = os.path.realpath(os.path.join(base, rp))
+    if full == base or full.startswith(base + os.sep):
+        return full
+    raise HTTPException(status_code=400, detail="非法路径")
 
 
 def _get_relative_path(full_path: str) -> str:
@@ -272,8 +277,12 @@ async def create_folder(request: CreateFolderRequest):
 @router.put("/folders/rename")
 async def rename_folder(request: RenameFolderRequest):
     """重命名文件夹"""
+    if not request.newName or '/' in request.newName or '\\' in request.newName or request.newName in ('.', '..'):
+        raise HTTPException(status_code=400, detail="文件夹名称无效")
     old_full_path = _get_full_path(request.oldPath)
-    
+    if old_full_path == os.path.realpath(IMAGE_UPLOAD_DIR):
+        raise HTTPException(status_code=400, detail="不能重命名根目录")
+
     if not os.path.exists(old_full_path):
         raise HTTPException(status_code=404, detail="文件夹不存在")
     
@@ -312,8 +321,12 @@ async def rename_folder(request: RenameFolderRequest):
 @router.delete("/folders")
 async def delete_folder(request: DeleteFolderRequest):
     """删除文件夹及其所有内容"""
+    if not (request.folderPath or '').strip():
+        raise HTTPException(status_code=400, detail="不能删除根目录")
     full_path = _get_full_path(request.folderPath)
-    
+    if full_path == os.path.realpath(IMAGE_UPLOAD_DIR):
+        raise HTTPException(status_code=400, detail="不能删除根目录")
+
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="文件夹不存在")
     
@@ -321,10 +334,11 @@ async def delete_folder(request: DeleteFolderRequest):
         # 删除文件夹
         shutil.rmtree(full_path)
         
-        # 删除该文件夹下的所有图像元数据
+        # 删除该文件夹下的所有图像元数据（精确前缀匹配，避免误删相邻同前缀文件夹）
+        fp = request.folderPath.rstrip('/').rstrip('\\')
         to_delete = [
             asset_id for asset_id, asset in image_assets.items()
-            if asset['folder'].startswith(request.folderPath)
+            if asset['folder'] == fp or asset['folder'].startswith(fp + '/')
         ]
         for asset_id in to_delete:
             del image_assets[asset_id]

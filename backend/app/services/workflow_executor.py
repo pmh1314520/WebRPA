@@ -2488,6 +2488,16 @@ class WorkflowExecutor:
         
         return error_nodes
 
+    def _using_shared_browser(self) -> bool:
+        """当前是否复用了 browser_engine 的全局共享浏览器 context（复用则不应关闭它）。"""
+        try:
+            from app.services import browser_engine as _be
+            return (_be.is_open() and
+                    self.context.browser_context is not None and
+                    self.context.browser_context is _be.get_context())
+        except Exception:
+            return False
+
     async def _cleanup(self):
         """清理资源（内部方法，清理所有资源包括浏览器）"""
         try:
@@ -2498,33 +2508,39 @@ class WorkflowExecutor:
             except Exception as e:
                 print(f"清理 FFmpeg 进程时出错: {e}")
             
-            if self.context.page:
-                try:
-                    await self.context.page.close()
-                except Exception:
-                    pass
+            if self._using_shared_browser():
+                # 复用全局浏览器：仅解除引用，绝不关闭用户手动打开的浏览器/共享 playwright
                 self.context.page = None
-            
-            if self.context.browser_context:
-                try:
-                    await self.context.browser_context.close()
-                except Exception:
-                    pass
                 self.context.browser_context = None
-            
-            if self.context.browser:
-                try:
-                    await self.context.browser.close()
-                except Exception:
-                    pass
-                self.context.browser = None
-            
-            if self.context._playwright:
-                try:
-                    await self.context._playwright.stop()
-                except Exception:
-                    pass
                 self.context._playwright = None
+            else:
+                if self.context.page:
+                    try:
+                        await self.context.page.close()
+                    except Exception:
+                        pass
+                    self.context.page = None
+
+                if self.context.browser_context:
+                    try:
+                        await self.context.browser_context.close()
+                    except Exception:
+                        pass
+                    self.context.browser_context = None
+
+                if self.context.browser:
+                    try:
+                        await self.context.browser.close()
+                    except Exception:
+                        pass
+                    self.context.browser = None
+
+                if self.context._playwright:
+                    try:
+                        await self.context._playwright.stop()
+                    except Exception:
+                        pass
+                    self.context._playwright = None
             
             # 清理上下文中的数据，防止内存泄漏
             self.context.variables.clear()
@@ -2823,33 +2839,39 @@ class WorkflowExecutor:
         
         # 3. 强制关闭浏览器以中断正在进行的操作
         try:
-            if self.context.page:
-                try:
-                    await self.context.page.close()
-                except Exception:
-                    pass
+            if self._using_shared_browser():
+                # 复用全局浏览器：停止流程时仅解除引用，不关闭用户手动打开的浏览器
                 self.context.page = None
-            
-            if self.context.browser_context:
-                try:
-                    await self.context.browser_context.close()
-                except Exception:
-                    pass
                 self.context.browser_context = None
-            
-            if self.context.browser:
-                try:
-                    await self.context.browser.close()
-                except Exception:
-                    pass
-                self.context.browser = None
-            
-            if self.context._playwright:
-                try:
-                    await self.context._playwright.stop()
-                except Exception:
-                    pass
                 self.context._playwright = None
+            else:
+                if self.context.page:
+                    try:
+                        await self.context.page.close()
+                    except Exception:
+                        pass
+                    self.context.page = None
+
+                if self.context.browser_context:
+                    try:
+                        await self.context.browser_context.close()
+                    except Exception:
+                        pass
+                    self.context.browser_context = None
+
+                if self.context.browser:
+                    try:
+                        await self.context.browser.close()
+                    except Exception:
+                        pass
+                    self.context.browser = None
+
+                if self.context._playwright:
+                    try:
+                        await self.context._playwright.stop()
+                    except Exception:
+                        pass
+                    self.context._playwright = None
         except Exception as e:
             print(f"停止时关闭浏览器出错: {e}")
         
