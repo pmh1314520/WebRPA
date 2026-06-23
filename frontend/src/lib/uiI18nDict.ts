@@ -176,6 +176,40 @@ Object.assign(UI_DICT, {
   '页脚（可选）': 'Footer (optional)',
   '提示：开启界面定制后建议把上方「显示运行控制台」关掉，运行时就只显示这个品牌窗口。': 'Tip: after enabling UI customization, turn off "Show run console" above so only this branded window shows at runtime.',
   '选择启动图 (PNG / GIF)': 'Select splash image (PNG / GIF)',
+  // —— 打包：自由画布式 EXE 界面设计器 ——
+  '想自由摆放控件？用可视化设计器拖拽设计运行界面': 'Want to place controls freely? Use the visual designer to drag-and-drop your runtime UI',
+  '设计界面': 'Design UI',
+  '清除自定义界面，恢复简单模式': 'Clear custom UI and revert to simple mode',
+  'EXE 运行界面设计器（拖拽摆放控件）': 'EXE runtime UI designer (drag to place controls)',
+  '添加控件': 'Add control',
+  '文本': 'Text',
+  '进度条': 'Progress bar',
+  '状态文字': 'Status text',
+  '色块面板': 'Color panel',
+  '按钮': 'Button',
+  '画布': 'Canvas',
+  '背景色': 'Background color',
+  '点击画布上的控件以编辑属性': 'Click a control on the canvas to edit its properties',
+  '（拖动可移动位置）': '(drag to move)',
+  '文字': 'Text',
+  '字号': 'Font size',
+  '对齐': 'Align',
+  '左': 'Left',
+  '中': 'Center',
+  '右': 'Right',
+  '文字颜色': 'Text color',
+  '进度条颜色': 'Progress bar color',
+  '按钮颜色': 'Button color',
+  '填充色': 'Fill color',
+  '图片（PNG / GIF）': 'Image (PNG / GIF)',
+  '选择图片': 'Select image',
+  '该控件运行时会自动显示实时状态（运行中/完成/失败）': 'This control auto-shows live status at runtime (running / done / failed)',
+  '该控件运行时会自动随执行进度滚动': 'This control auto-scrolls with execution progress at runtime',
+  '运行结束后点击此按钮可关闭窗口': 'Click this button to close the window after the run finishes',
+  '删除控件': 'Delete control',
+  '应用到打包': 'Apply to package',
+  '图片（选择 PNG/GIF）': 'Image (select PNG/GIF)',
+  '选择图片 (PNG / GIF)': 'Select image (PNG / GIF)',
   // —— 自愈固化 ——
   '自愈固化（健康基线）': 'Self-heal & persist (healthy baseline)',
   // —— 错误处理 / 错误回流 ——
@@ -502,6 +536,13 @@ Object.assign(PHRASES, {
   '当然，我也能顺手帮你操作 WebRPA、搭建并运行自动化工作流':
     'of course, I can also help you operate WebRPA and build and run automation workflows',
   '搭档': 'partner', '框架': 'framework', '建议': 'suggestion', '细节': 'details', '步骤': 'step',
+})
+
+Object.assign(PHRASES, {
+  // —— EXE 界面设计器 动态片段（含数字插值，整句无法命中时按短语兜底）——
+  '已自定义运行界面': 'Custom runtime UI set', '覆盖上面的标题/主题设置': 'overrides the title / theme settings above',
+  '个控件': ' controls', '拖动控件移动位置，右侧编辑属性': 'drag a control to move it, edit properties on the right',
+  '属性': 'properties',
 })
 
 Object.assign(PHRASES, {

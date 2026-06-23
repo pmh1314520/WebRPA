@@ -3,7 +3,8 @@ import { getBackendBaseUrl } from '@/services/config'
 import { systemApi } from '@/services/api'
 import { SelectNative } from '@/components/ui/select-native'
 import { Checkbox } from '@/components/ui/checkbox'
-import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen, Ban, Square } from 'lucide-react'
+import { ExeUiDesigner, type ExeLayout } from './ExeUiDesigner'
+import { X, Package, Loader2, CheckCircle2, AlertCircle, FolderOpen, Ban, Square, Layers } from 'lucide-react'
 
 interface PackageDialogProps {
   isOpen: boolean
@@ -58,6 +59,9 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [uiFooter, setUiFooter] = useState('')
   const [uiSplash, setUiSplash] = useState('')
   const [pickingSplash, setPickingSplash] = useState(false)
+  // 自由画布式界面设计器
+  const [showDesigner, setShowDesigner] = useState(false)
+  const [uiLayout, setUiLayout] = useState<ExeLayout | null>(null)
   const pollRef = useRef<any>(null)
   const startRef = useRef<number>(0)
   const logScrollRef = useRef<HTMLDivElement>(null)
@@ -110,7 +114,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       const r = await fetch(`${base()}/api/workflow-package/build`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workflow: content, output_name: outName, mode, headless, show_console: showConsole, slim, icon_path: iconPath.trim() || null,
-          ui_config: uiEnabled ? { enabled: true, title: uiTitle.trim(), subtitle: uiSubtitle.trim(), themeColor: uiTheme, footer: uiFooter.trim(), splashImage: uiSplash.trim() || null } : null }),
+          ui_config: uiEnabled ? { enabled: true, title: uiTitle.trim(), subtitle: uiSubtitle.trim(), themeColor: uiTheme, footer: uiFooter.trim(), splashImage: uiSplash.trim() || null, layout: uiLayout || null } : null }),
       })
       const d = await r.json()
       if (!r.ok) { setJob({ status: 'failed', error: d.detail || '启动失败' }); setBuilding(false); return }
@@ -274,6 +278,20 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
                     value={uiFooter} onChange={e => setUiFooter(e.target.value)} placeholder="例如 © 你的公司 · 技术支持 xxx" />
                 </div>
                 <div className="text-[11px] text-[hsl(var(--muted-foreground))]">提示：开启界面定制后建议把上方「显示运行控制台」关掉，运行时就只显示这个品牌窗口。</div>
+
+                {/* 自由画布式界面设计器入口 */}
+                <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[hsl(var(--border))]">
+                  <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                    {uiLayout ? `已自定义运行界面（${uiLayout.widgets.length} 个控件，覆盖上面的标题/主题设置）` : '想自由摆放控件？用可视化设计器拖拽设计运行界面'}
+                  </div>
+                  <button type="button" onClick={() => setShowDesigner(true)}
+                    className="px-2.5 py-1.5 rounded-md border border-[hsl(var(--brand-500)/0.5)] text-[hsl(var(--brand-700))] hover:bg-[hsl(var(--brand-50))] inline-flex items-center gap-1.5 text-sm flex-shrink-0">
+                    <Layers className="w-4 h-4" /> 设计界面
+                  </button>
+                </div>
+                {uiLayout && (
+                  <button type="button" onClick={() => setUiLayout(null)} className="text-[11px] underline text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--destructive))]">清除自定义界面，恢复简单模式</button>
+                )}
               </div>
             )}
           </div>
@@ -363,6 +381,13 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
           </div>
         </div>
       </div>
+
+      <ExeUiDesigner
+        isOpen={showDesigner}
+        initial={uiLayout}
+        onClose={() => setShowDesigner(false)}
+        onApply={(l) => setUiLayout(l)}
+      />
     </div>
   )
 }

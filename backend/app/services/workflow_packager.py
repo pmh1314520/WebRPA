@@ -421,12 +421,155 @@ def _run_with_ui(cfg, ui):
     return 0 if res.get("success") else 1
 
 
+def _run_with_layout(cfg, ui, layout):
+    """按用户在"界面设计器"里自由摆放的布局渲染运行窗口（tk place 绝对定位）。
+    status 控件实时显示状态，progress 控件随执行滚动；跑完自动收尾。"""
+    try:
+        import tkinter as tk
+    except Exception:
+        return asyncio.run(_main())
+
+    import threading
+    holder = {"done": False, "res": None}
+    t = threading.Thread(target=_run_blocking, args=(cfg, holder), daemon=True)
+    t.start()
+
+    W = int(layout.get("width", 520) or 520)
+    H = int(layout.get("height", 360) or 360)
+    bg = str(layout.get("bg", "#ffffff") or "#ffffff")
+
+    root = tk.Tk()
+    root.title(str(ui.get("title") or "WebRPA 自动化程序"))
+    root.configure(bg=bg)
+    try:
+        root.geometry("%dx%d" % (W, H))
+        root.eval("tk::PlaceWindow . center")
+        root.attributes("-topmost", True)
+    except Exception:
+        pass
+
+    _imgs = []
+    status_vars = []
+    progress_items = []
+    _anchor_map = {"left": "w", "center": "center", "right": "e"}
+
+    for w in (layout.get("widgets") or []):
+        try:
+            typ = w.get("type")
+            x = int(w.get("x", 0)); y = int(w.get("y", 0))
+            ww = int(w.get("w", 100)); hh = int(w.get("h", 28))
+            if typ == "panel":
+                f = tk.Frame(root, bg=str(w.get("bg") or "#e5e7eb"))
+                f.place(x=x, y=y, width=ww, height=hh)
+            elif typ == "image":
+                src = w.get("src") or ""
+                p = os.path.join(HERE, src) if src else ""
+                if p and os.path.isfile(p):
+                    img = tk.PhotoImage(file=p)
+                    try:
+                        while img.width() > ww or img.height() > hh:
+                            img = img.subsample(2, 2)
+                    except Exception:
+                        pass
+                    _imgs.append(img)
+                    tk.Label(root, image=img, bg=bg).place(x=x, y=y, width=ww, height=hh)
+            elif typ == "progress":
+                col = str(w.get("bg") or "#2563eb")
+                canv = tk.Canvas(root, bg="#e5e7eb", highlightthickness=0)
+                canv.place(x=x, y=y, width=ww, height=hh)
+                bw = max(40, int(ww * 0.28))
+                bar = canv.create_rectangle(0, 0, bw, hh, fill=col, width=0)
+                progress_items.append({"canv": canv, "bar": bar, "col": col, "w": ww, "h": hh, "bw": bw, "x": 0, "dir": 1})
+            else:
+                # text / status / button 都用 Label/Button
+                fnt = ("Microsoft YaHei", int(w.get("fontSize", 13) or 13), "bold" if w.get("bold") else "normal")
+                anc = _anchor_map.get(str(w.get("align") or "left"), "w")
+                if typ == "status":
+                    sv = tk.StringVar(value=str(w.get("text") or "正在运行…"))
+                    lbl = tk.Label(root, textvariable=sv, bg=bg, fg=str(w.get("color") or "#334155"), font=fnt, anchor=anc, justify="left")
+                    lbl.place(x=x, y=y, width=ww, height=hh)
+                    status_vars.append(sv)
+                elif typ == "button":
+                    def _mk(closable=True):
+                        def _cmd():
+                            if holder["done"]:
+                                root.destroy()
+                        return _cmd
+                    btn = tk.Button(root, text=str(w.get("text") or "关闭"), command=_mk(),
+                                    bg=str(w.get("bg") or "#2563eb"), fg="#ffffff", relief="flat", font=fnt)
+                    btn.place(x=x, y=y, width=ww, height=hh)
+                else:
+                    wbg = str(w.get("bg") or "")
+                    lbl = tk.Label(root, text=str(w.get("text") or ""), bg=(wbg if wbg and wbg != "#ffffff" else bg),
+                                   fg=str(w.get("color") or "#111827"), font=fnt, anchor=anc, justify="left")
+                    lbl.place(x=x, y=y, width=ww, height=hh)
+        except Exception:
+            continue
+
+    def _tick():
+        if holder["done"]:
+            return
+        for p in progress_items:
+            p["x"] += max(8, int(p["w"] * 0.04)) * p["dir"]
+            if p["x"] > p["w"] - p["bw"]:
+                p["dir"] = -1
+            elif p["x"] < 0:
+                p["dir"] = 1
+            try:
+                p["canv"].coords(p["bar"], p["x"], 0, p["x"] + p["bw"], p["h"])
+            except Exception:
+                pass
+        root.after(60, _tick)
+
+    def _poll():
+        if holder["done"]:
+            res = holder.get("res") or {}
+            ok = res.get("success")
+            for sv in status_vars:
+                try:
+                    sv.set("执行完成" if ok else ("执行失败：" + str(res.get("error") or "")[:50]))
+                except Exception:
+                    pass
+            for p in progress_items:
+                try:
+                    p["canv"].coords(p["bar"], 0, 0, p["w"], p["h"])
+                    p["canv"].itemconfig(p["bar"], fill=("#16a34a" if ok else "#dc2626"))
+                except Exception:
+                    pass
+            # 有按钮就等用户点关闭；没有按钮则自动收尾
+            has_btn = any((w.get("type") == "button") for w in (layout.get("widgets") or []))
+            if not has_btn:
+                root.after(1800 if ok else 4000, root.destroy)
+            return
+        root.after(120, _poll)
+
+    def _on_close():
+        if holder["done"]:
+            root.destroy()
+    root.protocol("WM_DELETE_WINDOW", _on_close)
+
+    _tick()
+    _poll()
+    try:
+        root.mainloop()
+    except Exception:
+        pass
+    try:
+        t.join(timeout=3)
+    except Exception:
+        pass
+    res = holder.get("res") or {}
+    return 0 if res.get("success") else 1
+
+
 if __name__ == "__main__":
     code = 1
     _cfg = _load_cfg()
     _ui = _cfg.get("ui") or {}
     try:
-        if _ui.get("enabled"):
+        if _ui.get("enabled") and isinstance(_ui.get("layout"), dict) and _ui["layout"].get("widgets"):
+            code = _run_with_layout(_cfg, _ui, _ui["layout"])
+        elif _ui.get("enabled"):
             code = _run_with_ui(_cfg, _ui)
         else:
             code = asyncio.run(_main())
@@ -683,6 +826,29 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
                         dst = runtime / ("ui_splash" + ext)
                         shutil.copy2(sp, dst)
                         ui_out["splashImage"] = dst.name
+                # 自由画布式自定义界面布局：复制每个图片控件的源图进运行时并改写为相对名
+                layout = ui_config.get("layout")
+                if isinstance(layout, dict) and isinstance(layout.get("widgets"), list):
+                    _img_i = 0
+                    for w in layout["widgets"]:
+                        try:
+                            if w.get("type") == "image" and w.get("src") and Path(w["src"]).is_file():
+                                ext = Path(w["src"]).suffix.lower()
+                                if ext in (".png", ".gif"):
+                                    _img_i += 1
+                                    dname = f"ui_img_{_img_i}{ext}"
+                                    shutil.copy2(w["src"], runtime / dname)
+                                    w["src"] = dname
+                                else:
+                                    w["src"] = ""
+                        except Exception:
+                            w["src"] = ""
+                    ui_out["layout"] = {
+                        "width": int(layout.get("width", 520) or 520),
+                        "height": int(layout.get("height", 360) or 360),
+                        "bg": str(layout.get("bg", "#ffffff") or "#ffffff")[:16],
+                        "widgets": layout["widgets"],
+                    }
                 _cfg["ui"] = ui_out
         except Exception as _e:
             print(f"[packager] 写入自定义界面配置失败: {_e}")
