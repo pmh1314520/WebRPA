@@ -5,6 +5,7 @@ import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react'
 import type { ModuleType, Variable, LogEntry, ExecutionStatus, ModuleConfig, DataAsset, ImageAsset } from '@/types'
 import { useGlobalConfigStore } from './globalConfigStore'
 import { layoutGraph } from '@/lib/elkLayout'
+import { collectNodeVarNames } from '@/lib/moduleDefaultVars'
 
 // ============================================================================
 // 全局节点/边 sanitizer：保证写入 react-flow 的数据永远不会让 react-flow 崩
@@ -180,6 +181,7 @@ interface WorkflowState {
   
   // 变量操作
   addVariable: (variable: Omit<Variable, 'name'> & { name: string }) => void
+  ensureGlobalVariables: (names: string[]) => void
   updateVariable: (name: string, value: unknown) => void
   deleteVariable: (name: string) => void
   renameVariable: (oldName: string, newName: string) => void
@@ -2338,40 +2340,20 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       },
     }
     
-    // 将默认变量名添加到变量列表中
-    const variableFields = [
-      'variableName', 'resultVariable', 'itemVariable', 'indexVariable', 
-      'loopIndexVariable', 'saveToVariable', 'saveNewElementSelector', 'saveChangeInfo',
-      // 坐标相关
-      'variableNameX', 'variableNameY',
-      // Python脚本相关
-      'stdoutVariable', 'stderrVariable', 'returnCodeVariable',
-      // 数据提取相关
-      'columnName',
-      // 桌面自动化相关
-      'appVariable', 'controlVariable',
-      // 其他可能的变量名字段
-      'outputVariable', 'targetVariable', 'dataVariable'
-    ]
-    const newVariables: string[] = []
-    for (const field of variableFields) {
-      const varName = newNode.data[field]
-      if (varName && typeof varName === 'string' && varName.trim()) {
-        newVariables.push(varName.trim())
-      }
-    }
+    // 将默认变量名添加到变量列表中（含模块自带的默认变量，如循环的 index）
+    const newVariables: string[] = collectNodeVarNames(type, newNode.data as Record<string, unknown>)
     
-    // 添加新变量到变量列表(去重)
+    // 添加新变量到变量列表(去重，已存在同名则不创建、不覆盖)，统一作为「全局变量」显示
     if (newVariables.length > 0) {
       const currentVariables = get().variables
       const existingNames = new Set(currentVariables.map(v => v.name))
-      const variablesToAdd: Variable[] = newVariables
+      const variablesToAdd: Variable[] = Array.from(new Set(newVariables))
         .filter(name => !existingNames.has(name))
         .map(name => ({
           name,
           value: undefined,
           type: 'string' as const,
-          scope: 'local' as const
+          scope: 'global' as const
         }))
       
       if (variablesToAdd.length > 0) {
@@ -2682,6 +2664,21 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     set({
       variables: [...get().variables, variable],
     })
+  },
+
+  // 批量确保一组变量存在于全局变量中（已存在同名则跳过，绝不覆盖）。
+  // 供模块创建（流程图/模块条）时自动建立其自带的默认变量使用。
+  ensureGlobalVariables: (names) => {
+    const list = (names || []).map((n) => (n || '').trim()).filter(Boolean)
+    if (list.length === 0) return
+    const current = get().variables
+    const existingNames = new Set(current.map((v) => v.name))
+    const toAdd = Array.from(new Set(list))
+      .filter((n) => !existingNames.has(n))
+      .map((name) => ({ name, value: undefined, type: 'string' as const, scope: 'global' as const }))
+    if (toAdd.length > 0) {
+      set({ variables: [...current, ...toAdd] })
+    }
   },
 
   updateVariable: (name, value) => {

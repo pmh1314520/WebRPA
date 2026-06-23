@@ -277,6 +277,9 @@ class WorkflowExecutor:
         
         self.executed_nodes = 0
         self.failed_nodes = 0
+        # 模块执行结果（按节点 id 记录最终成功/失败，去重统计"模块数"，
+        # 避免循环/重试把同一模块的多次执行重复累加）
+        self._node_outcomes: dict[str, bool] = {}
         self.start_time: Optional[datetime] = None
         
         self._result: Optional[ExecutionResult] = None
@@ -929,7 +932,7 @@ class WorkflowExecutor:
             custom_module_result.duration = duration
             # 通用后处理：成功则统计、失败则计错
             if custom_module_result.success:
-                self.executed_nodes += 1
+                self._node_outcomes[node.id] = True
                 await self._log(
                     LogLevel.INFO,
                     f"[{label}] {custom_module_result.message or '自定义模块执行完成'}",
@@ -937,7 +940,7 @@ class WorkflowExecutor:
                     duration=duration,
                 )
             else:
-                self.failed_nodes += 1
+                self._node_outcomes[node.id] = False
                 await self._log(
                     LogLevel.ERROR,
                     f"[{label}] {custom_module_result.error or custom_module_result.message or '自定义模块执行失败'}",
@@ -1159,7 +1162,8 @@ class WorkflowExecutor:
         duration = (time.time() - start_time) * 1000
         result.duration = duration
         
-        self.executed_nodes += 1
+        # 记录该模块最终结果（按节点 id 去重；循环/重试会以最后一次结果覆盖）
+        self._node_outcomes[node.id] = bool(result.success)
         
         if result.success:
                 # 重要模块列表 - 这些模块的日志在简洁模式下也会显示
@@ -1253,7 +1257,6 @@ class WorkflowExecutor:
                 await self._log(log_level, f"[{label}] {result.message}", 
                                node_id=node.id, duration=duration, is_user_log=is_user_log, is_system_log=is_system_log)
         else:
-            self.failed_nodes += 1
             print(f"[ERROR] 节点失败: {label} - {result.error}")
             # 错误日志也标记为用户日志，这样在简洁模式下也会显示
             await self._log(LogLevel.ERROR, f"[{label}] {result.error}", 
@@ -2613,6 +2616,7 @@ class WorkflowExecutor:
         self.start_time = datetime.now()
         self.executed_nodes = 0
         self.failed_nodes = 0
+        self._node_outcomes = {}
         self._executed_node_ids.clear()
         self._executing_node_ids.clear()
         self._pending_nodes.clear()
@@ -2713,6 +2717,11 @@ class WorkflowExecutor:
                     for i in range(self._last_data_rows_count, len(self.context.data_rows)):
                         await self._send_data_row(self.context.data_rows[i])
             
+            # 统计"模块数"：按节点 id 取最终结果去重，避免循环/重试把同一模块多次执行重复累加；
+            # 同一模块多次执行/重试只按其最后一次结果计入成功或失败。
+            self.executed_nodes = len(self._node_outcomes)
+            self.failed_nodes = sum(1 for ok in self._node_outcomes.values() if not ok)
+
             if self.should_stop:
                 status = ExecutionStatus.STOPPED
                 await self._log(LogLevel.WARNING, "⏹️ 工作流已停止", is_system_log=True)
@@ -2738,6 +2747,9 @@ class WorkflowExecutor:
             import traceback
             traceback.print_exc()
             await self._log(LogLevel.ERROR, f"💥 工作流执行异常: {str(e)}", is_system_log=True)
+            # 异常路径同样按最终结果去重统计模块数
+            self.executed_nodes = len(self._node_outcomes)
+            self.failed_nodes = sum(1 for ok in self._node_outcomes.values() if not ok)
             self._result = ExecutionResult(
                 workflow_id=self.workflow.id,
                 status=ExecutionStatus.FAILED,

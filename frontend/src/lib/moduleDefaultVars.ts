@@ -179,8 +179,9 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
 
   // ==================== 控制流 / 循环 ====================
   foreach: { itemVariable: 'item', indexVariable: 'index' },
-  foreach_dict: { keyVariable: 'key', valueVariable: 'value' },
+  foreach_dict: { keyVariable: 'key', valueVariable: 'value', indexVariable: 'index' },
   loop: { indexVariable: 'index' },
+  infinite_loop: { indexVariable: 'index' },
 
   // ==================== 数学/统计 ====================
   list_sum: { resultVariable: 'sum_result' },
@@ -343,3 +344,28 @@ export const VARIABLE_NAME_FIELDS: string[] = [
   // 触发器/元素变化
   'saveNewElementSelector', 'saveChangeInfo', 'dataSource',
 ]
+
+
+/**
+ * 收集一个节点在「创建时」应自动建立的变量名集合：
+ *  1) 节点配置里已填写的变量名字段（VARIABLE_NAME_FIELDS）
+ *  2) 该模块类型自带的默认变量名（MODULE_DEFAULT_VARS）——即使配置里尚未填，
+ *     创建时也应内置（例如循环模块的 index、遍历模块的 item/index）。
+ * 供流程图 addNode 与模块条创建路径共用，确保任何模块创建即在全局变量中建好自带变量。
+ */
+export function collectNodeVarNames(moduleType: string, data?: Record<string, unknown>): string[] {
+  const names = new Set<string>()
+  if (data) {
+    for (const f of VARIABLE_NAME_FIELDS) {
+      const v = (data as Record<string, unknown>)[f]
+      if (typeof v === 'string' && v.trim()) names.add(v.trim())
+    }
+  }
+  const defs = MODULE_DEFAULT_VARS[moduleType]
+  if (defs) {
+    for (const v of Object.values(defs)) {
+      if (v && typeof v === 'string' && v.trim()) names.add(v.trim())
+    }
+  }
+  return Array.from(names)
+}

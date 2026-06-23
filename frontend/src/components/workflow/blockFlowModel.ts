@@ -9,6 +9,7 @@ import { nanoid } from 'nanoid'
 import type { Node, Edge } from '@xyflow/react'
 import type { NodeData } from '@/store/workflowStore'
 import { moduleTypeLabels } from '@/store/workflowStore'
+import { getModuleAllDefaultVars } from '@/lib/moduleDefaultVars'
 import type { ModuleType } from '@/types'
 
 export type Block =
@@ -279,7 +280,11 @@ export function generateGraphFromBlocks(blocks: Block[]): { nodes: Node<NodeData
     // loop
     if (b.kind === 'loop') {
       if (b.body.length > 0) {
-        const bodyEntry = wireSeq(b.body, b.id) // 循环体最后回到循环节点
+        // 循环体按顺序串接，末节点不回连到循环节点：
+        // WebRPA 执行引擎在 _handle_loop 内部按轮次重跑循环体入口来实现迭代，
+        // 若加"末节点→循环节点"的回边会形成图环，导致循环节点被误纳入循环体、
+        // 每轮被清除执行状态，并破坏前驱等待逻辑。循环体末节点应无后继。
+        const bodyEntry = wireSeq(b.body, null)
         addEdge(b.id, bodyEntry, 'loop')
       }
       addEdge(b.id, followId, 'done')
@@ -298,11 +303,14 @@ export function generateGraphFromBlocks(blocks: Block[]): { nodes: Node<NodeData
 /** 新建一个 Block（条件/循环带空分支） */
 export function createBlock(type: ModuleType, extraData?: Partial<NodeData>): Block {
   const id = nanoid()
+  // 套用该模块类型自带的默认变量名字段（如循环的 indexVariable='index'、遍历的 item/index），
+  // 使模块条创建的节点与流程图 addNode 行为一致：运行时变量名正确、配置面板有默认值。
+  const defVars = getModuleAllDefaultVars(type as string)
   const node: Node<NodeData> = {
     id,
     type: 'moduleNode',
     position: { x: 0, y: 0 },
-    data: { label: moduleTypeLabels[type] || type, moduleType: type, ...(extraData || {}) } as NodeData,
+    data: { label: moduleTypeLabels[type] || type, moduleType: type, ...(defVars as Partial<NodeData>), ...(extraData || {}) } as NodeData,
   }
   if (CONDITION_TYPES.has(type)) return { kind: 'if', id, node, then: [], els: [] }
   if (LOOP_TYPES.has(type)) return { kind: 'loop', id, node, body: [] }

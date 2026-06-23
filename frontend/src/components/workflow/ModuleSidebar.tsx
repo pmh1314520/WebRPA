@@ -2522,6 +2522,9 @@ export { moduleCategories }
 // 导出模块图标映射
 export { moduleIcons }
 
+// 导出模块搜索关键词映射（供其它选择器做拼音/关键词搜索）
+export { moduleKeywords }
+
 // 获取所有可用模块的扁平列表（包括自定义模块）
 export function getAllAvailableModules() {
   // 内置模块

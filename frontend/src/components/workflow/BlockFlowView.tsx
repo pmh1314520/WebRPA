@@ -4,12 +4,12 @@
  * 纯模块条模式即可搭建任意工作流（含条件/循环/嵌套），无需切回流程图。
  * 以「结构树」为操作对象，每次编辑后由树重新生成完整的图（自动连线）。
  */
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type React from 'react'
 import { useWorkflowStore, moduleTypeLabels, type NodeData, type ErrorPolicy } from '@/store/workflowStore'
 import { useNodeRunStore } from '@/store/nodeRunStore'
-import { moduleIcons, moduleCategories } from './ModuleSidebar'
+import { moduleIcons, moduleCategories, moduleKeywords } from './ModuleSidebar'
 import { moduleColors } from './moduleColors'
 import { SelectNative } from '@/components/ui/select-native'
 import { Plus, Search, Trash2, X, ChevronUp, ChevronDown, Ban, CheckCircle2, RotateCcw } from 'lucide-react'
@@ -17,9 +17,10 @@ import type { ModuleType } from '@/types'
 import {
   parseGraphToBlocks, generateGraphFromBlocks, createBlock,
   insertAfter, insertBefore, insertIntoContainer, removeBlock, moveBlock, moveBlockTo,
-  cloneBlock,
-  type Block,
+  cloneBlock,  type Block,
 } from './blockFlowModel'
+import { collectNodeVarNames } from '@/lib/moduleDefaultVars'
+import { pinyinMatch } from '@/lib/pinyin'
 
 // 模块条复制粘贴的会话级剪贴板（跨组件重渲染保留；存的是已换新 id 的快照，
 // 每次粘贴时再 clone 一次，保证可重复粘贴且 id 不冲突）
@@ -52,9 +53,18 @@ function branchLabels(mt: string): { yes: string; no: string; head: string } {
 /** 模块选择弹层（portal 到 body，fixed 定位，避免被滚动容器裁剪） */
 function ModulePicker({ x, y, onPick, onClose }: { x: number; y: number; onPick: (t: ModuleType) => void; onClose: () => void }) {
   const [query, setQuery] = useState('')
-  const q = query.trim().toLowerCase()
+  const q = query.trim()
   const filtered = useMemo(() => moduleCategories
-    .map((cat) => ({ ...cat, modules: cat.modules.filter((m) => !q || (moduleTypeLabels[m] || m).toLowerCase().includes(q) || m.toLowerCase().includes(q)) }))
+    .map((cat) => ({ ...cat, modules: cat.modules.filter((m) => {
+      if (!q) return true
+      const label = moduleTypeLabels[m] || m
+      // 支持中文 / 拼音全拼 / 拼音首字母 / 英文类型名 / 关键词
+      if (pinyinMatch(label, q)) return true
+      if (m.toLowerCase().includes(q.toLowerCase())) return true
+      const kws = moduleKeywords[m] || []
+      if (kws.some((kw) => pinyinMatch(kw, q))) return true
+      return false
+    }) }))
     .filter((cat) => cat.modules.length > 0), [q])
   // 视口内夹取，避免溢出
   const W = 340, H = 420
@@ -70,7 +80,7 @@ function ModulePicker({ x, y, onPick, onClose }: { x: number; y: number; onPick:
       >
         <div className="flex items-center gap-2 px-3 py-2 border-b border-[hsl(var(--border))]">
           <Search className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
-          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索模块…" className="flex-1 bg-transparent outline-none text-[13px]" />
+          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索模块（支持拼音）" className="flex-1 bg-transparent outline-none text-[13px]" />
           <button onClick={onClose} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"><X className="w-3.5 h-3.5" /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-1.5" onWheel={(e) => e.stopPropagation()}>
@@ -105,6 +115,7 @@ export function BlockFlowView() {
   const setGraph = useWorkflowStore((s) => s.setGraph)
   const toggleNodesDisabled = useWorkflowStore((s) => s.toggleNodesDisabled)
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData)
+  const ensureGlobalVariables = useWorkflowStore((s) => s.ensureGlobalVariables)
   const runStatuses = useNodeRunStore((s) => s.statuses)
 
   // 多选（像资源管理器：单击单选 / Ctrl 切换 / Shift 范围 / Ctrl+A 全选）
@@ -112,8 +123,19 @@ export function BlockFlowView() {
   const lastClickedRef = useRef<string | null>(null)
   // 鼠标当前悬停的插入点（用于"粘贴到这两个模块之间"而非永远粘到底部）
   const hoverTargetRef = useRef<PickerTarget | null>(null)
+  // 模块条滚动容器 + 编辑后待恢复的滚动位置（修复增删模块后自动滚回顶部的问题）
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  const pendingScrollTopRef = useRef<number | null>(null)
 
   const blocks = useMemo(() => parseGraphToBlocks(nodes, edges), [nodes, edges])
+
+  // 编辑后恢复滚动位置（修复增删模块条自动滚回顶部）。仅在 applyEdit 标记了待恢复值时生效。
+  useLayoutEffect(() => {
+    if (pendingScrollTopRef.current != null && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = pendingScrollTopRef.current
+      pendingScrollTopRef.current = null
+    }
+  })
   const [picker, setPicker] = useState<{ target: PickerTarget; x: number; y: number } | null>(null)
   const [dropActive, setDropActive] = useState(false)
   // 错误策略弹层（点击模块行的"出错处理"按钮打开）
@@ -129,6 +151,8 @@ export function BlockFlowView() {
   // 所有结构化编辑：基于当前图重新解析出可变树 → 编辑 → 重新生成图 → 提交
   // 关键：重新生成只管 moduleNode；分组/便签/子流程头等非模块节点及其相关连线原样保留，避免数据丢失
   const applyEdit = (fn: (tree: Block[]) => Block[]) => {
+    // 编辑前记录当前滚动位置，编辑后恢复，避免增删模块条后视图自动滚回顶部
+    pendingScrollTopRef.current = scrollContainerRef.current?.scrollTop ?? null
     const tree = parseGraphToBlocks(nodes, edges)
     const next = fn(tree)
     const g = generateGraphFromBlocks(next)
@@ -146,12 +170,16 @@ export function BlockFlowView() {
 
   // 统一插入逻辑（点击选择 / 拖拽放入 共用）
   const insertAt = (target: PickerTarget, type: ModuleType, extra?: Partial<NodeData>) => {
+    let createdData: Record<string, unknown> | null = null
     applyEdit((tree) => {
       const neu = createBlock(type, extra)
+      createdData = neu.node.data as Record<string, unknown>
       if (target.mode === 'after') return insertAfter(tree, target.id, neu)
       if (target.mode === 'before') return insertBefore(tree, target.id, neu)
       return insertIntoContainer(tree, target.id, target.slot, neu)
     })
+    // 创建模块时自动在全局变量中建立其自带的默认变量（如循环的 index），已存在同名则不覆盖
+    ensureGlobalVariables(collectNodeVarNames(type, createdData || undefined))
   }
 
   // 打开模块选择弹层（记录锚点坐标，portal 定位）
@@ -732,6 +760,7 @@ export function BlockFlowView() {
 
   return (
     <div
+      ref={scrollContainerRef}
       className={'h-full w-full overflow-y-auto bg-[hsl(var(--background))] py-5 px-4 ' + (dropActive ? 'ring-2 ring-inset ring-[hsl(var(--brand-500))]' : '')}
       onDragOver={(e) => { if (e.dataTransfer.types.includes('application/reactflow') || e.dataTransfer.types.includes('application/blockmove')) { e.preventDefault(); setDropActive(true) } }}
       onDragLeave={() => setDropActive(false)}
