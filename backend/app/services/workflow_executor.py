@@ -851,7 +851,7 @@ class WorkflowExecutor:
                 if next_id in self._executed_node_ids or next_id in self._executing_node_ids:
                     continue
                 
-                prev_nodes = self.graph.get_prev_nodes(next_id)
+                prev_nodes = self.graph.get_join_prev_nodes(next_id)
                 
                 if len(prev_nodes) <= 1:
                     nodes_ready_to_execute.append(next_id)
@@ -1778,7 +1778,7 @@ class WorkflowExecutor:
             # 注意：条件分支只走一条路，另一条路的节点永远不会进入 executed_ids
             # 因此只要「在 allowed_nodes 中且尚未执行」的前置节点都已完成，即可执行
             # 已不在 allowed_nodes 中的前置节点（子流程外）不参与等待
-            prev_nodes = self.graph.get_prev_nodes(node_id)
+            prev_nodes = self.graph.get_join_prev_nodes(node_id)
             prev_in_subflow = [pid for pid in prev_nodes if pid in allowed_nodes]
             
             # 如果没有前置节点，直接执行

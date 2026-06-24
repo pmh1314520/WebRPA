@@ -18,6 +18,10 @@ class ExecutionGraph:
         self.condition_branches: dict[str, dict[str, list[str]]] = {}
         self.loop_branches: dict[str, dict[str, list[str]]] = {}  # loop_node_id -> {handle: [target_node_ids]}
         self.error_branches: dict[str, list[str]] = {}  # node_id -> [error_handler_node_ids]
+        # 错误边的反向映射：error 目标节点 -> {来源节点}。
+        # 用于"多前驱汇合等待"时排除错误边来源——错误边是异常路径，
+        # 若把它当普通前驱，"出错回流到上层"形成的环会让上层节点永远等待下游而死锁。
+        self.error_pred: dict[str, set[str]] = defaultdict(set)
     
     def get_node(self, node_id: str) -> Optional[WorkflowNode]:
         return self.nodes.get(node_id)
@@ -51,6 +55,16 @@ class ExecutionGraph:
     def get_prev_nodes(self, node_id: str) -> list[str]:
         """获取前置节点ID列表"""
         return self.reverse_adjacency.get(node_id, [])
+
+    def get_join_prev_nodes(self, node_id: str) -> list[str]:
+        """获取用于"多前驱汇合等待"的前置节点：排除错误边来源。
+        错误边（出错回流到上层）是异常路径，不应让节点等待其下游错误处理节点先完成，
+        否则"出错→回到上层重试"形成的环会导致上层节点永久等待而死锁。"""
+        prev = self.reverse_adjacency.get(node_id, [])
+        errs = self.error_pred.get(node_id)
+        if not errs:
+            return list(prev)
+        return [p for p in prev if p not in errs]
     
     def get_start_nodes(self) -> list[str]:
         """获取起始节点ID列表"""
@@ -107,6 +121,8 @@ class WorkflowParser:
                     if source_id not in graph.error_branches:
                         graph.error_branches[source_id] = []
                     graph.error_branches[source_id].append(target_id)
+                # 记录错误边来源，供 join 等待排除
+                graph.error_pred[target_id].add(source_id)
             # 处理条件分支（condition、face_recognition、element_exists、element_visible、image_exists、phone_image_exists、probability_trigger 模块的 true/false/path1/path2）
             elif edge.sourceHandle and source_node and source_node.type in ('condition', 'face_recognition', 'element_exists', 'element_visible', 'image_exists', 'phone_image_exists', 'probability_trigger'):
                 handle = edge.sourceHandle
