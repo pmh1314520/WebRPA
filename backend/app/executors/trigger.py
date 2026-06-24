@@ -78,6 +78,14 @@ class WebhookTriggerExecutor(ModuleExecutor):
             except json.JSONDecodeError:
                 return ModuleResult(success=False, error="响应内容格式错误，必须是有效的JSON")
 
+        # 打包独立运行（无 FastAPI 路由）：自起轻量 HTTP 监听承接 webhook，避免永久挂起
+        import os as _os_pkg
+        if _os_pkg.environ.get('WEBRPA_PACKAGED'):
+            return await self._run_packaged_webhook(
+                context, webhook_id, method, timeout, save_to_variable,
+                validate_headers, validate_params, response_body, response_status,
+                auto_set_params, param_prefix)
+
         # 注册Webhook到全局触发器管理器
         from app.services.trigger_manager import trigger_manager
         from app.utils.config import get_backend_url
@@ -185,6 +193,117 @@ class WebhookTriggerExecutor(ModuleExecutor):
         finally:
             # 清理Webhook注册
             trigger_manager.unregister_webhook(webhook_id)
+
+    async def _run_packaged_webhook(self, context, webhook_id, method, timeout, save_to_variable,
+                                    validate_headers, validate_params, response_body, response_status,
+                                    auto_set_params, param_prefix):
+        """打包独立运行时：用标准库 http.server 自起 webhook 监听，收到匹配请求即返回数据。"""
+        import threading
+        import json as _json
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        from urllib.parse import urlparse, parse_qs
+
+        # 监听端口：与编辑器一致默认 5241，可被 WEBRPA_WEBHOOK_PORT 覆盖
+        port = 5241
+        try:
+            import os as _os
+            port = int(_os.environ.get('WEBRPA_WEBHOOK_PORT') or 5241)
+        except Exception:
+            port = 5241
+
+        expect_path = f"/api/triggers/webhook/{webhook_id}"
+        holder = {"data": None}
+        done = threading.Event()
+        _method = (method or 'ANY').upper()
+
+        class _Handler(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def _do(self, m):
+                parsed = urlparse(self.path)
+                if parsed.path != expect_path or (_method != 'ANY' and m != _method):
+                    self.send_response(404); self.end_headers(); return
+                query = {k: (v[0] if v else '') for k, v in parse_qs(parsed.query).items()}
+                headers = {k: v for k, v in self.headers.items()}
+                body = {}
+                try:
+                    ln = int(self.headers.get('Content-Length') or 0)
+                    if ln > 0:
+                        raw = self.rfile.read(ln).decode('utf-8', 'ignore')
+                        try:
+                            body = _json.loads(raw)
+                        except Exception:
+                            body = {'raw': raw}
+                except Exception:
+                    pass
+                # 校验请求头/查询参数
+                for kk, vv in (validate_headers or {}).items():
+                    if headers.get(kk) != vv:
+                        self.send_response(403); self.end_headers(); return
+                for kk, vv in (validate_params or {}).items():
+                    if query.get(kk) != vv:
+                        self.send_response(403); self.end_headers(); return
+                holder["data"] = {"query": query, "headers": headers, "body": body, "method": m}
+                self.send_response(int(response_status or 200))
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                try:
+                    self.wfile.write(_json.dumps(response_body or {"success": True}, ensure_ascii=False).encode('utf-8'))
+                except Exception:
+                    pass
+                done.set()
+
+            def do_GET(self): self._do('GET')
+            def do_POST(self): self._do('POST')
+            def do_PUT(self): self._do('PUT')
+            def do_DELETE(self): self._do('DELETE')
+
+        try:
+            server = HTTPServer(('0.0.0.0', port), _Handler)
+        except Exception as e:
+            return ModuleResult(success=False, error=f"打包模式启动 Webhook 监听失败（端口 {port} 可能被占用）：{e}")
+
+        th = threading.Thread(target=server.serve_forever, daemon=True)
+        th.start()
+        try:
+            context.add_log('info', f"🌐 Webhook 已就绪（独立监听 :{port}），路径 {expect_path}", None)
+            await context.send_progress(f"🌐 Webhook 已就绪（独立监听 :{port}）")
+        except Exception:
+            pass
+
+        loop = asyncio.get_event_loop()
+        try:
+            if timeout and timeout > 0:
+                await loop.run_in_executor(None, lambda: done.wait(timeout))
+            else:
+                await loop.run_in_executor(None, done.wait)
+        finally:
+            try:
+                server.shutdown()
+            except Exception:
+                pass
+            try:
+                server.server_close()
+            except Exception:
+                pass
+
+        webhook_data = holder["data"]
+        if not webhook_data:
+            return ModuleResult(success=False, error=f"Webhook等待超时（{timeout}秒）")
+
+        context.set_variable(save_to_variable, webhook_data)
+        if auto_set_params:
+            for key, value in (webhook_data.get('query') or {}).items():
+                context.set_variable(f"{param_prefix}{key}", value)
+            bd = webhook_data.get('body')
+            if isinstance(bd, dict):
+                for key, value in bd.items():
+                    context.set_variable(f"{param_prefix}{key}", value)
+            for key, value in (webhook_data.get('headers') or {}).items():
+                if key.lower() not in ['host', 'connection', 'user-agent', 'accept', 'accept-encoding', 'accept-language']:
+                    context.set_variable(f"{param_prefix}header_{key.lower().replace('-', '_')}", value)
+        return ModuleResult(success=True, message=f"Webhook已触发，数据已保存到变量: {save_to_variable}", data=webhook_data)
 
 
 @register_executor

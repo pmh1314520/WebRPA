@@ -408,45 +408,111 @@ def request_tts_sync(text: str, lang: str = "zh", rate: float = 1.0, pitch: floa
     return True
 
 
-# ---------- 查看图片 / 播放音视频（调用系统默认程序）----------
-def _open_local_or_url(target: str) -> bool:
-    target = (target or "").strip()
-    if not target:
-        return False
+# ---------- 查看图片 / 播放音视频（打包后用原生方式，不再打开浏览器）----------
+def _download_to_temp(url: str) -> Optional[str]:
+    """把 http(s) 资源下载到临时文件，返回本地路径（失败返回 None）。"""
     try:
-        if target.lower().startswith(("http://", "https://")):
-            webbrowser.open(target)
-            return True
-        # 本地路径
-        path = target
-        if os.path.exists(path):
-            os.startfile(path)  # type: ignore[attr-defined]
-            return True
-        # 相对运行时目录
-        rel = os.path.join(os.getcwd(), target)
-        if os.path.exists(rel):
-            os.startfile(rel)  # type: ignore[attr-defined]
-            return True
-        webbrowser.open(target)
+        import tempfile, urllib.request
+        clean = url.split("?")[0].split("#")[0]
+        ext = os.path.splitext(clean)[1]
+        if not ext or len(ext) > 6:
+            ext = ".tmp"
+        fd, path = tempfile.mkstemp(suffix=ext, prefix="webrpa_media_")
+        os.close(fd)
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 WebRPA"})
+        with urllib.request.urlopen(req, timeout=60) as resp, open(path, "wb") as f:
+            f.write(resp.read())
+        return path
+    except Exception as e:
+        print(f"[下载失败] {url}: {e}")
+        return None
+
+
+def _resolve_media_path(target: str) -> Optional[str]:
+    """把目标解析为本地文件路径：本地路径直接用；http(s) 下载到临时文件；相对路径基于运行时目录。"""
+    t = (target or "").strip().strip('"')
+    if not t:
+        return None
+    if t.lower().startswith(("http://", "https://")):
+        return _download_to_temp(t)
+    if os.path.isfile(t):
+        return t
+    rel = os.path.join(os.getcwd(), t)
+    if os.path.isfile(rel):
+        return rel
+    return None
+
+
+def _open_with_default_app(path: str) -> bool:
+    """用系统默认程序打开本地文件（图片/视频用）。"""
+    try:
+        os.startfile(path)  # type: ignore[attr-defined]
         return True
     except Exception as e:
-        print(f"[打开失败] {target}: {e}")
+        print(f"[打开失败] {path}: {e}")
         return False
 
 
 def request_view_image_sync(image_url: str, auto_close: bool = False, display_time: int = 0,
                             timeout: float = 300) -> dict:
-    ok = _open_local_or_url(image_url)
+    # 图片：解析为本地文件后用系统默认看图程序打开（http 资源先下载，不再开浏览器）
+    path = _resolve_media_path(image_url)
+    if not path:
+        return {"success": False, "error": "无法获取图片（路径无效或下载失败）"}
+    ok = _open_with_default_app(path)
     return {"success": ok, "error": None if ok else "无法打开图片"}
 
 
+def _play_audio_native(path: str, wait: bool, timeout: float) -> bool:
+    """用 Windows MCI(winmm) 原生播放音频，真正发声；wait=True 时阻塞到播放结束。
+    支持 wav/mp3 等常见格式，无需任何第三方库。"""
+    try:
+        import ctypes
+        mci = ctypes.windll.winmm.mciSendStringW
+        alias = "webrpa_audio_%d" % (int(os.getpid()) % 100000)
+        buf = ctypes.create_unicode_buffer(128)
+        mci("close %s" % alias, None, 0, 0)
+        # 优先按 mpegvideo 打开（mp3），失败再用通用方式
+        if mci('open "%s" type mpegvideo alias %s' % (path, alias), None, 0, 0) != 0:
+            if mci('open "%s" alias %s' % (path, alias), None, 0, 0) != 0:
+                return False
+        mci("play %s%s" % (alias, " wait" if wait else ""), None, 0, 0)
+        if wait:
+            mci("close %s" % alias, None, 0, 0)
+        else:
+            # 不等待：异步播放，留一个后台线程在合理时间后关闭别名，避免泄漏
+            def _later():
+                try:
+                    import time as _t
+                    _t.sleep(min(float(timeout or 600), 600))
+                    mci("close %s" % alias, None, 0, 0)
+                except Exception:
+                    pass
+            t = threading.Thread(target=_later, daemon=True)
+            t.start()
+        return True
+    except Exception as e:
+        print(f"[音频播放失败] {path}: {e}")
+        return False
+
+
 def request_play_music_sync(audio_url: str, wait_for_end: bool = False, timeout: float = 600) -> dict:
-    ok = _open_local_or_url(audio_url)
+    # 音频：原生 MCI 播放（真正发声），http 资源先下载到本地；失败再回退默认程序
+    path = _resolve_media_path(audio_url)
+    if not path:
+        return {"success": False, "error": "无法获取音频（路径无效或下载失败）"}
+    if _play_audio_native(path, bool(wait_for_end), timeout):
+        return {"success": True, "error": None}
+    ok = _open_with_default_app(path)
     return {"success": ok, "error": None if ok else "无法播放音频"}
 
 
 def request_play_video_sync(video_url: str, wait_for_end: bool = False, timeout: float = 600) -> dict:
-    ok = _open_local_or_url(video_url)
+    # 视频：解析为本地文件后用系统默认播放器打开（http 资源先下载，不再开浏览器）
+    path = _resolve_media_path(video_url)
+    if not path:
+        return {"success": False, "error": "无法获取视频（路径无效或下载失败）"}
+    ok = _open_with_default_app(path)
     return {"success": ok, "error": None if ok else "无法播放视频"}
 
 

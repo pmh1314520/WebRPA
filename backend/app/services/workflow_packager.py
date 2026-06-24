@@ -492,6 +492,27 @@ def _run_with_layout(cfg, ui, layout):
     progress_items = []
     _anchor_map = {"left": "w", "center": "center", "right": "e"}
 
+    # 预扫描所有面板，供文本/状态控件取"其下方面板颜色"作为背景——
+    # tk 的 Label 不支持透明背景，若用白色就会在彩色面板上盖出白方块（与设计器不一致）。
+    _panels = []
+    for _pw in (layout.get("widgets") or []):
+        if _pw.get("type") == "panel":
+            try:
+                _panels.append((int(_pw.get("x", 0)), int(_pw.get("y", 0)),
+                                int(_pw.get("w", 0)), int(_pw.get("h", 0)),
+                                _col(_pw.get("bg"), "#e5e7eb")))
+            except Exception:
+                pass
+
+    def _bg_at(wx, wy, wW, wH):
+        cx = wx + wW / 2.0
+        cy = wy + wH / 2.0
+        result = bg
+        for (px, py, pw, ph, pc) in _panels:
+            if px <= cx <= px + pw and py <= cy <= py + ph:
+                result = pc  # 后置的面板在上层，覆盖先前的
+        return result
+
     for w in (layout.get("widgets") or []):
         try:
             typ = w.get("type")
@@ -535,7 +556,7 @@ def _run_with_layout(cfg, ui, layout):
                 anc = _anchor_map.get(str(w.get("align") or "left"), "w")
                 if typ == "status":
                     sv = tk.StringVar(value=str(w.get("text") or "正在运行…"))
-                    lbl = tk.Label(root, textvariable=sv, bg=bg, fg=_col(w.get("color"), "#334155"), font=fnt, anchor=anc, justify="left")
+                    lbl = tk.Label(root, textvariable=sv, bg=_bg_at(x, y, ww, hh), fg=_col(w.get("color"), "#334155"), font=fnt, anchor=anc, justify="left")
                     lbl.place(x=x, y=y, width=ww, height=hh)
                     status_vars.append(sv)
                 elif typ == "button":
@@ -549,7 +570,9 @@ def _run_with_layout(cfg, ui, layout):
                     btn.place(x=x, y=y, width=ww, height=hh)
                 else:
                     wbg = _col(w.get("bg"), "")
-                    lbl = tk.Label(root, text=str(w.get("text") or ""), bg=(wbg if wbg and wbg != "#ffffff" else bg),
+                    # 设计器中文本 bg 为空或 #ffffff 视为透明 → 取其下方面板/画布的颜色，避免白方块
+                    eff_bg = wbg if (wbg and wbg != "#ffffff") else _bg_at(x, y, ww, hh)
+                    lbl = tk.Label(root, text=str(w.get("text") or ""), bg=eff_bg,
                                    fg=_col(w.get("color"), "#111827"), font=fnt, anchor=anc, justify="left")
                     lbl.place(x=x, y=y, width=ww, height=hh)
         except Exception:
@@ -760,16 +783,53 @@ def _copy_assets(workflow: dict[str, Any], runtime_dir: Path) -> int:
                     copied += 1
                 except Exception as e:
                     print(f"[packager] 复制 uploads/{sub} 失败: {e}")
-    # 2) 自定义模块（cwd 相对解析）
+    # 2) 自定义模块（执行器按 __file__ 解析为 runtime/data/custom_modules；同时兼容 runtime/backend/data/custom_modules）
     cm = root / "backend" / "data" / "custom_modules"
     if cm.is_dir():
-        try:
-            shutil.copytree(cm, runtime_dir / "backend" / "data" / "custom_modules",
-                            dirs_exist_ok=True)
-            copied += 1
-        except Exception as e:
-            print(f"[packager] 复制 custom_modules 失败: {e}")
+        for dst_sub in (runtime_dir / "data" / "custom_modules",
+                        runtime_dir / "backend" / "data" / "custom_modules"):
+            try:
+                shutil.copytree(cm, dst_sub, dirs_exist_ok=True)
+                copied += 1
+            except Exception as e:
+                print(f"[packager] 复制 custom_modules 失败: {e}")
     return copied
+
+
+def _bundle_binaries(workflow: dict[str, Any], runtime_dir: Path, job: dict[str, Any]) -> None:
+    """按工作流用到的模块，把 backend 下的二进制工具（ffmpeg/ffprobe/yt-dlp/m3u8/pandoc）
+    拷进运行时根目录。执行器用 get_backend_root() 解析到 runtime 根，故必须放这里，
+    否则打包后媒体/文档类模块会因找不到 exe 而回退系统 PATH（终端机器多半没有）→ 失败。"""
+    types = _module_types(workflow)
+    tl = " ".join(t.lower() for t in types)
+    root = _project_root()
+    want: set[str] = set()
+    media_kw = ("video", "audio", "media", "music", "ffmpeg", "ffprobe", "m3u8", "ytdlp",
+                "yt_dlp", "yt-dlp", "youtube", "screen_record", "subtitle", "volume",
+                "convert", "compress", "extract_frame", "extract_audio", "gif", "merge_media",
+                "watermark", "speed", "resize_video", "rotate_video", "trim", "frame")
+    office_kw = ("document_convert", "pandoc", "docx", "epub", "markdown", "to_pdf", "to_docx", "odt")
+    if any(k in tl for k in media_kw):
+        want.update(["ffmpeg.exe", "ffprobe.exe", "yt-dlp.exe", "m3u8.exe"])
+    if any(k in tl for k in office_kw):
+        want.add("pandoc.exe")
+    if not want:
+        return
+    for name in sorted(want):
+        _check_cancel(job)
+        src = root / "backend" / name
+        if not src.is_file():
+            continue
+        dst = runtime_dir / name
+        if dst.exists():
+            continue
+        try:
+            _set(job, step=f"打包内置工具 {name}（可随时点停止）")
+            shutil.copy2(src, dst)
+        except _Cancelled:
+            raise
+        except Exception as e:
+            print(f"[packager] 复制二进制 {name} 失败: {e}")
 
 
 def _bundle_heavy_runtimes(runtime_dir: Path, needed: set[str], job: dict[str, Any]) -> None:
@@ -919,6 +979,8 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
         (runtime / "run_packaged.py").write_text(build_runner_script(), encoding="utf-8")
         assets = _copy_assets(wf, runtime)
         _set(job, progress=22, step=f"已复制 {assets} 类资源")
+        # 媒体/文档类模块需要的二进制工具（ffmpeg/yt-dlp/pandoc 等）按需打进运行时根目录
+        _bundle_binaries(wf, runtime, job)
         _check_cancel(job)
 
         # 3) 运行时 python
