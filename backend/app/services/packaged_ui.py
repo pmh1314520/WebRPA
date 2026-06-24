@@ -409,32 +409,54 @@ def request_tts_sync(text: str, lang: str = "zh", rate: float = 1.0, pitch: floa
 
 
 # ---------- 查看图片 / 播放音视频（打包后用原生方式，不再打开浏览器）----------
-def _download_to_temp(url: str) -> Optional[str]:
-    """把 http(s) 资源下载到临时文件，返回本地路径（失败返回 None）。"""
+def _download_to_temp(url: str, kind: str = "media") -> Optional[str]:
+    """把 http(s) 资源下载到临时文件，返回本地路径（失败返回 None）。
+    关键：很多接口 URL 无扩展名（如 /song?id=123），必须按响应 Content-Type 推断正确扩展名，
+    否则下载成 .tmp 会让 MCI/默认程序无法识别格式而播放/打开失败。"""
     try:
         import tempfile, urllib.request
         clean = url.split("?")[0].split("#")[0]
         ext = os.path.splitext(clean)[1]
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 WebRPA"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = resp.read()
+            ctype = (resp.headers.get("Content-Type") or "").lower()
         if not ext or len(ext) > 6:
-            ext = ".tmp"
+            ct_map = {
+                "audio/mpeg": ".mp3", "audio/mp3": ".mp3", "audio/wav": ".wav",
+                "audio/x-wav": ".wav", "audio/wave": ".wav", "audio/ogg": ".ogg",
+                "audio/flac": ".flac", "audio/x-flac": ".flac", "audio/aac": ".aac",
+                "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/webm": ".webm",
+                "video/mp4": ".mp4", "video/webm": ".webm", "video/x-msvideo": ".avi",
+                "video/quicktime": ".mov", "video/x-matroska": ".mkv",
+                "image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif",
+                "image/webp": ".webp", "image/bmp": ".bmp",
+            }
+            ext = ""
+            for k, v in ct_map.items():
+                if k in ctype:
+                    ext = v
+                    break
+            if not ext:
+                # 按用途给个合理默认：音频默认 mp3，视频默认 mp4，图片默认 png
+                ext = ".mp3" if kind == "audio" else (".mp4" if kind == "video" else (".png" if kind == "image" else ".bin"))
         fd, path = tempfile.mkstemp(suffix=ext, prefix="webrpa_media_")
         os.close(fd)
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 WebRPA"})
-        with urllib.request.urlopen(req, timeout=60) as resp, open(path, "wb") as f:
-            f.write(resp.read())
+        with open(path, "wb") as f:
+            f.write(data)
         return path
     except Exception as e:
         print(f"[下载失败] {url}: {e}")
         return None
 
 
-def _resolve_media_path(target: str) -> Optional[str]:
+def _resolve_media_path(target: str, kind: str = "media") -> Optional[str]:
     """把目标解析为本地文件路径：本地路径直接用；http(s) 下载到临时文件；相对路径基于运行时目录。"""
     t = (target or "").strip().strip('"')
     if not t:
         return None
     if t.lower().startswith(("http://", "https://")):
-        return _download_to_temp(t)
+        return _download_to_temp(t, kind)
     if os.path.isfile(t):
         return t
     rel = os.path.join(os.getcwd(), t)
@@ -456,7 +478,7 @@ def _open_with_default_app(path: str) -> bool:
 def request_view_image_sync(image_url: str, auto_close: bool = False, display_time: int = 0,
                             timeout: float = 300) -> dict:
     # 图片：解析为本地文件后用系统默认看图程序打开（http 资源先下载，不再开浏览器）
-    path = _resolve_media_path(image_url)
+    path = _resolve_media_path(image_url, "image")
     if not path:
         return {"success": False, "error": "无法获取图片（路径无效或下载失败）"}
     ok = _open_with_default_app(path)
@@ -498,7 +520,7 @@ def _play_audio_native(path: str, wait: bool, timeout: float) -> bool:
 
 def request_play_music_sync(audio_url: str, wait_for_end: bool = False, timeout: float = 600) -> dict:
     # 音频：原生 MCI 播放（真正发声），http 资源先下载到本地；失败再回退默认程序
-    path = _resolve_media_path(audio_url)
+    path = _resolve_media_path(audio_url, "audio")
     if not path:
         return {"success": False, "error": "无法获取音频（路径无效或下载失败）"}
     if _play_audio_native(path, bool(wait_for_end), timeout):
@@ -509,7 +531,7 @@ def request_play_music_sync(audio_url: str, wait_for_end: bool = False, timeout:
 
 def request_play_video_sync(video_url: str, wait_for_end: bool = False, timeout: float = 600) -> dict:
     # 视频：解析为本地文件后用系统默认播放器打开（http 资源先下载，不再开浏览器）
-    path = _resolve_media_path(video_url)
+    path = _resolve_media_path(video_url, "video")
     if not path:
         return {"success": False, "error": "无法获取视频（路径无效或下载失败）"}
     ok = _open_with_default_app(path)
