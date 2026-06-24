@@ -59,6 +59,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
   const [uiTheme, setUiTheme] = useState('#2563eb')
   const [uiFooter, setUiFooter] = useState('')
   const [uiSplash, setUiSplash] = useState('')
+  const [uiAutoClose, setUiAutoClose] = useState(true)
   const [pickingSplash, setPickingSplash] = useState(false)
   // 自由画布式界面设计器
   const [showDesigner, setShowDesigner] = useState(false)
@@ -115,7 +116,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
       const r = await fetch(`${base()}/api/workflow-package/build`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workflow: content, output_name: outName, mode, headless, show_console: showConsole, slim, icon_path: iconPath.trim() || null,
-          ui_config: uiEnabled ? { enabled: true, title: uiTitle.trim(), subtitle: uiSubtitle.trim(), themeColor: uiTheme, footer: uiFooter.trim(), splashImage: uiSplash.trim() || null, layout: uiLayout || null } : null }),
+          ui_config: uiEnabled ? { enabled: true, title: uiTitle.trim(), subtitle: uiSubtitle.trim(), themeColor: uiTheme, footer: uiFooter.trim(), splashImage: uiSplash.trim() || null, autoClose: uiAutoClose, layout: uiLayout || null } : null }),
       })
       const d = await r.json()
       if (!r.ok) { setJob({ status: 'failed', error: d.detail || '启动失败' }); setBuilding(false); return }
@@ -277,6 +278,12 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
                     value={uiFooter} onChange={e => setUiFooter(e.target.value)} placeholder="例如 © 你的公司 · 技术支持 xxx" />
                 </div>
                 <div className="text-[11px] text-[hsl(var(--muted-foreground))]">提示：开启界面定制后建议把上方「显示运行控制台」关掉，运行时就只显示这个品牌窗口。</div>
+
+                <label className="flex items-center gap-2 cursor-pointer pt-1">
+                  <Checkbox checked={uiAutoClose} onCheckedChange={(c) => setUiAutoClose(!!c)} />
+                  <span className="text-[13px]">运行结束后自动关闭窗口</span>
+                  <span className="text-[11px] text-[hsl(var(--muted-foreground))]">（关闭则运行完保留窗口，由用户手动关闭）</span>
+                </label>
 
                 {/* 自由画布式界面设计器入口 */}
                 <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[hsl(var(--border))]">

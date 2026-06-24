@@ -328,6 +328,7 @@ def _run_with_ui(cfg, ui):
     subtitle = str(ui.get("subtitle") or "正在为您自动执行任务，请稍候…")
     footer = str(ui.get("footer") or "")
     splash = ui.get("splashImage") or ""
+    _auto_close = bool(ui.get("autoClose", True))
 
     try:
         root = tk.Tk()
@@ -419,8 +420,12 @@ def _run_with_ui(cfg, ui):
                 canv.itemconfig(bar, fill=("#16a34a" if ok else "#dc2626"))
             except Exception:
                 pass
-            status_var.set("执行完成，窗口即将关闭" if ok else ("执行失败：" + str(res.get("error") or "")[:60]))
-            root.after(1800 if ok else 4000, root.destroy)
+            if ok:
+                status_var.set("执行完成，窗口即将关闭" if _auto_close else "执行完成（可关闭窗口）")
+            else:
+                status_var.set("执行失败：" + str(res.get("error") or "")[:60])
+            if _auto_close:
+                root.after(1800 if ok else 4000, root.destroy)
             return
         root.after(120, _poll)
 
@@ -461,6 +466,7 @@ def _run_with_layout(cfg, ui, layout):
     W = int(layout.get("width", 520) or 520)
     H = int(layout.get("height", 360) or 360)
     bg = _col(layout.get("bg"), "#ffffff")
+    _auto_close = bool(ui.get("autoClose", True))
 
     try:
         root = tk.Tk()
@@ -599,7 +605,10 @@ def _run_with_layout(cfg, ui, layout):
             ok = res.get("success")
             for sv in status_vars:
                 try:
-                    sv.set("执行完成" if ok else ("执行失败：" + str(res.get("error") or "")[:50]))
+                    if ok:
+                        sv.set("执行完成" if _auto_close else "执行完成（可关闭窗口）")
+                    else:
+                        sv.set("执行失败：" + str(res.get("error") or "")[:50])
                 except Exception:
                     pass
             for p in progress_items:
@@ -608,9 +617,9 @@ def _run_with_layout(cfg, ui, layout):
                     p["canv"].itemconfig(p["bar"], fill=("#16a34a" if ok else "#dc2626"))
                 except Exception:
                     pass
-            # 有按钮就等用户点关闭；没有按钮则自动收尾
+            # 有按钮就等用户点关闭；没有按钮时：autoClose 才自动收尾，否则保留窗口由用户关闭
             has_btn = any((w.get("type") == "button") for w in (layout.get("widgets") or []))
-            if not has_btn:
+            if not has_btn and _auto_close:
                 root.after(1800 if ok else 4000, root.destroy)
             return
         root.after(120, _poll)
@@ -940,6 +949,7 @@ def _run_build(job: dict[str, Any], wf: dict[str, Any], name: str, mode: str,
                     "subtitle": str(ui_config.get("subtitle") or "")[:160],
                     "themeColor": str(ui_config.get("themeColor") or "#2563eb")[:16],
                     "footer": str(ui_config.get("footer") or "")[:120],
+                    "autoClose": bool(ui_config.get("autoClose", True)),
                 }
                 # 复制启动图进运行时（仅支持 png/gif，tk 原生可直接显示）
                 sp = ui_config.get("splashImage")
