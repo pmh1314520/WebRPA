@@ -94,3 +94,12 @@ html[data-webrpa-theme="dark"] [style*="background-image"] {
 html[data-webrpa-theme="gray"] {
   filter: grayscale(1);
 }
+
+
+/* 暗色模式下遮罩防止反相后发白：改用浅色半透明 → 整页反相后恰好是深色遮罩 */
+html[data-webrpa-theme="dark"] .modal-mask {
+  background: rgba(236, 239, 244, 0.5) !important;
+}
+html[data-webrpa-theme="dark"] .qr-zoom-mask {
+  background: rgba(236, 239, 244, 0.78) !important;
+}

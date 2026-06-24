@@ -1964,3 +1964,10 @@ html[data-webrpa-theme="dark"] [style*="background-image"] {
 html[data-webrpa-theme="gray"] {
   filter: grayscale(1);
 }
+/* 暗色模式下，全屏遮罩(scrim)原本是深色半透明，被整页反相后会变成浅色(发白)。
+   这里只针对"全屏 fixed inset-0 遮罩"把背景改为浅色半透明 → 反相后恰好是深色遮罩，
+   且只改背景色、不影响其中的弹窗内容（弹窗是子元素，会正常反相为深色）。 */
+html[data-webrpa-theme="dark"] .fixed.inset-0[class*="bg-black/"],
+html[data-webrpa-theme="dark"] .fixed.inset-0[class*="hsl(217_45%_15%"] {
+  background-color: rgba(236, 239, 244, 0.45) !important;
+}
