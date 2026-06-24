@@ -1943,3 +1943,24 @@ input[type="range"].slider-thumb::-moz-range-thumb {
     box-shadow: 0 0 0 0 hsl(var(--brand-500) / 0);
   }
 }
+
+
+/* ============================================================
+   主题切换（Dark Reader 式 CSS 滤镜）
+   默认：无滤镜；暗色：反相+色相旋转+亮度125%（图片/视频反相还原）；
+   灰色：灰度100%。滤镜挂在 <html> 上，整页（含弹窗 portal）统一生效。
+   ============================================================ */
+html[data-webrpa-theme="dark"] {
+  background-color: #181a1b;
+  filter: invert(1) hue-rotate(180deg) brightness(1.25);
+}
+html[data-webrpa-theme="dark"] img,
+html[data-webrpa-theme="dark"] video,
+html[data-webrpa-theme="dark"] canvas,
+html[data-webrpa-theme="dark"] svg image,
+html[data-webrpa-theme="dark"] [style*="background-image"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+html[data-webrpa-theme="gray"] {
+  filter: grayscale(1);
+}

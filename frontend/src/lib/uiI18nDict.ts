@@ -165,6 +165,14 @@ Object.assign(UI_DICT, {
   '；也可免打包——到输出目录的': '; or skip re-packaging \u2014 go to the output directory\u2019s',
   ' 对应子目录里用同名文件覆盖即可（路径不变就生效）。': ' matching subfolder and overwrite it with a same-name file (works as long as the path is unchanged).',
   '提示：资源会频繁更新就用外部固定路径引用，以后只换文件、永不重打包。': 'Tip: if resources update frequently, reference them by a fixed external path \u2014 then you only swap files and never re-package.',
+  // —— 显示/主题 ——
+  '默认：原始亮色界面；暗色：整页反相暗色（护眼）；灰色：整页灰度（专注）。切换即时生效。': 'Default: original light UI; Dark: full-page inverted dark (eye-friendly); Gray: full-page grayscale (focus). Applies instantly.',
+  '默认': 'Default',
+  '暗色': 'Dark',
+  '灰色': 'Gray',
+  '亮色': 'Light',
+  '护眼深色': 'Eye-friendly dark',
+  '灰度专注': 'Grayscale focus',
   // —— 打包：界面定制 ——
   '界面定制（自定义启动界面）': 'UI customization (custom launch screen)',
   '开启后 EXE 运行时显示你设计的品牌窗口（启动图/标题/主题色/实时进度），而非黑色控制台': 'When on, the EXE shows your branded window (splash / title / theme / live progress) at runtime instead of a black console',

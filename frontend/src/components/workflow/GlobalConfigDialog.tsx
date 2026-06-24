@@ -1413,6 +1413,38 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                 配置界面显示相关的选项
               </p>
               <div className="space-y-4">
+                {/* 主题色切换 */}
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <Label className="text-gray-700 font-medium">主题色</Label>
+                  <p className="text-xs text-gray-500 mt-1 mb-2.5">
+                    默认：原始亮色界面；暗色：整页反相暗色（护眼）；灰色：整页灰度（专注）。切换即时生效。
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { id: 'default', name: '默认', desc: '亮色' },
+                      { id: 'dark', name: '暗色', desc: '护眼深色' },
+                      { id: 'gray', name: '灰色', desc: '灰度专注' },
+                    ] as const).map((opt) => {
+                      const active = (config.display?.theme || 'default') === opt.id
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => updateDisplayConfig({ theme: opt.id })}
+                          className={'flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg border-[1.5px] transition-all ' +
+                            (active ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 bg-white hover:border-blue-300')}
+                        >
+                          <span className="w-full h-7 rounded-md border border-gray-300" style={{
+                            background: opt.id === 'default' ? 'linear-gradient(135deg,#fff,#eef2ff)' : opt.id === 'dark' ? 'linear-gradient(135deg,#181a1b,#2b2f31)' : 'linear-gradient(135deg,#9ca3af,#d1d5db)',
+                          }} />
+                          <span className={'text-[12.5px] font-semibold ' + (active ? 'text-blue-700' : 'text-gray-700')}>{opt.name}</span>
+                          <span className="text-[10px] text-gray-400">{opt.desc}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div>
                     <Label className="text-gray-700 font-medium">鼠标坐标实时显示</Label>

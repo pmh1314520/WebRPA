@@ -481,6 +481,7 @@ def _run_with_layout(cfg, ui, layout):
         pass
     try:
         root.geometry("%dx%d" % (W, H))
+        root.resizable(False, False)
         root.eval("tk::PlaceWindow . center")
         root.attributes("-topmost", True)
     except Exception:
@@ -503,14 +504,23 @@ def _run_with_layout(cfg, ui, layout):
                 src = w.get("src") or ""
                 p = os.path.join(HERE, src) if src else ""
                 if p and os.path.isfile(p):
-                    img = tk.PhotoImage(file=p)
+                    img = None
                     try:
-                        while img.width() > ww or img.height() > hh:
-                            img = img.subsample(2, 2)
+                        # 用 PIL 按"包含(contain)"方式精确缩放到控件框，与设计器预览一致
+                        from PIL import Image as _PILImage, ImageTk as _PILImageTk
+                        _im = _PILImage.open(p)
+                        _im.thumbnail((max(1, ww), max(1, hh)))
+                        img = _PILImageTk.PhotoImage(_im)
                     except Exception:
-                        pass
-                    _imgs.append(img)
-                    tk.Label(root, image=img, bg=bg).place(x=x, y=y, width=ww, height=hh)
+                        try:
+                            img = tk.PhotoImage(file=p)
+                            while img.width() > ww or img.height() > hh:
+                                img = img.subsample(2, 2)
+                        except Exception:
+                            img = None
+                    if img is not None:
+                        _imgs.append(img)
+                        tk.Label(root, image=img, bg=bg).place(x=x, y=y, width=ww, height=hh)
             elif typ == "progress":
                 col = _col(w.get("bg"), "#2563eb")
                 canv = tk.Canvas(root, bg="#e5e7eb", highlightthickness=0)
@@ -519,8 +529,9 @@ def _run_with_layout(cfg, ui, layout):
                 bar = canv.create_rectangle(0, 0, bw, hh, fill=col, width=0)
                 progress_items.append({"canv": canv, "bar": bar, "col": col, "w": ww, "h": hh, "bw": bw, "x": 0, "dir": 1})
             else:
-                # text / status / button 都用 Label/Button
-                fnt = ("Microsoft YaHei", int(w.get("fontSize", 13) or 13), "bold" if w.get("bold") else "normal")
+                # text / status / button 都用 Label/Button；字号用负值=像素，与设计器(px)一致
+                _fs = int(w.get("fontSize", 13) or 13)
+                fnt = ("Microsoft YaHei", -_fs, "bold" if w.get("bold") else "normal")
                 anc = _anchor_map.get(str(w.get("align") or "left"), "w")
                 if typ == "status":
                     sv = tk.StringVar(value=str(w.get("text") or "正在运行…"))

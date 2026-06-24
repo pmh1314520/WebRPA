@@ -214,14 +214,14 @@ export function ExeUiDesigner({ isOpen, initial, onClose, onApply }: Props) {
     }
     if (w.type === 'button') {
       return (
-        <div key={w.id} style={{ ...common, background: w.bg, color: '#fff', borderRadius: 8, justifyContent: 'center', fontSize: w.fontSize, fontWeight: w.bold ? 700 : 400 }} onMouseDown={(e) => onWidgetMouseDown(e, w)}>
+        <div key={w.id} style={{ ...common, background: w.bg, color: '#fff', borderRadius: 8, justifyContent: 'center', fontSize: w.fontSize, fontWeight: w.bold ? 700 : 400, fontFamily: '"Microsoft YaHei", sans-serif' }} onMouseDown={(e) => onWidgetMouseDown(e, w)}>
           {w.text}
         </div>
       )
     }
     // text / status
     return (
-      <div key={w.id} style={{ ...common, color: w.color, background: w.bg && w.bg !== '#ffffff' ? w.bg : 'transparent', fontSize: w.fontSize, fontWeight: w.bold ? 700 : 400 }} onMouseDown={(e) => onWidgetMouseDown(e, w)}>
+      <div key={w.id} style={{ ...common, color: w.color, background: w.bg && w.bg !== '#ffffff' ? w.bg : 'transparent', fontSize: w.fontSize, fontWeight: w.bold ? 700 : 400, fontFamily: '"Microsoft YaHei", sans-serif' }} onMouseDown={(e) => onWidgetMouseDown(e, w)}>
         <span style={{ width: '100%', textAlign: w.align, padding: '0 4px' }}>{w.text}{w.type === 'status' ? '（运行时实时更新）' : ''}</span>
       </div>
     )

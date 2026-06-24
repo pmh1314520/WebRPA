@@ -237,6 +237,14 @@ function App() {
     setUpdateInfo(prev => ({ ...prev, show: false }))
   }
 
+  // 主题切换（默认/暗色/灰色，Dark Reader 式滤镜挂在 <html> 上）
+  const themeMode = useGlobalConfigStore((state) => state.config.display?.theme || 'default')
+  useEffect(() => {
+    const el = document.documentElement
+    if (themeMode === 'default') el.removeAttribute('data-webrpa-theme')
+    else el.setAttribute('data-webrpa-theme', themeMode)
+  }, [themeMode])
+
   // 用户自定义快捷键：匹配组合键后触发对应功能（纯附加，不影响内置快捷键）
   const customShortcuts = useGlobalConfigStore((state) => state.config.shortcuts)
   useEffect(() => {

@@ -610,6 +610,17 @@
                   <button class="lang-seg-btn" :class="{ on: uiLang === 'en' }" @click="setUiLang('en')">English</button>
                 </div>
               </div>
+              <div class="cfg-row cfg-row-toggle">
+                <div class="cfg-toggle-text">
+                  <div class="cfg-toggle-title">主题色</div>
+                  <div class="cfg-toggle-sub">默认 / 暗色（护眼深色）/ 灰色（灰度专注），切换即时生效</div>
+                </div>
+                <div class="lang-seg">
+                  <button class="lang-seg-btn" :class="{ on: uiTheme === 'default' }" @click="setUiTheme('default')">默认</button>
+                  <button class="lang-seg-btn" :class="{ on: uiTheme === 'dark' }" @click="setUiTheme('dark')">暗色</button>
+                  <button class="lang-seg-btn" :class="{ on: uiTheme === 'gray' }" @click="setUiTheme('gray')">灰色</button>
+                </div>
+              </div>
             </div>
             <div class="cfg-block">
               <div class="cfg-block-head">
@@ -807,6 +818,21 @@ const setUiLang = (l) => {
   try { if (window.__setLauncherLang) window.__setLauncherLang(l) } catch (e) {}
   // 若 Agent 窗口已打开，实时同步其语言（窗口没开则后端命令为空操作，不会弹窗）
   try { invoke('sync_assistant_agent_lang', { lang: l }) } catch (e) {}
+}
+// 界面主题（默认/暗色/灰色，Dark Reader 式滤镜挂在 <html> 上；持久化 localStorage）
+const THEME_KEY = 'webrpa.launcher.theme'
+const uiTheme = ref('default')
+const applyTheme = (t) => {
+  try {
+    const el = document.documentElement
+    if (t === 'default') el.removeAttribute('data-webrpa-theme')
+    else el.setAttribute('data-webrpa-theme', t)
+  } catch (e) {}
+}
+const setUiTheme = (t) => {
+  uiTheme.value = t
+  try { localStorage.setItem(THEME_KEY, t) } catch (e) {}
+  applyTheme(t)
 }
 // 是否在启动器启动时自动弹出赞助提示（持久化在 localStorage，默认开启）
 // 注意：使用带版本号的新 key。旧版启动器很多用户已手动关闭（旧 key 存了 '0'），
@@ -1230,6 +1256,7 @@ const openFrontendLog = async () => {
 
 onMounted(async () => {
   try { uiLang.value = (window.__getLauncherLang && window.__getLauncherLang()) || 'zh' } catch (e) {}
+  try { const t = localStorage.getItem(THEME_KEY); uiTheme.value = (t === 'dark' || t === 'gray') ? t : 'default'; applyTheme(uiTheme.value) } catch (e) {}
   try { version.value = await invoke('get_version') } catch { version.value = '?' }
   await loadConfig()
   // 读取系统真实的开机自启动状态，同步到开关（避免触发反向写入）
