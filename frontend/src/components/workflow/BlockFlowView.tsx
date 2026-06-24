@@ -123,20 +123,24 @@ export function BlockFlowView() {
   const lastClickedRef = useRef<string | null>(null)
   // 鼠标当前悬停的插入点（用于"粘贴到这两个模块之间"而非永远粘到底部）
   const hoverTargetRef = useRef<PickerTarget | null>(null)
-  // 模块条滚动容器 + 编辑后待恢复的滚动位置（修复增删模块后自动滚回顶部的问题）
+  // 模块条滚动容器 + 持续记录的滚动位置。
+  // 因 HoverInsert/EmptySlot 等为内联组件，任何重渲染都会整列表重挂载、浏览器把 scrollTop 清零；
+  // 这里用 onScroll 持续记录用户滚动位置，并在每次渲染后（useLayoutEffect，早于浏览器异步 scroll 事件）
+  // 同步恢复，从根上消除"打开选择器/增删模块后自动滚回顶部"。
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
-  const pendingScrollTopRef = useRef<number | null>(null)
+  const savedScrollRef = useRef<number>(0)
 
   const blocks = useMemo(() => parseGraphToBlocks(nodes, edges), [nodes, edges])
 
-  // 编辑后恢复滚动位置（修复增删模块条自动滚回顶部）。仅在 applyEdit 标记了待恢复值时生效。
+  // 每次渲染后把滚动位置恢复到用户上次所在处（仅当被重挂载清零等导致偏离时）
   useLayoutEffect(() => {
-    if (pendingScrollTopRef.current != null && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = pendingScrollTopRef.current
-      pendingScrollTopRef.current = null
+    const el = scrollContainerRef.current
+    if (el && Math.abs(el.scrollTop - savedScrollRef.current) > 1) {
+      el.scrollTop = savedScrollRef.current
     }
   })
   const [picker, setPicker] = useState<{ target: PickerTarget; x: number; y: number } | null>(null)
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null)
   const [dropActive, setDropActive] = useState(false)
   // 错误策略弹层（点击模块行的"出错处理"按钮打开）
   const [errPopover, setErrPopover] = useState<{ nodeId: string; x: number; y: number } | null>(null)
@@ -151,8 +155,6 @@ export function BlockFlowView() {
   // 所有结构化编辑：基于当前图重新解析出可变树 → 编辑 → 重新生成图 → 提交
   // 关键：重新生成只管 moduleNode；分组/便签/子流程头等非模块节点及其相关连线原样保留，避免数据丢失
   const applyEdit = (fn: (tree: Block[]) => Block[]) => {
-    // 编辑前记录当前滚动位置，编辑后恢复，避免增删模块条后视图自动滚回顶部
-    pendingScrollTopRef.current = scrollContainerRef.current?.scrollTop ?? null
     const tree = parseGraphToBlocks(nodes, edges)
     const next = fn(tree)
     const g = generateGraphFromBlocks(next)
@@ -294,6 +296,22 @@ export function BlockFlowView() {
       selectNode(id)
     }
   }
+  // 右键菜单（选中模块条后右键弹出批量操作）
+  const handleRowContextMenu = (e: React.MouseEvent, id: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // 若右键的模块不在已选集合中，则把它设为当前选择（与资源管理器一致）
+    setSelectedIds((prev) => {
+      if (prev.has(id)) return prev
+      return new Set([id])
+    })
+    if (!selectedIds.has(id)) {
+      lastClickedRef.current = id
+      selectNode(id)
+    }
+    setCtxMenu({ x: e.clientX, y: e.clientY })
+  }
+
   const openPickerAt = (target: PickerTarget, anchorId: string) => {
     const el = document.querySelector(`[data-block-id="${anchorId}"]`) as HTMLElement | null
     if (el) {
@@ -513,6 +531,7 @@ export function BlockFlowView() {
         onDragLeave={() => setDropPos(null)}
         onDrop={onRowDrop}
         onClick={(e) => handleRowClick(e, node.id)}
+        onContextMenu={(e) => handleRowContextMenu(e, node.id)}
         className={
           'group/row relative flex items-center gap-2.5 pl-3 pr-2 py-2 rounded-[10px] border cursor-grab active:cursor-grabbing transition-[box-shadow,border-color,background-color,transform] duration-150 ' +
           (disabled ? 'opacity-55 grayscale-[0.4] ' : '') +
@@ -761,6 +780,7 @@ export function BlockFlowView() {
   return (
     <div
       ref={scrollContainerRef}
+      onScroll={(e) => { savedScrollRef.current = (e.currentTarget as HTMLDivElement).scrollTop }}
       className={'h-full w-full overflow-y-auto bg-[hsl(var(--background))] py-5 px-4 ' + (dropActive ? 'ring-2 ring-inset ring-[hsl(var(--brand-500))]' : '')}
       onDragOver={(e) => { if (e.dataTransfer.types.includes('application/reactflow') || e.dataTransfer.types.includes('application/blockmove')) { e.preventDefault(); setDropActive(true) } }}
       onDragLeave={() => setDropActive(false)}
@@ -778,14 +798,6 @@ export function BlockFlowView() {
             </span>
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => toggleNodesDisabled(Array.from(selectedIds))}
-                  className="px-2 py-1 rounded-[6px] text-[11.5px] text-[hsl(var(--slate-600))] hover:bg-[hsl(var(--slate-100))] transition-colors inline-flex items-center gap-1"
-                ><Ban className="w-3 h-3" /> 禁用/启用</button>
-                <button
-                  onClick={() => handleDeleteMany(Array.from(selectedIds))}
-                  className="px-2 py-1 rounded-[6px] text-[11.5px] text-[hsl(var(--danger-600))] hover:bg-[hsl(var(--danger-50))] transition-colors inline-flex items-center gap-1"
-                ><Trash2 className="w-3 h-3" /> 删除选中</button>
                 <button
                   onClick={() => setSelectedIds(new Set())}
                   className="px-2 py-1 rounded-[6px] text-[11.5px] text-[hsl(var(--slate-600))] hover:bg-[hsl(var(--slate-100))] transition-colors"
@@ -820,6 +832,32 @@ export function BlockFlowView() {
           onPick={(t) => handlePick(t)}
           onClose={() => setPicker(null)}
         />
+      )}
+      {ctxMenu && createPortal(
+        <>
+          <div className="fixed inset-0" style={{ zIndex: 2147483646 }} onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }} />
+          <div
+            className="fixed min-w-[168px] rounded-[10px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-pop-2xl py-1 animate-scale-in"
+            style={{ zIndex: 2147483647, left: Math.min(ctxMenu.x, window.innerWidth - 184), top: Math.min(ctxMenu.y, window.innerHeight - 140) }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-1 text-[10.5px] text-[hsl(var(--muted-foreground))]">已选 {selectedIds.size} 个模块</div>
+            <button
+              onClick={() => { toggleNodesDisabled(Array.from(selectedIds)); setCtxMenu(null) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] text-left text-[hsl(var(--slate-700))] hover:bg-[hsl(var(--brand-50))] transition-colors"
+            ><Ban className="w-3.5 h-3.5 text-[hsl(var(--slate-500))]" /> 批量启用 / 禁用</button>
+            <button
+              onClick={() => { handleDeleteMany(Array.from(selectedIds)); setCtxMenu(null) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] text-left text-[hsl(var(--danger-600))] hover:bg-[hsl(var(--danger-50))] transition-colors"
+            ><Trash2 className="w-3.5 h-3.5" /> 删除选中</button>
+            <div className="my-1 border-t border-[hsl(var(--border))]" />
+            <button
+              onClick={() => { setSelectedIds(new Set()); setCtxMenu(null) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] text-left text-[hsl(var(--slate-600))] hover:bg-[hsl(var(--slate-100))] transition-colors"
+            ><X className="w-3.5 h-3.5 text-[hsl(var(--slate-500))]" /> 取消选择</button>
+          </div>
+        </>,
+        document.body,
       )}
       {errPopover && (() => {
         const nd = nodes.find((n) => n.id === errPopover.nodeId)

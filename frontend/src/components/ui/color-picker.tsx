@@ -1,10 +1,12 @@
 /**
- * 颜色选择器组件
+ * 颜色选择器组件（WebRPA 主题 · 无浏览器原生取色控件）
+ *
+ * 弹层用 Portal + fixed 定位渲染到 body，避免被窄侧栏/弹窗的 overflow 裁剪
+ * （这是「设计器左栏背景色选择器展开后显示不全」的根因）。
+ * 提供预设色板（一键选）+ 十六进制输入（精确自定义）。
  */
-import { useState, useRef, useEffect } from 'react'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Palette } from 'lucide-react'
 
 interface ColorPickerProps {
@@ -13,117 +15,81 @@ interface ColorPickerProps {
   label?: string
 }
 
-// 预设颜色
 const PRESET_COLORS = [
-  '#EF4444', // 红色
-  '#F97316', // 橙色
-  '#F59E0B', // 琥珀色
-  '#EAB308', // 黄色
-  '#84CC16', // 青柠色
-  '#22C55E', // 绿色
-  '#10B981', // 翠绿色
-  '#14B8A6', // 青色
-  '#06B6D4', // 天蓝色
-  '#0EA5E9', // 蓝色
-  '#3B82F6', // 靛蓝色
-  '#6366F1', // 紫罗兰色
-  '#8B5CF6', // 紫色
-  '#A855F7', // 紫红色
-  '#D946EF', // 品红色
-  '#EC4899', // 粉色
-  '#F43F5E', // 玫瑰色
-  '#64748B', // 灰色
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#10B981', '#14B8A6', '#06B6D4',
+  '#0EA5E9', '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF', '#EC4899', '#F43F5E', '#64748B',
+  '#0F172A', '#334155', '#94A3B8', '#E2E8F0', '#FFFFFF', '#000000',
 ]
 
 export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   const [open, setOpen] = useState(false)
-  const [customColor, setCustomColor] = useState(value)
-  const colorInputRef = useRef<HTMLInputElement>(null)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const triggerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    setCustomColor(value)
-  }, [value])
-
-  const handleColorChange = (color: string) => {
-    setCustomColor(color)
-    onChange(color)
+  const openPop = () => {
+    const r = triggerRef.current?.getBoundingClientRect()
+    if (r) setPos({ x: r.left, y: r.bottom + 6 })
+    setOpen((o) => !o)
   }
 
-  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const color = e.target.value
-    setCustomColor(color)
-    onChange(color)
-  }
+  const W = 232, H = 240
+  const left = Math.max(8, Math.min(pos.x, window.innerWidth - W - 8))
+  const top = Math.max(8, Math.min(pos.y, window.innerHeight - H - 8))
 
   return (
     <div className="space-y-2">
-      {label && <Label>{label}</Label>}
-      <div className="relative">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <div
-              role="button"
-              tabIndex={0}
-              className="w-full flex items-center justify-start gap-2 px-3 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
-              onClick={() => setOpen(!open)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  setOpen(!open)
-                }
-              }}
-            >
-              <div
-                className="w-5 h-5 rounded border border-gray-300 shadow-sm"
-                style={{ backgroundColor: value }}
-              />
-              <span className="flex-1 text-left font-mono text-sm">{value}</span>
-              <Palette className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-3" align="start">
-            <div className="space-y-3">
-              {/* 预设颜色 */}
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">预设颜色</Label>
-                <div className="grid grid-cols-9 gap-2">
-                  {PRESET_COLORS.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => handleColorChange(color)}
-                      className="w-6 h-6 rounded border-2 hover:scale-110 transition-transform"
-                      style={{
-                        backgroundColor: color,
-                        borderColor: value === color ? '#000' : 'transparent',
-                      }}
-                      title={color}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* 自定义颜色（纯文本 hex，避免使用浏览器原生取色控件） */}
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">自定义颜色（输入十六进制）</Label>
-                <div className="flex gap-2 items-center">
-                  <span
-                    className="w-8 h-8 rounded-md border border-gray-300 shrink-0"
-                    style={{ backgroundColor: customColor }}
-                  />
-                  <Input
-                    ref={colorInputRef}
-                    type="text"
-                    value={customColor}
-                    onChange={handleCustomColorChange}
-                    placeholder="#000000"
-                    className="font-mono text-sm flex-1"
-                  />
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+      {label && <label className="text-sm font-medium text-[hsl(var(--foreground))]">{label}</label>}
+      <div
+        ref={triggerRef}
+        role="button"
+        tabIndex={0}
+        className="w-full flex items-center justify-start gap-2 px-3 py-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] hover:bg-[hsl(var(--muted))] cursor-pointer transition-colors"
+        onClick={openPop}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPop() } }}
+      >
+        <span className="w-5 h-5 rounded border border-[hsl(var(--border))] shadow-sm flex-shrink-0" style={{ backgroundColor: value || '#ffffff' }} />
+        <span className="flex-1 text-left font-mono text-sm truncate">{value || '#ffffff'}</span>
+        <Palette className="w-4 h-4 text-[hsl(var(--muted-foreground))] flex-shrink-0" />
       </div>
+      {open && createPortal(
+        <>
+          <div className="fixed inset-0" style={{ zIndex: 2147483646 }} onClick={() => setOpen(false)} />
+          <div
+            className="fixed rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-pop-2xl p-3 animate-scale-in"
+            style={{ zIndex: 2147483647, left, top, width: W }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[11px] text-[hsl(var(--muted-foreground))] mb-1.5">预设颜色</div>
+            <div className="grid grid-cols-8 gap-1.5 mb-2.5">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  title={c}
+                  onClick={() => onChange(c)}
+                  className={'w-5 h-5 rounded-md transition-transform hover:scale-110 ' +
+                    ((value || '').toLowerCase() === c.toLowerCase()
+                      ? 'ring-2 ring-[hsl(var(--brand-500))] ring-offset-1 border border-white'
+                      : 'border border-[hsl(var(--border))]')}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <div className="text-[11px] text-[hsl(var(--muted-foreground))] mb-1.5 pt-2 border-t border-[hsl(var(--border))]">自定义（十六进制）</div>
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-md border border-[hsl(var(--border))] flex-shrink-0" style={{ backgroundColor: value || '#ffffff' }} />
+              <input
+                type="text"
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="#000000"
+                className="flex-1 min-w-0 px-2 py-1.5 rounded-md bg-[hsl(var(--background))] border border-[hsl(var(--border))] text-sm font-mono focus:outline-none focus:border-[hsl(var(--brand-500))]"
+              />
+            </div>
+          </div>
+        </>,
+        document.body,
+      )}
     </div>
   )
 }
