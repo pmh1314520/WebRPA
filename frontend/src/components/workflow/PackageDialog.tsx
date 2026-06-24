@@ -185,7 +185,7 @@ export function PackageDialog({ isOpen, onClose, currentName }: PackageDialogPro
         </div>
         <div className="p-4 space-y-3 text-sm">
           <div>
-            <label className="text-xs text-[hsl(var(--muted-foreground))]">选择工作流</label>
+            <label className="text-xs text-[hsl(var(--muted-foreground))]">选择保存的工作流</label>
             <SelectNative className="mt-1" value={filename} onChange={e => setFilename(e.target.value)}
               placeholder="（请先在编辑器保存工作流）">
               {list.length === 0 && <option value="">（请先在编辑器保存工作流）</option>}

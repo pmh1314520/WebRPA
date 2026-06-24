@@ -336,23 +336,76 @@ def request_input_prompt_sync(variable_name: str, title: str, message: str,
 # ---------- 文本朗读（原生 TTS）----------
 def request_tts_sync(text: str, lang: str = "zh", rate: float = 1.0, pitch: float = 1.0,
                      volume: float = 1.0, timeout: float = 60) -> bool:
+    """打包运行下的文本朗读。依次尝试：pyttsx3 → Windows SAPI(win32com) →
+    PowerShell System.Speech → comtypes SAPI。任一成功即真正发声；全部失败才打印兜底。
+    （内置运行时通常无 pyttsx3，但有 pywin32，故 SAPI 路径是主力。）"""
     if not text:
         return True
+    text = str(text)
+    rate = float(rate or 1.0)
+    volume = max(0.0, min(1.0, float(volume or 1.0)))
+
+    # 1) pyttsx3（若运行时带了）
     try:
         import pyttsx3
         engine = pyttsx3.init()
         try:
-            engine.setProperty("rate", int(200 * float(rate or 1.0)))
-            engine.setProperty("volume", max(0.0, min(1.0, float(volume or 1.0))))
+            engine.setProperty("rate", int(200 * rate))
+            engine.setProperty("volume", volume)
         except Exception:
             pass
-        engine.say(str(text))
+        engine.say(text)
         engine.runAndWait()
         return True
     except Exception:
-        # 无 TTS 引擎时不让工作流失败，打印出来即可
-        print(f"[朗读] {text}")
+        pass
+
+    # 2) Windows SAPI（win32com，pywin32 自带；内置运行时可用）
+    try:
+        import pythoncom  # type: ignore
+        import win32com.client  # type: ignore
+        try:
+            pythoncom.CoInitialize()
+        except Exception:
+            pass
+        speaker = win32com.client.Dispatch("SAPI.SpVoice")
+        try:
+            # SAPI Rate: -10~10（0 为正常）；把 0.5~2.0 倍速映射过去
+            speaker.Rate = max(-10, min(10, int((rate - 1.0) * 10)))
+            speaker.Volume = int(volume * 100)
+        except Exception:
+            pass
+        speaker.Speak(text)  # 同步朗读
         return True
+    except Exception:
+        pass
+
+    # 3) PowerShell System.Speech（.NET 自带，无需任何 Python 包）
+    try:
+        import subprocess
+        safe = text.replace("'", "''")
+        ps = ("Add-Type -AssemblyName System.Speech; "
+              "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+              "$s.Rate = %d; $s.Volume = %d; $s.Speak('%s')" % (
+                  max(-10, min(10, int((rate - 1.0) * 10))), int(volume * 100), safe))
+        flags = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
+        subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
+                       creationflags=flags, timeout=max(10, int(timeout or 60)))
+        return True
+    except Exception:
+        pass
+
+    # 4) comtypes SAPI 兜底
+    try:
+        import comtypes.client  # type: ignore
+        speaker = comtypes.client.CreateObject("SAPI.SpVoice")
+        speaker.Speak(text)
+        return True
+    except Exception:
+        pass
+
+    print(f"[朗读] {text}")
+    return True
 
 
 # ---------- 查看图片 / 播放音视频（调用系统默认程序）----------
