@@ -5,7 +5,7 @@
 WebRPA - 网页机器人流程自动化工具
 </h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-2.3.0-blue.svg" alt="版本">
+  <img src="https://img.shields.io/badge/版本-2.3.65-blue.svg" alt="版本">
   <img src="https://img.shields.io/badge/模块数量-560+个-brightgreen.svg" alt="模块数量">
   <img src="https://img.shields.io/badge/协议-AGPL--3.0%20%2B%20商业授权-green.svg" alt="协议">
   <img src="https://img.shields.io/badge/作者-青云制作__彭明航-orange.svg" alt="作者">
