@@ -1,10 +1,10 @@
-export const inputGuideContent = `# 🖱️ 屏幕、鼠标与键盘模拟
+export const inputGuideContent = `# 屏幕、鼠标与键盘模拟
 
 本章介绍屏幕截图、录像，以及真实鼠标键盘模拟操作模块。
 
 ---
 
-## 📷 屏幕操作
+## 屏幕操作
 
 ### 屏幕截图（screenshot_screen）
 
@@ -65,7 +65,7 @@ export const inputGuideContent = `# 🖱️ 屏幕、鼠标与键盘模拟
 
 ---
 
-## 🖱️ 真实鼠标模拟
+## 真实鼠标模拟
 
 真实鼠标模块通过操作系统 API 模拟实际鼠标动作，适用于无法用浏览器自动化的桌面软件场景。
 
@@ -128,7 +128,7 @@ export const inputGuideContent = `# 🖱️ 屏幕、鼠标与键盘模拟
 
 ---
 
-## ⌨️ 真实键盘模拟
+## 真实键盘模拟
 
 ### 真实键盘操作（real_keyboard）
 
@@ -178,7 +178,7 @@ export const inputGuideContent = `# 🖱️ 屏幕、鼠标与键盘模拟
 
 ---
 
-## 🖼️ 图像/文字识别点击
+## 图像/文字识别点击
 
 ### 点击图像（click_image）
 
@@ -228,7 +228,7 @@ export const inputGuideContent = `# 🖱️ 屏幕、鼠标与键盘模拟
 
 ---
 
-## 🎹 宏录制器（macro_recorder）
+## 宏录制器（macro_recorder）
 
 录制一段鼠标键盘操作，然后自动重放，是最简单的桌面自动化方式。
 
@@ -250,7 +250,7 @@ export const inputGuideContent = `# 🖱️ 屏幕、鼠标与键盘模拟
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 - **坐标系**：所有坐标都是屏幕绝对坐标（以屏幕左上角为原点）
 - **多显示器**：第二块屏幕的坐标从第一块宽度开始（如主屏 1920px，副屏 X 从 1920 开始）

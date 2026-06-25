@@ -1,42 +1,42 @@
-export const variablesGuideContentEn = `# 📦 Variable System in depth
+export const variablesGuideContentEn = `# Variable System in depth
 
 This chapter explains WebRPA's variable system in detail: types, scope, references and more.
 
 ---
 
-## ✨ Module built-in variables
+## Module built-in variables
 
 WebRPA defines default variable names for common modules; when you add a module, they're auto-added to the autocomplete list.
 
 ### Default variables of common modules
 
 **Data scraping modules:**
-- \`get_element_info\` → \`element_info\`
-- \`screenshot\` → \`screenshot_path\`
-- \`extract_table_data\` → \`table_data\`
-- \`download_file\` → \`file_downloaded\`
+- \`get_element_info\` -> \`element_info\`
+- \`screenshot\` -> \`screenshot_path\`
+- \`extract_table_data\` -> \`table_data\`
+- \`download_file\` -> \`file_downloaded\`
 
 **Network request modules:**
-- \`api_request\` → \`api_response\`
-- \`send_email\` → \`email_sent\`
-- \`webhook_request\` → \`webhook_response\`
+- \`api_request\` -> \`api_response\`
+- \`send_email\` -> \`email_sent\`
+- \`webhook_request\` -> \`webhook_response\`
 
 **Data processing modules:**
-- \`json_parse\` → \`json_data\`
-- \`regex_extract\` → \`regex_result\`
-- \`list_operation\` → \`list_result\`
-- \`dict_operation\` → \`dict_result\`
+- \`json_parse\` -> \`json_data\`
+- \`regex_extract\` -> \`regex_result\`
+- \`list_operation\` -> \`list_result\`
+- \`dict_operation\` -> \`dict_result\`
 
 **AI modules:**
-- \`ai_chat\` → \`ai_response\`
-- \`ocr_captcha\` → \`captcha_text\`
-- \`image_ocr\` → \`ocr_text\`
-- \`face_recognition\` → \`face_match_result\`
+- \`ai_chat\` -> \`ai_response\`
+- \`ocr_captcha\` -> \`captcha_text\`
+- \`image_ocr\` -> \`ocr_text\`
+- \`face_recognition\` -> \`face_match_result\`
 
 **Database modules:**
-- \`db_query\` → \`query_result\`
-- \`db_insert\` → \`insert_result\`
-- \`db_update\` → \`update_result\`
+- \`db_query\` -> \`query_result\`
+- \`db_insert\` -> \`insert_result\`
+- \`db_update\` -> \`update_result\`
 
 ### Variable autocomplete
 
@@ -48,13 +48,13 @@ As you type a variable name, matching suggestions appear:
 4. **Value preview**: shows the current value (if any)
 
 **Shortcuts:**
-- ↑↓: select a variable
+- Up/Down: select a variable
 - Enter/Tab: confirm
 - Esc: close the suggestion list
 
 ---
 
-## 🎯 What is a variable?
+## What is a variable?
 
 A variable is a container that stores data and passes it between modules in a workflow.
 
@@ -67,7 +67,7 @@ A variable is a container that stores data and passes it between modules in a wo
 
 ---
 
-## 📝 Variable types
+## Variable types
 
 WebRPA supports 5 types:
 
@@ -130,7 +130,7 @@ Example:
 
 ---
 
-## 🔤 Variable reference syntax
+## Variable reference syntax
 
 ### Basic reference
 
@@ -151,26 +151,26 @@ Use curly braces:
 
 Access list elements:
 \`\`\`
-{list[0]}      → first element
-{list[1]}      → second element
-{list[-1]}     → last element
+{list[0]}      -> first element
+{list[1]}      -> second element
+{list[-1]}     -> last element
 \`\`\`
 
 Access dict properties:
 \`\`\`
-{user[name]}   → the user's name property
-{user[age]}    → the user's age property
+{user[name]}   -> the user's name property
+{user[age]}    -> the user's age property
 \`\`\`
 
 Multi-level:
 \`\`\`
-{data[0][name]}        → the name of the first data item
-{response[data][items][0]} → the first element of response.data.items
+{data[0][name]}        -> the name of the first data item
+{response[data][items][0]} -> the first element of response.data.items
 \`\`\`
 
 ---
 
-## ➕ Creating variables
+## Creating variables
 
 ### Option 1: the "Set variable" module
 
@@ -206,11 +206,11 @@ Loop modules auto-create index variables:
 
 ---
 
-## 👁️ Viewing variables
+## Viewing variables
 
 ### Variable panel
 
-Click the **📦 Variables** tab in the bottom log panel to:
+Click the **Variables** tab in the bottom log panel to:
 - See all variables and their values
 - Monitor changes in real time
 - Manually add/edit variables
@@ -224,17 +224,17 @@ Print log: current user={username}, balance={balance}
 
 ---
 
-## 📋 List operations
+## List operations
 
 ### List operation module
 
 | Operation | Description | Example |
 |------|------|------|
-| Append | Add at the end | [1,2] → [1,2,3] |
-| Insert | Insert at a position | [1,3] → [1,2,3] |
-| Remove | Remove by value | [1,2,3] → [1,3] |
-| Pop | Remove by index and return | [1,2,3] → [1,2], returns 3 |
-| Clear | Remove all | [1,2,3] → [] |
+| Append | Add at the end | [1,2] -> [1,2,3] |
+| Insert | Insert at a position | [1,3] -> [1,2,3] |
+| Remove | Remove by value | [1,2,3] -> [1,3] |
+| Pop | Remove by index and return | [1,2,3] -> [1,2], returns 3 |
+| Clear | Remove all | [1,2,3] -> [] |
 
 ### Get list info
 
@@ -250,14 +250,14 @@ List:   ["a", "b", "c", "d"]
 Index:    0     1     2     3
 Negative: -4   -3    -2    -1
 
-{list[0]}  → "a" (first)
-{list[-1]} → "d" (last)
-{list[1]}  → "b" (second)
+{list[0]}  -> "a" (first)
+{list[-1]} -> "d" (last)
+{list[1]}  -> "b" (second)
 \`\`\`
 
 ---
 
-## 📖 Dictionary operations
+## Dictionary operations
 
 ### Dict operation module
 
@@ -278,15 +278,15 @@ Negative: -4   -3    -2    -1
 \`\`\`
 Dict: {"name": "John", "age": 25}
 
-{dict[name]}  → "John"
-{dict[age]}   → 25
+{dict[name]}  -> "John"
+{dict[age]}   -> 25
 
-Get all keys → ["name", "age"]
+Get all keys -> ["name", "age"]
 \`\`\`
 
 ---
 
-## 🔧 Variable processing modules
+## Variable processing modules
 
 ### Increment / decrement
 
@@ -315,10 +315,10 @@ Result: counter goes from 0 to 10
 
 **Difference from Set variable**:
 \`\`\`
-❌ Not recommended:
+[×] Not recommended:
 Set variable: counter = {counter} + 1  (manual calculation)
 
-✅ Recommended:
+[√] Recommended:
 Increment/decrement: counter increment 1  (cleaner)
 \`\`\`
 
@@ -342,17 +342,17 @@ Extract data from a JSON string.
 \`\`\`json
 Data: {"code": 200, "data": {"user": "John", "items": [1,2,3]}}
 
-$.code           → 200
-$.data.user      → "John"
-$.data.items[0]  → 1
+$.code           -> 200
+$.data.user      -> "John"
+$.data.items[0]  -> 1
 \`\`\`
 
 ### Base64 encode/decode
 
 | Operation | Description |
 |------|------|
-| Encode | text/file → Base64 string |
-| Decode | Base64 string → original data |
+| Encode | text/file -> Base64 string |
+| Decode | Base64 string -> original data |
 
 **Use cases**: image-to-Base64 for AI recognition, encoded file transfer, binary data.
 
@@ -385,15 +385,15 @@ Get the current date/time.
 
 **Common formats**:
 \`\`\`
-YYYY-MM-DD           → 2024-01-15
-YYYY-MM-DD HH:mm:ss  → 2024-01-15 14:30:00
-YYYYMMDD             → 20240115
-HH:mm                → 14:30
+YYYY-MM-DD           -> 2024-01-15
+YYYY-MM-DD HH:mm:ss  -> 2024-01-15 14:30:00
+YYYYMMDD             -> 20240115
+HH:mm                -> 14:30
 \`\`\`
 
 ---
 
-## 🔄 Variable scope
+## Variable scope
 
 ### Global variables
 
@@ -417,26 +417,26 @@ Outside the loop: {item} and {index} are unavailable
 
 ---
 
-## 💡 Best practices
+## Best practices
 
 ### Naming
 
 \`\`\`
-✅ Recommended:
+[√] Recommended:
 productName, userList, currentIndex, apiResponse
 
-❌ Avoid:
+[×] Avoid:
 a, temp, x, data1
 \`\`\`
 
 ### Type consistency
 
 \`\`\`
-✅ Correct:
+[√] Correct:
 number compare: {count} > 10
 string compare: {status} == "success"
 
-❌ Wrong:
+[×] Wrong:
 {count} > "10"  (number vs string)
 \`\`\`
 
@@ -444,8 +444,8 @@ string compare: {status} == "success"
 
 \`\`\`
 Condition: {var} != ""
-  ├─ true → use the value
-  └─ false → use a default
+  ├─ true -> use the value
+  └─ false -> use a default
 \`\`\`
 
 ### Debugging tips
@@ -458,7 +458,7 @@ Condition: {var} != ""
 
 ---
 
-## 🐛 Common issues
+## Common issues
 
 ### Variable undefined
 

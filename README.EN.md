@@ -21,37 +21,67 @@ WebRPA - Web Robotic Process Automation Tool
 
 **A powerful visual web automation tool (with some support for Windows desktop automation and Android automation). Build automation workflows quickly by dragging and dropping modules — no coding required — to accomplish web data scraping, form filling, automated testing and more.**
 
-> **⚠️ Important notice: This software is provided only as a technical tool. Users must comply with all applicable laws and regulations; the developer assumes no liability for how users use it. See the [Disclaimer](#️-disclaimer).**
+> **Important notice: This software is provided only as a technical tool. Users must comply with all applicable laws and regulations; the developer assumes no liability for how users use it. See the [Disclaimer](#disclaimer).**
 
-> **【Please download the latest 7z archive from Releases — the latest source code and runtime are all inside; extract and run. 😇】**
+> **【Please download the latest 7z archive from Releases — the latest source code and runtime are all inside; extract and run.】**
 >
 > Support WebRPA development: [Afdian page](https://ifdian.net/a/qypmh)
 
-## ✨ Features
+## Overview
 
-### 🎯 Core advantages
+WebRPA is a fully open-source, offline-capable visual Robotic Process Automation (RPA) tool. Built around a drag-and-drop workflow editor, it lets you compose web, desktop and mobile automation flows without writing a single line of code — covering data scraping, form filling, file processing, office automation and system integration.
 
-- **🚀 Zero-code development**: Visual drag-and-drop, no programming background required
-- **📦 Ready to use**: Bundled Python and Node.js runtimes, one-click start
-- **🔧 Rich modules**: 560+ functional modules covering 95% of automation scenarios (including DrissionPage-based anti-detection web automation modules)
-- **🤖 AI Assistant**: A built-in AI assistant that understands intent in chat, auto-builds/troubleshoots workflows, and has **self-healing** ability (on failure it diagnoses → fixes → re-runs). OpenAI-compatible protocol, supporting OpenAI / Zhipu / DeepSeek / Ollama and more. Three **permission levels** (Per-action confirm / Smart auto / Full access), and one-click **AI Diagnosis** when the editor errors out
-- **🛡️ Never goes blank**: A global error boundary catches everything — any module exception shows an error card (with details and AI Diagnosis) instead of letting the editor white-screen
-- **🌳 Version history**: Git-style local snapshots (including nodes, edges and global variables) that can be restored / compared anytime; the assistant auto-saves a snapshot before big changes
-- **☁️ WebDAV remote storage**: Workflows can be saved to / loaded from NAS, Nextcloud, Jianguoyun, etc., shared across devices
-- **⌨️ Custom shortcuts**: Common actions (run / stop / save / new, etc.) can be freely bound to key combinations
-- **🎨 Beautiful UI**: Modern UI design with lively Motion animations and smooth interactions, with Mermaid flowchart support
-- **⚡ High performance**: Built on FastAPI + React for fast responses
-- **🔌 Easy to extend**: Modular architecture, supports custom module development and MCP server integration
-- **📚 Complete docs**: Built-in detailed tutorials covering all module categories
-- **🆓 Completely free**: Free for non-commercial use, open and transparent
-- **🔍 Smart search**: Modules and tutorials support fuzzy search by Chinese, Pinyin and Pinyin initials
-- **📊 Visual flow**: Built-in Mermaid flowcharts intuitively show workflow logic
-- **💾 Variable autocomplete**: Default variable names are added to the autocomplete list when modules are created
-- **🌐 Fully offline**: All resources are local, no internet required, perfect for LAN deployment
+The project ships with 560+ built-in modules and a self-healing AI assistant: describe what you need in one sentence and the AI builds, debugs and re-runs the workflow for you. Every runtime (Python 3.13, Node.js, the browser engine, and the media/document tools) is bundled — extract, double-click the launcher, and go. No internet and no extra installation required, which makes it a natural fit for intranet and LAN deployments.
+
+- **Who it's for**: operations, QA, data, office and development staff who want to offload repetitive work — with or without a coding background.
+- **What it is**: a zero-code, visual, ready-to-use and fully offline all-in-one automation platform.
+- **Licensing**: free for personal and non-commercial use (AGPL-3.0); commercial licenses are available for business use.
 
 ---
 
-## 🖼️ Screenshots
+## Features
+
+### Core advantages
+
+- **Zero-code development**: Visual drag-and-drop, no programming background required
+- **Ready to use**: Bundled Python and Node.js runtimes, one-click start
+- **Rich modules**: 560+ functional modules covering 95% of automation scenarios (including DrissionPage-based anti-detection web automation modules)
+- **AI Assistant**: A built-in AI assistant that understands intent in chat, auto-builds/troubleshoots workflows, and has **self-healing** ability (on failure it diagnoses → fixes → re-runs). OpenAI-compatible protocol, supporting OpenAI / Zhipu / DeepSeek / Ollama and more. Three **permission levels** (Per-action confirm / Smart auto / Full access), and one-click **AI Diagnosis** when the editor errors out
+- **Never goes blank**: A global error boundary catches everything — any module exception shows an error card (with details and AI Diagnosis) instead of letting the editor white-screen
+- **Version history**: Git-style local snapshots (including nodes, edges and global variables) that can be restored / compared anytime; the assistant auto-saves a snapshot before big changes
+- **WebDAV remote storage**: Workflows can be saved to / loaded from NAS, Nextcloud, Jianguoyun, etc., shared across devices
+- **Custom shortcuts**: Common actions (run / stop / save / new, etc.) can be freely bound to key combinations
+- **Beautiful UI**: Modern UI design with lively Motion animations and smooth interactions, with Mermaid flowchart support
+- **High performance**: Built on FastAPI + React for fast responses
+- **Easy to extend**: Modular architecture, supports custom module development and MCP server integration
+- **Complete docs**: Built-in detailed tutorials covering all module categories
+- **Completely free**: Free for non-commercial use, open and transparent
+- **Smart search**: Modules and tutorials support fuzzy search by Chinese, Pinyin and Pinyin initials
+- **Visual flow**: Built-in Mermaid flowcharts intuitively show workflow logic
+- **Variable autocomplete**: Default variable names are added to the autocomplete list when modules are created
+- **One-click EXE packaging**: Compile any workflow into a standalone Windows executable, with a built-in visual "EXE runtime UI designer" to freely place controls — double-click to run, no runtime install needed on the target machine
+- **Theme switching**: Built-in default / dark / gray themes you can switch at will
+- **Fully offline**: All resources are local, no internet required, perfect for LAN deployment
+
+### Key module capabilities
+
+Backed by 560+ built-in modules (organized by scenario, drag onto the canvas to use), WebRPA covers the following key capabilities:
+
+- **Web automation**: page navigation, element interaction and query, data scraping, network capture, plus DrissionPage-based anti-detection automation
+- **Desktop automation**: real mouse/keyboard simulation, image-recognition clicking, screen recording, desktop control operations, system operations
+- **Mobile automation**: Android tap / swipe / input, screen mirroring, app management, file push/pull, image recognition
+- **Flow control & triggers**: condition, loop, subflow reuse, assertions, scheduled tasks, and triggers for Webhook / hotkeys / file watch / email / image / sound
+- **Data processing**: variable operations, text processing, list / dict / math & statistics, tables and CSV
+- **Excel & databases**: full openpyxl Excel automation, WPS / Feishu bitables, and databases such as MySQL / PostgreSQL / Redis
+- **AI capabilities**: AI chat and vision, AI data processing (extract / classify / summarize / translate / sentiment / normalize / semantic dedup / smart routing), AI generation (text-to-image / text-to-video), AI smart crawler and element locating, OCR and CAPTCHA recognition
+- **Media processing**: image editing, blind watermarking, video and audio processing, media format conversion
+- **Files & documents**: file management, file/folder comparison, PDF processing (merge / split / encrypt / watermark / to Word, etc.), document format conversion
+- **Integration & communication**: HTTP requests, email, 17 notification channels, QQ / WeChat bots, SSH remote, SAP automation, LAN sharing
+- **Utilities & testing**: encryption/encoding, color & time conversion, script execution (JS / Python), Allure test reports
+
+---
+
+## Screenshots
 
 ![](png/展示图8.png)
 
@@ -85,7 +115,7 @@ WebRPA - Web Robotic Process Automation Tool
 
 ------
 
-## 🚀 Quick start
+## Quick start
 
 ### Requirements
 
@@ -159,7 +189,7 @@ cd frontend
 
 ---
 
-## 📁 Project structure
+## Project structure
 
 ```
 WebRPA/
@@ -213,7 +243,7 @@ WebRPA/
 
 ---
 
-## 📖 Usage
+## Usage
 
 The project ships with complete tutorials — click the "Tutorials" button in the toolbar to view them.
 
@@ -228,20 +258,20 @@ The project ships with complete tutorials — click the "Tutorials" button in th
 
 ### Documentation features
 
-- 📚 **Detailed tutorials** covering all 542 modules
-- 🔍 **Third-level heading search**: results are pinpointed to third-level headings (###) for fast navigation
-- 🎨 **Keyword highlighting**: search keywords are automatically highlighted in the docs
-- 🔖 **Persistent search state**: search and highlighting are kept when switching docs, for easy comparison
-- 📊 **Mermaid flowcharts**: built-in beautiful flowcharts that intuitively show workflow logic
-- 📝 **Rich examples**: every module has detailed configuration notes and code examples
-- 💡 **Best practices**: workflow design patterns and optimization tips
-- 🎯 **Quick onboarding**: a progressive learning path from basic to advanced
-- 📖 **Always up to date**: docs are updated with each release
-- 💾 **Doc export**: download a single doc or all docs as Markdown files
+- **Detailed tutorials** covering all 542 modules
+- **Third-level heading search**: results are pinpointed to third-level headings (###) for fast navigation
+- **Keyword highlighting**: search keywords are automatically highlighted in the docs
+- **Persistent search state**: search and highlighting are kept when switching docs, for easy comparison
+- **Mermaid flowcharts**: built-in beautiful flowcharts that intuitively show workflow logic
+- **Rich examples**: every module has detailed configuration notes and code examples
+- **Best practices**: workflow design patterns and optimization tips
+- **Quick onboarding**: a progressive learning path from basic to advanced
+- **Always up to date**: docs are updated with each release
+- **Doc export**: download a single doc or all docs as Markdown files
 
 ---
 
-## 🔧 Tech stack
+## Tech stack
 
 ### Frontend
 
@@ -329,7 +359,7 @@ The project ships with complete tutorials — click the "Tutorials" button in th
 
 ---
 
-## 👤 Author
+## Author
 
 **QingYun Studio · Peng Minghang (a college freshman hopelessly obsessed with computer technology)**
 
@@ -337,36 +367,36 @@ The project ships with complete tutorials — click the "Tutorials" button in th
 
 ---
 
-## 📄 License
+## License
 
 This project uses a **dual-license model**:
 
 ### 1. Open-source edition: GNU AGPL-3.0
 
-- ✅ **Free for individuals**: completely free for study, research and non-commercial use
-- ✅ **Copyleft**: any modification or derivative work must be open-sourced under AGPL-3.0
-- ✅ **Network-service copyleft**: providing a service over a network (e.g. SaaS) must also open-source the complete code
-- ✅ **Attribution required**: the original author "QingYun Studio · Peng Minghang" must be retained
-- ❌ **No closed-source commercial use**: you may not use this project commercially while keeping it closed-source
+- **Free for individuals**: completely free for study, research and non-commercial use
+- **Copyleft**: any modification or derivative work must be open-sourced under AGPL-3.0
+- **Network-service copyleft**: providing a service over a network (e.g. SaaS) must also open-source the complete code
+- **Attribution required**: the original author "QingYun Studio · Peng Minghang" must be retained
+- **No closed-source commercial use**: you may not use this project commercially while keeping it closed-source
 
 ### 2. Commercial license: private commercial license
 
-- 💰 **Commercial use**: usable for commercial purposes after purchasing a commercial license
-- 💰 **Closed-source use**: can be used closed-source, free of AGPL-3.0 restrictions
-- 💰 **Technical support**: commercial technical support
-- 💰 **Contact**: QQ 2124691573
+- **Commercial use**: usable for commercial purposes after purchasing a commercial license
+- **Closed-source use**: can be used closed-source, free of AGPL-3.0 restrictions
+- **Technical support**: commercial technical support
+- **Contact**: QQ 2124691573
 
 **For full license terms, see the [LICENSE](LICENSE) file.**
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
-### 🚨 Important legal notice
+### Important legal notice
 
 **This software (WebRPA) is provided only as a technical tool. The developer assumes no legal liability for any actions taken by users with this software or their consequences.**
 
-### 📋 Usage responsibility
+### Usage responsibility
 
 1. **User responsibility**
    - When using WebRPA, users must strictly comply with the laws and regulations of their country and region
@@ -386,7 +416,7 @@ This project uses a **dual-license model**:
    - **The developer is not liable for any direct or indirect loss caused by users' use of this software**
    - **The developer provides no express or implied warranty regarding the software's fitness, reliability or accuracy**
 
-### 🛡️ Technical tool statement
+### Technical tool statement
 
 1. **Nature of the tool**
    - WebRPA is a technical tool, similar to general-purpose software such as browsers and text editors
@@ -399,7 +429,7 @@ This project uses a **dual-license model**:
    - Control access frequency reasonably to avoid overloading target servers
    - Respect websites' anti-crawling mechanisms and do not maliciously bypass them
 
-### ⚖️ Applicable law
+### Applicable law
 
 1. **Jurisdiction**
    - This disclaimer is governed by the laws of the People's Republic of China
@@ -410,25 +440,25 @@ This project uses a **dual-license model**:
    - Downloading, installing or using this software constitutes agreement to all of this disclaimer
    - If you disagree with this disclaimer, stop using the software immediately and delete all related files
 
-### 🔔 Special reminder
+### Special reminder
 
 **Before performing any automation with WebRPA, please make sure to:**
 
-- ✅ Confirm your use complies with local laws and regulations
-- ✅ Obtain explicit authorization from the target website or system (where applicable)
-- ✅ Comply with the target website's terms of service and usage agreement
-- ✅ Respect others' intellectual property and privacy
-- ✅ Bear all risks and responsibility of using this software
+- Confirm your use complies with local laws and regulations
+- Obtain explicit authorization from the target website or system (where applicable)
+- Comply with the target website's terms of service and usage agreement
+- Respect others' intellectual property and privacy
+- Bear all risks and responsibility of using this software
 
-**⚠️ Once again: any user behavior that violates laws and regulations or infringes others' rights while using WebRPA is unrelated to the WebRPA developer, who bears no joint liability.**
+**Once again: any user behavior that violates laws and regulations or infringes others' rights while using WebRPA is unrelated to the WebRPA developer, who bears no joint liability.**
 
 ---
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
 **Thanks to the following open-source projects and tech communities:**
 
-### 🎨 Frontend frameworks & UI
+### Frontend frameworks & UI
 
 - [React](https://react.dev/) - library for building user interfaces
 - [TypeScript](https://www.typescriptlang.org/) - a typed superset of JavaScript
@@ -442,7 +472,7 @@ This project uses a **dual-license model**:
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/) - the code editor that powers VS Code
 - [React Markdown](https://remarkjs.github.io/react-markdown/) - Markdown rendering component
 
-### ⚙️ Backend frameworks & services
+### Backend frameworks & services
 
 - [FastAPI](https://fastapi.tiangolo.com/) - modern, high-performance Python web framework
 - [Uvicorn](https://www.uvicorn.org/) - lightning-fast ASGI server
@@ -451,26 +481,26 @@ This project uses a **dual-license model**:
 - [Express](https://expressjs.com/) - fast, unopinionated, minimalist Node.js web framework
 - [PM2](https://pm2.keymetrics.io/) - production-grade process manager for Node.js
 
-### 🌐 Browser automation
+### Browser automation
 
 - [Playwright](https://playwright.dev/) - modern browser automation by Microsoft
 - [Playwright for Python](https://playwright.dev/python/) - Python bindings for Playwright
 
-### 🖱️ System operations & simulation
+### System operations & simulation
 
 - [PyAutoGUI](https://pyautogui.readthedocs.io/) - cross-platform GUI automation library
 - [pynput](https://pynput.readthedocs.io/) - monitor and control keyboard and mouse
 - [pywin32](https://github.com/mhammond/pywin32) - Python extensions for the Windows API
 - [mss](https://python-mss.readthedocs.io/) - ultra-fast cross-platform screenshot library
 
-### 📊 Data processing & storage
+### Data processing & storage
 
 - [Polars](https://pola.rs/) - lightning-fast DataFrame library
 - [openpyxl](https://openpyxl.readthedocs.io/) - read/write Excel 2010 files
 - [PyMySQL](https://pymysql.readthedocs.io/) - pure-Python MySQL client
 - [httpx](https://www.python-httpx.org/) - next-generation HTTP client
 
-### 🎬 Media processing
+### Media processing
 
 - [FFmpeg](https://ffmpeg.org/) - complete cross-platform audio/video solution
 - [Pillow](https://pillow.readthedocs.io/) - Python imaging library (PIL fork)
@@ -480,7 +510,7 @@ This project uses a **dual-license model**:
 - [Pandoc](https://pandoc.org/) - universal document converter
 - [pypandoc](https://github.com/JessicaTegner/pypandoc) - Python wrapper for Pandoc
 
-### 🤖 AI & recognition
+### AI & recognition
 
 - [OpenAI](https://openai.com/) - AI chat interface standard
 - [EasyOCR](https://github.com/JaidedAI/EasyOCR) - ready-to-use OCR, 80+ languages
@@ -491,7 +521,7 @@ This project uses a **dual-license model**:
 - [qrcode](https://github.com/lincolnloop/python-qrcode) - QR code generator
 - [pyzbar](https://github.com/NaturalHistoryMuseum/pyzbar) - QR code and barcode decoder
 
-### 🔧 Dev tools & libraries
+### Dev tools & libraries
 
 - [mitmproxy](https://mitmproxy.org/) - interactive HTTPS proxy
 - [colorama](https://github.com/tartley/colorama) - cross-platform colored terminal output
@@ -499,16 +529,16 @@ This project uses a **dual-license model**:
 - [aiofiles](https://github.com/Tinche/aiofiles) - async file operations
 - [watchdog](https://github.com/gorakhargosh/watchdog) - filesystem event monitoring
 
-### 🎯 Special thanks
+### Special thanks
 
-- **Microsoft** - for excellent tools such as Playwright, VS Code and TypeScript
-- **The open-source community** - thanks to all developers contributing to open source
+- **Microsoft**- for excellent tools such as Playwright, VS Code and TypeScript
+- **The open-source community**- thanks to all developers contributing to open source
 
 ---
 
-## ⭐ Star History
+## Star History
 
-**This is the first product I've open-sourced. If this project helps you, please give it a Star ⭐ to support it!**
+**This is the first product I've open-sourced. If this project helps you, please give it a Star to support it!**
 
 <h4 align="center">Support the independent development of WebRPA</h4>
 
@@ -532,7 +562,7 @@ This project uses a **dual-license model**:
 | 8 | 键鼠自动化为您解放双手 | 2026-02-24 20:54:11 | 20.00 |
 | 9 | 某 | 2026-02-24 21:05:45 | 15.00 |
 | 10 | 滚蛋~坏丫头 | 2026-02-25 14:29:05 | 50.00 |
-| 11 | 🌙✨ | 2026-02-27 12:58:24 | 20.00 |
+| 11 | | 2026-02-27 12:58:24 | 20.00 |
 | 12 | 小帅 | 2026-03-03 14:50:38 | 50.00 |
 | 13 | 键鼠自动化为您解放双手 | 2026-03-03 14:54:45 | 100.00 |
 | 14 | Man In Black | 2026-03-03 17:03:15 | 66.00 |
@@ -595,10 +625,10 @@ This project uses a **dual-license model**:
 
 <br>
 
-<h1 align="center">🌟 WebRPA Commercial License Pricing</h1>
+<h1 align="center">WebRPA Commercial License Pricing</h1>
 <br>
 
-## 📊 Commercial license (monthly / yearly)
+## Commercial license (monthly / yearly)
 | License | Scenario | Monthly (CNY) | Yearly (CNY)<br>(10-month discount) |
 | :--------- | :--------------------------------- | :------------: | :--------------------------------: |
 | Individual | Freelancer / personal studio commercial use |       80       |                800                 |
@@ -610,7 +640,7 @@ This project uses a **dual-license model**:
 
 <br>
 
-## 🏆 Perpetual license
+## Perpetual license
 | License | Scenario | Price (CNY) |
 | :--------- | :------------------------------ | :--------: |
 | Individual | Freelancer / personal studio perpetual license |    4000    |
@@ -624,11 +654,11 @@ This project uses a **dual-license model**:
 
 ---
 
-## ⚠️ Important notice: rules for special dependencies
+## Important notice: rules for special dependencies
 
 > **This project includes some third-party components with special licenses, for personal non-commercial use only.**
 
-### 📋 Special dependencies
+### Special dependencies
 
 1. **NapCat framework** (non-commercial license)
    - Purpose: QQ bot features
@@ -648,46 +678,46 @@ This project uses a **dual-license model**:
    - FFmpeg, Pandoc, poppler
    - Note: invoked as standalone programs (not linked libraries), compliant with GPL usage
 
-### 🔒 Legal compliance
+### Legal compliance
 
 - This project fully complies with the licenses of all third-party components
 - Personal non-commercial use: all features are free to use
 - Commercial use: a commercial license must be purchased; the commercial edition removes the special dependencies
 
-### 💼 Commercial edition notes
+### Commercial edition notes
 
 After purchasing a commercial license, you get a commercial edition without the special dependencies:
 
-- ❌ Removes NapCat and all QQ bot features
-- ❌ Removes pdf2docx and the PDF-to-Word feature
-- ✅ Keeps all other features
-- ✅ Completely free of license risk
-- ✅ Can be used commercially closed-source
+- Removes NapCat and all QQ bot features
+- Removes pdf2docx and the PDF-to-Word feature
+- Keeps all other features
+- Completely free of license risk
+- Can be used commercially closed-source
 
 **For a commercial QQ bot or PDF-to-Word solution, please find commercially-licensed alternatives yourself.**
 
 ---
 
-## 📦 Commercial edition features
+## Commercial edition features
 
 After purchasing a commercial license, you get the full commercial edition:
 
 **Commercial edition highlights:**
 
-- ✅ Can be used closed-source, free of AGPL-3.0 restrictions
-- ✅ Can be integrated into commercial products
-- ✅ Can be used to provide paid services
-- ✅ Includes commercial technical support
+- Can be used closed-source, free of AGPL-3.0 restrictions
+- Can be integrated into commercial products
+- Can be used to provide paid services
+- Includes commercial technical support
 
 **Removed features:**
 
-- ❌ All QQ bot related features (8 modules, depend on NapCat)
-- ❌ PDF-to-Word module (1 module, depends on pdf2docx)
+- All QQ bot related features (8 modules, depend on NapCat)
+- PDF-to-Word module (1 module, depends on pdf2docx)
 
 ---
 
-> 🔔 **Important note**
-> - Personal non-commercial use is **completely free** — free to use, modify and distribute.
+> **Important note**
+> - Personal non-commercial use is **completely free**— free to use, modify and distribute.
 > - Any modification or derivative work must be open-sourced under **AGPL-3.0**, with **attribution to the original author**.
 > - Providing a service over a network (e.g. SaaS) must also open-source the complete code.
 > - Commercial use requires purchasing a commercial license, which allows closed-source use.

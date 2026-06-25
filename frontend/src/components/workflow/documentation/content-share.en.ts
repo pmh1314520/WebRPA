@@ -1,10 +1,10 @@
-export const shareGuideContentEn = `# 🔗 Network & Screen Sharing
+export const shareGuideContentEn = `# Network & Screen Sharing
 
 This chapter covers folder sharing, file sharing and screen casting.
 
 ---
 
-## 📁 Network sharing
+## Network sharing
 
 ### Share folder (share_folder)
 
@@ -43,7 +43,7 @@ Close the file-sharing service.
 
 ---
 
-## 🖥️ Screen sharing
+## Screen sharing
 
 ### Start screen share (start_screen_share)
 
@@ -70,7 +70,7 @@ Close the screen-sharing service.
 
 ---
 
-## 💡 Use cases
+## Use cases
 
 - **Automation monitoring**: start screen sharing to watch a workflow's progress remotely
 - **File distribution**: share generated report files for others on the LAN to download

@@ -1,4 +1,4 @@
-export const botsGuideContentEn = `# 💬 QQ & WeChat Bots
+export const botsGuideContentEn = `# QQ & WeChat Bots
 
 This chapter shows how to automate QQ (via the NapCat framework) and WeChat (via mouse/keyboard simulation) with WebRPA.
 
@@ -31,7 +31,7 @@ Send a text message to a friend or group.
 
 **Example** (notify yourself after a workflow):
 \`\`\`
-Send QQ message → type: private, target: {my_qq}, content: Done! Scraped {count} records
+Send QQ message -> type: private, target: {my_qq}, content: Done! Scraped {count} records
 \`\`\`
 
 ---
@@ -84,10 +84,10 @@ Wait for and receive a QQ message, filterable by source and content.
 
 **Example** (run a task on command):
 \`\`\`
-Wait for QQ message → source: private, match: start scraping → result variable: msg
-Print log → command received, running...
+Wait for QQ message -> source: private, match: start scraping -> result variable: msg
+Print log -> command received, running...
 run the main task...
-Send QQ message → type: private, target: {msg.sender_id}, content: Done!
+Send QQ message -> type: private, target: {msg.sender_id}, content: Done!
 \`\`\`
 
 ---
@@ -171,7 +171,7 @@ Send a local file to a contact or group.
 
 ---
 
-## 📋 Example: a group-notification bot
+## Example: a group-notification bot
 
 \`\`\`mermaid
 flowchart TD
@@ -184,7 +184,7 @@ flowchart TD
 
 ---
 
-## 💡 Tips
+## Tips
 
 - **Get your QQ number**: use "Get login info" to get your own number, then save it with "Set variable"
 - **Broadcast**: use "Get group list" to get all groups, then iterate and send

@@ -1,10 +1,10 @@
-export const practicalCasesContentEn = `# 📚 Practical Cases
+export const practicalCasesContentEn = `# Practical Cases
 
 This chapter provides complete solutions for common automation scenarios that you can reference or modify directly.
 
 ---
 
-## 🔐 Case 1: Automatic Login
+## Case 1: Automatic Login
 
 ### Scenario
 Automatically log in to a website, useful for check-ins, logging in before data collection, and similar scenarios.
@@ -12,12 +12,12 @@ Automatically log in to a website, useful for check-ins, logging in before data 
 ### Workflow Design
 
 \`\`\`
-1. Open page → Login page URL
-2. Wait for element → Wait for the login form to load
-3. Input text → Username
-4. Input text → Password
-5. Click element → Login button
-6. Wait for element → Wait for the login success indicator
+1. Open page -> Login page URL
+2. Wait for element -> Wait for the login form to load
+3. Input text -> Username
+4. Input text -> Password
+5. Click element -> Login button
+6. Wait for element -> Wait for the login success indicator
 \`\`\`
 
 ### Detailed Configuration
@@ -68,20 +68,20 @@ If there is a CAPTCHA, you can:
 
 **Option 1: AI vision recognition**
 \`\`\`
-1. Element screenshot → CAPTCHA image
-2. AI vision → Recognize the CAPTCHA
-3. Input text → Enter the recognized result
+1. Element screenshot -> CAPTCHA image
+2. AI vision -> Recognize the CAPTCHA
+3. Input text -> Enter the recognized result
 \`\`\`
 
 **Option 2: Manual input**
 \`\`\`
-1. User input → Prompt "Please enter the CAPTCHA"
-2. Input text → Enter the CAPTCHA the user typed
+1. User input -> Prompt "Please enter the CAPTCHA"
+2. Input text -> Enter the CAPTCHA the user typed
 \`\`\`
 
 ---
 
-## 📊 Case 2: Product Data Collection
+## Case 2: Product Data Collection
 
 ### Scenario
 Collect product list data from an e-commerce website, including name, price, link, etc.
@@ -89,13 +89,13 @@ Collect product list data from an e-commerce website, including name, price, lin
 ### Workflow Design
 
 \`\`\`
-1. Open page → Product list page
-2. Wait for element → Wait for products to load
-3. Get element info → Get all product selectors
-4. Iterate list → Iterate over each product
-   ├─ Get element info → Product name → Excel column: Name
-   ├─ Get element info → Product price → Excel column: Price
-   └─ Get element info → Product link → Excel column: Link
+1. Open page -> Product list page
+2. Wait for element -> Wait for products to load
+3. Get element info -> Get all product selectors
+4. Iterate list -> Iterate over each product
+   ├─ Get element info -> Product name -> Excel column: Name
+   ├─ Get element info -> Product price -> Excel column: Price
+   └─ Get element info -> Product link -> Excel column: Link
 \`\`\`
 
 ### Detailed Configuration
@@ -149,15 +149,15 @@ Set variable: total pages = 10
 Loop while ({current page} <= {total pages})
   ├─ Collect current page data (the iteration flow above)
   ├─ Condition check: is there a next page
-  │   ├─ Yes → Click the next page button
+  │   ├─ Yes -> Click the next page button
   │   │       Wait for the page to load
   │   │       Set variable: current page = {current page} + 1
-  │   └─ No → Break out of the loop
+  │   └─ No -> Break out of the loop
 \`\`\`
 
 ---
 
-## 📰 Case 3: News Article Collection
+## Case 3: News Article Collection
 
 ### Scenario
 Collect the article list and detail content from a news website.
@@ -165,13 +165,13 @@ Collect the article list and detail content from a news website.
 ### Workflow Design
 
 \`\`\`
-1. Open page → News list page
+1. Open page -> News list page
 2. Get all article links
 3. Iterate the link list
    ├─ Open the article page
-   ├─ Get title → Excel column: Title
-   ├─ Get time → Excel column: Publish time
-   ├─ Get content → Excel column: Body
+   ├─ Get title -> Excel column: Title
+   ├─ Get time -> Excel column: Publish time
+   ├─ Get content -> Excel column: Body
    └─ Wait (to avoid requesting too fast)
 \`\`\`
 
@@ -212,7 +212,7 @@ Iterate list: article link list (enter the variable name directly)
 
 ---
 
-## 💰 Case 4: Price Monitoring
+## Case 4: Price Monitoring
 
 ### Scenario
 Periodically check a product's price and send a notification when it drops.
@@ -220,12 +220,12 @@ Periodically check a product's price and send a notification when it drops.
 ### Workflow Design
 
 \`\`\`
-1. Set variable → Target price
+1. Set variable -> Target price
 2. Open the product page
 3. Get the current price
-4. Condition check → current price < target price
-   ├─ Yes → Send email notification
-   └─ No → Print log "Price unchanged"
+4. Condition check -> current price < target price
+   ├─ Yes -> Send email notification
+   └─ No -> Print log "Price unchanged"
 \`\`\`
 
 ### Detailed Configuration
@@ -271,7 +271,7 @@ Go grab it!
 
 ---
 
-## ✅ Case 5: Automatic Check-in
+## [√] Case 5: Automatic Check-in
 
 ### Scenario
 Automatically log in to a website and complete the daily check-in task.
@@ -279,14 +279,14 @@ Automatically log in to a website and complete the daily check-in task.
 ### Workflow Design
 
 \`\`\`
-1. Open page → Website home page
-2. Condition check → already logged in
-   ├─ No → Run the login flow
-   └─ Yes → Continue
+1. Open page -> Website home page
+2. Condition check -> already logged in
+   ├─ No -> Run the login flow
+   └─ Yes -> Continue
 3. Open the check-in page
-4. Condition check → already checked in
-   ├─ Yes → Print "Already checked in today"
-   └─ No → Click the check-in button
+4. Condition check -> already checked in
+   ├─ Yes -> Print "Already checked in today"
+   └─ No -> Click the check-in button
 5. Get the check-in result
 6. Send notification (optional)
 \`\`\`
@@ -314,7 +314,7 @@ Condition check: {checked in} == true
 
 ---
 
-## 📝 Case 6: Batch Form Filling
+## Case 6: Batch Form Filling
 
 ### Scenario
 Read data from Excel and batch-fill a web form.
@@ -322,7 +322,7 @@ Read data from Excel and batch-fill a web form.
 ### Workflow Design
 
 \`\`\`
-1. Read Excel → Get the data list
+1. Read Excel -> Get the data list
 2. Iterate the data list
    ├─ Open the form page
    ├─ Fill in name: {current item[Name]}
@@ -375,7 +375,7 @@ Iterate list: data list (enter the variable name directly)
 
 ---
 
-## 🔄 Case 7: Lazy-loading Page Collection
+## Case 7: Lazy-loading Page Collection
 
 ### Scenario
 Collect from pages that require scrolling to load (such as Weibo, Zhihu).
@@ -392,7 +392,7 @@ Collect from pages that require scrolling to load (such as Weibo, Zhihu).
    ├─ Scroll to the bottom of the page
    ├─ Wait for new content to load
    └─ Condition check: is there more
-       └─ No → Break out of the loop
+       └─ No -> Break out of the loop
 \`\`\`
 
 ### Scroll-loading Logic
@@ -416,13 +416,13 @@ Save to variable: new count
 
 // Determine whether there is more
 Condition check: {new count} > {current count}
-  ├─ Yes → Skip the current iteration
-  └─ No → Break out of the loop (reached the bottom)
+  ├─ Yes -> Skip the current iteration
+  └─ No -> Break out of the loop (reached the bottom)
 \`\`\`
 
 ---
 
-## 🤖 Case 8: AI-assisted Data Processing
+## Case 8: AI-assisted Data Processing
 
 ### Scenario
 Collect comment data and use AI for sentiment analysis and classification.
@@ -432,7 +432,7 @@ Collect comment data and use AI for sentiment analysis and classification.
 \`\`\`
 1. Collect the comment list
 2. Iterate comments
-   ├─ AI Brain → Analyze sentiment
+   ├─ AI Brain -> Analyze sentiment
    ├─ Save the result to Excel
 \`\`\`
 
@@ -479,7 +479,7 @@ Set variable (Excel column: Summary): {analysis data[summary]}
 
 ---
 
-## 🗄️ Case 9: Collect Data into a Database
+## Case 9: Collect Data into a Database
 
 ### Scenario
 Collect web page data and save it into a MySQL database.
@@ -488,7 +488,7 @@ Collect web page data and save it into a MySQL database.
 
 \`\`\`
 1. Connect to the database
-2. Open page → Product list page
+2. Open page -> Product list page
 3. Iterate the product list
    ├─ Get the product name
    ├─ Get the product price
@@ -560,7 +560,7 @@ CREATE TABLE products (
 
 ---
 
-## 🔄 Case 10: Database Data Sync
+## Case 10: Database Data Sync
 
 ### Scenario
 Read pending data from a database, process it, then update the status.
@@ -596,11 +596,11 @@ Iterate list: pending list
   Save to: processing result
 
 - Condition check: {processing result[success]} == true
-  ├─ Yes → Update data
+  ├─ Yes -> Update data
   │        Table: tasks
   │        Data: {"status": 1, "result": "{processing result[data]}"}
   │        WHERE: id = {item[id]}
-  └─ No → Update data
+  └─ No -> Update data
            Table: tasks
            Data: {"status": -1, "error": "{processing result[error]}"}
            WHERE: id = {item[id]}
@@ -608,7 +608,7 @@ Iterate list: pending list
 
 ---
 
-## 💡 Case Design Tips
+## Case Design Tips
 
 ### 1. Modular Design
 - Encapsulate repeated operations into independent flow segments

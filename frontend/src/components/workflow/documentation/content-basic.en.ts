@@ -1,10 +1,10 @@
-export const basicModulesContentEn = `# ⚡ Basic Modules in depth
+export const basicModulesContentEn = `# Basic Modules in depth
 
 This chapter explains the features and configuration of all basic modules.
 
 ---
 
-## 🌐 Browser operation modules
+## Browser operation modules
 
 ### Open page
 
@@ -107,19 +107,19 @@ Extract data from a page element — the core scraping module.
 1. **Text content**: the displayed text
    \`\`\`html
    <span class="price">$99.00</span>
-   → result: $99.00
+   -> result: $99.00
    \`\`\`
 
 2. **Attribute value**: an HTML attribute
    \`\`\`html
    <a href="https://example.com">Link</a>
-   → extract href: https://example.com
+   -> extract href: https://example.com
    \`\`\`
 
 3. **HTML content**: the element's full HTML
    \`\`\`html
    <div class="content"><p>Paragraph</p></div>
-   → result: <p>Paragraph</p>
+   -> result: <p>Paragraph</p>
    \`\`\`
 
 **Scraping tips**:
@@ -223,7 +223,7 @@ Close the current browser page.
 
 ---
 
-## ⏰ Wait modules
+## Wait modules
 
 ### Wait (fixed time)
 
@@ -266,7 +266,7 @@ Wait until an element meets a condition — smarter than a fixed wait.
 
 ---
 
-## 📝 Form modules
+## Form modules
 
 ### Dropdown select
 
@@ -283,13 +283,13 @@ Select an option in a \`<select>\`.
 1. **By value**: the option's value attribute
    \`\`\`html
    <option value="beijing">Beijing</option>
-   → option value: beijing
+   -> option value: beijing
    \`\`\`
 
 2. **By text**: the option's displayed text
    \`\`\`html
    <option value="beijing">Beijing</option>
-   → option value: Beijing
+   -> option value: Beijing
    \`\`\`
 
 3. **By index**: the option position (from 0)
@@ -336,13 +336,13 @@ Choose a file to upload; two trigger methods are supported.
 - **input[type="file"]**: a standard file input — set the file directly
 - **Button**: a button that opens a file picker on click — the picker is watched automatically
 
-**Path selection**: click the 📁 button to pick a file via Explorer
+**Path selection**: click the button to pick a file via Explorer
 
 **Note**: folder-upload controls (webkitdirectory) are not supported
 
 ---
 
-## 📜 Scroll modules
+## Scroll modules
 
 ### Scroll page
 
@@ -384,7 +384,7 @@ Use system-level mouse-wheel simulation — fully mimics a real wheel.
 
 **Use cases**: when a page has anti-scroll detection; when normal scrolling fails; when you need the most realistic scroll.
 
-**⚠️ Important**:
+**Important**:
 - The mouse must be over the scrollable page area
 - This is a system-level action that really moves the wheel
 - Works on any page and can't be detected or blocked
@@ -399,7 +399,7 @@ Use system-level mouse-wheel simulation — fully mimics a real wheel.
 
 ---
 
-## 📸 Screenshot modules
+## Screenshot modules
 
 ### Page screenshot
 
@@ -416,7 +416,7 @@ Capture the current browser page.
 - **Viewport**: only the visible part
 - **Specific element**: a particular element
 
-💡 To capture the whole screen (including content outside the browser), use the "Screen capture" module in the System category.
+To capture the whole screen (including content outside the browser), use the "Screen capture" module in the System category.
 
 ---
 
@@ -434,7 +434,7 @@ Save an image element from the page.
 
 ---
 
-## 📊 Data processing modules
+## Data processing modules
 
 ### Set variable
 
@@ -497,7 +497,7 @@ Read data from an Excel file.
 
 ---
 
-## 📋 Helper modules
+## Helper modules
 
 ### Print log
 
@@ -564,7 +564,7 @@ Pop up a dialog for the user to enter content.
 
 ---
 
-## 💻 Script modules
+## Script modules
 
 ### JS script
 

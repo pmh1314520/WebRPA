@@ -1,10 +1,10 @@
-export const utilsGuideContent = `# 🛠️ 实用工具
+export const utilsGuideContent = `# 实用工具
 
 本章介绍 WebRPA 提供的各类实用工具模块，包括文件对比、加密、编码、颜色转换、UUID、打印等。
 
 ---
 
-## 🔐 加密与哈希
+## 加密与哈希
 
 ### MD5 加密（md5_encrypt）
 
@@ -43,7 +43,7 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 
 ---
 
-## 🔗 URL 编解码（url_encode_decode）
+## URL 编解码（url_encode_decode）
 
 对 URL 字符串进行编码（转义特殊字符）或解码（还原特殊字符）。
 
@@ -53,11 +53,11 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 | 输入 URL | 要处理的 URL 或参数 | \`你好世界\` |
 | 结果变量 | 编解码结果 | \`url_result\` |
 
-**示例**：\`你好\` → \`%E4%BD%A0%E5%A5%BD\`
+**示例**：\`你好\` -> \`%E4%BD%A0%E5%A5%BD\`
 
 ---
 
-## 📁 文件对比
+## 文件对比
 
 ### 文件哈希对比（file_hash_compare）
 
@@ -107,7 +107,7 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 
 ---
 
-## 🎲 随机生成
+## 随机生成
 
 ### 随机密码生成器（random_password_generator）
 
@@ -138,13 +138,13 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 
 ---
 
-## 🕐 时间戳转换（timestamp_converter）
+## 时间戳转换（timestamp_converter）
 
 在时间戳（Unix 时间）和可读时间字符串之间互相转换。
 
 | 参数 | 说明 | 示例 |
 |------|------|------|
-| 转换方向 | 时间戳→字符串 / 字符串→时间戳 | 时间戳→字符串 |
+| 转换方向 | 时间戳->字符串 / 字符串->时间戳 | 时间戳->字符串 |
 | 输入值 | 时间戳或时间字符串 | \`1700000000\` |
 | 时间格式 | Python strftime 格式 | \`%Y-%m-%d %H:%M:%S\` |
 | 时区 | 时区名称 | \`Asia/Shanghai\` |
@@ -152,7 +152,7 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 
 ---
 
-## 🎨 颜色转换
+## 颜色转换
 
 ### RGB 转 HSV（rgb_to_hsv）
 
@@ -187,7 +187,7 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 
 ---
 
-## 🖨️ 打印机调用（printer_call）
+## 打印机调用（printer_call）
 
 将文件发送到打印机打印。
 
@@ -199,7 +199,7 @@ export const utilsGuideContent = `# 🛠️ 实用工具
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 ### 文件完整性校验工作流
 

@@ -1,4 +1,4 @@
-export const triggersGuideContent = `# ⚡ 触发器使用指南
+export const triggersGuideContent = `# 触发器使用指南
 
 ## 概述
 
@@ -43,7 +43,7 @@ graph TD
 
 ---
 
-## 🌐 Webhook触发器
+## Webhook触发器
 
 ### 功能说明
 等待HTTP请求触发工作流，可用于接收外部系统的通知或回调。
@@ -86,7 +86,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## ⌨️ 热键触发器
+## 热键触发器
 
 ### 功能说明
 监听全局热键，按下指定组合键时触发工作流。
@@ -111,7 +111,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 \`\`\`
 配置：
 - 热键组合：ctrl+shift+s
-- 后续模块：截图 → 保存图片 → 系统通知
+- 后续模块：截图 -> 保存图片 -> 系统通知
 
 效果：按下Ctrl+Shift+S立即截图并保存
 \`\`\`
@@ -123,7 +123,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 📁 文件监控触发器
+## 文件监控触发器
 
 ### 功能说明
 监控文件或文件夹的变化，检测到指定事件时触发工作流。
@@ -163,7 +163,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 📧 邮件触发器
+## 邮件触发器
 
 ### 功能说明
 监控邮箱，收到符合条件的新邮件时触发工作流。
@@ -212,19 +212,19 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 ### 获取授权码
 **QQ邮箱**：
 1. 登录QQ邮箱网页版
-2. 设置 → 账户 → POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务
+2. 设置 -> 账户 -> POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务
 3. 开启IMAP服务
 4. 生成授权码
 
 **163邮箱**：
 1. 登录163邮箱网页版
-2. 设置 → POP3/SMTP/IMAP
+2. 设置 -> POP3/SMTP/IMAP
 3. 开启IMAP服务
 4. 设置客户端授权密码
 
 ---
 
-## 🔄 API触发器
+## API触发器
 
 ### 功能说明
 定期轮询API接口，当响应满足指定条件时触发工作流。
@@ -279,7 +279,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 🖱️ 鼠标触发器
+## 鼠标触发器
 
 ### 功能说明
 监听全局鼠标事件，检测到指定鼠标操作时触发工作流，支持鼠标手势识别。
@@ -297,41 +297,41 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
   - 中键手势触发
   - 自定义手势触发
 - **移动距离阈值**：仅移动类型有效，单位像素
-- **手势模式**：仅手势触发类型有效，指定要识别的手势（如：↑、→、↓←等）
+- **手势模式**：仅手势触发类型有效，指定要识别的手势（如：上、->、下<-等）
 - **超时时间**：等待时间（0=无限等待）
 - **保存到变量**：保存鼠标位置和事件信息
 
 ### 手势触发详解
 
 **手势方向符号**：
-- ↑：向上
-- ↓：向下
-- ←：向左
-- →：向右
+- 上：向上
+- 下：向下
+- <-：向左
+- ->：向右
 
 **手势类型说明**：
 
 | 类型 | 说明 | 示例手势 |
 |------|------|----------|
-| 左键手势 | 按住鼠标左键并移动 | ↑、→↓、↑→↓← |
-| 右键手势 | 按住鼠标右键并移动 | ↓、←→、↑↓ |
-| 中键手势 | 按住鼠标中键并移动 | →、↑↓、←→ |
-| 自定义手势 | 不限制按键，只识别移动轨迹 | ↑→、↓←、↑→↓← |
+| 左键手势 | 按住鼠标左键并移动 | 上、->下、上->下<- |
+| 右键手势 | 按住鼠标右键并移动 | 下、<-->、上下方向键 |
+| 中键手势 | 按住鼠标中键并移动 | ->、上下方向键、<--> |
+| 自定义手势 | 不限制按键，只识别移动轨迹 | 上->、下<-、上->下<- |
 
 **常用手势示例**：
 \`\`\`
 简单手势：
-↑     - 向上划
-↓     - 向下划
-←     - 向左划
-→     - 向右划
+上     - 向上划
+下     - 向下划
+<-     - 向左划
+->     - 向右划
 
 组合手势：
-↑↓    - 上下划
-←→    - 左右划
-↑→    - L形（先上后右）
-→↓    - 7形（先右后下）
-↑→↓←  - 顺时针画圈
+上下方向键    - 上下划
+<-->    - 左右划
+上->    - L形（先上后右）
+->下    - 7形（先右后下）
+上->下<-  - 顺时针画圈
 \`\`\`
 
 ### 使用场景
@@ -357,7 +357,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 \`\`\`
 配置：
 - 触发类型：右键手势触发
-- 手势模式：↑
+- 手势模式：上
 - 保存到变量：gesture_info
 
 后续流程：
@@ -370,21 +370,21 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 \`\`\`
 配置：
 - 触发类型：左键手势触发
-- 手势模式：↓→
+- 手势模式：下->
 - 保存到变量：gesture_info
 
 后续流程：
-1. 检测到"↓→"手势后
+1. 检测到"下->"手势后
 2. 截取屏幕
 3. 保存图片
 \`\`\`
 
 ### 示例4：自定义手势组合
 \`\`\`
-工作流1：右键手势 ↑ → 打开百度
-工作流2：右键手势 ↓ → 打开淘宝
-工作流3：右键手势 ← → 截图
-工作流4：右键手势 → → 关闭当前页面
+工作流1：右键手势 上 -> 打开百度
+工作流2：右键手势 下 -> 打开淘宝
+工作流3：右键手势 <- -> 截图
+工作流4：右键手势 -> -> 关闭当前页面
 \`\`\`
 
 ### 手势识别原理
@@ -402,7 +402,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 🖼️ 图像触发器
+## 图像触发器
 
 ### 功能说明
 持续检测屏幕上是否出现指定图像，检测到后立即触发工作流。
@@ -443,7 +443,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 🔊 声音触发器
+## 声音触发器
 
 ### 功能说明
 监听系统音频输出（扬声器），当音量达到阈值时触发工作流。
@@ -481,7 +481,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 👤 人脸触发器
+## 人脸触发器
 
 ### 功能说明
 实时监控摄像头画面，检测到目标人脸时自动触发工作流。
@@ -525,7 +525,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 🔄 子元素变化触发器
+## 子元素变化触发器
 
 ### 功能说明
 监控网页元素的子元素数量变化，实时检测新增内容，适用于直播评论、聊天消息、动态列表等场景。
@@ -589,7 +589,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 💡 最佳实践
+## 最佳实践
 
 ### 1. 触发器组合使用
 可以在一个工作流中使用多个触发器，实现复杂的触发逻辑：
@@ -600,9 +600,9 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 ### 2. 错误处理
 建议在触发器后添加错误处理：
 \`\`\`
-触发器 → 条件判断 → 正常流程
-              ↓
-           错误处理 → 日志记录 → 通知
+触发器 -> 条件判断 -> 正常流程
+              下
+           错误处理 -> 日志记录 -> 通知
 \`\`\`
 
 ### 3. 超时设置
@@ -629,7 +629,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 🔧 故障排查
+## 故障排查
 
 ### Webhook触发器
 **问题**：Webhook无法触发
@@ -682,7 +682,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 📚 相关文档
+## 相关文档
 
 - [基础模块](basic-modules)：了解基础模块使用
 - [流程控制](advanced-features)：条件判断和循环
@@ -692,7 +692,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## 🎯 总结
+## 总结
 
 触发器是实现自动化的关键，选择合适的触发器可以让工作流真正"自动"运行：
 

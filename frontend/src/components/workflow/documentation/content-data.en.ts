@@ -1,10 +1,10 @@
-export const dataProcessingContentEn = `# 📊 Data Processing Guide
+export const dataProcessingContentEn = `# Data Processing Guide
 
 This chapter covers the variable system and data-processing features — the foundation for complex automation.
 
 ---
 
-## 📦 Variable basics
+## Variable basics
 
 ### What is a variable?
 
@@ -78,14 +78,14 @@ In any input that supports variables:
 
 ---
 
-## 🔗 Reference syntax in detail
+## Reference syntax in detail
 
 ### Basic reference
 
 Use \`{name}\` in any input:
 
 \`\`\`
-{username}      → the value of the "username" variable
+{username}      -> the value of the "username" variable
 \`\`\`
 
 ### Mixing in text
@@ -100,18 +100,18 @@ Your order is {orderId}, amount: {amount}.
 List indexes start at **0**:
 
 \`\`\`
-{list[0]}    → 1st element
-{list[1]}    → 2nd element
-{list[2]}    → 3rd element
+{list[0]}    -> 1st element
+{list[1]}    -> 2nd element
+{list[2]}    -> 3rd element
 ...
 \`\`\`
 
 **Negative index** (from the end):
 
 \`\`\`
-{list[-1]}   → last element
-{list[-2]}   → 2nd from last
-{list[-3]}   → 3rd from last
+{list[-1]}   -> last element
+{list[-2]}   -> 2nd from last
+{list[-3]}   -> 3rd from last
 ...
 \`\`\`
 
@@ -129,9 +129,9 @@ Assume \`fruits\` = \`["Apple", "Banana", "Orange", "Grape"]\`
 ### Dict key access
 
 \`\`\`
-{dict[key]}       → value of the given key
-{dict["key"]}     → quoted key (use when the key has special chars)
-{dict['key']}     → single quotes also work
+{dict[key]}       -> value of the given key
+{dict["key"]}     -> quoted key (use when the key has special chars)
+{dict['key']}     -> single quotes also work
 \`\`\`
 
 **Example**:
@@ -175,14 +175,14 @@ Assume \`user\` = \`{"name": "Tom", "hobbies": ["reading", "gaming", "sports"]}\
 Assume \`data\` = \`{"users": [{"name": "Tom", "scores": [90, 85, 92]}]}\`
 
 \`\`\`
-{data[users][0][name]}        → Tom
-{data[users][0][scores][0]}   → 90
-{data[users][0][scores][-1]}  → 92
+{data[users][0][name]}        -> Tom
+{data[users][0][scores][0]}   -> 90
+{data[users][0][scores][-1]}  -> 92
 \`\`\`
 
 ---
 
-## 📋 List operations in detail
+## List operations in detail
 
 ### Create a list
 
@@ -242,7 +242,7 @@ Result: [1, 1, 2, 3, 4, 5, 6, 9]
 
 ---
 
-## 📖 Dictionary operations in detail
+## Dictionary operations in detail
 
 ### Create a dict
 
@@ -283,7 +283,7 @@ Result: ["name", "age", "city"]
 
 ---
 
-## 📊 Data table operations
+## Data table operations
 
 The data table is the core of scraping: live preview, edit and export.
 
@@ -307,13 +307,13 @@ WebRPA provides a set of data-table modules:
 
 | Module | Description | Key parameters |
 |------|------|----------|
-| 📝 Add row | Add a row | row data as JSON |
-| 📊 Add column | Add a new column | column name, default value |
-| ✏️ Set cell | Modify a cell | row index, column, value |
-| 📖 Get cell | Read a cell | row index, column, variable |
-| 🗑️ Delete row | Delete a row | row index (negatives ok) |
-| 🧹 Clear table | Clear all data | none |
-| 💾 Export table | Export to a file | format, save path |
+| Add row | Add a row | row data as JSON |
+| Add column | Add a new column | column name, default value |
+| Set cell | Modify a cell | row index, column, value |
+| Get cell | Read a cell | row index, column, variable |
+| Delete row | Delete a row | row index (negatives ok) |
+| Clear table | Clear all data | none |
+| Export table | Export to a file | format, save path |
 
 ### Add row
 
@@ -354,7 +354,7 @@ Export the data table to a file:
 | File name pattern | Supports the {timestamp} placeholder |
 | Save path to variable | Variable for the exported file path |
 
-💡 **Tip**: click the 📁 button to the right of the save-path input to pick a folder via Windows Explorer.
+**Tip**: click the button to the right of the save-path input to pick a folder via Windows Explorer.
 
 ### View and edit data
 
@@ -371,7 +371,7 @@ Export the data table to a file:
 
 ---
 
-## 🔢 Math operations
+## Math operations
 
 ### Set variable (expressions)
 
@@ -396,7 +396,7 @@ You can use math expressions in Set variable:
 
 ---
 
-## 📝 String processing
+## String processing
 
 WebRPA provides rich string modules to handle text flexibly.
 
@@ -404,18 +404,18 @@ WebRPA provides rich string modules to handle text flexibly.
 
 | Module | Description | Main use |
 |------|------|----------|
-| ➕ Concatenate | Join two strings | Combine text |
-| 🔍 Regex extract | Extract with a regex | Pull formatted data from text |
-| 🔄 Replace | Replace text | Edit/clean text |
-| ✂️ Split | Split by delimiter | Turn text into a list |
-| 🔗 Join | Join a list into text | Concatenate list elements |
-| 🧹 Trim | Clean whitespace | Trim leading/trailing spaces |
-| 🔠 Case | Change letter case | Format text |
-| 📏 Slice | Take part of the text | Get a substring |
+| Concatenate | Join two strings | Combine text |
+| Regex extract | Extract with a regex | Pull formatted data from text |
+| Replace | Replace text | Edit/clean text |
+| Split | Split by delimiter | Turn text into a list |
+| Join | Join a list into text | Concatenate list elements |
+| Trim | Clean whitespace | Trim leading/trailing spaces |
+| Case | Change letter case | Format text |
+| Slice | Take part of the text | Get a substring |
 
 ---
 
-### ➕ Concatenate
+### Concatenate
 
 Join two strings into one — the simplest way to combine text.
 
@@ -438,7 +438,7 @@ Result: Order: 12345
 
 ---
 
-### 🔍 Regex extract
+### Regex extract
 
 Extract data from text with a regular expression — the most powerful text tool.
 
@@ -475,7 +475,7 @@ Result: ["299.00", "399.00"]
 
 ---
 
-### 🔄 Replace
+### Replace
 
 Replace text content; supports plain-text and regex modes.
 
@@ -505,7 +505,7 @@ Result: orderABCDEF
 
 ---
 
-### ✂️ Split
+### Split
 
 Split text into a list by a delimiter.
 
@@ -519,10 +519,10 @@ Split text into a list by a delimiter.
 
 | Delimiter | Description | Example |
 |--------|------|----------|
-| \`,\` | Comma | \`a,b,c\` → \`["a","b","c"]\` |
-| \`|\` | Pipe | \`a|b|c\` → \`["a","b","c"]\` |
-| \`\\n\` | Newline | multi-line → one element per line |
-| (space) | Space | \`a b c\` → \`["a","b","c"]\` |
+| \`,\` | Comma | \`a,b,c\` -> \`["a","b","c"]\` |
+| \`|\` | Pipe | \`a|b|c\` -> \`["a","b","c"]\` |
+| \`\\n\` | Newline | multi-line -> one element per line |
+| (space) | Space | \`a b c\` -> \`["a","b","c"]\` |
 
 **Example**: split tags
 \`\`\`
@@ -533,7 +533,7 @@ Result: ["tech", "tutorial", "Python", "automation"]
 
 ---
 
-### 🔗 Join
+### Join
 
 Join list elements into a string.
 
@@ -551,33 +551,33 @@ Result: Apple, Banana, Orange
 
 ---
 
-### 🧹 Trim
+### Trim
 
 Clean whitespace in text.
 
 | Mode | Description | Example |
 |------|------|------|
-| Trim both | Remove leading and trailing | \`  hello  \` → \`hello\` |
-| Trim start | Leading only | \`  hello  \` → \`hello  \` |
-| Trim end | Trailing only | \`  hello  \` → \`  hello\` |
-| Remove all | Remove all spaces | \`h e l l o\` → \`hello\` |
+| Trim both | Remove leading and trailing | \`  hello  \` -> \`hello\` |
+| Trim start | Leading only | \`  hello  \` -> \`hello  \` |
+| Trim end | Trailing only | \`  hello  \` -> \`  hello\` |
+| Remove all | Remove all spaces | \`h e l l o\` -> \`hello\` |
 
 ---
 
-### 🔠 Case
+### Case
 
 Change the case of text.
 
 | Mode | Description | Example |
 |------|------|------|
-| UPPERCASE | All to upper | \`hello\` → \`HELLO\` |
-| lowercase | All to lower | \`HELLO\` → \`hello\` |
-| Capitalize first | First letter upper | \`hello world\` → \`Hello world\` |
-| Title Case | Each word capitalized | \`hello world\` → \`Hello World\` |
+| UPPERCASE | All to upper | \`hello\` -> \`HELLO\` |
+| lowercase | All to lower | \`HELLO\` -> \`hello\` |
+| Capitalize first | First letter upper | \`hello world\` -> \`Hello world\` |
+| Title Case | Each word capitalized | \`hello world\` -> \`Hello World\` |
 
 ---
 
-### 📏 Slice
+### Slice
 
 Take a substring of a given range.
 
@@ -634,7 +634,7 @@ data_{date}_{seq}.xlsx
 
 ---
 
-## 💡 Tips for using variables
+## Tips for using variables
 
 ### 1. Naming
 

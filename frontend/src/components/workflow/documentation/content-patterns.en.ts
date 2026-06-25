@@ -1,24 +1,24 @@
-export const workflowPatternsContentEn = `# 🔄 Workflow Patterns
+export const workflowPatternsContentEn = `# Workflow Patterns
 
 This chapter introduces common workflow design patterns and best practices to help you build more robust and efficient automation flows.
 
 ---
 
-## 📐 Basic Patterns
+## Basic Patterns
 
 ### 1. Sequential Execution Pattern
 
 The simplest pattern: modules execute one after another in order.
 
 \`\`\`
-Module A → Module B → Module C → Module D
+Module A -> Module B -> Module C -> Module D
 \`\`\`
 
 **Use cases**:
 - Simple linear tasks
 - Steps with a strict order
 
-**Example**: Open web page → Enter search term → Click search → Get results
+**Example**: Open web page -> Enter search term -> Click search -> Get results
 
 ---
 
@@ -49,8 +49,8 @@ graph TD
 **Example**:
 \`\`\`
 Check login status
-  ├─ Logged in → Run the task directly
-  └─ Not logged in → Log in first, then run the task
+  ├─ Logged in -> Run the task directly
+  └─ Not logged in -> Log in first, then run the task
 \`\`\`
 
 ---
@@ -80,7 +80,7 @@ graph TD
 
 ---
 
-## 🏗️ Advanced Patterns
+## Advanced Patterns
 
 ### 4. Retry Pattern
 
@@ -93,8 +93,8 @@ Set variable: max retries = 3
 Loop while ({retry count} < {max retries})
   ├─ Execute operation
   ├─ Condition check: operation succeeded?
-  │   ├─ Yes → Break out of the loop
-  │   └─ No → retry count + 1
+  │   ├─ Yes -> Break out of the loop
+  │   └─ No -> retry count + 1
   │           Wait 2000 ms
   └─ Skip current iteration
 \`\`\`
@@ -133,10 +133,10 @@ Collect data first, then process it.
 
 \`\`\`
 Phase 1: Produce (collect data)
-  Loop collect → Add to list
+  Loop collect -> Add to list
 
 Phase 2: Consume (process data)
-  Iterate list → Process each item
+  Iterate list -> Process each item
 \`\`\`
 
 **Example**:
@@ -165,25 +165,25 @@ Iterate list: {link list}
 Data goes through multiple processing steps, where each step's output is the next step's input.
 
 \`\`\`
-Raw data → Clean → Transform → Validate → Store
+Raw data -> Clean -> Transform -> Validate -> Store
 \`\`\`
 
 **Example**:
 \`\`\`
 Get price text: "¥1,299.00"
-  ↓
+  Down
 Remove symbols: Run JS to strip ¥ and commas
-  ↓
+  Down
 Convert to number: 1299
-  ↓
+  Down
 Calculate discount: 1299 * 0.8 = 1039.2
-  ↓
+  Down
 Save result
 \`\`\`
 
 ---
 
-## 🛡️ Robustness Patterns
+## Robustness Patterns
 
 ### 8. Defensive Check Pattern
 
@@ -192,13 +192,13 @@ Check preconditions before key operations.
 \`\`\`
 // Check the page is correct
 Condition check: page URL contains "expected-page"
-  ├─ Yes → Continue
-  └─ No → Print error, stop execution
+  ├─ Yes -> Continue
+  └─ No -> Print error, stop execution
 
 // Check whether the element exists
 Wait for element: target element
-  ├─ Success → Continue operation
-  └─ Timeout → Handle exception
+  ├─ Success -> Continue operation
+  └─ Timeout -> Handle exception
 \`\`\`
 
 ---
@@ -209,10 +209,10 @@ When the primary method fails, try a fallback method.
 
 \`\`\`
 Try method A (preferred)
-  ├─ Success → Continue
-  └─ Fail → Try method B (alternative)
-              ├─ Success → Continue
-              └─ Fail → Try method C (fallback)
+  ├─ Success -> Continue
+  └─ Fail -> Try method B (alternative)
+              ├─ Success -> Continue
+              └─ Fail -> Try method C (fallback)
 \`\`\`
 
 **Example**: Get price
@@ -220,12 +220,12 @@ Try method A (preferred)
 // Method 1: Get by ID
 Get element info: #price
 Condition check: success?
-  ├─ Yes → Use result
-  └─ No → Method 2: Get by class name
+  ├─ Yes -> Use result
+  └─ No -> Method 2: Get by class name
           Get element info: .product-price
           Condition check: success?
-            ├─ Yes → Use result
-            └─ No → Method 3: Get by XPath
+            ├─ Yes -> Use result
+            └─ No -> Method 3: Get by XPath
 \`\`\`
 
 ---
@@ -241,14 +241,14 @@ Read variable: processed index (default 0)
 // Resume from breakpoint
 Iterate list: {data list}
   ├─ Condition check: {current index} < {processed index}
-  │   └─ Yes → Skip current iteration
+  │   └─ Yes -> Skip current iteration
   ├─ Process current data
   └─ Save progress: processed index = {current index}
 \`\`\`
 
 ---
 
-## ⚡ Performance Optimization Patterns
+## Performance Optimization Patterns
 
 ### 11. Batch Processing Pattern
 
@@ -257,7 +257,7 @@ Combine multiple operations to reduce overhead.
 \`\`\`
 // Bad approach: open a new page for each item
 Iterate data
-  └─ Open page → Operate → Close page
+  └─ Open page -> Operate -> Close page
 
 // Good approach: process multiple items on the same page
 Open page
@@ -275,8 +275,8 @@ Cache reused data to avoid fetching it repeatedly.
 \`\`\`
 // Check cache
 Condition check: {cached data} exists?
-  ├─ Yes → Use cache
-  └─ No → Fetch data
+  ├─ Yes -> Use cache
+  └─ No -> Fetch data
           Save to cache
 \`\`\`
 
@@ -287,9 +287,9 @@ Condition check: {cached data} exists?
 Use the system's true parallel execution capability to handle multiple independent tasks at once.
 
 \`\`\`
-        ┌─→ Task A ─┐
-Start ──┼─→ Task B ─┼─→ Join & process
-        └─→ Task C ─┘
+        ┌─-> Task A ─┐
+Start ──┼─-> Task B ─┼─-> Join & process
+        └─-> Task C ─┘
 \`\`\`
 
 **How it works**:
@@ -306,10 +306,10 @@ Start ──┼─→ Task B ─┼─→ Join & process
 **Example**: Fetch multiple data sources in parallel
 \`\`\`
 Start
-  ├─→ API request: get user data
-  ├─→ API request: get order data
-  └─→ API request: get product data
-      ↓
+  ├─-> API request: get user data
+  ├─-> API request: get order data
+  └─-> API request: get product data
+      Down
 Join: merge all data and process
 \`\`\`
 
@@ -320,7 +320,7 @@ Join: merge all data and process
 
 ---
 
-## 📋 Best Practices
+## Best Practices
 
 ### Naming Conventions
 
@@ -376,7 +376,7 @@ Print log: Login status: {login status}
 
 ---
 
-## 🎯 Pattern Selection Guide
+## Pattern Selection Guide
 
 | Scenario | Recommended Pattern |
 |------|----------|

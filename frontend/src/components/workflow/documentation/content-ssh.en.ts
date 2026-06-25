@@ -1,4 +1,4 @@
-export const sshGuideContentEn = `# 🔐 SSH Remote Operations
+export const sshGuideContentEn = `# SSH Remote Operations
 
 This chapter shows how to use WebRPA to connect to servers over SSH, run commands and upload/download files, automating server operations.
 
@@ -18,7 +18,7 @@ There are **5** SSH modules, built on Paramiko, supporting both password and key
 
 ---
 
-## 🔌 Establish SSH connection (ssh_connect)
+## Establish SSH connection (ssh_connect)
 
 Connect to a remote server over SSH.
 
@@ -35,7 +35,7 @@ Connect to a remote server over SSH.
 
 ---
 
-## ⚡ Run remote command (ssh_execute_command)
+## Run remote command (ssh_execute_command)
 
 Run a shell command on the remote server and get its output.
 
@@ -50,8 +50,8 @@ Run a shell command on the remote server and get its output.
 
 **Example** (check disk usage):
 \`\`\`
-SSH run command → connection: {ssh}, command: df -h → result variable: disk_info
-Print log → content: {disk_info}
+SSH run command -> connection: {ssh}, command: df -h -> result variable: disk_info
+Print log -> content: {disk_info}
 \`\`\`
 
 **Run multiple commands**: join with \`&&\` or \`;\`:
@@ -66,7 +66,7 @@ echo '{sudo_password}' | sudo -S systemctl restart nginx
 
 ---
 
-## 📤 Upload file (ssh_upload_file)
+## Upload file (ssh_upload_file)
 
 Upload a local file to the server via SFTP.
 
@@ -79,7 +79,7 @@ Upload a local file to the server via SFTP.
 
 ---
 
-## 📥 Download file (ssh_download_file)
+## Download file (ssh_download_file)
 
 Download a file from the server via SFTP.
 
@@ -92,7 +92,7 @@ Download a file from the server via SFTP.
 
 ---
 
-## 🔌 Disconnect (ssh_disconnect)
+## Disconnect (ssh_disconnect)
 
 Close the SSH connection and free resources.
 
@@ -104,7 +104,7 @@ Close the SSH connection and free resources.
 
 ---
 
-## 📋 Full example: automated server deployment
+## Full example: automated server deployment
 
 \`\`\`mermaid
 flowchart TD
@@ -121,10 +121,10 @@ flowchart TD
 
 ---
 
-## 💡 Tips
+## Tips
 
 - **Reuse the connection**: connect once, run many commands, then disconnect
 - **Variables**: use \`{name}\` in commands to reference workflow variables
 - **Error handling**: check the exit-code variable (\`0\` = success); non-zero means the command failed
 - **Key auth**: in production, prefer key authentication for security
-- **Global config**: preset server info under Global settings → SSH`
+- **Global config**: preset server info under Global settings -> SSH`

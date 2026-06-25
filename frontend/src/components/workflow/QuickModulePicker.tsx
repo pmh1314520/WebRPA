@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, Search, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModuleStatsStore } from '@/store/moduleStatsStore'
-import { pinyinMatch } from '@/lib/pinyin'
+import { moduleMatchesQuery } from '@/lib/pinyin'
 import { moduleKeywords } from './ModuleSidebar'
 import type { ModuleType } from '@/types'
 
@@ -89,7 +89,6 @@ export function QuickModulePicker({
   const filteredCategories = useMemo(() => {
     const result: Array<{ category: string; modules: typeof availableModules }> = []
     const term = searchTerm.trim()
-    const termLower = term.toLowerCase()
 
     for (const [category, mods] of Object.entries(groupedByCategory)) {
       let list = mods
@@ -97,12 +96,13 @@ export function QuickModulePicker({
         list = list.filter((m) => getStats(m.type).isFavorite)
       }
       if (term) {
-        list = list.filter(
-          (m) =>
-            pinyinMatch(m.label, term) ||
-            pinyinMatch(m.category, term) ||
-            (moduleKeywords[m.type as ModuleType] || []).some((kw) => pinyinMatch(kw, term)) ||
-            m.type.toLowerCase().includes(termLower),
+        list = list.filter((m) =>
+          moduleMatchesQuery(term, {
+            label: m.label,
+            type: m.type,
+            category: m.category,
+            keywords: moduleKeywords[m.type as ModuleType] || [],
+          }),
         )
       }
       if (list.length > 0) {

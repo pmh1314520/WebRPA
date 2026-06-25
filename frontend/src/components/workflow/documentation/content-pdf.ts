@@ -1,10 +1,10 @@
-export const pdfGuideContent = `# 📄 PDF处理指南
+export const pdfGuideContent = `# PDF处理指南
 
 本章介绍PDF文件的各种处理功能，包括格式转换、合并拆分、加密解密、水印添加等。
 
 ---
 
-## 📋 模块概览
+## 模块概览
 
 | 模块 | 功能 | 默认超时 |
 |------|------|----------|
@@ -28,7 +28,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🖼️ PDF转图片
+## PDF转图片
 
 将PDF的每一页转换为独立的图片文件。
 
@@ -71,7 +71,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 📷 图片转PDF
+## 图片转PDF
 
 将多张图片合成为一个PDF文件。
 
@@ -100,7 +100,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🔗 PDF合并
+## PDF合并
 
 将多个PDF文件合并为一个。
 
@@ -127,7 +127,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## ✂️ PDF拆分
+## PDF拆分
 
 将一个PDF拆分为多个独立文件。
 
@@ -166,7 +166,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 📝 PDF提取文本
+## PDF提取文本
 
 提取PDF中的文字内容。
 
@@ -193,7 +193,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
   结果变量：简介文本
 \`\`\`
 
-### ⚠️ 注意事项
+### 注意事项
 
 - 扫描版PDF需要先OCR才能提取文本
 - 提取结果可能包含格式字符
@@ -201,7 +201,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🖼️ PDF提取图片
+## PDF提取图片
 
 提取PDF中嵌入的图片。
 
@@ -231,7 +231,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🔐 PDF加密
+## PDF加密
 
 为PDF添加密码保护。
 
@@ -276,7 +276,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🔓 PDF解密
+## PDF解密
 
 移除PDF的密码保护。
 
@@ -301,7 +301,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 💧 PDF添加水印
+## PDF添加水印
 
 为PDF添加文字或图片水印。
 
@@ -352,7 +352,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🔄 PDF旋转
+## PDF旋转
 
 旋转PDF的页面方向。
 
@@ -383,7 +383,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🗑️ PDF删除页面
+## PDF删除页面
 
 删除PDF中的指定页面。
 
@@ -412,7 +412,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## ℹ️ PDF获取信息
+## PDF获取信息
 
 获取PDF文件的元数据信息。
 
@@ -453,7 +453,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 📦 PDF压缩
+## PDF压缩
 
 压缩PDF文件减小体积。
 
@@ -486,7 +486,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## ➕ PDF插入页面
+## PDF插入页面
 
 将其他PDF的页面插入到目标PDF中。
 
@@ -520,7 +520,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 🔀 PDF重排页面
+## PDF重排页面
 
 调整PDF页面的顺序。
 
@@ -549,7 +549,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 📝 PDF转Word
+## PDF转Word
 
 将PDF文件转换为可编辑的Word文档。
 
@@ -578,7 +578,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
   结果变量：Word文件
 \`\`\`
 
-### ⚠️ 注意事项
+### 注意事项
 
 - 转换效果取决于PDF的复杂程度
 - 扫描版PDF转换效果较差
@@ -587,7 +587,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 📄 Word转PDF
+## Word转PDF
 
 将Word文档转换为PDF文件。
 
@@ -608,7 +608,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
   结果变量：PDF文件
 \`\`\`
 
-### ⚠️ 注意事项
+### 注意事项
 
 - 需要系统安装 Microsoft Word 或 LibreOffice
 - 转换保持原有格式和排版
@@ -616,12 +616,12 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 ---
 
-## 💡 PDF处理技巧
+## PDF处理技巧
 
 ### 1. 批量处理
 
 \`\`\`
-获取文件列表：D:/pdfs/*.pdf → {PDF列表}
+获取文件列表：D:/pdfs/*.pdf -> {PDF列表}
 遍历列表：{PDF列表}
   PDF压缩：
     输入：{当前项}
@@ -633,7 +633,7 @@ export const pdfGuideContent = `# 📄 PDF处理指南
 
 \`\`\`
 # 1. 获取PDF信息
-PDF获取信息：{PDF文件} → {信息}
+PDF获取信息：{PDF文件} -> {信息}
 
 # 2. 添加水印
 PDF添加水印：
@@ -653,13 +653,13 @@ PDF加密：
 
 \`\`\`
 # 1. PDF转图片
-PDF转图片：{扫描PDF} → {图片列表}
+PDF转图片：{扫描PDF} -> {图片列表}
 
 # 2. 图片OCR识别
 遍历列表：{图片列表}
-  图片OCR：{当前项} → {文本}
+  图片OCR：{当前项} -> {文本}
   字符串拼接：{全部文本} + {文本}
 
 # 3. 保存识别结果
-写入文本文件：{全部文本} → D:/output/ocr_result.txt
+写入文本文件：{全部文本} -> D:/output/ocr_result.txt
 \`\`\``

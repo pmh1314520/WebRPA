@@ -298,7 +298,7 @@ export const moduleTypeLabels: Record<ModuleType, string> = {
   set_variable: '设置变量',
   increment_decrement: '自增自减',
   json_parse: 'JSON解析',
-  base64: 'Base64',
+  base64: 'Base64编解码',
   random_number: '随机数',
   get_time: '获取时间',
   download_file: '下载文件',

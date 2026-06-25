@@ -1,10 +1,10 @@
-export const advancedFeaturesContentEn = `# 🧠 Advanced Features
+export const advancedFeaturesContentEn = `# Advanced Features
 
 This chapter introduces advanced features such as flow control, AI integration, and API requests.
 
 ---
 
-## 🔀 Flow Control
+## Flow Control
 
 ### Sub-flow (Module Reuse)
 
@@ -16,7 +16,7 @@ Encapsulate commonly used module combinations into reusable sub-flows for modula
 2. **Set as sub-flow**: Select the group and turn on the "Set as sub-flow" switch in the configuration panel on the right
 3. **Name the sub-flow**: Enter a sub-flow name (such as "Login Flow")
 
-The group turns into a **green border** and shows the "📦 Sub-flow Definition" label.
+The group turns into a **green border** and shows the "Sub-flow Definition" label.
 
 **Place modules inside the sub-flow**:
 
@@ -52,11 +52,11 @@ Canvas layout:
 
 ┌─────────────────────────────────────┐
 │  [Sub-flow group: Login Flow]        │
-│    Enter username → Enter password → Click login │
+│    Enter username -> Enter password -> Click login │
 └─────────────────────────────────────┘
 
 Main flow:
-  Open page → Call sub-flow (Login) → Collect data → Export
+  Open page -> Call sub-flow (Login) -> Collect data -> Export
 \`\`\`
 
 **Publish and share**:
@@ -87,7 +87,7 @@ Scheduled execution:
   Date: 2024-12-26
   Time: 09:00
   
-→ Continue with subsequent modules after waiting until the specified time
+-> Continue with subsequent modules after waiting until the specified time
 \`\`\`
 
 #### 2. Delayed Execution
@@ -106,7 +106,7 @@ Scheduled execution:
   Type: Delayed execution
   Delay minutes: 5
   
-→ Continue with subsequent modules after waiting 5 minutes
+-> Continue with subsequent modules after waiting 5 minutes
 \`\`\`
 
 **Use cases**:
@@ -151,14 +151,14 @@ Execute different branches based on a condition, implementing "if...then...else.
 **Branch connections**:
 
 The condition check module has two outputs:
-- **✓ True**: runs when the condition holds
-- **✗ False**: runs when the condition does not hold
+- **[√] True**: runs when the condition holds
+- **[×] False**: runs when the condition does not hold
 
 **Example**: Check login status
 \`\`\`
 Condition check: {login status} == "logged in"
-  ├─ True → Perform check-in
-  └─ False → Perform login
+  ├─ True -> Perform check-in
+  └─ False -> Perform login
 \`\`\`
 
 ---
@@ -236,7 +236,7 @@ Iterate list: url list (note: enter the variable name directly, without braces)
   └─ Print log: Processing URL number {index}
 \`\`\`
 
-💡 **Tip**: The loop variables \`item\` and \`index\` automatically appear in the variable smart hints.
+**Tip**: The loop variables \`item\` and \`index\` automatically appear in the variable smart hints.
 
 ---
 
@@ -256,14 +256,14 @@ Control the execution flow of a loop.
 \`\`\`
 Iterate list: product list (enter the variable name directly)
   ├─ Condition check: {item[price]} < 100
-  │   ├─ True → Set variable: found product = {item}
+  │   ├─ True -> Set variable: found product = {item}
   │   │       Break loop
-  │   └─ False → Skip current iteration
+  │   └─ False -> Skip current iteration
 \`\`\`
 
 ---
 
-## 🤖 AI Brain
+## AI Brain
 
 Call an AI large model to process text, making workflows smarter.
 
@@ -338,7 +338,7 @@ User message: Please write a 50-word promotional copy for the following product:
 
 ---
 
-## 👁️ AI Vision
+## AI Vision
 
 Call a visual understanding model to analyze image content.
 
@@ -395,13 +395,13 @@ Prompt: Extract the data from the chart, output in JSON format
 
 ---
 
-## 🧪 AI Smart Scraper (Experimental Feature)
+## AI Smart Scraper (Experimental Feature)
 
-> ⚠️ **Experimental feature notice**: The AI smart scraper and AI element selector are experimental features that depend on third-party AI services, may be unstable, and are not recommended for production use.
+> **Experimental feature notice**: The AI smart scraper and AI element selector are experimental features that depend on third-party AI services, may be unstable, and are not recommended for production use.
 
 The AI smart scraper leverages the understanding capability of large language models to extract data from web pages via natural-language descriptions, without writing complex selectors.
 
-### 🤖 AI Smart Scraper
+### AI Smart Scraper
 
 Describe the data to extract in natural language, and the AI automatically analyzes the web page and extracts the corresponding content.
 
@@ -439,7 +439,7 @@ Print log: {product info}
 }
 \`\`\`
 
-### 🎯 AI Element Selector
+### AI Element Selector
 
 Describe the element to locate in natural language, and the AI automatically generates a CSS selector.
 
@@ -476,7 +476,7 @@ Input text:
 
 ---
 
-## 🌐 API Request
+## API Request
 
 Send an HTTP request to interact with external services.
 
@@ -529,9 +529,9 @@ API responses are usually in JSON format; after saving to a variable, you can ac
 \`\`\`
 Assume the response: {"code": 200, "data": {"name": "test", "items": [1,2,3]}}
 
-{response[code]}           → 200
-{response[data][name]}     → test
-{response[data][items][0]} → 1
+{response[code]}           -> 200
+{response[data][name]}     -> test
+{response[data][items][0]} -> 1
 \`\`\`
 
 ### Practical Examples
@@ -570,7 +570,7 @@ Body: {
 
 ---
 
-## 📧 Send Email
+## Send Email
 
 Automatically send an email notification.
 
@@ -589,7 +589,7 @@ Automatically send an email notification.
 ### Getting a QQ Mail Authorization Code
 
 1. Log in to [QQ Mail web version](https://mail.qq.com)
-2. Click **Settings** → **Account**
+2. Click **Settings** -> **Account**
 3. Find **POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV services**
 4. Enable the **POP3/SMTP service**
 5. Complete SMS verification as prompted
@@ -625,7 +625,7 @@ This email was sent automatically by WebRPA
 
 ---
 
-## 📥 Download File
+## Download File
 
 Download a file from a web page to local.
 
@@ -656,11 +656,11 @@ Download a file from a web page to local.
 | Save directory | The folder to save the file | \`C:/Downloads\` |
 | Custom file name | Optional, specify the file name | \`{date}_report.pdf\` |
 
-**Path selection**: Click the 📁 button on the right of the save directory input box to choose a folder via the file explorer
+**Path selection**: Click the button on the right of the save directory input box to choose a folder via the file explorer
 
 ---
 
-## 📋 Clipboard Operations
+## Clipboard Operations
 
 ### Set Clipboard
 
@@ -688,7 +688,7 @@ Set text or an image to the system clipboard.
 
 ---
 
-## ⌨️ Keyboard Operations
+## Keyboard Operations
 
 Simulate keyboard keys and shortcut operations.
 
@@ -729,7 +729,7 @@ Simulate keyboard keys and shortcut operations.
 
 ---
 
-## 💻 Execute JavaScript
+## Execute JavaScript
 
 Execute custom JavaScript code in the page.
 
@@ -781,7 +781,7 @@ return true;
 
 ---
 
-## 🔔 User Input
+## User Input
 
 Pop up a dialog during workflow execution for the user to enter data.
 
@@ -802,7 +802,7 @@ Pop up a dialog during workflow execution for the user to enter data.
 
 ---
 
-## ⏸️ Pause Execution
+## Pause Execution
 
 Pause workflow execution and wait for the user to continue manually.
 
@@ -814,16 +814,16 @@ Pause workflow execution and wait for the user to continue manually.
 
 ---
 
-## 🔀 Parallel Execution
+## Parallel Execution
 
 When a module has multiple output connections, those branches **truly execute in parallel**, greatly improving workflow efficiency.
 
 ### How It Works
 
 \`\`\`
-        ┌─→ Branch A (parallel) ─┐
-Module ──┼─→ Branch B (parallel) ─┼─→ Join point
-        └─→ Branch C (parallel) ─┘
+        ┌─-> Branch A (parallel) ─┐
+Module ──┼─-> Branch B (parallel) ─┼─-> Join point
+        └─-> Branch C (parallel) ─┘
 \`\`\`
 
 The system uses an async execution engine; when it detects multiple branches, it automatically executes them in parallel, and only continues with the modules after the join point once all branches complete.
@@ -843,10 +843,10 @@ The system uses an async execution engine; when it detects multiple branches, it
 #### 1. Parallel API Requests
 \`\`\`
 Start
-  ├─→ Request API-A (get user info)
-  ├─→ Request API-B (get order list)
-  └─→ Request API-C (get product data)
-      ↓
+  ├─-> Request API-A (get user info)
+  ├─-> Request API-B (get order list)
+  └─-> Request API-C (get product data)
+      Down
   Join: merge all data
 \`\`\`
 
@@ -854,27 +854,27 @@ Start
 #### 2. Send Notifications in Parallel
 \`\`\`
 Task complete
-  ├─→ Send email notification
-  ├─→ Send WeChat push
-  └─→ Write to log file
+  ├─-> Send email notification
+  ├─-> Send WeChat push
+  └─-> Write to log file
 \`\`\`
 
 #### 3. Parallel File Processing
 \`\`\`
 Get file list
-  ├─→ Download file 1
-  ├─→ Download file 2
-  └─→ Download file 3
+  ├─-> Download file 1
+  ├─-> Download file 2
+  └─-> Download file 3
 \`\`\`
 
 #### 4. Parallel Inside a Loop
 \`\`\`
 Iterate product list
   └─ Within each iteration:
-      ├─→ Get price
-      ├─→ Get stock
-      └─→ Get reviews
-          ↓
+      ├─-> Get price
+      ├─-> Get stock
+      └─-> Get reviews
+          Down
       Join: save product data
 \`\`\`
 
@@ -884,13 +884,13 @@ When multiple branches connect to the same subsequent node, the system automatic
 
 \`\`\`
 Branch A ──┐
-Branch B ──┼─→ Join node (waits for A, B, C to all complete)
+Branch B ──┼─-> Join node (waits for A, B, C to all complete)
 Branch C ──┘
 \`\`\`
 
-The log shows: \`⏳ Waiting to join: X predecessor branches still incomplete\`
+The log shows: \`Waiting to join: X predecessor branches still incomplete\`
 
-### ⚠️ Notes
+### Notes
 
 | Note | Description | Recommendation |
 |--------|------|------|
@@ -901,7 +901,7 @@ The log shows: \`⏳ Waiting to join: X predecessor branches still incomplete\`
 
 ### Best Practices
 
-**✅ Operations recommended for parallelism**:
+**[√] Operations recommended for parallelism**:
 - API requests (each an independent network request)
 - File read/write (different files)
 - Data computation (computation with no dependencies)
@@ -909,7 +909,7 @@ The log shows: \`⏳ Waiting to join: X predecessor branches still incomplete\`
 - AI calls (independent AI requests)
 - Database operations (independent queries/inserts)
 
-**❌ Operations not recommended for parallelism**:
+**[×] Operations not recommended for parallelism**:
 - Multiple browser operations on the same page
 - Data processing with sequential dependencies
 - Steps that must run in order
@@ -919,15 +919,15 @@ The log shows: \`⏳ Waiting to join: X predecessor branches still incomplete\`
 
 **Sequential execution**:
 \`\`\`
-API-A(2s) → API-B(3s) → API-C(2s)
+API-A(2s) -> API-B(3s) -> API-C(2s)
 Total time = 2 + 3 + 2 = 7s
 \`\`\`
 
 **Parallel execution**:
 \`\`\`
-      ┌─→ API-A(2s) ─┐
-Start ─┼─→ API-B(3s) ─┼─→ Done
-      └─→ API-C(2s) ─┘
+      ┌─-> API-A(2s) ─┐
+Start ─┼─-> API-B(3s) ─┼─-> Done
+      └─-> API-C(2s) ─┘
 Total time = max(2, 3, 2) = 3s
 \`\`\`
 
@@ -935,15 +935,15 @@ Total time = max(2, 3, 2) = 3s
 
 ### Debugging Tips
 
-1. **View the log**: during parallel execution it shows \`🔀 Detected X branches, executing in parallel...\`
-2. **Join wait**: at the join it shows \`⏳ Waiting to join: X predecessor branches still incomplete\`
-3. **Completion hint**: after all branches complete it shows \`🔀 X branches finished executing\`
+1. **View the log**: during parallel execution it shows \`Detected X branches, executing in parallel...\`
+2. **Join wait**: at the join it shows \`Waiting to join: X predecessor branches still incomplete\`
+3. **Completion hint**: after all branches complete it shows \`X branches finished executing\`
 
 ---
 
-## 🗄️ Database Operations
+## Database Operations
 
-WebRPA supports connecting to a MySQL database for create/read/update/delete operations. For details, see the **🗄️ Database Operations** chapter.
+WebRPA supports connecting to a MySQL database for create/read/update/delete operations. For details, see the **Database Operations** chapter.
 
 ### Quick Overview
 
@@ -960,7 +960,7 @@ WebRPA supports connecting to a MySQL database for create/read/update/delete ope
 ### Typical Flow
 
 \`\`\`
-Connect to database → Perform operations → Close connection
+Connect to database -> Perform operations -> Close connection
 \`\`\`
 
 ### Use Cases
@@ -972,11 +972,11 @@ Connect to database → Perform operations → Close connection
 
 ---
 
-## 🖥️ System Operation Modules
+## System Operation Modules
 
 WebRPA provides a series of system-level operation modules that can control the mouse, keyboard, run commands, and more.
 
-### 🎯 Coordinate Picking
+### Coordinate Picking
 
 When configuring modules that need screen coordinates (such as real mouse click, real mouse move, real mouse drag, custom screenshot area), you can use the **visual coordinate picking** feature, with no need to enter coordinate values manually.
 
@@ -1001,7 +1001,7 @@ When configuring modules that need screen coordinates (such as real mouse click,
 - Real mouse drag
 - Screenshot (custom area)
 
-💡 **Tip**: Using the Ctrl combination avoids accidentally triggering click events in other applications.
+**Tip**: Using the Ctrl combination avoids accidentally triggering click events in other applications.
 
 ---
 
@@ -1025,7 +1025,7 @@ Use the system-level SendInput API to simulate a real hardware-level mouse click
 - Use together with "Get Mouse Position"
 - Long-press operations (such as preparing for a drag)
 
-💡 Click the "Pick" button, then Ctrl+left click to visually select the click position
+Click the "Pick" button, then Ctrl+left click to visually select the click position
 
 ---
 
@@ -1041,7 +1041,7 @@ Move the mouse to a specified screen coordinate.
 | Y coordinate | Target Y coordinate | \`300\`, supports picking |
 | Move duration | The move animation duration (ms) | 0 = instant, >0 = smooth move |
 
-💡 Click the "Pick" button, then Ctrl+left click to visually select the target position
+Click the "Pick" button, then Ctrl+left click to visually select the target position
 
 ---
 
@@ -1066,7 +1066,7 @@ Press and drag the mouse from a start point to an end point; suitable for drag-a
 - Adjust a slider
 - Drawing operations
 
-💡 Click the "Pick" button, then Ctrl+left click to visually select the start and end positions
+Click the "Pick" button, then Ctrl+left click to visually select the start and end positions
 
 **Example**: Slider CAPTCHA
 \`\`\`
@@ -1075,7 +1075,7 @@ Real mouse drag:
   End: (400, 300) - slider target position
   Drag duration: 800ms
   
-→ Simulate manually dragging the slider
+-> Simulate manually dragging the slider
 \`\`\`
 
 ---
@@ -1182,7 +1182,7 @@ Capture the entire screen or a specified area.
 3. Click the second "Pick" button, Ctrl+left click to select the bottom-right position
 4. The system automatically calculates and shows the screenshot area size
 
-💡 Two-point positioning is more intuitive, with no need to manually calculate width and height
+Two-point positioning is more intuitive, with no need to manually calculate width and height
 
 ---
 
@@ -1213,7 +1213,7 @@ Execute a system command (CMD or PowerShell).
 | Timeout | The command execution timeout (seconds) | 30 |
 | Storage variable name | The variable to save the command output | output |
 
-**⚠️ Security warning**: Execute system commands with caution; avoid running commands from unknown sources.
+**Security warning**: Execute system commands with caution; avoid running commands from unknown sources.
 
 ---
 
@@ -1243,16 +1243,16 @@ Lock the Windows screen, equivalent to pressing Win+L.
 
 ---
 
-## ⚠️ Exception Handling
+## Exception Handling
 
 Every module has an **orange exception handling connection point** (on the right side of the module). When a module fails, the flow connected to that point is triggered automatically.
 
 ### How It Works
 
 \`\`\`
-                    ┌─→ Exception handling flow
-Module ──┬─→ Normal flow  │
-       └─→ (error) ─┘
+                    ┌─-> Exception handling flow
+Module ──┬─-> Normal flow  │
+       └─-> (error) ─┘
 \`\`\`
 
 - **Normal flow**: when the module succeeds, it continues from the bottom connection point
@@ -1267,15 +1267,15 @@ Module ──┬─→ Normal flow  │
 ### Example: Network Request Exception Handling
 
 \`\`\`
-API request ──┬─→ Process response data → Continue flow
-          └─→ (error) → Print log: "Request failed" → Send notification
+API request ──┬─-> Process response data -> Continue flow
+          └─-> (error) -> Print log: "Request failed" -> Send notification
 \`\`\`
 
 ### Example: Element Click Exception Handling
 
 \`\`\`
-Click element ──┬─→ Continue operation
-           └─→ (error) → Screenshot → Retry logic
+Click element ──┬─-> Continue operation
+           └─-> (error) -> Screenshot -> Retry logic
 \`\`\`
 
 ### Features
@@ -1289,7 +1289,7 @@ Click element ──┬─→ Continue operation
 
 ### Best Practices
 
-**✅ Recommended exception handling**:
+**[√] Recommended exception handling**:
 - Log the error
 - Send a failure notification
 - Save an error screenshot
@@ -1298,14 +1298,14 @@ Click element ──┬─→ Continue operation
 
 **Example: A complete exception handling flow**
 \`\`\`
-Open page ──┬─→ Normal flow...
-           └─→ (error) → Print log → Wait 5 seconds → Reopen page
+Open page ──┬─-> Normal flow...
+           └─-> (error) -> Print log -> Wait 5 seconds -> Reopen page
 
 \`\`\`
 
 ---
 
-## 🎬 Media Processing
+## Media Processing
 
 WebRPA includes powerful media processing features implemented based on FFmpeg, supporting format conversion, compression, trimming, and other operations for video, audio, and images.
 
@@ -1344,7 +1344,7 @@ Format conversion:
   Input file: C:/videos/movie.avi
   Output format: mp4
   
-→ Output: C:/videos/movie_converted.mp4
+-> Output: C:/videos/movie_converted.mp4
 \`\`\`
 
 ---
@@ -1376,7 +1376,7 @@ Image compression:
   Compression quality: 80
   Max width: 1920
   
-→ Compression ratio: about 60%
+-> Compression ratio: about 60%
 \`\`\`
 
 ---
@@ -1423,7 +1423,7 @@ Video compression:
   CRF: 23
   Resolution: 1280x720
   
-→ Compression ratio: about 70%
+-> Compression ratio: about 70%
 \`\`\`
 
 ---
@@ -1458,7 +1458,7 @@ Extract audio:
   Audio format: mp3
   Bitrate: 192k
   
-→ Output: C:/videos/mv.mp3
+-> Output: C:/videos/mv.mp3
 \`\`\`
 
 ---
@@ -1488,7 +1488,7 @@ Video trim:
   Start time: 00:01:30
   End time: 00:05:00
   
-→ Output a 3-minute-30-second video segment
+-> Output a 3-minute-30-second video segment
 \`\`\`
 
 ---
@@ -1536,7 +1536,7 @@ Add an image or text watermark to a video or image.
 | Input file path | Source file path | \`C:/videos/movie.mp4\` |
 | Watermark type | Image watermark/Text watermark | image |
 | Watermark image path | The image file for an image watermark | \`C:/logo.png\` |
-| Watermark text | The content of a text watermark | © 2026 |
+| Watermark text | The content of a text watermark | 2026 |
 | Font size | The font size of a text watermark | 24 |
 | Font color | The color of a text watermark | white |
 | Watermark position | Where to place the watermark | bottomright |
@@ -1571,7 +1571,7 @@ Add watermark:
   Media type: Image
   Input file: C:/images/photo.jpg
   Watermark type: Text watermark
-  Watermark text: © 2026 Qingyun Studio_Peng Minghang
+  Watermark text: 2026 Qingyun Studio_Peng Minghang
   Font size: 24
   Font color: white
   Position: Bottom right
@@ -1584,12 +1584,12 @@ Add watermark:
 
 **Batch processing**:
 \`\`\`
-Get file list → Iterate list → Format conversion/compression → Save results
+Get file list -> Iterate list -> Format conversion/compression -> Save results
 \`\`\`
 
 **Video processing pipeline**:
 \`\`\`
-Download video → Trim segment → Compress → Add watermark → Upload
+Download video -> Trim segment -> Compress -> Add watermark -> Upload
 \`\`\`
 
 **Notes**:
@@ -1599,7 +1599,7 @@ Download video → Trim segment → Compress → Add watermark → Upload
 
 ---
 
-## 🧠 AI Recognition
+## AI Recognition
 
 WebRPA provides AI-based image recognition features, including face recognition and image OCR text recognition.
 
@@ -1621,8 +1621,8 @@ Compare whether the faces in two images match; useful for identity verification,
 **Branch outputs**:
 
 The face recognition module has two output branches (similar to a condition check):
-- **✓ Match**: runs when a matching face is detected
-- **✗ No match**: runs when no matching face is detected
+- **[√] Match**: runs when a matching face is detected
+- **[×] No match**: runs when no matching face is detected
 
 **Result variable content**:
 
@@ -1660,8 +1660,8 @@ Face recognition:
   Target face: C:/employees/{employee ID}.jpg
   Tolerance: 0.5
   
-  ├─ Match → Record successful clock-in
-  └─ No match → Prompt verification failed
+  ├─ Match -> Record successful clock-in
+  └─ No match -> Prompt verification failed
 \`\`\`
 
 **Notes**:
@@ -1691,7 +1691,7 @@ Recognize text content in an image, supporting mixed Chinese and English recogni
 
 **Example**: Extract the price from a screenshot
 \`\`\`
-Screenshot → Image OCR → Regex extract price → Save data
+Screenshot -> Image OCR -> Regex extract price -> Save data
 \`\`\`
 
 **Example**: Batch recognize text in images
@@ -1710,7 +1710,7 @@ Iterate image list:
 
 ---
 
-## 📁 File Operations
+## File Operations
 
 WebRPA provides complete local file operation features, allowing you to read, write, copy, move, delete, and otherwise operate on files and folders.
 
@@ -1743,12 +1743,12 @@ Get file list:
   Filter pattern: *.jpg;*.png;*.gif
   Result variable: image_list
 
-→ image_list = ["photo1.jpg", "photo2.png", "banner.gif"]
+-> image_list = ["photo1.jpg", "photo2.png", "banner.gif"]
 \`\`\`
 
 **Use with iteration**:
 \`\`\`
-Get file list → Iterate list → Process each file
+Get file list -> Iterate list -> Process each file
 \`\`\`
 
 
@@ -1777,7 +1777,7 @@ Copy file:
   Source file: C:/data/report.xlsx
   Target path: D:/backup/
   
-→ Copied to D:/backup/report.xlsx
+-> Copied to D:/backup/report.xlsx
 \`\`\`
 
 ---
@@ -1801,7 +1801,7 @@ Move file:
   Source file: C:/downloads/{file name}
   Target path: D:/documents/
   
-→ The file is moved from downloads to documents
+-> The file is moved from downloads to documents
 \`\`\`
 
 ---
@@ -1817,7 +1817,7 @@ Delete a specified file or folder.
 | File/folder path | The path to delete | \`C:/temp/old.txt\` |
 | Delete type | File/Folder (including contents) | File |
 
-**⚠️ Warning**: The delete operation is irreversible, use with caution!
+**Warning**: The delete operation is irreversible, use with caution!
 
 **Example**: Clean up temporary files
 \`\`\`
@@ -1832,7 +1832,7 @@ Delete file:
   Path: C:/temp/old_data
   Type: Folder (including contents)
   
-→ Delete the folder and all its contents
+-> Delete the folder and all its contents
 \`\`\`
 
 ---
@@ -1854,7 +1854,7 @@ Create a new folder, supporting multi-level directory creation.
 
 **Example**: Create folders by date
 \`\`\`
-Get time → Create folder: C:/data/{year}/{month}/{day}
+Get time -> Create folder: C:/data/{year}/{month}/{day}
 \`\`\`
 
 ---
@@ -1872,9 +1872,9 @@ Check whether a specified file or folder exists.
 
 **Use with a condition check**:
 \`\`\`
-File exists → Condition check: {exists} == true
-  ├─ True → Read the file
-  └─ False → Create a default file
+File exists -> Condition check: {exists} == true
+  ├─ True -> Read the file
+  └─ False -> Create a default file
 \`\`\`
 
 ---
@@ -1907,10 +1907,10 @@ Get detailed information about a file, including size, creation time, modificati
 
 **Access the file info**:
 \`\`\`
-{file_info[name]}          → report.pdf
-{file_info[size]}          → 1048576 (bytes)
-{file_info[extension]}     → .pdf
-{file_info[modified_time]} → 2024-01-20 14:25:00
+{file_info[name]}          -> report.pdf
+{file_info[size]}          -> 1048576 (bytes)
+{file_info[extension]}     -> .pdf
+{file_info[modified_time]} -> 2024-01-20 14:25:00
 \`\`\`
 
 ---
@@ -1941,7 +1941,7 @@ Read text file:
   Encoding: UTF-8
   Result variable: config_text
 
-→ Then you can process the content with JSON parse
+-> Then you can process the content with JSON parse
 \`\`\`
 
 **Example**: Read a log file
@@ -1951,7 +1951,7 @@ Read text file:
   Encoding: UTF-8
   Result variable: log_content
 
-→ Then you can analyze the log with regex extract
+-> Then you can analyze the log with regex extract
 \`\`\`
 
 ---
@@ -1981,7 +1981,7 @@ Write text file:
   Content: {product name},{price},{stock}
   Mode: Append
   
-→ Append one row of data per execution
+-> Append one row of data per execution
 \`\`\`
 
 **Example**: Save JSON data
@@ -1998,22 +1998,22 @@ Write text file:
 
 **Batch file processing**:
 \`\`\`
-Get file list → Iterate list → Process each file → Move to the done folder
+Get file list -> Iterate list -> Process each file -> Move to the done folder
 \`\`\`
 
 **Data export flow**:
 \`\`\`
-Collect data → Create folder (by date) → Write text file
+Collect data -> Create folder (by date) -> Write text file
 \`\`\`
 
 **File backup flow**:
 \`\`\`
-File exists → Copy file to backup directory → Delete the original file
+File exists -> Copy file to backup directory -> Delete the original file
 \`\`\`
 
 **Config file read/write**:
 \`\`\`
-Read text file → JSON parse → Modify config → Write text file
+Read text file -> JSON parse -> Modify config -> Write text file
 \`\`\`
 
 **Notes**:
@@ -2024,7 +2024,7 @@ Read text file → JSON parse → Modify config → Write text file
 
 ---
 
-## 💬 QQ Automation
+## QQ Automation
 
 WebRPA supports QQ message automation via NapCat (OneBot protocol), allowing you to send messages and images, get friend/group lists, and wait to receive messages.
 
@@ -2037,8 +2037,8 @@ WebRPA supports QQ message automation via NapCat (OneBot protocol), allowing you
 ### Connection Status
 
 You can see the NapCat connection status on the toolbar:
-- 🟢 Green: connected
-- 🔴 Red: not connected
+- Green: connected
+- Red: not connected
 
 Click the status icon to open the NapCat settings panel and configure the HTTP port.
 
@@ -2162,9 +2162,9 @@ Wait to receive a QQ message that meets specified conditions; can be used to imp
 
 | Mode | Description | Example |
 |------|------|------|
-| Contains | The message contains the specified text | Match content: \`hello\` → matches "hello there", "say hello" |
-| Exact | The message exactly equals the specified text | Match content: \`hello\` → matches only "hello" |
-| Regex | Match using a regular expression | Match content: \`\\d+\` → matches messages containing numbers |
+| Contains | The message contains the specified text | Match content: \`hello\` -> matches "hello there", "say hello" |
+| Exact | The message exactly equals the specified text | Match content: \`hello\` -> matches only "hello" |
+| Regex | Match using a regular expression | Match content: \`\\d+\` -> matches messages containing numbers |
 | Any | Receive any message | No match content needed |
 
 **Result variable content**:
@@ -2191,7 +2191,7 @@ QQ wait for message:
   Match content: confirm
   Wait timeout: 0 (wait indefinitely)
   
-→ Wait for user 123456789 to send a message containing "confirm"
+-> Wait for user 123456789 to send a message containing "confirm"
 \`\`\`
 
 **Example**: Wait for any message in a group
@@ -2202,7 +2202,7 @@ QQ wait for message:
   Match mode: Any
   Wait timeout: 60
   
-→ Wait for any message in group 987654321, up to 60 seconds
+-> Wait for any message in group 987654321, up to 60 seconds
 \`\`\`
 
 **Implement message listening with a loop**:
@@ -2240,7 +2240,7 @@ Get the friend list of the currently logged-in account.
 
 **Example**: Iterate friends and send messages
 \`\`\`
-QQ get friend list → Iterate list
+QQ get friend list -> Iterate list
   └─ QQ send message: {item[user_id]}, Happy New Year!
 \`\`\`
 
@@ -2362,7 +2362,7 @@ QQ wait for message (source: private)
 
 ---
 
-## 💚 WeChat Automation
+## WeChat Automation
 
 WebRPA supports WeChat message automation, allowing you to send messages and files to specified contacts or groups.
 
@@ -2461,12 +2461,12 @@ Iterate list: contact list
 
 #### 3. Auto Send Files
 \`\`\`
-Download file → WeChat send file: {downloaded file path}
+Download file -> WeChat send file: {downloaded file path}
 \`\`\`
 
 #### 4. Combine with Other Modules
 \`\`\`
-Collect data → Export Excel → WeChat send file: {exported file}
+Collect data -> Export Excel -> WeChat send file: {exported file}
 \`\`\`
 
 ### Notes
@@ -2481,7 +2481,7 @@ Collect data → Export Excel → WeChat send file: {exported file}
 
 ---
 
-## 🎬 Macro Recorder
+## Macro Recorder
 
 Record mouse and keyboard operations, then automatically replay them in the recorded order and timing to automate operations.
 
@@ -2497,10 +2497,10 @@ The macro recorder can record the following operations:
 
 **Start recording**:
 
-1. Click the "🎬 Start Recording" button in the configuration panel
+1. Click the "Start Recording" button in the configuration panel
 2. A recording dialog pops up; choose the operation types to record
 3. After clicking "Start Recording", perform mouse and keyboard operations
-4. When done, click "⏹️ Stop Recording"
+4. When done, click "Stop Recording"
 5. Click "Save" to save the recorded data to the module
 
 **Recording options**:
@@ -2537,19 +2537,19 @@ The macro recorder can record the following operations:
 
 #### 1. Repetitive Operation Automation
 \`\`\`
-Record: open software → click menu → select option → confirm
+Record: open software -> click menu -> select option -> confirm
 Replay: automatically perform the same operations
 \`\`\`
 
 #### 2. Game Scripts
 \`\`\`
-Record: character movement path → skill release → item pickup
+Record: character movement path -> skill release -> item pickup
 Replay: automatically perform game operations
 \`\`\`
 
 #### 3. Form Filling
 \`\`\`
-Record: click input box → enter content → switch to next → submit
+Record: click input box -> enter content -> switch to next -> submit
 Replay: automatically fill forms of the same format
 \`\`\`
 
@@ -2586,13 +2586,13 @@ Replay: repeatedly execute the test case
 
 ### Best Practices
 
-**✅ Recommended**:
+**[√] Recommended**:
 - Determine the window position before recording
 - Keep a steady rhythm during operations
 - Use relative position mode to improve compatibility
 - Test at slow speed first, then accelerate after confirming it is correct
 
-**❌ Avoid**:
+**[×] Avoid**:
 - Switching windows during recording
 - Moving the mouse too fast during recording
 - Replaying at a different resolution
@@ -2601,7 +2601,7 @@ Replay: repeatedly execute the test case
 ### Combine with Other Modules
 
 \`\`\`
-Scheduled execution → Macro recorder → Screenshot → Send notification
+Scheduled execution -> Macro recorder -> Screenshot -> Send notification
 \`\`\`
 
 \`\`\`
@@ -2612,13 +2612,13 @@ Loop 5 times
 
 ---
 
-## 🎯 Real-time Mouse Coordinate Display
+## Real-time Mouse Coordinate Display
 
 After enabling it in the global settings, the current screen coordinate is shown in real time next to the mouse, making positioning and debugging easier.
 
 ### How to Enable
 
-1. Click the **⚙️ Settings** button on the toolbar
+1. Click the **Settings** button on the toolbar
 2. Find the **Display Settings** area
 3. Turn on the **Real-time mouse coordinate display** switch
 
@@ -2653,7 +2653,7 @@ The coordinate display window contains the following info:
 
 ---
 
-## 🧠 AI Data Processing Modules
+## AI Data Processing Modules
 
 WebRPA 2.0 provides 8 ready-to-use AI workflow modules under the "AI Data Processing" category in the sidebar, embedding the understanding capability of large language models directly into the workflow, so that cleaning, classification, and judgment after data collection can all be handed to the AI.
 
@@ -2688,8 +2688,8 @@ Extract structured JSON from unstructured text such as web pages, emails, orders
 
 **Result usage**:
 \`\`\`
-{extraction result[name]}     → Zhang San
-{extraction result[phone]}    → 13800138000
+{extraction result[name]}     -> Zhang San
+{extraction result[phone]}    -> 13800138000
 \`\`\`
 
 > Fields that cannot be found return an empty string; if the model does not return valid JSON, it falls back to returning the original text.
@@ -2754,9 +2754,9 @@ Determine the sentiment of text, outputting positive/negative/neutral and a sent
 
 **Result usage**:
 \`\`\`
-{sentiment result[sentiment]}   → positive / negative / neutral
-{sentiment result[score]}       → 0.82 (closer to 1 is more positive)
-{sentiment result[confidence]}  → 0.9
+{sentiment result[sentiment]}   -> positive / negative / neutral
+{sentiment result[score]}       -> 0.82 (closer to 1 is more positive)
+{sentiment result[confidence]}  -> 0.9
 \`\`\`
 
 ---
@@ -2824,10 +2824,10 @@ Based on the input content, intelligently select the most appropriate one of the
 
 **Typical combination**:
 \`\`\`
-Collect customer message → AI smart routing (refund/inquiry/complaint)
-  ├─ Condition check: {route result} == "refund"  → Go to the refund flow
-  ├─ Condition check: {route result} == "inquiry"  → Auto-reply to common questions
-  └─ Condition check: {route result} == "complaint"  → Transfer to a human + create a ticket
+Collect customer message -> AI smart routing (refund/inquiry/complaint)
+  ├─ Condition check: {route result} == "refund"  -> Go to the refund flow
+  ├─ Condition check: {route result} == "inquiry"  -> Auto-reply to common questions
+  └─ Condition check: {route result} == "complaint"  -> Transfer to a human + create a ticket
 \`\`\`
 
 ---
@@ -2838,23 +2838,23 @@ By chaining multiple AI modules, you can build "thinking" automation flows:
 
 **E-commerce review sentiment monitoring**:
 \`\`\`
-Collect review list → Iterate list
+Collect review list -> Iterate list
   ├─ AI sentiment analysis: {item}
-  ├─ AI smart routing: negative → create ticket / praise → archive
+  ├─ AI smart routing: negative -> create ticket / praise -> archive
   └─ AI information extraction: extract the involved products and issue points
 \`\`\`
 
 **Cleaning messy data into the database**:
 \`\`\`
-Read Excel → Iterate each row
-  ├─ AI data normalization: date → standard date
-  ├─ AI data normalization: amount → plain number
+Read Excel -> Iterate each row
+  ├─ AI data normalization: date -> standard date
+  ├─ AI data normalization: amount -> plain number
   └─ Write to database
 \`\`\`
 
 **Multi-language customer service routing**:
 \`\`\`
-Receive message → AI translation (unify to Chinese) → AI text classification → AI smart routing → corresponding handling branch
+Receive message -> AI translation (unify to Chinese) -> AI text classification -> AI smart routing -> corresponding handling branch
 \`\`\`
 
 > These modules are also the parts the AI assistant proactively calls when "generating workflows from natural language"; combined with the workflow self-healing capability, they make building flows a smarter experience.

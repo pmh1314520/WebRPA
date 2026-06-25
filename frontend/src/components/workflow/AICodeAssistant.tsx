@@ -28,6 +28,7 @@ export function AICodeAssistant({
   const globalConfig = useGlobalConfigStore(state => state.config)
 
   // 构建系统提示词
+  // @i18n-ignore-start AI 系统提示词与代码示例模板，发送给 LLM 使用，非界面展示文本
   const buildSystemPrompt = () => {
     const languageName = language === 'javascript' ? 'JavaScript' : 'Python'
     const variableAccessMethod = language === 'javascript' 
@@ -335,6 +336,7 @@ ${currentCode}
 只返回代码本身，不要包含任何解释文字或markdown代码块标记。
 代码应该可以直接运行，无需任何修改。`
   }
+  // @i18n-ignore-end
 
   // 调用AI API生成代码
   const generateCode = async () => {

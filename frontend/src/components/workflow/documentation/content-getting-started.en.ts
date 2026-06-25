@@ -1,10 +1,10 @@
-export const gettingStartedContentEn = `# 🚀 Quick Start: Learn WebRPA in 5 minutes
+export const gettingStartedContentEn = `# Quick Start: Learn WebRPA in 5 minutes
 
 Welcome to **WebRPA** (Web Automation Framework) — a powerful and easy-to-use web automation tool that lets you build all kinds of automation without writing code.
 
 ---
 
-## 📌 Important update: browser engine architecture
+## Important update: browser engine architecture
 
 WebRPA now uses a **main-process browser engine**. When a workflow runs, it can directly reuse an already-open browser page without restarting the browser.
 
@@ -12,38 +12,38 @@ WebRPA now uses a **main-process browser engine**. When a workflow runs, it can 
 1. Click "Open browser" in the toolbar to launch the browser in the main process
 2. Manually open the website you want to operate
 3. Create a workflow whose first module is "Operate the open page"
-4. Run the workflow → it operates the open page directly, no restart needed
+4. Run the workflow -> it operates the open page directly, no restart needed
 
 **Benefits:**
-- ⚡ Higher automation efficiency (no browser restart)
-- 💾 Saves system resources (shared browser instance)
-- 🔄 Supports multi-page operations (automatic page lifecycle management)
+- Higher automation efficiency (no browser restart)
+- Saves system resources (shared browser instance)
+- Supports multi-page operations (automatic page lifecycle management)
 
 ---
 
-## 🎯 What can WebRPA do?
+## What can WebRPA do?
 
 ### Everyday automation
-- 📝 Auto sign in to websites daily to earn points
-- 🛒 Monitor product prices and get notified on price drops
-- 📧 Send email notifications automatically
-- 🔄 Run repetitive tasks on a schedule
+- Auto sign in to websites daily to earn points
+- Monitor product prices and get notified on price drops
+- Send email notifications automatically
+- Run repetitive tasks on a schedule
 
 ### Data scraping
-- 📊 Batch-scrape web data and export to Excel
-- 📰 Auto-collect news and article content
-- 🏷️ Collect product info, prices and reviews
-- 📋 Extract tables and list data
-- 🗄️ Write scraped data straight into MySQL
+- Batch-scrape web data and export to Excel
+- Auto-collect news and article content
+- Collect product info, prices and reviews
+- Extract tables and list data
+- Write scraped data straight into MySQL
 
 ### Smart processing
-- 🤖 Process and analyze data with AI
-- 👁️ Use AI vision to recognize captchas and image content
-- 📝 Auto-generate reports and summaries
+- Process and analyze data with AI
+- Use AI vision to recognize captchas and image content
+- Auto-generate reports and summaries
 
 ---
 
-## 🏃 Your first workflow: a Baidu search
+## Your first workflow: a Baidu search
 
 Let's start with a simple example — a workflow that searches on Baidu automatically.
 
@@ -54,13 +54,13 @@ Let's start with a simple example — a workflow that searches on Baidu automati
 
 ### Step 2: Drag in the "Operate the open page" module
 
-1. Find **🌐 Operate the open page** in the **module list** on the left
+1. Find **Operate the open page** in the **module list** on the left
 2. **Drag** it onto the canvas in the middle
 3. This module automatically connects to the open Baidu page
 
 ### Step 3: Add a "Type text" module
 
-1. Drag a **⌨️ Type text** module onto the canvas
+1. Drag a **Type text** module onto the canvas
 2. **Connect modules**: move the mouse to the small dot at the bottom of the "Operate the open page" module, hold and drag to the small dot at the top of the "Type text" module, then release to connect
 3. Configure the "Type text" module:
    - **Selector**: \`#kw\` (the ID of the Baidu search box)
@@ -68,18 +68,18 @@ Let's start with a simple example — a workflow that searches on Baidu automati
 
 ### Step 4: Add a "Click element" module
 
-1. Drag in a **🖱️ Click element** module
+1. Drag in a **Click element** module
 2. Connect it to the "Type text" module
 3. Configure:
    - **Selector**: \`#su\` (the ID of the Baidu search button)
 
 ### Step 5: Run the workflow
 
-1. Click the **▶️ Run** button in the top toolbar
+1. Click the **Run** button in the top toolbar
 2. Watch the browser open Baidu, type the text and click search
 3. Check the run in the **log panel** at the bottom
 
-🎉 Congratulations! You've built your first automation workflow!
+Congratulations! You've built your first automation workflow!
 
 ### Flow diagram
 
@@ -98,7 +98,7 @@ graph LR
 
 ---
 
-## 📌 Interface overview
+## Interface overview
 
 ### Overall layout
 
@@ -152,29 +152,29 @@ Shows the selected module's settings:
 ### 4. Log panel (bottom)
 
 Four tabs:
-- **📋 Execution log**: detailed run logs with search and filtering; you can set how many rows to show (100-500)
-- **📊 Data table**: collected data, editable, with add row/column and CSV export
-- **📦 Global variables**: current values of all variables, can be added and edited
-- **💾 Excel assets**: uploaded Excel files for workflows to read
+- **Execution log**: detailed run logs with search and filtering; you can set how many rows to show (100-500)
+- **Data table**: collected data, editable, with add row/column and CSV export
+- **Global variables**: current values of all variables, can be added and edited
+- **Excel assets**: uploaded Excel files for workflows to read
 
 ### 5. Top toolbar
 
 | Button | Function |
 |------|------|
-| ▶️ Run | Start running the workflow |
-| ⏹️ Stop | Stop the running workflow |
-| 💾 Save | Save the workflow to a local folder (Ctrl+S) |
-| 📂 Open | Open a locally saved workflow |
-| 📦 Workflow Hub | Browse, download and publish workflows |
-| 🌐 Automation browser | Manage automation browser instances |
-| 📖 Tutorials | Open these tutorials |
-| ⚙️ Global settings | Configure AI, email, workflow storage path, etc. |
-| 🗑️ Clear | Clear the current workflow |
-| 🤖 AI Assistant | Open the AI assistant chat (Ctrl+K) |
+| Run | Start running the workflow |
+| Stop | Stop the running workflow |
+| Save | Save the workflow to a local folder (Ctrl+S) |
+| Open | Open a locally saved workflow |
+| Workflow Hub | Browse, download and publish workflows |
+| Automation browser | Manage automation browser instances |
+| Tutorials | Open these tutorials |
+| Global settings | Configure AI, email, workflow storage path, etc. |
+| Clear | Clear the current workflow |
+| AI Assistant | Open the AI assistant chat (Ctrl+K) |
 
 ---
 
-## ⌨️ Global shortcuts
+## Global shortcuts
 
 | Shortcut | Function |
 |--------|------|
@@ -189,7 +189,7 @@ Four tabs:
 
 ---
 
-## 🔗 Variable references quick start
+## Variable references quick start
 
 In any input box, use \`{variableName}\` to reference a variable's value. Typing \`{\` pops up a variable hint list.
 
@@ -198,17 +198,17 @@ In any input box, use \`{variableName}\` to reference a variable's value. Typing
 All variable-name inputs support **fuzzy autocomplete**:
 - A list of matching variables appears as you type
 - Fuzzy matching: type part of the name to find it
-- Use ↑↓ to select, Enter to confirm, Esc to close
+- Use Up/Down to select, Enter to confirm, Esc to close
 - Storage-variable inputs (used to create new variables) won't say "variable not found"
 
 ### Basic syntax
 
 | Syntax | Meaning | Example |
 |------|------|------|
-| \`{name}\` | Reference a variable | \`{username}\` → John |
-| \`{list[index]}\` | List item | \`{fruits[0]}\` → Apple |
-| \`{list[-1]}\` | Last list item | \`{fruits[-1]}\` → Orange |
-| \`{dict[key]}\` | Dict value | \`{user[name]}\` → John |
+| \`{name}\` | Reference a variable | \`{username}\` -> John |
+| \`{list[index]}\` | List item | \`{fruits[0]}\` -> Apple |
+| \`{list[-1]}\` | Last list item | \`{fruits[-1]}\` -> Orange |
+| \`{dict[key]}\` | Dict value | \`{user[name]}\` -> John |
 | \`{data[0][title]}\` | Nested access | a dict field inside a list |
 
 ### Loop variables
@@ -226,10 +226,10 @@ Hello, {username}! Your order is {orderId}, total {amount}.
 
 ---
 
-## 🔥 Must-know tips for beginners
+## Must-know tips for beginners
 
 ### Element selectors
-- **Ctrl+click** the selector button 🎯: visually pick a single element
+- **Ctrl+click** the selector button: visually pick a single element
 - **Alt+click** the selector button: pick similar elements (essential for batch scraping)
 
 ### Quick actions
@@ -254,7 +254,7 @@ Hello, {username}! Your order is {orderId}, total {amount}.
 - Use **Variable tracking** to see a variable's full change history
 
 ### Global settings
-- Click **⚙️ Global settings** in the toolbar to set defaults
+- Click **Global settings** in the toolbar to set defaults
 - Configure default parameters for AI, email, database, etc.
 - Set the workflow save path and auto-save options
 - Enable **Auto-detect clipboard screenshots**: after you press PrtScn or use a snipping tool, a save dialog pops up automatically for quick saving
@@ -283,7 +283,7 @@ Common block-bar actions:
 
 ---
 
-## 📚 Next steps
+## Next steps
 
 1. **Basic Modules** - learn how each module works in detail
 2. **Data Processing** - learn variable, list and dict operations
@@ -294,5 +294,5 @@ Common block-bar actions:
 
 ---
 
-💡 **Tip**: the best way to learn automation is hands-on practice! Try building a workflow that auto-logs in to a site you use often!`
+**Tip**: the best way to learn automation is hands-on practice! Try building a workflow that auto-logs in to a site you use often!`
 

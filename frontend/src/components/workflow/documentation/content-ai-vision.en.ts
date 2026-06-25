@@ -1,10 +1,10 @@
-export const aiVisionGuideContentEn = `# 🤖 AI Recognition & Computer Vision
+export const aiVisionGuideContentEn = `# AI Recognition & Computer Vision
 
 This chapter covers OCR text recognition, captcha recognition, face recognition and the AI smart crawler.
 
 ---
 
-## 🔍 OCR captcha (ocr_captcha)
+## OCR captcha (ocr_captcha)
 
 Use ddddocr to recognize common image captchas on web pages.
 
@@ -24,7 +24,7 @@ flowchart TD
 
 ---
 
-## 🧩 Slider captcha (slider_captcha)
+## Slider captcha (slider_captcha)
 
 Automatically solve a slider captcha (drag the slider to the gap).
 
@@ -39,7 +39,7 @@ Automatically solve a slider captcha (drag the slider to the gap).
 
 ---
 
-## 👁️ Image OCR (image_ocr)
+## Image OCR (image_ocr)
 
 Use EasyOCR to recognize text in an image, supporting 80+ languages.
 
@@ -54,7 +54,7 @@ Common languages: Simplified Chinese \`chi_sim\`, Traditional \`chi_tra\`, Engli
 
 ---
 
-## 👤 Face recognition (face_recognition)
+## Face recognition (face_recognition)
 
 Compare faces in two images to see if they're the same person.
 
@@ -67,7 +67,7 @@ Compare faces in two images to see if they're the same person.
 
 ---
 
-## 🤖 AI smart crawler (ai_smart_scraper)
+## AI smart crawler (ai_smart_scraper)
 
 Describe the data to extract in natural language; the AI analyzes the page and extracts it — no selectors needed.
 
@@ -83,7 +83,7 @@ Describe the data to extract in natural language; the AI analyzes the page and e
 
 ---
 
-## 🎯 AI element selector (ai_element_selector)
+## AI element selector (ai_element_selector)
 
 Describe a page element in natural language; the AI generates a CSS selector.
 
@@ -97,7 +97,7 @@ The generated selector can be used directly in the "Selector" field of click, ty
 
 ---
 
-## 🔥 Firecrawl
+## Firecrawl
 
 Firecrawl is a professional AI crawler service supporting JS rendering and smart content extraction.
 
@@ -136,9 +136,40 @@ Crawl all page content of an entire site.
 
 ---
 
-## 💡 Tips
+## Tips
 
 - **OCR preprocessing**: sharpen the image before OCR to improve accuracy
 - **Captcha retry**: on failure, refresh the captcha and retry (condition + loop)
 - **Face threshold**: usually 0.5-0.6; too small causes false positives, too large misses matches
-- **Crawler prompts**: the more specific, the better, e.g. "Extract the product-name text inside li tags"`
+- **Crawler prompts**: the more specific, the better, e.g. "Extract the product-name text inside li tags"
+---
+
+## AI Generation (Image / Video)
+
+Call third-party AI APIs to generate images or videos from a text description.
+
+### AI image generation (ai_generate_image)
+
+| Parameter | Description |
+|------|------|
+| Provider | openai (DALL-E) or stability |
+| Prompt | Describe the desired image (required) |
+| Negative prompt | Content to avoid (supported by stability) |
+| Size / Count | e.g. 1024x1024, number of images |
+| API Key / API Base | Key and endpoint for the platform |
+| Save path | If set, downloads locally; multiple images get a numeric suffix |
+| Result variable | Default ai_image_urls; stores the URL or local-path list |
+
+### AI video generation (ai_generate_video)
+
+| Parameter | Description |
+|------|------|
+| Provider | runway or custom (custom endpoint) |
+| Prompt | Describe the video (required) |
+| Duration / Aspect / FPS | e.g. 5s, 16:9, 24 fps |
+| API Key / API Base / API URL | Platform configuration |
+| Save path | If set, downloads locally |
+| Result variable | Default ai_video_url; stores the video URL or local path |
+
+Video generation is asynchronous; the module polls the task status until it completes or times out, so no manual waiting is needed.
+`

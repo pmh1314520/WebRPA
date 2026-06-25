@@ -1,10 +1,10 @@
-export const excelGuideContentEn = `# 📊 Excel & Data Tables
+export const excelGuideContentEn = `# Excel & Data Tables
 
 This chapter covers Excel file operations and the data-table feature.
 
 ---
 
-## 📁 Excel file assets
+## Excel file assets
 
 ### What are Excel file assets?
 
@@ -12,7 +12,7 @@ Excel file assets are Excel files uploaded to the system that workflows can read
 
 ### Upload an Excel file
 
-1. Click the **📊 Excel assets** button in the top toolbar
+1. Click the **Excel assets** button in the top toolbar
 2. Click **Upload file**
 3. Choose a .xlsx or .xls file
 4. Once uploaded, it can be used in workflows
@@ -32,7 +32,7 @@ Excel file assets are Excel files uploaded to the system that workflows can read
 
 ---
 
-## 📖 Read Excel
+## Read Excel
 
 ### Basic config
 
@@ -64,7 +64,7 @@ The data is a **list** where each row is a **dict**:
 
 **Iterate all rows**:
 \`\`\`
-Read Excel → save to: dataList
+Read Excel -> save to: dataList
 
 Iterate: dataList
   ├─ Print log: name={item[Name]}, age={item[Age]}
@@ -73,20 +73,20 @@ Iterate: dataList
 
 **Access a specific row**:
 \`\`\`
-{dataList[0]}        → first row
-{dataList[0][Name]}  → first row's name
-{dataList[-1]}       → last row
+{dataList[0]}        -> first row
+{dataList[0][Name]}  -> first row's name
+{dataList[-1]}       -> last row
 \`\`\`
 
 ---
 
-## 📋 Data table
+## Data table
 
 The data table is WebRPA's built-in data-collection feature for gathering and managing data during a run.
 
 ### View the data table
 
-Click the **📊 Data table** tab in the bottom log panel.
+Click the **Data table** tab in the bottom log panel.
 
 ### Features
 
@@ -99,7 +99,7 @@ Click the **📊 Data table** tab in the bottom log panel.
 
 ---
 
-## ➕ Data-table modules
+## Data-table modules
 
 ### Add row
 
@@ -170,18 +170,18 @@ Export the data table to a file.
 
 ---
 
-## 🔄 Data-collection workflow
+## Data-collection workflow
 
 ### Basic pattern
 
 \`\`\`
 Open page
-  ↓
+  Down
 Loop (paging)
   ├─ Get element info (set column names to auto-collect)
   ├─ Click next page
   └─ Wait for load
-  ↓
+  Down
 Export table
 \`\`\`
 
@@ -197,9 +197,9 @@ Export table
 1. Open page: product list
 2. Loop 10 times (10 pages)
    ├─ Iterate: product elements
-   │   ├─ Get element info: name → column "Name"
-   │   ├─ Get element info: price → column "Price"
-   │   └─ Get element info: link → column "Link"
+   │   ├─ Get element info: name -> column "Name"
+   │   ├─ Get element info: price -> column "Price"
+   │   └─ Get element info: link -> column "Link"
    ├─ Click next page
    └─ Wait for load
 3. Export table: C:/result.csv
@@ -208,7 +208,7 @@ Export table
 
 ---
 
-## 📤 Export data
+## Export data
 
 ### CSV format
 
@@ -233,15 +233,15 @@ Export table
 
 ---
 
-## 💡 Best practices
+## Best practices
 
 ### Dedup
 
 \`\`\`
 Iterate collected data
   ├─ Condition: already exists?
-  │   ├─ yes → skip
-  │   └─ no → add to the table
+  │   ├─ yes -> skip
+  │   └─ no -> add to the table
 \`\`\`
 
 ### Validation
@@ -249,8 +249,8 @@ Iterate collected data
 \`\`\`
 After getting data
   ├─ Condition: data valid?
-  │   ├─ yes → save
-  │   └─ no → log an error
+  │   ├─ yes -> save
+  │   └─ no -> log an error
 \`\`\`
 
 ### Incremental collection
@@ -271,7 +271,7 @@ After getting data
 
 ---
 
-## 🐛 Common issues
+## Common issues
 
 ### Excel reads garbled text
 
@@ -295,7 +295,7 @@ After getting data
 
 ---
 
-## 🧩 Excel automation modules (read/write .xlsx directly, via openpyxl)
+## Excel automation modules (read/write .xlsx directly, via openpyxl)
 
 Besides "upload asset + Read Excel", WebRPA provides a full set of modules to **operate local .xlsx files directly** (the "Excel Automation" sidebar category) — no upload needed, just a file path, covering almost everything openpyxl can do.
 
@@ -343,10 +343,25 @@ Besides "upload asset + Read Excel", WebRPA provides a full set of modules to **
 
 ---
 
-## ⚡ Data-table performance (large volumes)
+## Data-table performance (large volumes)
 
 The bottom "Data table" uses **virtual scrolling** — no matter how many records (tens of thousands stay smooth), the DOM only renders the visible rows.
 
 - **Show all**: no preview-count limit; shows everything collected.
 - **Live fill**: data is pushed to the table in batches during a run.
-- **Full download**: "Download data" in the top-right exports **all** collected data (not just the visible part), even beyond the preview.`
+- **Full download**: "Download data" in the top-right exports **all** collected data (not just the visible part), even beyond the preview.
+---
+
+## WPS Bitable
+
+A counterpart to Feishu Bitable, integrating the multidimensional table (dbsheet) capability of the Kingsoft WPS open platform (open.wps.cn). Create an app on the WPS open platform first to get the AK / SK.
+
+| Module | Description |
+|------|------|
+| **wps_bitable_write** | Write records into a bitable |
+| **wps_bitable_read** | Read all records from a bitable (auto-paging) |
+
+Common parameters: AK, SK, file ID (fileId), sheet ID (sheetId); baseUrl can be tuned per the platform docs, default https://openapi.wps.cn .
+
+Write supports two data sources: manual fields, or from a variable (a dict writes one record, a list of dicts writes in bulk). Read auto-pages 200 records per page and stores all records into the result variable (default wps_data).
+`

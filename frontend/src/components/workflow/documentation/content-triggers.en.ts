@@ -1,4 +1,4 @@
-export const triggersGuideContentEn = `# ⚡ Triggers Guide
+export const triggersGuideContentEn = `# Triggers Guide
 
 ## Overview
 
@@ -43,7 +43,7 @@ graph TD
 
 ---
 
-## 🌐 Webhook Trigger
+## Webhook Trigger
 
 ### Function
 Wait for an HTTP request to trigger the workflow; useful for receiving notifications or callbacks from external systems.
@@ -86,7 +86,7 @@ curl -X POST http://localhost:YOUR_PORT/api/triggers/webhook/your_id \\
 
 ---
 
-## ⌨️ Hotkey Trigger
+## Hotkey Trigger
 
 ### Function
 Listen for a global hotkey and trigger the workflow when the specified key combination is pressed.
@@ -111,7 +111,7 @@ Listen for a global hotkey and trigger the workflow when the specified key combi
 \`\`\`
 Configuration:
 - Hotkey combination: ctrl+shift+s
-- Subsequent modules: Screenshot → Save image → System notification
+- Subsequent modules: Screenshot -> Save image -> System notification
 
 Effect: Pressing Ctrl+Shift+S immediately takes and saves a screenshot
 \`\`\`
@@ -123,7 +123,7 @@ Effect: Pressing Ctrl+Shift+S immediately takes and saves a screenshot
 
 ---
 
-## 📁 File Monitor Trigger
+## File Monitor Trigger
 
 ### Function
 Monitor changes to a file or folder and trigger the workflow when a specified event is detected.
@@ -163,7 +163,7 @@ Subsequent flow:
 
 ---
 
-## 📧 Email Trigger
+## Email Trigger
 
 ### Function
 Monitor a mailbox and trigger the workflow when a new email meeting the conditions arrives.
@@ -212,19 +212,19 @@ Subsequent flow:
 ### Getting an Authorization Code
 **QQ Mail**:
 1. Log in to the QQ Mail web version
-2. Settings → Account → POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV services
+2. Settings -> Account -> POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV services
 3. Enable the IMAP service
 4. Generate an authorization code
 
 **163 Mail**:
 1. Log in to the 163 Mail web version
-2. Settings → POP3/SMTP/IMAP
+2. Settings -> POP3/SMTP/IMAP
 3. Enable the IMAP service
 4. Set a client authorization password
 
 ---
 
-## 🔄 API Trigger
+## API Trigger
 
 ### Function
 Periodically poll an API endpoint and trigger the workflow when the response meets a specified condition.
@@ -279,7 +279,7 @@ Flow explanation:
 
 ---
 
-## 🖱️ Mouse Trigger
+## Mouse Trigger
 
 ### Function
 Listen for global mouse events and trigger the workflow when a specified mouse action is detected; supports mouse gesture recognition.
@@ -297,41 +297,41 @@ Listen for global mouse events and trigger the workflow when a specified mouse a
   - Middle-button gesture trigger
   - Custom gesture trigger
 - **Move distance threshold**: Effective only for the move type, in pixels
-- **Gesture pattern**: Effective only for gesture trigger types; specifies the gesture to recognize (e.g. ↑, →, ↓←, etc.)
+- **Gesture pattern**: Effective only for gesture trigger types; specifies the gesture to recognize (e.g. Up, ->, Down<-, etc.)
 - **Timeout**: Wait time (0 = wait indefinitely)
 - **Save to variable**: Saves the mouse position and event info
 
 ### Gesture Triggers Explained
 
 **Gesture direction symbols**:
-- ↑: up
-- ↓: down
-- ←: left
-- →: right
+- Up: up
+- Down: down
+- <-: left
+- ->: right
 
 **Gesture types**:
 
 | Type | Description | Example Gesture |
 |------|------|----------|
-| Left-button gesture | Hold the left button and move | ↑, →↓, ↑→↓← |
-| Right-button gesture | Hold the right button and move | ↓, ←→, ↑↓ |
-| Middle-button gesture | Hold the middle button and move | →, ↑↓, ←→ |
-| Custom gesture | No button restriction, only recognizes the movement path | ↑→, ↓←, ↑→↓← |
+| Left-button gesture | Hold the left button and move | Up, ->Down, Up->Down<- |
+| Right-button gesture | Hold the right button and move | Down, <-->, Up/Down |
+| Middle-button gesture | Hold the middle button and move | ->, Up/Down, <--> |
+| Custom gesture | No button restriction, only recognizes the movement path | Up->, Down<-, Up->Down<- |
 
 **Common gesture examples**:
 \`\`\`
 Simple gestures:
-↑     - Swipe up
-↓     - Swipe down
-←     - Swipe left
-→     - Swipe right
+Up     - Swipe up
+Down     - Swipe down
+<-     - Swipe left
+->     - Swipe right
 
 Combined gestures:
-↑↓    - Up then down
-←→    - Left then right
-↑→    - L shape (up then right)
-→↓    - 7 shape (right then down)
-↑→↓←  - Clockwise circle
+Up/Down    - Up then down
+<-->    - Left then right
+Up->    - L shape (up then right)
+->Down    - 7 shape (right then down)
+Up->Down<-  - Clockwise circle
 \`\`\`
 
 ### Use Cases
@@ -357,7 +357,7 @@ Subsequent flow:
 \`\`\`
 Configuration:
 - Trigger type: Right-button gesture trigger
-- Gesture pattern: ↑
+- Gesture pattern: Up
 - Save to variable: gesture_info
 
 Subsequent flow:
@@ -370,21 +370,21 @@ Subsequent flow:
 \`\`\`
 Configuration:
 - Trigger type: Left-button gesture trigger
-- Gesture pattern: ↓→
+- Gesture pattern: Down->
 - Save to variable: gesture_info
 
 Subsequent flow:
-1. After detecting the "↓→" gesture
+1. After detecting the "Down->" gesture
 2. Capture the screen
 3. Save the image
 \`\`\`
 
 ### Example 4: Custom Gesture Combinations
 \`\`\`
-Workflow 1: Right-button gesture ↑ → Open Baidu
-Workflow 2: Right-button gesture ↓ → Open Taobao
-Workflow 3: Right-button gesture ← → Screenshot
-Workflow 4: Right-button gesture → → Close the current page
+Workflow 1: Right-button gesture Up -> Open Baidu
+Workflow 2: Right-button gesture Down -> Open Taobao
+Workflow 3: Right-button gesture <- -> Screenshot
+Workflow 4: Right-button gesture -> -> Close the current page
 \`\`\`
 
 ### How Gesture Recognition Works
@@ -402,7 +402,7 @@ Workflow 4: Right-button gesture → → Close the current page
 
 ---
 
-## 🖼️ Image Trigger
+## Image Trigger
 
 ### Function
 Continuously detect whether a specified image appears on the screen, and trigger the workflow immediately upon detection.
@@ -443,7 +443,7 @@ Subsequent flow:
 
 ---
 
-## 🔊 Sound Trigger
+## Sound Trigger
 
 ### Function
 Listen to the system audio output (speakers) and trigger the workflow when the volume reaches a threshold.
@@ -481,7 +481,7 @@ Subsequent flow:
 
 ---
 
-## 👤 Face Trigger
+## Face Trigger
 
 ### Function
 Monitor the camera feed in real time and automatically trigger the workflow when the target face is detected.
@@ -525,7 +525,7 @@ Subsequent flow:
 
 ---
 
-## 🔄 Child Element Change Trigger
+## Child Element Change Trigger
 
 ### Function
 Monitor changes in the number of child elements of a web element, detecting new content in real time; suitable for live comments, chat messages, dynamic lists, etc.
@@ -589,7 +589,7 @@ When an increase in child elements is detected, the CSS selector of the latest n
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 ### 1. Combine Triggers
 You can use multiple triggers in one workflow to implement complex triggering logic:
@@ -600,9 +600,9 @@ You can use multiple triggers in one workflow to implement complex triggering lo
 ### 2. Error Handling
 It is recommended to add error handling after triggers:
 \`\`\`
-Trigger → Condition check → Normal flow
-              ↓
-           Error handling → Logging → Notification
+Trigger -> Condition check -> Normal flow
+              Down
+           Error handling -> Logging -> Notification
 \`\`\`
 
 ### 3. Timeout Settings
@@ -629,7 +629,7 @@ Trigger → Condition check → Normal flow
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Webhook Trigger
 **Issue**: The Webhook cannot trigger
@@ -682,7 +682,7 @@ Trigger → Condition check → Normal flow
 
 ---
 
-## 📚 Related Docs
+## Related Docs
 
 - [Basic Modules](basic-modules): Learn how to use basic modules
 - [Flow Control](advanced-features): Condition checks and loops
@@ -692,7 +692,7 @@ Trigger → Condition check → Normal flow
 
 ---
 
-## 🎯 Summary
+## Summary
 
 Triggers are the key to automation; choosing the right trigger lets a workflow truly run "automatically":
 

@@ -1,5 +1,5 @@
 // 当前编辑器版本号
-export const CURRENT_VERSION = '2.2.0'
+export const CURRENT_VERSION = '2.3.0'
 
 // 默认工作流仓库地址
 const HUB_URL = 'https://hub.pmhs.top'

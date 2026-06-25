@@ -1,10 +1,10 @@
-export const aiVisionGuideContent = `# 🤖 AI 识别与计算机视觉
+export const aiVisionGuideContent = `# AI 识别与计算机视觉
 
 本章介绍 OCR 文字识别、验证码识别、人脸识别，以及 AI 智能爬虫模块。
 
 ---
 
-## 🔍 OCR 验证码识别（ocr_captcha）
+## OCR 验证码识别（ocr_captcha）
 
 使用 ddddocr 识别网页中常见的图形验证码。
 
@@ -24,7 +24,7 @@ flowchart TD
 
 ---
 
-## 🧩 滑块验证码（slider_captcha）
+## 滑块验证码（slider_captcha）
 
 自动识别并完成滑动验证码（拖动滑块到缺口位置）。
 
@@ -39,7 +39,7 @@ flowchart TD
 
 ---
 
-## 👁️ 图片文字识别（image_ocr）
+## 图片文字识别（image_ocr）
 
 使用 EasyOCR 识别图片中的文字，支持 80+ 种语言。
 
@@ -54,7 +54,7 @@ flowchart TD
 
 ---
 
-## 👤 人脸识别（face_recognition）
+## 人脸识别（face_recognition）
 
 比对两张图片中的人脸是否为同一人。
 
@@ -67,7 +67,7 @@ flowchart TD
 
 ---
 
-## 🤖 AI 智能爬虫（ai_smart_scraper）
+## AI 智能爬虫（ai_smart_scraper）
 
 用自然语言描述要提取的数据，AI 自动分析网页并提取，无需手写选择器。
 
@@ -83,7 +83,7 @@ flowchart TD
 
 ---
 
-## 🎯 AI 元素选择器（ai_element_selector）
+## AI 元素选择器（ai_element_selector）
 
 用自然语言描述页面元素，AI 自动生成 CSS 选择器。
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ---
 
-## 🔥 Firecrawl 爬虫
+## Firecrawl 爬虫
 
 Firecrawl 是专业的 AI 爬虫服务，支持 JS 渲染、智能内容提取。
 
@@ -136,10 +136,41 @@ Firecrawl 是专业的 AI 爬虫服务，支持 JS 渲染、智能内容提取�
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 - **OCR 预处理**：对图片先做「图像锐化」再 OCR，可提高准确率
 - **验证码重试**：识别失败时刷新验证码重试（条件判断 + 循环）
 - **人脸识别阈值**：一般设 0.5-0.6，过小会误判，过大会漏判
 - **AI 爬虫提示词**：提示词越具体效果越好，如「提取 li 标签中的商品名称文字」
+
+---
+
+## AI生成（生图 / 生视频）
+
+调用第三方 AI 接口，由文字描述生成图片或视频。
+
+### AI 生成图片（ai_generate_image）
+
+| 参数 | 说明 |
+|------|------|
+| 提供商 | openai（DALL-E）或 stability |
+| 提示词 | 描述想要的画面，必填 |
+| 反向提示词 | 不希望出现的内容（stability 支持） |
+| 尺寸 / 数量 | 如 1024x1024、生成张数 |
+| API Key / API Base | 对应平台的密钥与接口地址 |
+| 保存路径 | 填写则下载到本地，多张自动加序号 |
+| 结果变量 | 默认 ai_image_urls，保存 URL 或本地路径列表 |
+
+### AI 生成视频（ai_generate_video）
+
+| 参数 | 说明 |
+|------|------|
+| 提供商 | runway 或 custom（自定义接口） |
+| 提示词 | 描述视频内容，必填 |
+| 时长 / 宽高比 / 帧率 | 如 5 秒、16:9、24 fps |
+| API Key / API Base / API URL | 对应平台配置 |
+| 保存路径 | 填写则下载到本地 |
+| 结果变量 | 默认 ai_video_url，保存视频 URL 或本地路径 |
+
+生视频为异步任务，模块会自动轮询任务状态直到完成或超时，无需手动等待。
 `

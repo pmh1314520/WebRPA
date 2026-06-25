@@ -5,7 +5,9 @@
 
 // Tailwind bg-xxx-500 类名 → 对应的 border + bg + text 类名映射
 // 分类的 color 字段格式为 'bg-{color}-{shade}'，我们从中提取颜色名和色阶
-const colorClassMap: Record<string, string> = {
+//
+// 导出以便配色审计测试独立复算「分类 color 经 colorClassMap 映射结果」（Property 7）。
+export const colorClassMap: Record<string, string> = {
   'bg-blue-500': 'border-blue-500 bg-blue-100 text-blue-900',
   'bg-blue-600': 'border-blue-600 bg-blue-100 text-blue-900',
   'bg-blue-800': 'border-blue-800 bg-blue-100 text-blue-900',
@@ -57,6 +59,9 @@ const colorClassMap: Record<string, string> = {
 // 从 ModuleSidebar 导出的 moduleCategories 在此处静态引用
 import { moduleCategories } from './ModuleSidebar'
 
+/** 未登记 color 时，模块节点回退的默认灰色样式类（Property 7 用于断言「不回退灰色」）。 */
+export const DEFAULT_NODE_COLOR_CLASS = 'border-gray-500 bg-gray-100 text-gray-900'
+
 /**
  * 根据 moduleCategories 自动生成颜色映射
  * 每个模块的颜色 = 其所在分类的 color 对应的节点样式类
@@ -65,7 +70,7 @@ function buildModuleColors(): Record<string, string> {
   const colors: Record<string, string> = {}
   
   for (const category of moduleCategories) {
-    const nodeColorClass = colorClassMap[category.color] || 'border-gray-500 bg-gray-100 text-gray-900'
+    const nodeColorClass = colorClassMap[category.color] || DEFAULT_NODE_COLOR_CLASS
     for (const moduleType of category.modules) {
       colors[moduleType as string] = nodeColorClass
     }
@@ -115,4 +120,89 @@ export const moduleHexColors: Record<string, string> = buildModuleHexColors()
 export function getModuleHexColor(moduleType?: string): string {
   if (!moduleType) return '#3b82f6'
   return moduleHexColors[moduleType] || '#3b82f6'
+}
+
+// ============================================================================
+// 配色审计辅助（纯函数，便于测试与回归核验）
+//
+// 配色由 moduleCategories 自动派生：模块只要归属某分类，画布色必然等于分类色。
+// 真正的缺口有三类，下列函数分别核验：
+//   1) 模块未归入任何分类 -> buildModuleColors 不会写入它，画布渲染时落默认灰色；
+//   2) 模块被多个分类重复收录 -> 颜色由最后写入的分类决定，存在歧义；
+//   3) 分类的 color 未在 colorClassMap / tailwindHex 登记 -> 派生时回退默认色。
+// 三者皆空（且全模块都已分类）时，配色与分类色 100% 一致。
+// ============================================================================
+
+/**
+ * 返回未归入任何分类的模块（这些模块在画布上会落到默认灰色）。
+ *
+ * @param allTypes 全部模块 type 的集合（口径：moduleCategories 模块并集 ∪ 后端注册表）。
+ * @returns allTypes 中不属于任何分类 modules 的 type 列表（按传入顺序去重）。
+ */
+export function findUncategorizedModules(allTypes: string[]): string[] {
+  const categorized = new Set<string>()
+  for (const category of moduleCategories) {
+    for (const moduleType of category.modules) {
+      categorized.add(moduleType as string)
+    }
+  }
+
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const type of allTypes) {
+    if (categorized.has(type) || seen.has(type)) continue
+    seen.add(type)
+    result.push(type)
+  }
+  return result
+}
+
+/**
+ * 返回被多个分类重复收录的模块及其所属分类名清单。
+ *
+ * 重复收录会让模块画布色由「最后写入的分类」决定，产生歧义。
+ * @returns 每个出现在 2 个及以上分类中的 type，附带其全部分类名（保持 moduleCategories 顺序）。
+ */
+export function findDuplicateCategorizedModules(): { type: string; categories: string[] }[] {
+  const typeToCategories = new Map<string, string[]>()
+  for (const category of moduleCategories) {
+    for (const moduleType of category.modules) {
+      const type = moduleType as string
+      const list = typeToCategories.get(type)
+      if (list) {
+        list.push(category.name)
+      } else {
+        typeToCategories.set(type, [category.name])
+      }
+    }
+  }
+
+  const result: { type: string; categories: string[] }[] = []
+  for (const [type, categories] of typeToCategories) {
+    if (categories.length > 1) {
+      result.push({ type, categories })
+    }
+  }
+  return result
+}
+
+/**
+ * 返回 color 未在 colorClassMap 或 tailwindHex 中登记的分类颜色。
+ *
+ * 未登记的 color 在派生时会回退到默认灰色（colorClassMap）或默认蓝色（tailwindHex），
+ * 导致画布色与分类色不一致。
+ * @returns 去重后的未登记 color 字符串列表（保持首次出现顺序）。
+ */
+export function findUnmappedCategoryColors(): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const category of moduleCategories) {
+    const color = category.color
+    if (seen.has(color)) continue
+    seen.add(color)
+    if (!(color in colorClassMap) || !(color in tailwindHex)) {
+      result.push(color)
+    }
+  }
+  return result
 }

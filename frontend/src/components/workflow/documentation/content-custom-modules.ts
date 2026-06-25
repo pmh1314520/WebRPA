@@ -1,19 +1,19 @@
-export const customModulesGuideContent = `# 🧩 自定义模块
+export const customModulesGuideContent = `# 自定义模块
 
 自定义模块允许你扩展WebRPA的功能，创建可复用的模块。
 
 ---
 
-## 📋 功能概述
+## 功能概述
 
 ### 什么是自定义模块？
 
 自定义模块是用户创建的可复用工作流片段，可以：
-- 📦 封装复杂逻辑
-- 🔄 在多个工作流中复用
-- 🎨 自定义图标和颜色
-- ⚙️ 配置输入输出参数
-- 📝 添加说明文档
+- 封装复杂逻辑
+- 在多个工作流中复用
+- 自定义图标和颜色
+- 配置输入输出参数
+- 添加说明文档
 
 ### 使用场景
 
@@ -36,7 +36,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 创建自定义模块
 
@@ -58,7 +58,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 \`\`\`yaml
 模块名称: 登录淘宝
 模块描述: 自动登录淘宝账号
-图标: 🔐
+图标: 
 颜色: #FF6B00
 
 输入参数:
@@ -70,8 +70,8 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 工作流:
   1. 打开页面: https://login.taobao.com
-  2. 输入文本: #username → {username}
-  3. 输入文本: #password → {password}
+  2. 输入文本: #username -> {username}
+  3. 输入文本: #password -> {password}
   4. 点击元素: #submit
   5. 等待元素: .user-info
   6. 设置变量: login_success = true
@@ -79,7 +79,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 🎨 模块配置
+## 模块配置
 
 ### 基本信息
 
@@ -96,12 +96,12 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 **图标选择**：
 \`\`\`
 常用图标:
-🔐 登录相关
-📊 数据处理
-📧 邮件相关
-💰 支付相关
-📦 物流相关
-🔍 搜索相关
+登录相关
+数据处理
+邮件相关
+支付相关
+物流相关
+搜索相关
 \`\`\`
 
 **颜色设置**：
@@ -168,7 +168,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 🔧 模块开发
+## 模块开发
 
 ### 工作流设计
 
@@ -194,8 +194,8 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 流程:
 1. 条件判断: {raw_data} 是否为空
-   └─ 真 → 设置变量: clean_data = []
-   └─ 假 → 继续处理
+   └─ 真 -> 设置变量: clean_data = []
+   └─ 假 -> 继续处理
 
 2. 遍历列表: {raw_data}
    └─ 字符串替换: 去除空格
@@ -211,12 +211,12 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 **添加错误处理**：
 \`\`\`
 1. 条件判断: 检查关键数据
-   └─ 假 → 设置变量: error_message = "数据无效"
-   └─ 假 → 跳出循环
+   └─ 假 -> 设置变量: error_message = "数据无效"
+   └─ 假 -> 跳出循环
 
 2. 最后添加:
    条件判断: {error_message} 不为空
-   └─ 真 → 打印日志: 错误={error_message}
+   └─ 真 -> 打印日志: 错误={error_message}
 \`\`\`
 
 ### 日志记录
@@ -231,7 +231,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 📦 模块管理
+## 模块管理
 
 ### 模块列表
 
@@ -269,15 +269,15 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 **使用标签分类**：
 \`\`\`
-登录类: 🔐
-数据类: 📊
-通知类: 📧
-支付类: 💰
+登录类: 
+数据类: 
+通知类: 
+支付类: 
 \`\`\`
 
 ---
 
-## 🎯 使用自定义模块
+## 使用自定义模块
 
 ### 添加到工作流
 
@@ -307,21 +307,21 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 **使用输出参数**：
 \`\`\`
-登录淘宝 → 条件判断
+登录淘宝 -> 条件判断
 条件: {login_success} == true
-  └─ 真 → 继续后续操作
-  └─ 假 → 发送失败通知
+  └─ 真 -> 继续后续操作
+  └─ 假 -> 发送失败通知
 \`\`\`
 
 ---
 
-## 💡 最佳实践
+## 最佳实践
 
 ### 1. 单一职责
 
 \`\`\`
-❌ 不推荐: 一个模块做太多事情
-✅ 推荐: 每个模块只做一件事
+[×] 不推荐: 一个模块做太多事情
+[√] 推荐: 每个模块只做一件事
 
 示例:
 - 登录模块：只负责登录
@@ -332,12 +332,12 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 ### 2. 参数化设计
 
 \`\`\`
-❌ 不推荐: 硬编码配置
-✅ 推荐: 使用参数
+[×] 不推荐: 硬编码配置
+[√] 推荐: 使用参数
 
 示例:
-❌ 打开页面: https://example.com
-✅ 打开页面: {base_url}
+[×] 打开页面: https://example.com
+[√] 打开页面: {base_url}
 \`\`\`
 
 ### 3. 完善的文档
@@ -371,18 +371,18 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 🔄 模块更新
+## 模块更新
 
 ### 更新策略
 
 **向后兼容**：
 \`\`\`
-✅ 可以做:
+[√] 可以做:
 - 添加新参数（带默认值）
 - 优化内部逻辑
 - 修复bug
 
-❌ 避免做:
+[×] 避免做:
 - 删除参数
 - 修改参数类型
 - 改变输出格式
@@ -398,13 +398,13 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 📚 实战案例
+## 实战案例
 
 ### 案例1：通用登录模块
 
 \`\`\`yaml
 模块名称: 通用网站登录
-图标: 🔐
+图标: 
 颜色: #FF6B00
 
 输入参数:
@@ -420,8 +420,8 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 工作流:
   1. 打开页面: {login_url}
-  2. 输入文本: {username_selector} → {username}
-  3. 输入文本: {password_selector} → {password}
+  2. 输入文本: {username_selector} -> {username}
+  3. 输入文本: {password_selector} -> {password}
   4. 点击元素: {submit_selector}
   5. 等待: 3秒
   6. 设置变量: login_success = true
@@ -431,7 +431,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 \`\`\`yaml
 模块名称: 数据格式验证
-图标: ✅
+图标: [√]
 颜色: #4CAF50
 
 输入参数:
@@ -447,16 +447,16 @@ export const customModulesGuideContent = `# 🧩 自定义模块
   2. 设置变量: error_message = ""
   3. 遍历列表: {required_fields}
      └─ 条件判断: {data[当前字段]} 为空
-        └─ 真 → 设置变量: is_valid = false
-        └─ 真 → 设置变量: error_message = "缺少字段: {当前字段}"
-        └─ 真 → 跳出循环
+        └─ 真 -> 设置变量: is_valid = false
+        └─ 真 -> 设置变量: error_message = "缺少字段: {当前字段}"
+        └─ 真 -> 跳出循环
 \`\`\`
 
 ### 案例3：通知发送模块
 
 \`\`\`yaml
 模块名称: 多渠道通知
-图标: 📢
+图标: 
 颜色: #2196F3
 
 输入参数:
@@ -472,17 +472,17 @@ export const customModulesGuideContent = `# 🧩 自定义模块
   1. 设置变量: failed_channels = []
   2. 遍历列表: {channels}
      └─ 条件判断: {当前渠道} == "email"
-        └─ 真 → 发送邮件
+        └─ 真 -> 发送邮件
      └─ 条件判断: {当前渠道} == "wechat"
-        └─ 真 → 企业微信通知
+        └─ 真 -> 企业微信通知
      └─ 条件判断: {当前渠道} == "dingtalk"
-        └─ 真 → 钉钉通知
+        └─ 真 -> 钉钉通知
   3. 设置变量: send_success = {failed_channels.length} == 0
 \`\`\`
 
 ---
 
-## 🐛 常见问题
+## 常见问题
 
 ### 模块找不到
 
@@ -517,22 +517,22 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 🌐 在线社区（发布 / 浏览 / 下载）
+## 在线社区（发布 / 浏览 / 下载）
 
 把你封装的模块分享给其他用户，也可以一键下载别人分享的模块到本地。
 
 ### 入口
 
-顶栏「工作流仓库」→「模块」标签 → 上方「本地模块 / 在线社区」切换。
+顶栏「工作流仓库」->「模块」标签 -> 上方「本地模块 / 在线社区」切换。
 
 ### 如何发布自己的模块
 
 \`\`\`
 1. 先有一个本地自定义模块
-   - 在画布选中一段节点 → 封装为自定义模块（填名称/图标/参数/输出）
-2. 打开「工作流仓库 → 模块 → 本地模块」
+   - 在画布选中一段节点 -> 封装为自定义模块（填名称/图标/参数/输出）
+2. 打开「工作流仓库 -> 模块 -> 本地模块」
 3. 在模块卡片上点紫色「发布」按钮
-4. 弹层里填写作者署名 → 「确认发布」
+4. 弹层里填写作者署名 -> 「确认发布」
 \`\`\`
 
 > 内容相同的模块由你本人重复发布会幂等返回（提示"已是最新"），不会产生重复。
@@ -543,7 +543,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 切到「在线社区」：
 - 搜索 / 分类 / 排序（最新 / 最热 / 下载多）
 - 「全部模块」浏览所有人分享的；「我发布的」管理自己的
-- 卡片点「下载到本地」→ 自动导入到本地模块仓库，立即可用
+- 卡片点「下载到本地」-> 自动导入到本地模块仓库，立即可用
 \`\`\`
 
 ### 评论 / 评分 / 举报
@@ -568,7 +568,7 @@ export const customModulesGuideContent = `# 🧩 自定义模块
 
 ---
 
-## 🔗 相关文档
+## 相关文档
 
 - [变量系统详解](variables-guide) - 参数传递
 - [高级功能](advanced-features) - 子流程

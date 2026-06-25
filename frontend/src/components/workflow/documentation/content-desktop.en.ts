@@ -1,4 +1,4 @@
-export const desktopGuideContentEn = `# 🖥️ Desktop App Automation
+export const desktopGuideContentEn = `# Desktop App Automation
 
 This chapter explains how to use WebRPA to automate Windows desktop applications (such as Notepad, Excel, browsers, custom software, etc.), implemented based on Windows UI Automation technology.
 
@@ -17,7 +17,7 @@ There are **26** desktop app automation modules in total, supporting:
 
 ---
 
-## 🚀 App Management
+## App Management
 
 ### Launch Desktop App (desktop_app_start)
 
@@ -35,7 +35,7 @@ Launch a desktop program and wait for it to fully load.
 **Example workflow**:
 
 \`\`\`
-Launch desktop app → Program path: C:\\Windows\\notepad.exe → Result variable: notepad_pid
+Launch desktop app -> Program path: C:\\Windows\\notepad.exe -> Result variable: notepad_pid
 \`\`\`
 
 ---
@@ -88,15 +88,15 @@ Wait for the application to become responsive (no longer spinning), good for slo
 
 ---
 
-## 🪟 Window Management
+## Window Management
 
 ### Activate Window (desktop_window_activate)
 
 Bring the specified window to the foreground and give it focus.
 
 \`\`\`
-Connect to desktop app → App variable: app
-Activate window → App variable: {app}
+Connect to desktop app -> App variable: app
+Activate window -> App variable: {app}
 \`\`\`
 
 ---
@@ -157,7 +157,7 @@ Take a screenshot of the specified window and save it as an image file.
 
 ---
 
-## 🎛️ Control Operations
+## Control Operations
 
 ### Find Control (desktop_find_control)
 
@@ -229,8 +229,8 @@ Click buttons, links, and other clickable controls.
 **Example** (click the "OK" button):
 
 \`\`\`
-Find control → Control name: OK, Control type: Button → Result variable: btn_ok
-Click control → Control variable: {btn_ok}
+Find control -> Control name: OK, Control type: Button -> Result variable: btn_ok
+Click control -> Control variable: {btn_ok}
 \`\`\`
 
 ---
@@ -320,9 +320,9 @@ Click a menu item in the app's menu bar; supports multi-level menus.
 **Example** (Save As in Notepad):
 
 \`\`\`
-Connect to desktop app → Process name: notepad → Result variable: app
-Activate window → App variable: {app}
-Click menu → App variable: {app}, Menu path: File>Save As
+Connect to desktop app -> Process name: notepad -> Result variable: app
+Activate window -> App variable: {app}
+Click menu -> App variable: {app}, Menu path: File>Save As
 \`\`\`
 
 ---
@@ -387,7 +387,7 @@ Automatically handle pop-up dialogs (confirmation boxes, warning boxes, file sav
 
 ---
 
-## 📋 Full Example: Automatically Fill in a Form
+## Full Example: Automatically Fill in a Form
 
 The following example shows how to automatically open Notepad, enter content, and save:
 
@@ -404,18 +404,18 @@ flowchart TD
 
 **Full configuration**:
 
-1. **Launch desktop app** → Program path: \`C:\\Windows\\notepad.exe\` → Result variable: \`app\`
-2. **Wait for app ready** → App variable: \`{app}\` → Timeout: \`10\`
-3. **Activate window** → App variable: \`{app}\`
-4. **Find control** → Control type: \`Edit\` → Result variable: \`text_box\`
-5. **Input text** → Control variable: \`{text_box}\` → Content: \`Hello WebRPA!\`
-6. **Send keys** → App variable: \`{app}\` → Keys: \`{CTRL}s\`
-7. **Handle dialog** → Operation: Click OK
-8. **Close desktop app** → App variable: \`{app}\`
+1. **Launch desktop app** -> Program path: \`C:\\Windows\\notepad.exe\` -> Result variable: \`app\`
+2. **Wait for app ready** -> App variable: \`{app}\` -> Timeout: \`10\`
+3. **Activate window** -> App variable: \`{app}\`
+4. **Find control** -> Control type: \`Edit\` -> Result variable: \`text_box\`
+5. **Input text** -> Control variable: \`{text_box}\` -> Content: \`Hello WebRPA!\`
+6. **Send keys** -> App variable: \`{app}\` -> Keys: \`{CTRL}s\`
+7. **Handle dialog** -> Operation: Click OK
+8. **Close desktop app** -> App variable: \`{app}\`
 
 ---
 
-## 💡 Tips
+## Tips
 
 ### How to Get a Control's Automation ID
 
@@ -444,7 +444,7 @@ A: Some custom dropdowns may need to be clicked open first, then find and click 
 
 ---
 
-## 🌟 Yingdao-class Desktop Enhancement Modules (added in v1.32+)
+## Yingdao-class Desktop Enhancement Modules (added in v1.32+)
 
 For complex desktop app scenarios, 8 new professional modules are added, greatly improving accuracy and efficiency.
 
@@ -562,14 +562,14 @@ Good for triggering common shortcuts like Ctrl+S, Ctrl+C, Alt+F4.
 
 ---
 
-## 🎯 App Type Decision Tree
+## App Type Decision Tree
 
 Different desktop apps have different underlying rendering mechanisms, so their automation strategies differ:
 
 | Type | App Examples | Recommended Flow |
 |------|---------|---------|
 | **A Native apps** | Notepad, Excel, Windows system software | \`desktop_find_control_smart\` + \`desktop_click_control\` + \`desktop_input_control\` |
-| **B Electron / Flutter** | VSCode, QQ, WeChat, Discord | Use UIA to find the window shell → use \`click_text\` / \`click_image\` / \`desktop_hotkey\` |
+| **B Electron / Flutter** | VSCode, QQ, WeChat, Discord | Use UIA to find the window shell -> use \`click_text\` / \`click_image\` / \`desktop_hotkey\` |
 | **C Game / Canvas** | Full-screen games, custom rendering | \`click_image\` + \`click_text\` + \`real_mouse_click\` + \`desktop_hotkey\` |
 
 How to judge: Use the "Desktop Element Selector" to pick the main area; if you see only one root control and cannot see the inner buttons, it is type B or C, and you must fall back to an image/OCR/hotkey strategy.

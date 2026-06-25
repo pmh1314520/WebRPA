@@ -1,4 +1,4 @@
-export const notifyGuideContent = `# 📢 多渠道通知
+export const notifyGuideContent = `# 多渠道通知
 
 本章介绍 WebRPA 支持的 17 种通知渠道，让工作流在完成、出错或达到特定条件时，自动向你发送通知。
 
@@ -30,12 +30,12 @@ export const notifyGuideContent = `# 📢 多渠道通知
 
 ---
 
-## 💬 Discord 通知（notify_discord）
+## Discord 通知（notify_discord）
 
 通过 Discord Webhook 发送消息到频道。
 
 **获取 Webhook URL**：
-1. 打开 Discord 频道设置 → 整合 → Webhook
+1. 打开 Discord 频道设置 -> 整合 -> Webhook
 2. 创建 Webhook，复制 URL
 
 **配置项**：
@@ -49,7 +49,7 @@ export const notifyGuideContent = `# 📢 多渠道通知
 
 ---
 
-## ✈️ Telegram 通知（notify_telegram）
+## Telegram 通知（notify_telegram）
 
 通过 Telegram Bot 发送消息。
 
@@ -73,13 +73,13 @@ export const notifyGuideContent = `# 📢 多渠道通知
 
 ---
 
-## 🔔 钉钉通知（notify_dingtalk）
+## 钉钉通知（notify_dingtalk）
 
 通过钉钉自定义机器人发送消息。
 
 **获取 Webhook**：
-1. 钉钉群 → 设置 → 智能群助手 → 添加机器人
-2. 选择「自定义」→ 复制 Webhook 地址
+1. 钉钉群 -> 设置 -> 智能群助手 -> 添加机器人
+2. 选择「自定义」-> 复制 Webhook 地址
 
 **配置项**：
 
@@ -94,12 +94,12 @@ export const notifyGuideContent = `# 📢 多渠道通知
 
 ---
 
-## 💼 企业微信通知（notify_wecom）
+## 企业微信通知（notify_wecom）
 
 通过企业微信群机器人发送消息。
 
 **获取 Webhook**：
-1. 企业微信群 → 添加群机器人
+1. 企业微信群 -> 添加群机器人
 2. 复制 Webhook 地址
 
 **配置项**：
@@ -113,12 +113,12 @@ export const notifyGuideContent = `# 📢 多渠道通知
 
 ---
 
-## 🚀 飞书通知（notify_feishu）
+## 飞书通知（notify_feishu）
 
 通过飞书群机器人发送消息。
 
 **获取 Webhook**：
-1. 飞书群 → 群设置 → 群机器人 → 添加自定义机器人
+1. 飞书群 -> 群设置 -> 群机器人 -> 添加自定义机器人
 2. 复制 Webhook 地址
 
 **配置项**：
@@ -132,7 +132,7 @@ export const notifyGuideContent = `# 📢 多渠道通知
 
 ---
 
-## 🍎 Bark 通知（notify_bark）
+## Bark 通知（notify_bark）
 
 iOS 设备专用推送，需先安装 Bark App。
 
@@ -148,7 +148,7 @@ iOS 设备专用推送，需先安装 Bark App。
 
 ---
 
-## 💬 Slack 通知（notify_slack）
+## Slack 通知（notify_slack）
 
 通过 Slack Incoming Webhook 发送消息。
 
@@ -163,7 +163,7 @@ iOS 设备专用推送，需先安装 Bark App。
 
 ---
 
-## 📨 Server 酱（notify_serverchan）
+## Server 酱（notify_serverchan）
 
 将消息推送到微信，需在 [sct.ftqq.com](https://sct.ftqq.com) 注册获取 SendKey。
 
@@ -177,7 +177,7 @@ iOS 设备专用推送，需先安装 Bark App。
 
 ---
 
-## 📬 PushPlus（notify_pushplus）
+## PushPlus（notify_pushplus）
 
 推送到微信，需在 [pushplus.plus](https://www.pushplus.plus) 注册获取 token。
 
@@ -192,7 +192,7 @@ iOS 设备专用推送，需先安装 Bark App。
 
 ---
 
-## 🔗 自定义 Webhook（notify_webhook）
+## 自定义 Webhook（notify_webhook）
 
 向任意 HTTP 接口发送 POST 请求，最灵活的通知方式。
 
@@ -207,7 +207,7 @@ iOS 设备专用推送，需先安装 Bark App。
 
 ---
 
-## 📡 Ntfy（notify_ntfy）
+## Ntfy（notify_ntfy）
 
 轻量级推送服务，支持自建和公共服务器（[ntfy.sh](https://ntfy.sh)）。
 
@@ -236,7 +236,7 @@ iOS 设备专用推送，需先安装 Bark App。
 
 ---
 
-## 📋 实战示例：工作流完成后发送通知
+## 实战示例：工作流完成后发送通知
 
 \`\`\`mermaid
 flowchart TD
@@ -254,9 +254,9 @@ flowchart TD
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
-- **全局配置**：在「全局配置」→「通知」中预设常用渠道的参数，避免每个模块重复填写
+- **全局配置**：在「全局配置」->「通知」中预设常用渠道的参数，避免每个模块重复填写
 - **变量引用**：消息内容中可用 \`{变量名}\` 引用工作流变量，实现动态消息
 - **多渠道并发**：可同时使用多个通知模块，一次事件通知多个渠道
 - **防通知刷屏**：配合条件判断，只在特定条件满足时发送通知

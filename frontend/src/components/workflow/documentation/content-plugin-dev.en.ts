@@ -1,8 +1,8 @@
-export const pluginDevContentEn = `# 🧩 Plugin Market & Extension Development
+export const pluginDevContentEn = `# Plugin Market & Extension Development
 
 WebRPA exposes a plugin extension capability: third-party developers can package "automation for a specific site/scenario" into a plugin and publish it to the plugin market for everyone to install with one click. Once installed, the modules a plugin contributes appear directly in the editor sidebar and work like built-in modules.
 
-> Entry: top bar "Workflow Hub" → "Plugins" tab.
+> Entry: top bar "Workflow Hub" -> "Plugins" tab.
 
 ---
 
@@ -31,7 +31,7 @@ WebRPA exposes a plugin extension capability: third-party developers can package
       "name": "douyin_publish",
       "display_name": "Douyin - Publish video",
       "description": "Upload and publish a video",
-      "icon": "🎬",
+      "icon": "",
       "color": "#fe2c55",
       "parameters": [
         { "name": "videoPath", "label": "Video path", "type": "string", "required": true }
@@ -43,13 +43,13 @@ WebRPA exposes a plugin extension capability: third-party developers can package
 }
 \`\`\`
 
-**Where does modules[].workflow come from?** Easiest: build the feature as a workflow in the editor → wrap it as a "custom module" → use the module card's "Export" to get JSON → fill its \`parameters / outputs / workflow\` into the plugin package.
+**Where does modules[].workflow come from?** Easiest: build the feature as a workflow in the editor -> wrap it as a "custom module" -> use the module card's "Export" to get JSON -> fill its \`parameters / outputs / workflow\` into the plugin package.
 
 ---
 
 ## 3. Install & debug
 
-1. Open "Workflow Hub → Plugins".
+1. Open "Workflow Hub -> Plugins".
 2. Click "Install from file" and choose your \`plugin.json\`.
 3. After installing, the modules appear in the sidebar (category tag \`plugin:<plugin id>\`) and can be dragged in.
 4. In "Installed" you can enable / disable / uninstall.

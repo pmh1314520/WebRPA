@@ -1,20 +1,20 @@
-export const scheduledTasksGuideContentEn = `# ⏰ Scheduled Tasks
+export const scheduledTasksGuideContentEn = `# Scheduled Tasks
 
 The scheduled-task system runs workflows automatically without manual triggering.
 
 ---
 
-## 📋 Overview
+## Overview
 
-- ⏰ **Scheduled runs**: run at a set time or interval
-- 🔄 **Repeat**: repeat a set number of times
-- 🎯 **Multiple triggers**: time, hotkey, webhook, file watch, email
-- 📊 **Run logs**: record details of each run
-- 🎛️ **Task management**: enable/disable, run manually, force stop
+- **Scheduled runs**: run at a set time or interval
+- **Repeat**: repeat a set number of times
+- **Multiple triggers**: time, hotkey, webhook, file watch, email
+- **Run logs**: record details of each run
+- **Task management**: enable/disable, run manually, force stop
 
 ---
 
-## 🚀 Quick start
+## Quick start
 
 ### Create a task
 
@@ -37,7 +37,7 @@ Run time: daily 09:00
 
 ---
 
-## ⚡ Trigger types
+## Trigger types
 
 ### 1. Time trigger
 
@@ -164,7 +164,7 @@ Value: ready
 
 ---
 
-## 🔄 Repeat
+## Repeat
 
 \`\`\`yaml
 Enable repeat: yes
@@ -196,11 +196,11 @@ Repeat interval: 300s
 
 ---
 
-## 🎛️ Task management
+## Task management
 
 ### Task list
 
-Shows all tasks and their status: ✅ enabled, ⏸️ disabled, ▶️ running, ⏱️ next run time.
+Shows all tasks and their status: [√] enabled, disabled, running, next run time.
 
 ### Task actions
 
@@ -212,7 +212,7 @@ Shows all tasks and their status: ✅ enabled, ⏸️ disabled, ▶️ running, 
 
 ---
 
-## 📊 Run logs
+## Run logs
 
 ### Log info
 
@@ -232,7 +232,7 @@ Each run records: trigger time, trigger type, status (success/failure/stopped), 
 
 ---
 
-## ⚙️ Advanced
+## Advanced
 
 ### Headless mode
 
@@ -261,13 +261,13 @@ Runs automatically after WebRPA starts, with an optional delay — good for run-
 
 ---
 
-## 💡 Best practices
+## Best practices
 
 ### 1. Reasonable frequency
 
 \`\`\`
-❌ Not recommended: scrape every minute
-✅ Recommended: hourly or daily
+[×] Not recommended: scrape every minute
+[√] Recommended: hourly or daily
 
 Why:
 - Avoid being banned for frequent requests
@@ -313,14 +313,14 @@ Notes:
 
 ---
 
-## 🔔 Run notifications (proactive failure/success alerts)
+## Run notifications (proactive failure/success alerts)
 
 After a task finishes, it can push the result to you so you know about failures immediately.
 
 ### Where to configure
 
 \`\`\`
-New / edit scheduled-task dialog → bottom "Run notifications" area:
+New / edit scheduled-task dialog -> bottom "Run notifications" area:
 - Check "Notify on failure" and/or "Notify on success"
 - Click the button to add one or more channels
 \`\`\`
@@ -348,7 +348,7 @@ The backend decrypts and injects at runtime; no plaintext stays in the task conf
 
 ---
 
-## 🐛 Common issues
+## Common issues
 
 ### Task doesn't run
 
@@ -384,7 +384,7 @@ Already auto-fixed:
 
 ---
 
-## 📚 Practical cases
+## Practical cases
 
 ### Case 1: daily data collection
 
@@ -431,7 +431,7 @@ Sender filter: *@customer.com
 
 ---
 
-## 🔗 Related docs
+## Related docs
 
 - [Triggers Guide](triggers-guide) - detailed trigger config
 - [Debugging & Errors](debug-guide) - task debugging tips

@@ -1,10 +1,10 @@
-export const networkGuideContent = `# 🌐 网络请求与抓包
+export const networkGuideContent = `# 网络请求与抓包
 
 本章介绍 HTTP 请求、Webhook 请求、网络抓包等网络相关模块。
 
 ---
 
-## 🌐 HTTP 请求（api_request）
+## HTTP 请求（api_request）
 
 发送 HTTP/HTTPS 请求，支持 GET、POST、PUT、DELETE 等方法，是与外部 API 交互的核心模块。
 
@@ -24,19 +24,19 @@ export const networkGuideContent = `# 🌐 网络请求与抓包
 **示例**（GET 请求获取数据）：
 
 \`\`\`
-HTTP请求 → 方法: GET, URL: https://httpbin.org/get → 结果变量: resp
-JSON解析 → 输入: {resp} → 结果变量: data
-打印日志 → {data}
+HTTP请求 -> 方法: GET, URL: https://httpbin.org/get -> 结果变量: resp
+JSON解析 -> 输入: {resp} -> 结果变量: data
+打印日志 -> {data}
 \`\`\`
 
 **示例**（POST 请求提交表单）：
 
 \`\`\`
-HTTP请求 → 方法: POST
+HTTP请求 -> 方法: POST
           URL: https://api.example.com/login
           请求头: {"Content-Type": "application/json"}
           请求体: {"username": "{user}", "password": "{pwd}"}
-          → 结果变量: login_resp
+          -> 结果变量: login_resp
 \`\`\`
 
 **使用 Cookie/Token 认证**：
@@ -51,7 +51,7 @@ HTTP请求 → 方法: POST
 
 ---
 
-## 📨 发送邮件（send_email）
+## 发送邮件（send_email）
 
 通过 SMTP 发送电子邮件，支持 HTML 内容和附件。
 
@@ -77,13 +77,13 @@ HTTP请求 → 方法: POST
 | Gmail | smtp.gmail.com | 587 |
 | Outlook | smtp.office365.com | 587 |
 
-> **获取 QQ 邮箱授权码**：QQ邮箱 → 设置 → 账户 → 开启 SMTP 服务 → 生成授权码
+> **获取 QQ 邮箱授权码**：QQ邮箱 -> 设置 -> 账户 -> 开启 SMTP 服务 -> 生成授权码
 
-**全局配置**：在「全局配置」→「邮件」中预设发件人信息，避免每次重复填写。
+**全局配置**：在「全局配置」->「邮件」中预设发件人信息，避免每次重复填写。
 
 ---
 
-## 🔗 Webhook 请求（webhook_request）
+## Webhook 请求（webhook_request）
 
 向指定 URL 发送 Webhook 通知，常用于与第三方系统集成。
 
@@ -99,7 +99,7 @@ HTTP请求 → 方法: POST
 
 ---
 
-## 🕵️ 网络抓包（network_capture）
+## 网络抓包（network_capture）
 
 拦截并分析浏览器的网络请求，提取 API 返回的数据，无需解析 HTML。
 
@@ -124,7 +124,7 @@ flowchart TD
 
 ---
 
-## 📡 网络监听（network_monitor_start/wait/stop）
+## 网络监听（network_monitor_start/wait/stop）
 
 持续监听网络请求，适合需要长时间监控的场景。
 
@@ -149,16 +149,16 @@ flowchart TD
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 ### 处理 JSON 响应
 
 HTTP 请求返回的是字符串，用「JSON 解析」模块转为字典后再访问字段：
 
 \`\`\`
-HTTP请求 → 结果变量: resp_str
-JSON解析 → 输入: {resp_str} → 结果变量: resp_data
-设置变量 → variableName: user_id, 值: {resp_data["data"]["id"]}
+HTTP请求 -> 结果变量: resp_str
+JSON解析 -> 输入: {resp_str} -> 结果变量: resp_data
+设置变量 -> variableName: user_id, 值: {resp_data["data"]["id"]}
 \`\`\`
 
 ### 接口认证
@@ -172,7 +172,7 @@ JSON解析 → 输入: {resp_str} → 结果变量: resp_data
 检查状态码变量，200 系列表示成功：
 
 \`\`\`
-条件判断 → {status_code} == 200 → 成功路径
-                              → 其他 → 失败路径（发通知告警）
+条件判断 -> {status_code} == 200 -> 成功路径
+                              -> 其他 -> 失败路径（发通知告警）
 \`\`\`
 `

@@ -1,14 +1,14 @@
-export const tipsTricksContentEn = `# 💡 Tips & Tricks
+export const tipsTricksContentEn = `# Tips & Tricks
 
 This chapter gathers various practical tips to help you use WebRPA more efficiently.
 
 ---
 
-## 🎯 Element Selection Tips
+## Element Selection Tips
 
 ### Visual Selection
 
-**Ctrl+Click** the selector button 🎯:
+**Ctrl+Click** the selector button:
 - Enter visual selection mode
 - Click the target element on the web page
 - Automatically generate a CSS selector
@@ -77,7 +77,7 @@ Some websites have dynamically generated class names (such as \`class="css-1a2b3
 
 ---
 
-## ⏱️ Stability Tips
+## Stability Tips
 
 ### Use Waits Sensibly
 
@@ -153,7 +153,7 @@ If the default timeout is not enough, you can adjust it manually in the module's
 
 ---
 
-## 🔧 Debugging Tips
+## Debugging Tips
 
 ### Use Print Logs
 
@@ -191,7 +191,7 @@ Print log: === Done ===
 
 ---
 
-## 📊 Data Collection Tips
+## Data Collection Tips
 
 ### Batch Collection Flow
 
@@ -209,8 +209,8 @@ Print log: === Done ===
 Loop
   ├─ Collect the current page
   ├─ Condition check: is there a next page?
-  │   ├─ Yes → Click next page, wait for load
-  │   └─ No → Break out of the loop
+  │   ├─ Yes -> Click next page, wait for load
+  │   └─ No -> Break out of the loop
 \`\`\`
 
 **Method 2: Modify the URL parameter**
@@ -230,8 +230,8 @@ Loop
   ├─ Wait 2 seconds
   ├─ Get the new count
   ├─ Condition check: new count > old count?
-  │   ├─ Yes → Keep scrolling
-  │   └─ No → Reached the bottom, break out of the loop
+  │   ├─ Yes -> Keep scrolling
+  │   └─ No -> Reached the bottom, break out of the loop
 \`\`\`
 
 ### Data Cleaning
@@ -254,7 +254,7 @@ return date.toISOString().split('T')[0];
 
 ---
 
-## ⚙️ Global Configuration Explained
+## Global Configuration Explained
 
 Global configuration lets you set default values for commonly used modules to improve efficiency.
 
@@ -378,7 +378,7 @@ Set default parameters for the QQ bot and Feishu automation:
 
 ---
 
-## 📁 Workflow Management
+## Workflow Management
 
 ### Workflow Repository
 
@@ -419,7 +419,7 @@ WebRPA provides a public workflow repository where you can:
 ### File Path Selection
 
 In input boxes that require a file or folder path:
-- Click the 📁 button on the right of the input box
+- Click the button on the right of the input box
 - Select directly through Windows Explorer
 - Supported modules: upload file, download file, save image, web screenshot, export table, etc.
 
@@ -455,7 +455,7 @@ In input boxes that require a file or folder path:
 
 ---
 
-## 🚀 Performance Optimization
+## Performance Optimization
 
 ### Reduce Wait Time
 
@@ -484,7 +484,7 @@ Enable **headless mode** in global configuration:
 
 ---
 
-## 🔐 Security Recommendations
+## Security Recommendations
 
 ### Handling Sensitive Information
 
@@ -513,7 +513,7 @@ Enable **headless mode** in global configuration:
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Shortcut | Function |
 |--------|------|
@@ -558,31 +558,31 @@ Use **Ctrl+F** to quickly find modules on the canvas:
 
 ---
 
-## 🆘 FAQ
+## FAQ
 
 ### Q: Why can't the selector find the element?
 
 **A**: Possible causes:
-1. The selector is wrong → confirm with browser debugging
-2. The element has not loaded → add a wait module
-3. The element is inside an iframe → switch to the iframe first
-4. The element is generated dynamically → use a more stable selector
+1. The selector is wrong -> confirm with browser debugging
+2. The element has not loaded -> add a wait module
+3. The element is inside an iframe -> switch to the iframe first
+4. The element is generated dynamically -> use a more stable selector
 
 ### Q: Why does the click do nothing?
 
 **A**: Possible causes:
-1. The element is covered by another element → scroll to the element or close the cover
-2. The element is not clickable → wait until the element is clickable
-3. You need to hover first → add a hover module
-4. It is a fake button → try clicking via JS
+1. The element is covered by another element -> scroll to the element or close the cover
+2. The element is not clickable -> wait until the element is clickable
+3. You need to hover first -> add a hover module
+4. It is a fake button -> try clicking via JS
 
 ### Q: Why is the collected data incomplete?
 
 **A**: Possible causes:
-1. The page is lazy-loaded → scroll to load
-2. The selector matches only some elements → check the selector
-3. The pagination logic has issues → check the pagination condition
-4. A timeout caused interruption → increase the timeout
+1. The page is lazy-loaded -> scroll to load
+2. The selector matches only some elements -> check the selector
+3. The pagination logic has issues -> check the pagination condition
+4. A timeout caused interruption -> increase the timeout
 
 ### Q: How do I handle CAPTCHAs?
 
@@ -602,7 +602,7 @@ Use **Ctrl+F** to quickly find modules on the canvas:
 
 ---
 
-## 📚 Learning Resources
+## Learning Resources
 
 ### CSS Selectors
 - MDN Web Docs: CSS Selectors
@@ -618,9 +618,9 @@ Use **Ctrl+F** to quickly find modules on the canvas:
 
 ---
 
-🎉 **Congratulations on finishing all the tutorials!**
+**Congratulations on finishing all the tutorials!**
 
 You have now mastered WebRPA's core features and tips.
 The best way to learn is hands-on practice, so try creating your own automation workflows!
 
-Happy automating! 🚀`
+Happy automating!`

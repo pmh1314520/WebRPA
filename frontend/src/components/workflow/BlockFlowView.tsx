@@ -20,7 +20,7 @@ import {
   cloneBlock,  type Block,
 } from './blockFlowModel'
 import { collectNodeVarNames } from '@/lib/moduleDefaultVars'
-import { pinyinMatch } from '@/lib/pinyin'
+import { moduleMatchesQuery } from '@/lib/pinyin'
 
 // 模块条复制粘贴的会话级剪贴板（跨组件重渲染保留；存的是已换新 id 的快照，
 // 每次粘贴时再 clone 一次，保证可重复粘贴且 id 不冲突）
@@ -57,13 +57,13 @@ function ModulePicker({ x, y, onPick, onClose }: { x: number; y: number; onPick:
   const filtered = useMemo(() => moduleCategories
     .map((cat) => ({ ...cat, modules: cat.modules.filter((m) => {
       if (!q) return true
-      const label = moduleTypeLabels[m] || m
-      // 支持中文 / 拼音全拼 / 拼音首字母 / 英文类型名 / 关键词
-      if (pinyinMatch(label, q)) return true
-      if (m.toLowerCase().includes(q.toLowerCase())) return true
-      const kws = moduleKeywords[m] || []
-      if (kws.some((kw) => pinyinMatch(kw, q))) return true
-      return false
+      // 统一三处搜索入口：对「中文 label + 英文名 + 关键词」逐项 pinyinMatch，命中任一即返回
+      // 支持中文原文 / 拼音全拼 / 拼音首字母 / 英文类型名 / 关键词，且大小写不敏感
+      return moduleMatchesQuery(q, {
+        label: moduleTypeLabels[m] || m,
+        type: m,
+        keywords: moduleKeywords[m] || [],
+      })
     }) }))
     .filter((cat) => cat.modules.length > 0), [q])
   // 视口内夹取，避免溢出

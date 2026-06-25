@@ -1,10 +1,10 @@
-export const aiAssistantGuideContentEn = `# 🤖 AI Assistant Guide
+export const aiAssistantGuideContentEn = `# AI Assistant Guide
 
 WebRPA ships with an **all-round AI assistant** that not only answers questions but can directly operate the whole of WebRPA. Anything you can do manually in the UI, it can do for you.
 
 ---
 
-## 🚀 Quick start
+## Quick start
 
 ### Open the assistant
 
@@ -12,7 +12,7 @@ Press **Ctrl + K** to bring up the assistant chat, or click the assistant button
 
 ### Configure the AI model
 
-Go to **Global settings → AI Assistant**:
+Go to **Global settings -> AI Assistant**:
 
 | Field | Description |
 |------|------|
@@ -27,7 +27,7 @@ Go to **Global settings → AI Assistant**:
 
 ---
 
-## 🎯 What it can do
+## What it can do
 
 The assistant has **top-level privileges** and can perform all of the following for you:
 
@@ -74,7 +74,7 @@ The assistant has **top-level privileges** and can perform all of the following 
 
 ---
 
-## 🧰 WebRPA steward capabilities (ops / enterprise / packaging)
+## WebRPA steward capabilities (ops / enterprise / packaging)
 
 The assistant is not only a workflow builder but a "steward" for WebRPA: anything AI can solve, operate, or look up across the platform can be handed to it.
 
@@ -93,13 +93,13 @@ The assistant is not only a workflow builder but a "steward" for WebRPA: anythin
 
 ### Enterprise platform management (if the enterprise module is enabled)
 - Query/manage robot clusters, orchestration tasks, approval flows, audit logs, RBAC roles and the credential vault
-- Drive the enterprise "create → approve → execute" closed loop with natural language
+- Drive the enterprise "create -> approve -> execute" closed loop with natural language
 
 > All of these are governed by the 3-level "AI permissions" (per-action confirm / smart auto / full access); high-risk actions ask for approval first.
 
 ---
 
-## 💬 Examples
+## Examples
 
 ### Example 1: let the assistant build a workflow for you
 
@@ -113,14 +113,14 @@ Assistant: Sure. Let me check the current project state first…
 
 Here's my plan:
 1. Scheduled-task trigger (daily 9:00)
-2. Open browser → operate the open page
+2. Open browser -> operate the open page
 3. Go to https://s.weibo.com/weibo?q=AI news
 4. Loop 10 times: scrape title/content/link
 5. Write to Excel
 
 Generating the nodes and loading them onto the canvas now…
 [calls client_action(action='load_workflow_from_data', payload={...})]
-✅ Done. Please review the canvas and try running it!
+[√] Done. Please review the canvas and try running it!
 \`\`\`
 
 ### Example 2: bulk-edit config
@@ -131,7 +131,7 @@ You: Set the wait time of all "Open page" nodes to 3 seconds
 Assistant: [calls find_nodes_by_type('open_page')]
 Found 5 matching nodes, updating in bulk…
 [calls update_node_config one by one]
-✅ waitTime of 5 nodes updated to 3
+[√] waitTime of 5 nodes updated to 3
 \`\`\`
 
 ### Example 3: natural-language queries
@@ -157,7 +157,7 @@ Noted. Next time I download Bilibili videos for you, I'll read cookies from Edge
 
 ---
 
-## 🎨 Rich replies
+## Rich replies
 
 The assistant renders **Markdown / GFM** throughout:
 - Headings / lists / quotes
@@ -167,7 +167,7 @@ The assistant renders **Markdown / GFM** throughout:
 
 ---
 
-## 🔐 Permissions & safety
+## Permissions & safety
 
 - **Dangerous actions** (deleting workflows, deleting memories, etc.) require confirmation by default; you can disable confirmation in Global settings
 - All of the assistant's actions are **reflected live in the UI**, easy to review and revert
@@ -175,7 +175,7 @@ The assistant renders **Markdown / GFM** throughout:
 
 ---
 
-## ⚙️ Recommended setups
+## Recommended setups
 
 Different models suit different scenarios:
 
@@ -188,7 +188,7 @@ Different models suit different scenarios:
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 | Symptom | Fix |
 |------|------|
@@ -199,7 +199,7 @@ Different models suit different scenarios:
 
 ---
 
-## 💡 Power tips
+## Power tips
 
 1. **First message of a new session**: describe your goal so the assistant calls \`get_full_snapshot\` to understand the current state
 2. **Complex workflows**: have the assistant produce the node structure at once with \`build_workflow\`, then load it with \`load_workflow_from_data\`
@@ -208,23 +208,23 @@ Different models suit different scenarios:
 
 ---
 
-## 🔁 Workflow self-healing (auto-fix on run failure)
+## Workflow self-healing (auto-fix on run failure)
 
-This is a flagship 2.0 capability: after building a workflow the assistant **proactively test-runs it**, and if it fails, it **enters a bounded "diagnose → fix → rerun" loop on its own** (up to 3 rounds) instead of dumping the error on you.
+This is a flagship 2.0 capability: after building a workflow the assistant **proactively test-runs it**, and if it fails, it **enters a bounded "diagnose -> fix -> rerun" loop on its own** (up to 3 rounds) instead of dumping the error on you.
 
 What it does:
 - Runs the workflow and truly waits for it to finish, calling \`auto_heal_workflow\` to aggregate all failed nodes + generate an actionable fix plan;
-- **Selector not found** → automatically \`probe_page\` / \`suggest_selector\` to re-probe the real selector and replace it;
-- **Execution timeout** → automatically raise the timeout, prepend a wait-for-element, or add retries;
-- **Wrong value path** → use \`get_node_io_snapshot\` to inspect the previous step's real output structure and correct it;
-- **Missing required field** → look up the schema default and fill it in automatically;
+- **Selector not found** -> automatically \`probe_page\` / \`suggest_selector\` to re-probe the real selector and replace it;
+- **Execution timeout** -> automatically raise the timeout, prepend a wait-for-element, or add retries;
+- **Wrong value path** -> use \`get_node_io_snapshot\` to inspect the previous step's real output structure and correct it;
+- **Missing required field** -> look up the schema default and fill it in automatically;
 - After fixing, it **reruns to verify** until everything is green; only for info you must provide (account/password, download location, which file) will it ask a precise follow-up.
 
 > Try it: deliberately break a web node's selector, then have the assistant run it and watch it auto-probe, fix and rerun.
 
 ---
 
-## 🧠 AI data-processing modules (make workflows "think")
+## AI data-processing modules (make workflows "think")
 
 The assistant can build flows and also use the new 2.0 **AI data-processing workflow modules** (the "AI Data" category in the sidebar) to embed LLM power right into a workflow:
 
@@ -238,5 +238,5 @@ The assistant can build flows and also use the new 2.0 **AI data-processing work
 | AI semantic dedup | Merge items "worded differently but meaning the same" |
 | AI smart routing | Pick the next branch by content, giving the workflow "judgment" |
 
-A typical combo: \`scrape comments → AI sentiment analysis → AI smart routing → auto-create tickets for negatives / auto-archive praise\`. These modules reuse the global AI config by default and work out of the box.
+A typical combo: \`scrape comments -> AI sentiment analysis -> AI smart routing -> auto-create tickets for negatives / auto-archive praise\`. These modules reuse the global AI config by default and work out of the box.
 `

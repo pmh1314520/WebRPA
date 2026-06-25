@@ -1,10 +1,10 @@
-export const browserGuideContentEn = `# 🌐 Automation Browser in depth
+export const browserGuideContentEn = `# Automation Browser in depth
 
 This chapter covers how the automation browser works, how to configure it, and tips for using it.
 
 ---
 
-## 🚀 Browser engine architecture
+## Browser engine architecture
 
 WebRPA uses a **main-process browser engine** — all workflow runs share the same browser instance.
 
@@ -27,7 +27,7 @@ WebRPA uses a **main-process browser engine** — all workflow runs share the sa
 
 ---
 
-## 🔧 What is the automation browser?
+## What is the automation browser?
 
 WebRPA uses **Playwright** to drive the browser. It uses **Microsoft Edge** by default, and also supports **Chrome**, **Chromium** and **Firefox**.
 
@@ -61,11 +61,11 @@ This means:
 
 ---
 
-## ⚙️ Browser settings
+## Browser settings
 
 ### Switch browser type
 
-1. Click **⚙️ Global settings** in the top toolbar
+1. Click **Global settings** in the top toolbar
 2. Choose the **Browser** tab
 3. Pick the browser type you want:
    - **Microsoft Edge** (default): bundled with Windows
@@ -83,11 +83,11 @@ This means:
 
 ---
 
-## 🚀 Open the automation browser
+## Open the automation browser
 
 ### Option 1: toolbar button
 
-Click **🌐 Automation browser** in the top toolbar to:
+Click **Automation browser** in the top toolbar to:
 - Open/close the browser
 - Navigate to a URL
 - Start the element selector
@@ -98,14 +98,14 @@ When a workflow contains an "Open page" module, the browser starts automatically
 
 ---
 
-## 🎯 Element selector
+## Element selector
 
 The element selector is a core WebRPA feature: locate web elements without writing CSS selectors.
 
 ### How to start
 
-1. **From the toolbar**: "Automation browser" → "Start picker"
-2. **From the config panel**: click the 🎯 button next to a selector input
+1. **From the toolbar**: "Automation browser" -> "Start picker"
+2. **From the config panel**: click the button next to a selector input
 
 ### Selection modes
 
@@ -141,7 +141,7 @@ where \`{index}\` is a variable — combine with a loop to iterate over all elem
 
 ---
 
-## 🔄 Page navigation
+## Page navigation
 
 ### Open a page
 
@@ -170,7 +170,7 @@ Wait condition: load (page fully loaded)
 
 ---
 
-## 💬 Handling dialogs
+## Handling dialogs
 
 ### Native browser dialogs
 
@@ -199,13 +199,13 @@ Custom (non-native) page dialogs are handled with normal click actions:
 
 ---
 
-## ⚡ Performance tips
+## Performance tips
 
 ### Reduce wait time
 
 \`\`\`
-❌ Not recommended: fixed wait of 5000 ms
-✅ Recommended: wait for element #content to appear
+[×] Not recommended: fixed wait of 5000 ms
+[√] Recommended: wait for element #content to appear
 \`\`\`
 
 ### Set sensible timeouts
@@ -220,16 +220,16 @@ Custom (non-native) page dialogs are handled with normal click actions:
 ### Avoid acting too fast
 
 \`\`\`
-❌ Not recommended:
-click → immediately get data
+[×] Not recommended:
+click -> immediately get data
 
-✅ Recommended:
-click → wait for element → get data
+[√] Recommended:
+click -> wait for element -> get data
 \`\`\`
 
 ---
 
-## 🛡️ Anti-detection notes
+## Anti-detection notes
 
 WebRPA uses a real browser, but some sites may detect automation.
 
@@ -251,7 +251,7 @@ Loop
 
 ---
 
-## 🎬 Web smart recording (record to generate nodes)
+## Web smart recording (record to generate nodes)
 
 Don't want to connect nodes by hand? Just act in the browser and WebRPA records it into workflow nodes.
 
@@ -259,9 +259,9 @@ Don't want to connect nodes by hand? Just act in the browser and WebRPA records 
 
 \`\`\`
 1. Open the automation browser first
-2. Top bar "Record" dropdown → "Web smart recording"
+2. Top bar "Record" dropdown -> "Web smart recording"
 3. Click "Start recording", then act normally in the browser
-4. Click "Stop recording" → edit as needed → "Generate nodes" to append to the canvas
+4. Click "Stop recording" -> edit as needed -> "Generate nodes" to append to the canvas
 \`\`\`
 
 ### What gets recorded
@@ -290,7 +290,7 @@ With "Auto wait" checked, wait nodes are inserted at action intervals (for slow-
 
 ---
 
-## 🐛 Common issues
+## Common issues
 
 ### Browser won't open
 
@@ -331,7 +331,7 @@ With "Auto wait" checked, wait nodes are inserted at action intervals (for slow-
 
 ---
 
-## 📝 Best practices
+## Best practices
 
 ### Start of a workflow
 
@@ -355,8 +355,30 @@ With "Auto wait" checked, wait nodes are inserted at action intervals (for slow-
 
 \`\`\`
 Condition: {elementExists} == true
-  ├─ true → continue
-  └─ false → print error log → break the loop
+  ├─ true -> continue
+  └─ false -> print error log -> break the loop
 \`\`\`\`
 
+
+---
+
+## DP Anti-detection Automation
+
+DrissionPage (DP) works by controlling a real browser kernel plus sending/receiving packets, making it stealthier on sites that detect the webdriver flag. Use it when the regular automation browser gets blocked by anti-bot systems.
+
+| Module | Description |
+|------|------|
+| **dp_open_page** | Open / navigate to a page, optional headless mode |
+| **dp_click** | Click an element (supports timeout) |
+| **dp_input** | Type text, optionally clear first |
+| **dp_get_text** | Get element text into a variable |
+| **dp_get_html** | Get the current page HTML into a variable |
+| **dp_run_js** | Run JavaScript and store the result |
+| **dp_wait_element** | Wait for an element to appear |
+| **dp_scroll** | Scroll the page (bottom / top / down / up) |
+| **dp_close** | Close the DrissionPage browser |
+
+Locators pass through DrissionPage syntax directly: #id, .class, tag:xx, text:xx, xpath://..., css:....
+
+Flow: open with dp_open_page (it creates and reuses one browser instance), then use dp_click / dp_input, and finally dp_close. First-time use needs the dependency: run Python313/python.exe -m pip install DrissionPage in the WebRPA folder.
 `

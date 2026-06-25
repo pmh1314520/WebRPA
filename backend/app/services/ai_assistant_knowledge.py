@@ -681,8 +681,20 @@ MODULE_CATEGORIES: dict[str, dict[str, str]] = {
         "allure_init": "Allure 报告初始化",
         "allure_start_test": "Allure 开始测试",
         "allure_add_step": "Allure 添加步骤",
+        "allure_add_attachment": "Allure 给当前测试用例添加附件（截图/日志/文本文件），报告中按类型内嵌预览或截取展示",
         "allure_stop_test": "Allure 停止测试",
         "allure_generate_report": "Allure 生成报告",
+    },
+    "DrissionPage 反检测自动化": {
+        "dp_open_page": "DrissionPage 打开/跳转网页（控制真实浏览器内核，绕过部分反自动化与风控检测）；系列入口模块",
+        "dp_click": "DrissionPage 点击元素（按 DrissionPage 定位符：#id/.class/text:/xpath://...）",
+        "dp_input": "DrissionPage 在元素中输入文本（可先清空原有内容）",
+        "dp_get_text": "DrissionPage 获取元素文本并存入变量",
+        "dp_get_html": "DrissionPage 获取当前页面完整 HTML 并存入变量",
+        "dp_run_js": "DrissionPage 在页面执行 JavaScript，返回结果存入变量",
+        "dp_wait_element": "DrissionPage 等待元素出现（超时未出现返回失败）",
+        "dp_scroll": "DrissionPage 滚动页面（到底部/顶部，或按指定像素上下滚动）",
+        "dp_close": "DrissionPage 关闭浏览器并释放页面单例",
     },
     # ============ 以下为 v2 完整补全：覆盖所有内置模块 ============
     "图像处理（高级）": {

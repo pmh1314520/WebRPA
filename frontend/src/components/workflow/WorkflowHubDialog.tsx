@@ -2718,6 +2718,7 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-gray-900" data-no-i18n>{msg.nickname}</span>
+                              {/* // @i18n-ignore-start className 三元基于后端返回的 message_type 原始值匹配，属代码逻辑非显示文本，须保持中文 */}
                               <span data-no-i18n className={`text-xs px-2 py-0.5 rounded ${
                                 msg.message_type === '建议' ? 'bg-blue-100 text-blue-700' :
                                 msg.message_type === '问题求助' ? 'bg-yellow-100 text-yellow-700' :
@@ -2728,6 +2729,7 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
                               }`}>
                                 {msg.message_type}
                               </span>
+                              {/* // @i18n-ignore-end */}
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-gray-500">
@@ -3281,6 +3283,7 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm" data-no-i18n>{comment.nickname}</span>
+                                {/* // @i18n-ignore-start className 三元基于后端返回的 comment_type 原始值匹配，属代码逻辑非显示文本，须保持中文 */}
                                 <span data-no-i18n className={`text-xs px-1.5 py-0.5 rounded ${
                                   comment.comment_type === '使用心得' ? 'bg-blue-100 text-blue-700' :
                                   comment.comment_type === '问题求助' ? 'bg-yellow-100 text-yellow-700' :
@@ -3290,6 +3293,7 @@ export function WorkflowHubDialog({ open, onClose }: Props) {
                                 }`}>
                                   {comment.comment_type}
                                 </span>
+                                {/* // @i18n-ignore-end */}
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-400">

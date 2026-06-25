@@ -1,10 +1,10 @@
-export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath）
+export const selectorGuideContent = `# 选择器完全指南（CSS + XPath）
 
 选择器是网页自动化的核心技能。本章从入门到精通，全面讲解 **CSS 选择器** 与 **XPath 选择器** 的使用方法、优缺点与实战技巧。
 
 ---
 
-## 📌 什么是选择器？
+## 什么是选择器？
 
 选择器是用来定位网页元素的"地址"。就像快递需要地址才能送到，自动化操作也需要选择器才能找到目标元素。
 
@@ -20,7 +20,7 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 
 ---
 
-## 🎓 基础选择器
+## 基础选择器
 
 ### 1. ID选择器（#）
 
@@ -39,9 +39,9 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 - \`#login-btn\` - 选择登录按钮
 
 **特点**：
-- ✅ 最稳定，ID通常不会变
-- ✅ 唯一性，一个页面ID不重复
-- ❌ 不是所有元素都有ID
+- [√] 最稳定，ID通常不会变
+- [√] 唯一性，一个页面ID不重复
+- [×] 不是所有元素都有ID
 
 ---
 
@@ -65,7 +65,7 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 
 **多类名选择**：
 \`\`\`
-.btn.btn-primary  → 同时有btn和btn-primary类的元素
+.btn.btn-primary  -> 同时有btn和btn-primary类的元素
 \`\`\`
 
 ---
@@ -84,9 +84,9 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 - \`div\` - 所有div
 
 **特点**：
-- ✅ 简单直接
-- ❌ 通常会选中多个元素
-- ❌ 不够精确
+- [√] 简单直接
+- [×] 通常会选中多个元素
+- [×] 不够精确
 
 ---
 
@@ -123,7 +123,7 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 
 ---
 
-## 🔗 组合选择器
+## 组合选择器
 
 ### 1. 后代选择器（空格）
 
@@ -195,7 +195,7 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 
 ---
 
-## 🎯 伪类选择器
+## 伪类选择器
 
 ### 位置伪类
 
@@ -251,7 +251,7 @@ export const selectorGuideContent = `# 🎯 选择器完全指南（CSS + XPath�
 
 ---
 
-## 🛠️ 实战技巧
+## 实战技巧
 
 ### 1. 可视化选择元素
 
@@ -280,7 +280,7 @@ document.querySelectorAll('你的选择器').length
 
 ---
 
-## 📋 常见场景选择器
+## 常见场景选择器
 
 ### 表单元素
 
@@ -328,7 +328,7 @@ document.querySelectorAll('你的选择器').length
 
 ---
 
-## 🧭 XPath 选择器（进阶定位利器）
+## XPath 选择器（进阶定位利器）
 
 很多复杂页面光靠 CSS 定位不准、不稳，这时 **XPath** 往往更精准。WebRPA 已完美支持手动填写 XPath，所有"元素选择器"输入框都能一键切换到 XPath 模式。
 
@@ -359,48 +359,48 @@ XPath（XML Path Language）是一套用"路径表达式"在 HTML/XML 文档树�
 ### 按属性定位
 
 \`\`\`
-//input[@id="username"]          → id 为 username 的输入框
-//button[@class="btn primary"]   → class 完全等于 "btn primary"
-//a[@href="https://x.com"]       → 指定链接
-//div[@data-id="123"]            → 自定义属性
+//input[@id="username"]          -> id 为 username 的输入框
+//button[@class="btn primary"]   -> class 完全等于 "btn primary"
+//a[@href="https://x.com"]       -> 指定链接
+//div[@data-id="123"]            -> 自定义属性
 \`\`\`
 
 ### 按文本定位（XPath 独有优势）
 
 \`\`\`
-//button[text()="提交"]              → 文本正好是"提交"的按钮
-//button[contains(text(),"提交")]    → 文本包含"提交"
-//a[contains(.,"下一页")]            → 后代文本含"下一页"的链接
-//span[normalize-space()="确定"]     → 去除首尾空白后等于"确定"
+//button[text()="提交"]              -> 文本正好是"提交"的按钮
+//button[contains(text(),"提交")]    -> 文本包含"提交"
+//a[contains(.,"下一页")]            -> 后代文本含"下一页"的链接
+//span[normalize-space()="确定"]     -> 去除首尾空白后等于"确定"
 \`\`\`
 
 ### 模糊匹配与函数
 
 \`\`\`
-//input[contains(@class,"form")]        → class 包含 form
-//a[starts-with(@href,"https")]         → href 以 https 开头
-//img[contains(@src,".png")]            → src 含 .png
-//div[@class="a" and @data-type="b"]    → 同时满足两个条件
-//div[@class="a" or @class="b"]         → 满足任一条件
-//input[not(@disabled)]                 → 没有 disabled 属性
+//input[contains(@class,"form")]        -> class 包含 form
+//a[starts-with(@href,"https")]         -> href 以 https 开头
+//img[contains(@src,".png")]            -> src 含 .png
+//div[@class="a" and @data-type="b"]    -> 同时满足两个条件
+//div[@class="a" or @class="b"]         -> 满足任一条件
+//input[not(@disabled)]                 -> 没有 disabled 属性
 \`\`\`
 
 ### 按位置定位
 
 \`\`\`
-//ul/li[1]              → 第一个 li（XPath 下标从 1 开始）
-//ul/li[last()]         → 最后一个 li
-//ul/li[position()<=3]  → 前三个 li
-//table//tr[2]/td[3]    → 第二行第三列单元格
+//ul/li[1]              -> 第一个 li（XPath 下标从 1 开始）
+//ul/li[last()]         -> 最后一个 li
+//ul/li[position()<=3]  -> 前三个 li
+//table//tr[2]/td[3]    -> 第二行第三列单元格
 \`\`\`
 
 ### 轴定位（沿文档树关系查找，CSS 做不到）
 
 \`\`\`
-//label[text()="账号"]/following-sibling::input   → "账号"标签后面的输入框
-//input[@id="x"]/ancestor::form                   → 该输入框所在的表单
-//td[text()="姓名"]/parent::tr                     → 含"姓名"单元格的整行
-//h2/preceding-sibling::p                          → h2 前面的所有 p
+//label[text()="账号"]/following-sibling::input   -> "账号"标签后面的输入框
+//input[@id="x"]/ancestor::form                   -> 该输入框所在的表单
+//td[text()="姓名"]/parent::tr                     -> 含"姓名"单元格的整行
+//h2/preceding-sibling::p                          -> h2 前面的所有 p
 \`\`\`
 
 ### CSS 与 XPath 对照速查
@@ -413,19 +413,19 @@ XPath（XML Path Language）是一套用"路径表达式"在 HTML/XML 文档树�
 | 按属性 | \`[name="user"]\` | \`//*[@name="user"]\` |
 | 第 n 个 | \`li:nth-child(2)\` | \`//li[2]\` |
 | 后代 | \`.box .item\` | \`//*[contains(@class,"box")]//*[contains(@class,"item")]\` |
-| 按文本 | ❌ 不支持 | \`//button[text()="提交"]\` |
-| 找父级 | ❌ 不支持 | \`//span/..\` |
+| 按文本 | [×] 不支持 | \`//button[text()="提交"]\` |
+| 找父级 | [×] 不支持 | \`//span/..\` |
 
 ### XPath 的优点与缺点
 
-**✅ 优点**
+**[√] 优点**
 
 - **能按文本内容定位**：页面没有稳定 id/class 时，按按钮文字、标签文字定位非常实用
 - **能向上/横向查找**：支持父级、祖先、兄弟等"轴"，可以"先找到一个锚点元素，再定位它附近的目标"
 - **筛选能力强**：支持 and/or/not、contains、starts-with、位置函数等复杂条件
 - **对复杂结构更精准**：层级深、动态 class 的页面往往比 CSS 更可靠
 
-**❌ 缺点**
+**[×] 缺点**
 
 - **语法更复杂**：表达式比 CSS 长，初学者上手门槛略高
 - **绝对路径很脆**：像 \`/html/body/div[3]/div[2]/...\` 这种一旦页面结构微调就失效（务必避免，多用 \`//\` 相对路径 + 属性/文本）
@@ -434,17 +434,17 @@ XPath（XML Path Language）是一套用"路径表达式"在 HTML/XML 文档树�
 
 ### 选择建议：什么时候用 XPath？
 
-- 元素**有稳定 id/class** → 优先用 **CSS**（更简洁）
-- 需要**按文本定位**（如"点击文字为'确定'的按钮"）→ 用 **XPath**
-- 需要**从一个元素找它的父级/兄弟**（如"找到'价格'标签右边的数值"）→ 用 **XPath**
-- 页面 class 是**随机/动态生成**、CSS 不稳 → 用 **XPath 按文本或属性包含** 定位
-- 多个条件组合筛选 → 用 **XPath** 的 and/or/not
+- 元素**有稳定 id/class** -> 优先用 **CSS**（更简洁）
+- 需要**按文本定位**（如"点击文字为'确定'的按钮"）-> 用 **XPath**
+- 需要**从一个元素找它的父级/兄弟**（如"找到'价格'标签右边的数值"）-> 用 **XPath**
+- 页面 class 是**随机/动态生成**、CSS 不稳 -> 用 **XPath 按文本或属性包含** 定位
+- 多个条件组合筛选 -> 用 **XPath** 的 and/or/not
 
 > 最佳实践：能用稳定 id 就用 CSS；定位不到或不稳时，切到 XPath 用"属性包含 + 文本 + 相对轴"组合，避免写绝对路径。两种模式可随时一键切换，配合右侧「测试定位」按钮即可快速验证。
 
 ---
 
-## 🔍 测试定位（运行前验证选择器）
+## 测试定位（运行前验证选择器）
 
 填好选择器后，不用真跑工作流就能验证它在当前页面是否命中。
 
@@ -465,7 +465,7 @@ XPath（XML Path Language）是一套用"路径表达式"在 HTML/XML 文档树�
 
 ---
 
-## ⚠️ 常见问题
+## 常见问题
 
 ### 1. 选择器找不到元素
 
@@ -497,7 +497,7 @@ XPath（XML Path Language）是一套用"路径表达式"在 HTML/XML 文档树�
 
 ---
 
-## 💡 选择器优先级建议
+## 选择器优先级建议
 
 1. **首选 ID 选择器**：\`#login-btn\`
 2. **次选 唯一类名**：\`.submit-button\`

@@ -1,4 +1,4 @@
-export const sshGuideContent = `# 🔐 SSH 远程操作
+export const sshGuideContent = `# SSH 远程操作
 
 本章介绍如何使用 WebRPA 通过 SSH 协议远程连接服务器，执行命令、上传下载文件，实现服务器运维自动化。
 
@@ -18,7 +18,7 @@ SSH 模块共 **5 个**，基于 Paramiko 库实现，支持密码和密钥两�
 
 ---
 
-## 🔌 建立 SSH 连接（ssh_connect）
+## 建立 SSH 连接（ssh_connect）
 
 建立到远程服务器的 SSH 连接。
 
@@ -37,7 +37,7 @@ SSH 模块共 **5 个**，基于 Paramiko 库实现，支持密码和密钥两�
 
 ---
 
-## ⚡ 执行远程命令（ssh_execute_command）
+## 执行远程命令（ssh_execute_command）
 
 在远程服务器上执行 Shell 命令，并获取输出结果。
 
@@ -55,8 +55,8 @@ SSH 模块共 **5 个**，基于 Paramiko 库实现，支持密码和密钥两�
 **示例**（查看磁盘使用情况）：
 
 \`\`\`
-SSH执行命令 → 连接: {ssh}, 命令: df -h → 结果变量: disk_info
-打印日志 → 内容: {disk_info}
+SSH执行命令 -> 连接: {ssh}, 命令: df -h -> 结果变量: disk_info
+打印日志 -> 内容: {disk_info}
 \`\`\`
 
 **执行多条命令**：用 \`&&\` 或 \`;\` 连接多条命令：
@@ -73,7 +73,7 @@ echo '{sudo_password}' | sudo -S systemctl restart nginx
 
 ---
 
-## 📤 上传文件（ssh_upload_file）
+## 上传文件（ssh_upload_file）
 
 通过 SFTP 将本地文件上传到远程服务器。
 
@@ -88,7 +88,7 @@ echo '{sudo_password}' | sudo -S systemctl restart nginx
 
 ---
 
-## 📥 下载文件（ssh_download_file）
+## 下载文件（ssh_download_file）
 
 通过 SFTP 从远程服务器下载文件到本地。
 
@@ -103,7 +103,7 @@ echo '{sudo_password}' | sudo -S systemctl restart nginx
 
 ---
 
-## 🔌 断开连接（ssh_disconnect）
+## 断开连接（ssh_disconnect）
 
 关闭 SSH 连接，释放资源。
 
@@ -115,7 +115,7 @@ echo '{sudo_password}' | sudo -S systemctl restart nginx
 
 ---
 
-## 📋 完整示例：自动化服务器部署
+## 完整示例：自动化服务器部署
 
 \`\`\`mermaid
 flowchart TD
@@ -132,11 +132,11 @@ flowchart TD
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 - **连接复用**：一次连接后可执行多条命令，最后再断开
 - **变量引用**：命令中可用 \`{变量名}\` 引用工作流变量
 - **错误处理**：检查返回码变量（\`0\` 表示成功），非零则说明命令失败
 - **私钥认证**：生产环境推荐使用私钥认证，更安全
-- **全局配置**：在「全局配置」→「SSH」中预设服务器信息
+- **全局配置**：在「全局配置」->「SSH」中预设服务器信息
 `

@@ -1,10 +1,10 @@
-export const inputGuideContentEn = `# 🖱️ Screen, Mouse & Keyboard Simulation
+export const inputGuideContentEn = `# Screen, Mouse & Keyboard Simulation
 
 This chapter covers screenshots, screen recording and real mouse/keyboard simulation modules.
 
 ---
 
-## 📷 Screen operations
+## Screen operations
 
 ### Screen capture (screenshot_screen)
 
@@ -65,7 +65,7 @@ Record a video with the camera.
 
 ---
 
-## 🖱️ Real mouse simulation
+## Real mouse simulation
 
 Real-mouse modules simulate actual mouse actions via the OS API — for desktop software that can't be automated via the browser.
 
@@ -128,7 +128,7 @@ Get the cursor's current screen coordinates.
 
 ---
 
-## ⌨️ Real keyboard simulation
+## Real keyboard simulation
 
 ### Real keyboard (real_keyboard)
 
@@ -176,7 +176,7 @@ Send key events to the focused window (based on PyAutoGUI).
 
 ---
 
-## 🖼️ Image/text recognition click
+## Image/text recognition click
 
 ### Click image (click_image)
 
@@ -226,7 +226,7 @@ Find an image, then drag it to another position.
 
 ---
 
-## 🎹 Macro recorder (macro_recorder)
+## Macro recorder (macro_recorder)
 
 Record a sequence of mouse/keyboard actions and replay it — the simplest desktop automation.
 
@@ -246,7 +246,7 @@ Record a sequence of mouse/keyboard actions and replay it — the simplest deskt
 
 ---
 
-## 💡 Tips
+## Tips
 
 - **Coordinate system**: all coordinates are absolute screen coordinates (origin at the top-left)
 - **Multiple monitors**: the second screen's coordinates start at the first screen's width (e.g. main 1920px, secondary X from 1920)

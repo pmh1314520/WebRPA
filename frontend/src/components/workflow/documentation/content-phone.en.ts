@@ -1,46 +1,46 @@
-export const phoneGuideContentEn = `# 📱 Phone Automation Guide
+export const phoneGuideContentEn = `# Phone Automation Guide
 
 This chapter explains how to use WebRPA for Android phone automation.
 
 ---
 
-## 📋 Module Overview
+## Module Overview
 
 | Module | Function | Default Timeout |
 |------|------|----------|
-| 📱 Tap | Tap a specified screen coordinate | 10s |
-| 📱 Swipe | Swipe the screen | 10s |
-| 📱 Long press | Long-press a specified screen coordinate | 10s |
-| 📱 Input text | Enter text (auto-switches input method) | 30s |
-| 📱 Key operation | Simulate keys (Back, Home, etc.) | 10s |
-| 📱 Screenshot | Capture the phone screen | 30s |
-| 📱 Start screen mirroring | Start scrcpy mirroring | 30s |
-| 📱 Stop screen mirroring | Stop scrcpy mirroring | 10s |
-| 📱 Install app | Install an APK file | 2 min |
-| 📱 Launch app | Launch the specified app | 30s |
-| 📱 Stop app | Stop the specified app | 10s |
-| 📱 Uninstall app | Uninstall the specified app | 1 min |
-| 📱 Push file | Push a file to the phone | 2 min |
-| 📱 Pull file | Pull a file from the phone | 2 min |
-| 📱 Tap image | Recognize and tap an image | 1 min |
-| 📱 Tap text | Recognize and tap text | 1 min |
-| 📱 Wait for image | Wait for an image to appear | 1 min |
-| 📱 Set volume | Set the phone volume | 30s |
-| 📱 Set brightness | Set the screen brightness | 10s |
-| 📱 Write clipboard | Write to the phone clipboard | 10s |
-| 📱 Read clipboard | Read the phone clipboard | 10s |
+| Tap | Tap a specified screen coordinate | 10s |
+| Swipe | Swipe the screen | 10s |
+| Long press | Long-press a specified screen coordinate | 10s |
+| Input text | Enter text (auto-switches input method) | 30s |
+| Key operation | Simulate keys (Back, Home, etc.) | 10s |
+| Screenshot | Capture the phone screen | 30s |
+| Start screen mirroring | Start scrcpy mirroring | 30s |
+| Stop screen mirroring | Stop scrcpy mirroring | 10s |
+| Install app | Install an APK file | 2 min |
+| Launch app | Launch the specified app | 30s |
+| Stop app | Stop the specified app | 10s |
+| Uninstall app | Uninstall the specified app | 1 min |
+| Push file | Push a file to the phone | 2 min |
+| Pull file | Pull a file from the phone | 2 min |
+| Tap image | Recognize and tap an image | 1 min |
+| Tap text | Recognize and tap text | 1 min |
+| Wait for image | Wait for an image to appear | 1 min |
+| Set volume | Set the phone volume | 30s |
+| Set brightness | Set the screen brightness | 10s |
+| Write clipboard | Write to the phone clipboard | 10s |
+| Read clipboard | Read the phone clipboard | 10s |
 
 ---
 
-## 🔌 Environment Setup
+## Environment Setup
 
 ### 1. Enable USB Debugging
 
 Enable Developer Options and USB Debugging on the phone:
 
-1. Go to "Settings" → "About phone"
+1. Go to "Settings" -> "About phone"
 2. Tap "Build number" 7 times in a row to enable Developer Options
-3. Return to "Settings" → "Developer options"
+3. Return to "Settings" -> "Developer options"
 4. Turn on "USB debugging"
 5. Turn on "USB installation" (required on some phones)
 
@@ -63,7 +63,7 @@ You can also connect the phone wirelessly over WiFi:
 
 ---
 
-## 📱 Basic Operations
+## Basic Operations
 
 ### Tap Operation
 
@@ -177,7 +177,7 @@ Long press a delete icon:
 
 ---
 
-## ⌨️ Text Input
+## Text Input
 
 ### Input Text Module
 
@@ -190,17 +190,17 @@ Enter text into the phone, supporting mixed Chinese and English input.
 | Input content | The text to enter |
 | Auto-press Enter after input | Whether to automatically press Enter |
 
-**✨ Smart input method switching:**
+**Smart input method switching:**
 
 The system automatically detects the input content:
 - If it contains Chinese, it automatically switches to the ADBKeyboard input method
 - After input, it automatically restores the original input method when the workflow ends
 - No manual switching needed; fully automated
 
-**⚠️ First-time setup:**
+**First-time setup:**
 
 1. Make sure the ADBKeyboard input method is installed on the phone
-2. Go to "Settings" → "Languages & input" → "Manage keyboards"
+2. Go to "Settings" -> "Languages & input" -> "Manage keyboards"
 3. Confirm that "ADB Keyboard" is enabled
 4. On first run, the system installs and configures it automatically
 
@@ -261,7 +261,7 @@ Confirm input:
 
 ---
 
-## 📷 Screen Operations
+## Screen Operations
 
 ### Screenshot
 
@@ -338,7 +338,7 @@ Use the "Stop screen mirroring" module to close the mirror window.
 
 ---
 
-## 📦 App Management
+## App Management
 
 ### Install App
 
@@ -357,7 +357,7 @@ Install an app:
   APK path: D:/apps/myapp.apk
 
 Batch install:
-  Get file list: D:/apps/*.apk → {APK list}
+  Get file list: D:/apps/*.apk -> {APK list}
   Iterate list: {APK list}
     Install app: {current item}
 \`\`\`
@@ -440,7 +440,7 @@ Uninstall an app:
 
 ---
 
-## 📁 File Transfer
+## File Transfer
 
 ### Push File
 
@@ -504,7 +504,7 @@ Pull a log:
 
 ---
 
-## 🔍 Visual Recognition
+## Visual Recognition
 
 ### Tap Image
 
@@ -627,7 +627,7 @@ Wait for a button to appear:
 
 ---
 
-## ⚙️ System Settings
+## System Settings
 
 ### Set Volume
 
@@ -679,7 +679,7 @@ Min brightness:
 
 ---
 
-## 📋 Clipboard Operations
+## Clipboard Operations
 
 ### Write Clipboard
 
@@ -691,7 +691,7 @@ Write text to the phone clipboard.
 |------|------|
 | Text content | The text to write |
 
-**✨ Automatic Clipper handling:**
+**Automatic Clipper handling:**
 
 The system automatically detects and uses the Clipper app:
 - Clipper is installed automatically on first use
@@ -726,7 +726,7 @@ Read the content of the phone clipboard.
 |------|------|
 | Save to variable | The variable name to save the clipboard content |
 
-**✨ Automatic Clipper handling:**
+**Automatic Clipper handling:**
 
 - Automatically detects the Clipper app state
 - Installed automatically on first use
@@ -739,7 +739,7 @@ Read the clipboard:
   Variable: clipboard content
 
 Use the clipboard content:
-  Read clipboard → {content}
+  Read clipboard -> {content}
   Print log: {content}
 \`\`\`
 
@@ -751,21 +751,21 @@ Use the clipboard content:
 
 ---
 
-## 💡 Practical Tips
+## Practical Tips
 
 ### 1. Coordinate Locating Tips
 
 **Method 1: Use the mirror window**
 \`\`\`
 Start screen mirroring
-  → Click the target position in the mirror window
-  → The title bar shows the coordinate
-  → Record the coordinate for the tap module
+  -> Click the target position in the mirror window
+  -> The title bar shows the coordinate
+  -> Record the coordinate for the tap module
 \`\`\`
 
 **Method 2: Use screenshot + image editor**
 \`\`\`
-Screenshot → View coordinates in an image editor
+Screenshot -> View coordinates in an image editor
 \`\`\`
 
 ---
@@ -792,7 +792,7 @@ Continue
 
 **Example: Batch install apps**
 \`\`\`
-Get file list: D:/apks/*.apk → {APK list}
+Get file list: D:/apks/*.apk -> {APK list}
 Iterate list: {APK list}
   Install app: {current item}
   Wait: 3 seconds
@@ -804,7 +804,7 @@ Iterate list: {APK list}
 
 **Use a condition check**
 \`\`\`
-Tap image: login button → {result}
+Tap image: login button -> {result}
 Condition check: {result} contains "success"
   Yes: Continue
   No: Print log: Login button not found
@@ -828,7 +828,7 @@ Wait for image: login-success icon
 
 ---
 
-## ⚠️ FAQ
+## FAQ
 
 ### 1. Phone Not Detected
 
@@ -878,7 +878,7 @@ Wait for image: login-success icon
 
 ---
 
-## 🎯 Full Examples
+## Full Examples
 
 ### Example 1: Automatic Check-in
 
@@ -933,7 +933,7 @@ Wait for image: login-success icon
 
 ---
 
-## 📚 Related Docs
+## Related Docs
 
 - [Variable System Explained](variables-guide) - Learn how to use variables
 - [Flow Control](advanced-features) - Learn condition checks and loops

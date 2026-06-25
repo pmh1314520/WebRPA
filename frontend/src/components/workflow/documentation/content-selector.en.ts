@@ -1,10 +1,10 @@
-export const selectorGuideContentEn = `# 🎯 Complete Selector Guide (CSS + XPath)
+export const selectorGuideContentEn = `# Complete Selector Guide (CSS + XPath)
 
 Selectors are a core skill for web automation. This chapter covers both **CSS selectors** and **XPath selectors** from basics to mastery, including their syntax, pros and cons, and practical tips.
 
 ---
 
-## 📌 What is a selector?
+## What is a selector?
 
 A selector is the "address" used to locate a web element. Just as a courier needs an address to deliver, automation needs a selector to find the target element.
 
@@ -20,7 +20,7 @@ You can locate this button with any of these:
 
 ---
 
-## 🎓 Basic selectors
+## Basic selectors
 
 ### 1. ID selector (#)
 
@@ -39,9 +39,9 @@ Selectors:
 - \`#login-btn\` - the login button
 
 **Traits**:
-- ✅ Most stable; IDs rarely change
-- ✅ Unique; an ID doesn't repeat on a page
-- ❌ Not every element has an ID
+- [√] Most stable; IDs rarely change
+- [√] Unique; an ID doesn't repeat on a page
+- [×] Not every element has an ID
 
 ---
 
@@ -65,7 +65,7 @@ Selectors:
 
 **Multiple classes**:
 \`\`\`
-.btn.btn-primary  → elements with both btn and btn-primary
+.btn.btn-primary  -> elements with both btn and btn-primary
 \`\`\`
 
 ---
@@ -84,9 +84,9 @@ Locate by HTML tag name.
 - \`div\` - all divs
 
 **Traits**:
-- ✅ Simple and direct
-- ❌ Usually matches many elements
-- ❌ Not precise enough
+- [√] Simple and direct
+- [×] Usually matches many elements
+- [×] Not precise enough
 
 ---
 
@@ -123,7 +123,7 @@ Selectors:
 
 ---
 
-## 🔗 Combinators
+## Combinators
 
 ### 1. Descendant (space)
 
@@ -195,7 +195,7 @@ Select all siblings after an element.
 
 ---
 
-## 🎯 Pseudo-classes
+## Pseudo-classes
 
 ### Positional
 
@@ -251,7 +251,7 @@ Select all siblings after an element.
 
 ---
 
-## 🛠️ Practical tips
+## Practical tips
 
 ### 1. Visually pick an element
 
@@ -280,7 +280,7 @@ document.querySelectorAll('your selector').length
 
 ---
 
-## 📋 Selectors for common scenarios
+## Selectors for common scenarios
 
 ### Form elements
 
@@ -328,7 +328,7 @@ Confirm button: .modal .btn-confirm
 
 ---
 
-## 🧭 XPath Selectors (advanced locating)
+## XPath Selectors (advanced locating)
 
 On complex pages CSS alone is often inaccurate or unstable. **XPath** is usually more precise in these cases. WebRPA fully supports manually entering XPath: every "element selector" input can switch to XPath mode with one click.
 
@@ -359,48 +359,48 @@ XPath (XML Path Language) is a language that locates nodes in an HTML/XML docume
 ### Locate by attribute
 
 \`\`\`
-//input[@id="username"]          → input whose id is username
-//button[@class="btn primary"]   → class exactly equals "btn primary"
-//a[@href="https://x.com"]       → specific link
-//div[@data-id="123"]            → custom attribute
+//input[@id="username"]          -> input whose id is username
+//button[@class="btn primary"]   -> class exactly equals "btn primary"
+//a[@href="https://x.com"]       -> specific link
+//div[@data-id="123"]            -> custom attribute
 \`\`\`
 
 ### Locate by text (XPath's unique strength)
 
 \`\`\`
-//button[text()="Submit"]              → button whose text is exactly "Submit"
-//button[contains(text(),"Submit")]    → text contains "Submit"
-//a[contains(.,"Next")]                → link whose descendant text contains "Next"
-//span[normalize-space()="OK"]         → equals "OK" after trimming whitespace
+//button[text()="Submit"]              -> button whose text is exactly "Submit"
+//button[contains(text(),"Submit")]    -> text contains "Submit"
+//a[contains(.,"Next")]                -> link whose descendant text contains "Next"
+//span[normalize-space()="OK"]         -> equals "OK" after trimming whitespace
 \`\`\`
 
 ### Fuzzy matching and functions
 
 \`\`\`
-//input[contains(@class,"form")]        → class contains form
-//a[starts-with(@href,"https")]         → href starts with https
-//img[contains(@src,".png")]            → src contains .png
-//div[@class="a" and @data-type="b"]    → both conditions
-//div[@class="a" or @class="b"]         → either condition
-//input[not(@disabled)]                 → no disabled attribute
+//input[contains(@class,"form")]        -> class contains form
+//a[starts-with(@href,"https")]         -> href starts with https
+//img[contains(@src,".png")]            -> src contains .png
+//div[@class="a" and @data-type="b"]    -> both conditions
+//div[@class="a" or @class="b"]         -> either condition
+//input[not(@disabled)]                 -> no disabled attribute
 \`\`\`
 
 ### Locate by position
 
 \`\`\`
-//ul/li[1]              → first li (XPath index starts at 1)
-//ul/li[last()]         → last li
-//ul/li[position()<=3]  → first three li
-//table//tr[2]/td[3]    → row 2, column 3 cell
+//ul/li[1]              -> first li (XPath index starts at 1)
+//ul/li[last()]         -> last li
+//ul/li[position()<=3]  -> first three li
+//table//tr[2]/td[3]    -> row 2, column 3 cell
 \`\`\`
 
 ### Axis locating (traverse tree relationships, impossible in CSS)
 
 \`\`\`
-//label[text()="Account"]/following-sibling::input   → input after the "Account" label
-//input[@id="x"]/ancestor::form                      → the form containing this input
-//td[text()="Name"]/parent::tr                        → the whole row containing the "Name" cell
-//h2/preceding-sibling::p                             → all p before the h2
+//label[text()="Account"]/following-sibling::input   -> input after the "Account" label
+//input[@id="x"]/ancestor::form                      -> the form containing this input
+//td[text()="Name"]/parent::tr                        -> the whole row containing the "Name" cell
+//h2/preceding-sibling::p                             -> all p before the h2
 \`\`\`
 
 ### CSS vs XPath cheat sheet
@@ -413,19 +413,19 @@ XPath (XML Path Language) is a language that locates nodes in an HTML/XML docume
 | By attribute | \`[name="user"]\` | \`//*[@name="user"]\` |
 | nth element | \`li:nth-child(2)\` | \`//li[2]\` |
 | Descendant | \`.box .item\` | \`//*[contains(@class,"box")]//*[contains(@class,"item")]\` |
-| By text | ❌ not supported | \`//button[text()="Submit"]\` |
-| Find parent | ❌ not supported | \`//span/..\` |
+| By text | [×] not supported | \`//button[text()="Submit"]\` |
+| Find parent | [×] not supported | \`//span/..\` |
 
 ### Pros and cons of XPath
 
-**✅ Pros**
+**[√] Pros**
 
 - **Locate by text content**: great when there is no stable id/class — match by button text or label text
 - **Walk up / sideways**: supports parent, ancestor, sibling axes — "find an anchor element, then locate a target near it"
 - **Powerful filtering**: and/or/not, contains, starts-with, position functions and more
 - **More precise on complex structures**: often more reliable than CSS on deeply nested pages with dynamic classes
 
-**❌ Cons**
+**[×] Cons**
 
 - **More complex syntax**: expressions are longer than CSS, with a slightly higher learning curve
 - **Absolute paths are fragile**: something like \`/html/body/div[3]/div[2]/...\` breaks once the structure changes slightly (avoid it — prefer \`//\` relative paths with attributes/text)
@@ -434,17 +434,17 @@ XPath (XML Path Language) is a language that locates nodes in an HTML/XML docume
 
 ### When to use XPath?
 
-- Element **has a stable id/class** → prefer **CSS** (more concise)
-- Need to **locate by text** (e.g. "click the button whose text is 'OK'") → use **XPath**
-- Need to **find a parent/sibling from an element** (e.g. "the value to the right of the 'Price' label") → use **XPath**
-- Page classes are **random/dynamic** and CSS is unstable → use **XPath with attribute-contains or text**
-- Combine multiple filter conditions → use **XPath** and/or/not
+- Element **has a stable id/class** -> prefer **CSS** (more concise)
+- Need to **locate by text** (e.g. "click the button whose text is 'OK'") -> use **XPath**
+- Need to **find a parent/sibling from an element** (e.g. "the value to the right of the 'Price' label") -> use **XPath**
+- Page classes are **random/dynamic** and CSS is unstable -> use **XPath with attribute-contains or text**
+- Combine multiple filter conditions -> use **XPath** and/or/not
 
 > Best practice: use CSS when a stable id is available; when locating fails or is unstable, switch to XPath using "attribute-contains + text + relative axes" and avoid absolute paths. You can toggle between the two modes anytime and verify quickly with the "Test locate" button on the right.
 
 ---
 
-## 🔍 Test locate (verify a selector before running)
+## Test locate (verify a selector before running)
 
 After entering a selector, you can verify whether it matches on the current page without running the whole workflow.
 
@@ -465,7 +465,7 @@ After entering a selector, you can verify whether it matches on the current page
 
 ---
 
-## ⚠️ Common issues
+## Common issues
 
 ### 1. Selector finds no element
 
@@ -497,7 +497,7 @@ After entering a selector, you can verify whether it matches on the current page
 
 ---
 
-## 💡 Selector priority advice
+## Selector priority advice
 
 1. **Prefer ID selectors**: \`#login-btn\`
 2. **Then unique class names**: \`.submit-button\`

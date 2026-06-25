@@ -1,10 +1,10 @@
-export const imageGuideContent = `# 🖼️ 图像处理
+export const imageGuideContent = `# 图像处理
 
 本章介绍 WebRPA 提供的图像编辑与处理模块，基于 Pillow（PIL）库实现。
 
 ---
 
-## 📐 图像变换
+## 图像变换
 
 ### 图像缩放（image_resize）
 
@@ -54,7 +54,7 @@ export const imageGuideContent = `# 🖼️ 图像处理
 
 ---
 
-## 🎨 图像调色
+## 图像调色
 
 ### 亮度调整（image_brightness）
 
@@ -107,7 +107,7 @@ export const imageGuideContent = `# 🖼️ 图像处理
 
 ---
 
-## 📝 图像内容操作
+## 图像内容操作
 
 ### 图像添加文字（image_add_text）
 
@@ -155,7 +155,7 @@ export const imageGuideContent = `# 🖼️ 图像处理
 
 ---
 
-## 🛠️ 图像工具
+## 图像工具
 
 ### 获取图像信息（image_get_info）
 
@@ -200,7 +200,7 @@ export const imageGuideContent = `# 🖼️ 图像处理
 
 ---
 
-## 🔄 格式工厂
+## 格式工厂
 
 格式工厂模块支持批量转换图片、视频、音频格式。
 
@@ -256,7 +256,7 @@ export const imageGuideContent = `# 🖼️ 图像处理
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 - 所有图像处理模块的**输出路径**留空时，会在原文件同目录下生成新文件
 - 批量处理时，结合「遍历列表」模块和「获取文件列表」模块
@@ -265,7 +265,7 @@ export const imageGuideContent = `# 🖼️ 图像处理
 
 ---
 
-## 🫥 盲水印（隐式数字水印）
+## 盲水印（隐式数字水印）
 
 WebRPA 集成了 **blind_watermark**（频域 DWT-DCT-SVD），把"文本"或"小图"以肉眼不可见的方式嵌入到图像里，能抵抗截屏、JPEG 重压缩、轻度缩放/裁剪等常见再加工。
 
@@ -316,13 +316,13 @@ WebRPA 集成了 **blind_watermark**（频域 DWT-DCT-SVD），把"文本"或"�
 | 水印高度 / 水印宽度 | 嵌入时返回 \`shape\` 的两个分量，可填 \`{{shape}}[0]\` 和 \`{{shape}}[1]\` |
 | 水印密码/图像密码 | 必须与嵌入时一致 |
 
-### 完整工作流示例（嵌入 → 提取文字）
+### 完整工作流示例（嵌入 -> 提取文字）
 
 \`\`\`mermaid
 flowchart LR
-  A[原图.png] --> B[盲水印·嵌入文字<br/>text='© 我'<br/>password_wm=42]
+  A[原图.png] --> B[盲水印·嵌入文字<br/>text='我'<br/>password_wm=42]
   B -- output_wm.png + wm_bit_len --> C[图像<br/>另存/分享/上网]
   C --> D[盲水印·提取文字<br/>password_wm=42<br/>wm_bit_len={{wm_bit_len}}]
-  D --> E[得到文本 '© 我']
+  D --> E[得到文本 '我']
 \`\`\`
 `

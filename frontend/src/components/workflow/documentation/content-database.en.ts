@@ -1,26 +1,26 @@
-export const databaseGuideContentEn = `# 🗄️ Database Operations Guide
+export const databaseGuideContentEn = `# Database Operations Guide
 
 This chapter covers using the database modules to connect to and operate a MySQL database.
 
 ---
 
-## 📋 Module overview
+## Module overview
 
 WebRPA provides a complete set of database modules:
 
 | Module | Description | Main use |
 |------|------|----------|
-| 🔌 Connect database | Establish a connection | Connect to a MySQL server |
-| 🔍 Query data | SELECT query | Read data |
-| ⚡ Execute SQL | Run any SQL | DDL, stored procedures, etc. |
-| ➕ Insert data | INSERT | Add records |
-| ✏️ Update data | UPDATE | Modify records |
-| 🗑️ Delete data | DELETE | Remove records |
-| 🔌 Close connection | Disconnect | Free connection resources |
+| Connect database | Establish a connection | Connect to a MySQL server |
+| Query data | SELECT query | Read data |
+| Execute SQL | Run any SQL | DDL, stored procedures, etc. |
+| Insert data | INSERT | Add records |
+| Update data | UPDATE | Modify records |
+| Delete data | DELETE | Remove records |
+| Close connection | Disconnect | Free connection resources |
 
 ---
 
-## 🔌 Connect database
+## Connect database
 
 Establish a connection to MySQL — required before any database operation.
 
@@ -56,7 +56,7 @@ In later operations, specify the connection name to use the right database
 
 ### Global defaults
 
-Set default connection parameters under **Global settings → Database**; new database modules auto-fill them.
+Set default connection parameters under **Global settings -> Database**; new database modules auto-fill them.
 
 ### Example
 
@@ -72,7 +72,7 @@ Connect database:
 
 ---
 
-## 🔍 Query data
+## Query data
 
 Run a SELECT query.
 
@@ -156,7 +156,7 @@ WHERE created_at > '2024-01-01'
 
 ---
 
-## ⚡ Execute SQL
+## Execute SQL
 
 Run any SQL — for DDL, stored procedures, etc.
 
@@ -198,7 +198,7 @@ TRUNCATE TABLE temp_data
 
 ---
 
-## ➕ Insert data
+## Insert data
 
 Insert new records into a table.
 
@@ -255,7 +255,7 @@ Iterate: collectedData
 
 ---
 
-## ✏️ Update data
+## Update data
 
 Modify existing records.
 
@@ -287,7 +287,7 @@ Update data:
   WHERE: stock = 0
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - Don't include the \`WHERE\` keyword in the condition
 - String values in the condition need quotes
@@ -295,7 +295,7 @@ Update data:
 
 ---
 
-## 🗑️ Delete data
+## Delete data
 
 Delete records from a table.
 
@@ -319,7 +319,7 @@ Delete data:
 Print log: deleted {deletedCount} expired logs
 \`\`\`
 
-### ⚠️ Safety warning
+### Safety warning
 
 - **The WHERE condition is required** to prevent deleting the whole table
 - Deletion is irreversible — use with care
@@ -327,7 +327,7 @@ Print log: deleted {deletedCount} expired logs
 
 ---
 
-## 🔌 Close connection
+## Close connection
 
 Disconnect and free resources.
 
@@ -343,7 +343,7 @@ Disconnect and free resources.
 
 ---
 
-## 💡 Best practices
+## Best practices
 
 ### 1. Connection management
 
@@ -359,10 +359,10 @@ Workflow start
 
 Check the result after key operations:
 \`\`\`
-Insert data → save ID to: insertId
+Insert data -> save ID to: insertId
 Condition: {insertId} > 0
-  ├─ yes → Print log (success): inserted
-  └─ no → Print log (error): insert failed
+  ├─ yes -> Print log (success): inserted
+  └─ no -> Print log (error): insert failed
 \`\`\`
 
 ### 3. Prevent SQL injection
@@ -381,13 +381,13 @@ The module handles parameters, but still:
 
 ---
 
-## 📚 Practical cases
+## Practical cases
 
 ### Case 1: scrape data into the database
 
 \`\`\`
 1. Connect database
-2. Open page → product list
+2. Open page -> product list
 3. Iterate products
    ├─ Get product name
    ├─ Get product price
@@ -422,7 +422,7 @@ The module handles parameters, but still:
 
 \`\`\`
 1. Connect database
-2. Get time → the date 30 days ago
+2. Get time -> the date 30 days ago
 3. Delete data:
      Table: logs
      WHERE: created_at < '{thirtyDaysAgo}'
@@ -432,7 +432,7 @@ The module handles parameters, but still:
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 ### Q: Connection fails?
 

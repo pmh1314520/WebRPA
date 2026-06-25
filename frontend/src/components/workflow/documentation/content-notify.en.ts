@@ -1,4 +1,4 @@
-export const notifyGuideContentEn = `# 📢 Multi-channel Notifications
+export const notifyGuideContentEn = `# Multi-channel Notifications
 
 This chapter covers WebRPA's 17 notification channels, letting a workflow notify you automatically when it finishes, errors out, or meets a condition.
 
@@ -30,11 +30,11 @@ The notification modules support mainstream platforms worldwide; no extra instal
 
 ---
 
-## 💬 Discord (notify_discord)
+## Discord (notify_discord)
 
 Send a message to a channel via a Discord webhook.
 
-**Get the webhook URL**: Discord channel settings → Integrations → Webhooks → create and copy the URL.
+**Get the webhook URL**: Discord channel settings -> Integrations -> Webhooks -> create and copy the URL.
 
 | Parameter | Description | Example |
 |------|------|------|
@@ -45,7 +45,7 @@ Send a message to a channel via a Discord webhook.
 
 ---
 
-## ✈️ Telegram (notify_telegram)
+## Telegram (notify_telegram)
 
 Send a message via a Telegram bot.
 
@@ -61,11 +61,11 @@ Send a message via a Telegram bot.
 
 ---
 
-## 🔔 DingTalk (notify_dingtalk)
+## DingTalk (notify_dingtalk)
 
 Send via a DingTalk custom bot.
 
-**Get the webhook**: DingTalk group → Settings → Group assistant → Add bot → "Custom" → copy the webhook.
+**Get the webhook**: DingTalk group -> Settings -> Group assistant -> Add bot -> "Custom" -> copy the webhook.
 
 | Parameter | Description |
 |------|------|
@@ -78,11 +78,11 @@ Send via a DingTalk custom bot.
 
 ---
 
-## 💼 WeCom (notify_wecom)
+## WeCom (notify_wecom)
 
 Send via a WeCom group bot.
 
-**Get the webhook**: WeCom group → add a group bot → copy the webhook.
+**Get the webhook**: WeCom group -> add a group bot -> copy the webhook.
 
 | Parameter | Description |
 |------|------|
@@ -93,11 +93,11 @@ Send via a WeCom group bot.
 
 ---
 
-## 🚀 Feishu (notify_feishu)
+## Feishu (notify_feishu)
 
 Send via a Feishu group bot.
 
-**Get the webhook**: Feishu group → settings → group bots → add a custom bot → copy the webhook.
+**Get the webhook**: Feishu group -> settings -> group bots -> add a custom bot -> copy the webhook.
 
 | Parameter | Description |
 |------|------|
@@ -108,7 +108,7 @@ Send via a Feishu group bot.
 
 ---
 
-## 🍎 Bark (notify_bark)
+## Bark (notify_bark)
 
 iOS-only push; install the Bark app first.
 
@@ -122,7 +122,7 @@ iOS-only push; install the Bark app first.
 
 ---
 
-## 💬 Slack (notify_slack)
+## Slack (notify_slack)
 
 Send via a Slack incoming webhook.
 
@@ -135,7 +135,7 @@ Send via a Slack incoming webhook.
 
 ---
 
-## 📨 ServerChan (notify_serverchan)
+## ServerChan (notify_serverchan)
 
 Push to WeChat; register at [sct.ftqq.com](https://sct.ftqq.com) for a SendKey.
 
@@ -147,7 +147,7 @@ Push to WeChat; register at [sct.ftqq.com](https://sct.ftqq.com) for a SendKey.
 
 ---
 
-## 📬 PushPlus (notify_pushplus)
+## PushPlus (notify_pushplus)
 
 Push to WeChat; register at [pushplus.plus](https://www.pushplus.plus) for a token.
 
@@ -160,7 +160,7 @@ Push to WeChat; register at [pushplus.plus](https://www.pushplus.plus) for a tok
 
 ---
 
-## 🔗 Custom Webhook (notify_webhook)
+## Custom Webhook (notify_webhook)
 
 POST to any HTTP endpoint — the most flexible notification.
 
@@ -173,7 +173,7 @@ POST to any HTTP endpoint — the most flexible notification.
 
 ---
 
-## 📡 Ntfy (notify_ntfy)
+## Ntfy (notify_ntfy)
 
 A lightweight push service supporting self-hosted and public servers ([ntfy.sh](https://ntfy.sh)).
 
@@ -200,7 +200,7 @@ A lightweight push service supporting self-hosted and public servers ([ntfy.sh](
 
 ---
 
-## 📋 Example: notify after a workflow finishes
+## Example: notify after a workflow finishes
 
 \`\`\`mermaid
 flowchart TD
@@ -216,9 +216,9 @@ flowchart TD
 
 ---
 
-## 💡 Tips
+## Tips
 
-- **Global config**: preset common channels' parameters under Global settings → Notifications to avoid re-entering per module
+- **Global config**: preset common channels' parameters under Global settings -> Notifications to avoid re-entering per module
 - **Variables**: use \`{name}\` in the content to reference workflow variables for dynamic messages
 - **Multiple channels**: use several notification modules at once to alert multiple channels per event
 - **Avoid spam**: gate notifications behind conditions to send only when needed`

@@ -1,4 +1,4 @@
-export const sapGuideContentEn = `# 🏢 SAP Automation Guide
+export const sapGuideContentEn = `# SAP Automation Guide
 
 > Automate SAP GUI with WebRPA: login, transaction codes, field operations and more.
 
@@ -224,7 +224,7 @@ graph LR
     H -->|No| I[SAP logout]
 \`\`\`
 
-Build it with: SAP login → Read Excel (order data) → foreach order → Run VA01 → set field VBAK-AUART/VKORG/KUNNR → send vkey 0 (Enter) → click btn[0] (save) → get field VBAK-VBELN (order number) → print log → SAP logout.
+Build it with: SAP login -> Read Excel (order data) -> foreach order -> Run VA01 -> set field VBAK-AUART/VKORG/KUNNR -> send vkey 0 (Enter) -> click btn[0] (save) -> get field VBAK-VBELN (order number) -> print log -> SAP logout.
 
 ### Case 2: export material master
 
@@ -261,7 +261,7 @@ Before long operations, periodically send a virtual key (vkey 0, Enter) to keep 
 
 ### Q4: How to get a control ID?
 
-Use the SAP GUI script recorder: "Customize Local Layout" → "Script Recording and Playback" → record → perform actions → stop → read the generated script for control IDs.
+Use the SAP GUI script recorder: "Customize Local Layout" -> "Script Recording and Playback" -> record -> perform actions -> stop -> read the generated script for control IDs.
 
 ### Q5: Which SAP versions are supported?
 
@@ -271,7 +271,7 @@ Use the SAP GUI script recorder: "Customize Local Layout" → "Script Recording 
 
 ---
 
-## 💡 Best practices
+## Best practices
 
 1. **Error handling**: check the status message after each key operation
 2. **Wait time**: adjust by your SAP system's responsiveness
@@ -281,7 +281,7 @@ Use the SAP GUI script recorder: "Customize Local Layout" → "Script Recording 
 
 ---
 
-## 🔗 Related docs
+## Related docs
 
 - [Advanced Features](advanced-features) - loops, conditions
 - [Excel & Tables](excel-guide) - reading Excel data

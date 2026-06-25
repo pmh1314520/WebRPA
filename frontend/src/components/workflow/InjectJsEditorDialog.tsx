@@ -133,6 +133,7 @@ export function InjectJsEditorDialog({ isOpen, code, onClose, onSave }: InjectJs
         })
 
         // 常用DOM操作代码片段
+        // @i18n-ignore-start Monaco 代码补全片段：insertText 为插入编辑器的代码、detail 在代码编辑器补全浮窗内显示，均处于 i18n 排除区，占位符默认文本保持中文不参与英文模式翻译
         const snippets = [
           {
             label: 'get-element-by-id',
@@ -210,6 +211,7 @@ export function InjectJsEditorDialog({ isOpen, code, onClose, onSave }: InjectJs
             detail: '切换CSS类',
           },
         ]
+        // @i18n-ignore-end
 
         snippets.forEach(snippet => {
           suggestions.push({

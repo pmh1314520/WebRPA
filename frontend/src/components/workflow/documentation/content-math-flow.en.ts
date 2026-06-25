@@ -1,8 +1,8 @@
-export const mathFlowGuideContentEn = `# 🔢 Math, Statistics & CSV
+export const mathFlowGuideContentEn = `# Math, Statistics & CSV
 
 ---
 
-## ➕ Math operations
+## Math operations
 
 | Module | Description |
 |------|------|
@@ -24,18 +24,18 @@ export const mathFlowGuideContentEn = `# 🔢 Math, Statistics & CSV
 | math_base_convert | Base conversion (2/8/10/16) |
 | math_random_advanced | Generate a list of random numbers |
 
-Every math module's config is: **input value** → **result variable**.
+Every math module's config is: **input value** -> **result variable**.
 
 **Example** (discounted price):
 \`\`\`
-Set variable → price = 199
-Percentage → value: {price}, total: 100 → discount: 80%
-Or simpler with an expression: Set variable → discounted = {price} * 0.8
+Set variable -> price = 199
+Percentage -> value: {price}, total: 100 -> discount: 80%
+Or simpler with an expression: Set variable -> discounted = {price} * 0.8
 \`\`\`
 
 ---
 
-## 📊 Statistical analysis
+## Statistical analysis
 
 | Module | Description |
 |------|------|
@@ -69,7 +69,7 @@ flowchart TD
 
 ---
 
-## 📋 CSV processing
+## CSV processing
 
 ### CSV parse (csv_parse)
 
@@ -84,10 +84,10 @@ Parse a CSV string into a list of lists (2D array).
 
 **Example** (read and process a CSV file):
 \`\`\`
-Read text file → path: data.csv → result variable: raw_csv
-CSV parse → content: {raw_csv}, has header: Yes → result variable: rows
-Iterate list → list: {rows}, item var: row
-  └── Print log → name: {row["name"]}, age: {row["age"]}
+Read text file -> path: data.csv -> result variable: raw_csv
+CSV parse -> content: {raw_csv}, has header: Yes -> result variable: rows
+Iterate list -> list: {rows}, item var: row
+  └── Print log -> name: {row["name"]}, age: {row["age"]}
 \`\`\`
 
 ---
@@ -119,7 +119,7 @@ Join a list into a string with a given format, supporting complex delimiters and
 
 ---
 
-## 🎲 Probability trigger (probability_trigger)
+## Probability trigger (probability_trigger)
 
 Decide, with a given probability, whether the workflow continues — for randomizing behavior.
 
@@ -140,7 +140,7 @@ Decide, with a given probability, whether the workflow continues — for randomi
 
 ---
 
-## 🔄 Iterate dict (foreach_dict)
+## Iterate dict (foreach_dict)
 
 Iterate all key-value pairs of a dict, getting one key and value per iteration.
 
@@ -155,16 +155,16 @@ Iterate all key-value pairs of a dict, getting one key and value per iteration.
 
 **Example** (process dict data):
 \`\`\`
-Set variable → config = {"host": "localhost", "port": "8080", "debug": "true"}
-Iterate dict → dict: {config}, key: key, value: value
-  └── Print log → config item: {key} = {value}
+Set variable -> config = {"host": "localhost", "port": "8080", "debug": "true"}
+Iterate dict -> dict: {config}, key: key, value: value
+  └── Print log -> config item: {key} = {value}
 \`\`\`
 
 ---
 
-## 💡 Tips
+## Tips
 
 - **Chaining math**: chain modules — the first's result variable feeds the next's input
-- **CSV flow**: read file → CSV parse → iterate/process → CSV generate → write file
+- **CSV flow**: read file -> CSV parse -> iterate/process -> CSV generate -> write file
 - **Statistics**: filter invalid data with "list_filter" first, then compute
 - **Probability trigger**: adding a 5-30% chance of a random wait in bot actions lowers detection risk`

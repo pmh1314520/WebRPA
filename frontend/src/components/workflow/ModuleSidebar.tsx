@@ -5,7 +5,7 @@ import { useModuleStatsStore } from '@/store/moduleStatsStore'
 import { useCustomModuleStore } from '@/store/customModuleStore'
 import type { ModuleType } from '@/types'
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
-import { pinyinMatch } from '@/lib/pinyin'
+import { moduleMatchesQuery } from '@/lib/pinyin'
 import { createPortal } from 'react-dom'
 import { CustomModuleList } from './CustomModuleList'
 import { CreateCustomModuleDialog } from './CreateCustomModuleDialog'
@@ -829,6 +829,7 @@ const moduleIcons: Record<ModuleType, React.ElementType> = {
 }
 
 // 模块搜索关键词（用于模糊搜索）
+// @i18n-ignore-start 搜索关键词/拼音别名仅用于中文模糊匹配，非界面展示文本，翻译会破坏中文搜索
 const moduleKeywords: Record<ModuleType, string[]> = {
   open_page: ['打开', '网页', '浏览器', 'url', '地址', 'open', 'page'],
   dp_open_page: ['drissionpage', 'dp', '反检测', '绕过', '风控', '打开', '网页', 'bypass', '隐蔽'],
@@ -1442,6 +1443,7 @@ const moduleKeywords: Record<ModuleType, string[]> = {
   stop_workflow: ['停止', '工作流', '终止', 'stop', 'workflow', '中断'],
   custom_module: ['自定义', '模块', '函数', 'custom', 'module', '复用'],
 }
+// @i18n-ignore-end
 
 // 模块分类 - 按功能主题合理归类
 const moduleCategories = [
@@ -1504,6 +1506,7 @@ const moduleCategories = [
       'desktop_list_operate', 'desktop_send_keys', 'desktop_get_property', 'desktop_dialog_handle',
       'desktop_hotkey', 'desktop_extract_table', 'desktop_get_app_state', 'desktop_query_with_xpath',
       'desktop_select_text', 'desktop_get_focused_control', 'desktop_assert_control',
+      'desktop_window_topmost', 'desktop_scroll_control', 'desktop_get_control_info', 'desktop_get_control_tree',
     ] as ModuleType[],
   },
   {
@@ -2162,14 +2165,13 @@ function ModuleSidebarRaw() {
     }
 
     const query = searchQuery.trim()
-    const matchType = (type: ModuleType) => {
-      const label = moduleTypeLabels[type]
-      const keywords = moduleKeywords[type] || []
-      if (pinyinMatch(label, query)) return true
-      if (keywords.some(kw => pinyinMatch(kw, query))) return true
-      if (type.toLowerCase().includes(query.toLowerCase())) return true
-      return false
-    }
+    // 统一三处搜索入口：对「中文 label + 英文名 + 关键词」逐项 pinyinMatch，命中任一即返回
+    const matchType = (type: ModuleType) =>
+      moduleMatchesQuery(query, {
+        label: moduleTypeLabels[type],
+        type,
+        keywords: moduleKeywords[type] || [],
+      })
 
     // 搜索时：常用分组里命中的也置顶
     const frequentMatched = frequentModules.filter(matchType)

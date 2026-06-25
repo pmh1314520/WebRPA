@@ -1,8 +1,8 @@
-export const mathFlowGuideContent = `# 🔢 数学统计与 CSV 处理
+export const mathFlowGuideContent = `# 数学统计与 CSV 处理
 
 ---
 
-## ➕ 数学运算
+## 数学运算
 
 | 模块 | 说明 |
 |------|------|
@@ -24,19 +24,19 @@ export const mathFlowGuideContent = `# 🔢 数学统计与 CSV 处理
 | math_base_convert | 进制转换（2/8/10/16进制互转） |
 | math_random_advanced | 生成随机数列表 |
 
-所有数学模块的配置都是：**输入数值** → **结果变量**。
+所有数学模块的配置都是：**输入数值** -> **结果变量**。
 
 **示例**（计算折扣后价格）：
 \`\`\`
-设置变量 → price = 199
-百分比计算 → 数值: {price}, 总数: 100 → 折扣: 80%
-幂运算 → 不适用本例...
-\ 直接用表达式更简单：设置变量 → discounted = {price} * 0.8
+设置变量 -> price = 199
+百分比计算 -> 数值: {price}, 总数: 100 -> 折扣: 80%
+幂运算 -> 不适用本例...
+\ 直接用表达式更简单：设置变量 -> discounted = {price} * 0.8
 \`\`\`
 
 ---
 
-## 📊 统计分析
+## 统计分析
 
 | 模块 | 说明 |
 |------|------|
@@ -70,7 +70,7 @@ flowchart TD
 
 ---
 
-## 📋 CSV 处理
+## CSV 处理
 
 ### CSV 解析（csv_parse）
 
@@ -85,10 +85,10 @@ flowchart TD
 
 **示例**（读取并处理 CSV 文件）：
 \`\`\`
-读取文本文件 → 路径: data.csv → 结果变量: raw_csv
-CSV解析 → 内容: {raw_csv}, 有标题行: 是 → 结果变量: rows
-遍历列表 → 列表: {rows}, 项变量: row
-  └── 打印日志 → 名称: {row["name"]}, 年龄: {row["age"]}
+读取文本文件 -> 路径: data.csv -> 结果变量: raw_csv
+CSV解析 -> 内容: {raw_csv}, 有标题行: 是 -> 结果变量: rows
+遍历列表 -> 列表: {rows}, 项变量: row
+  └── 打印日志 -> 名称: {row["name"]}, 年龄: {row["age"]}
 \`\`\`
 
 ---
@@ -120,7 +120,7 @@ CSV解析 → 内容: {raw_csv}, 有标题行: 是 → 结果变量: rows
 
 ---
 
-## 🎲 概率触发器（probability_trigger）
+## 概率触发器（probability_trigger）
 
 以指定概率决定工作流是否继续执行，用于随机化行为。
 
@@ -141,7 +141,7 @@ CSV解析 → 内容: {raw_csv}, 有标题行: 是 → 结果变量: rows
 
 ---
 
-## 🔄 遍历字典（foreach_dict）
+## 遍历字典（foreach_dict）
 
 遍历字典的所有键值对，每次迭代获取一个键和对应的值。
 
@@ -156,17 +156,17 @@ CSV解析 → 内容: {raw_csv}, 有标题行: 是 → 结果变量: rows
 
 **示例**（处理字典数据）：
 \`\`\`
-设置变量 → config = {"host": "localhost", "port": "8080", "debug": "true"}
-遍历字典 → 字典: {config}, 键: key, 值: value
-  └── 打印日志 → 配置项: {key} = {value}
+设置变量 -> config = {"host": "localhost", "port": "8080", "debug": "true"}
+遍历字典 -> 字典: {config}, 键: key, 值: value
+  └── 打印日志 -> 配置项: {key} = {value}
 \`\`\`
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 - **数学运算组合**：多个数学模块可以串联，第一个的结果变量作为第二个的输入
-- **CSV 处理流程**：读取文件 → CSV解析 → 遍历处理 → CSV生成 → 写入文件
+- **CSV 处理流程**：读取文件 -> CSV解析 -> 遍历处理 -> CSV生成 -> 写入文件
 - **统计分析**：先用「list_filter」过滤无效数据，再进行统计计算
 - **概率触发**：建议在机器人操作中加入5-30%的概率触发随机等待，降低被检测风险
 `

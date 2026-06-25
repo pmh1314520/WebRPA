@@ -1,10 +1,10 @@
-export const shareGuideContent = `# 🔗 网络共享与屏幕共享
+export const shareGuideContent = `# 网络共享与屏幕共享
 
 本章介绍文件夹共享、文件共享和屏幕投屏功能。
 
 ---
 
-## 📁 网络共享
+## 网络共享
 
 ### 共享文件夹（share_folder）
 
@@ -43,7 +43,7 @@ export const shareGuideContent = `# 🔗 网络共享与屏幕共享
 
 ---
 
-## 🖥️ 屏幕共享
+## 屏幕共享
 
 ### 启动屏幕共享（start_screen_share）
 
@@ -70,7 +70,7 @@ export const shareGuideContent = `# 🔗 网络共享与屏幕共享
 
 ---
 
-## 💡 使用场景
+## 使用场景
 
 - **自动化监控**：启动屏幕共享后，远程查看工作流执行进度
 - **文件分发**：将生成的报告文件共享给局域网内其他用户下载

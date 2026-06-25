@@ -1,4 +1,4 @@
-export const desktopGuideContent = `# 🖥️ 桌面应用自动化
+export const desktopGuideContent = `# 桌面应用自动化
 
 本章介绍如何使用 WebRPA 自动化控制 Windows 桌面应用程序（如记事本、Excel、浏览器、自定义软件等），基于 Windows UI Automation 技术实现。
 
@@ -17,7 +17,7 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 
 ---
 
-## 🚀 应用管理
+## 应用管理
 
 ### 启动桌面应用（desktop_app_start）
 
@@ -35,7 +35,7 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 **示例工作流**：
 
 \`\`\`
-启动桌面应用 → 程序路径: C:\\Windows\\notepad.exe → 结果变量: notepad_pid
+启动桌面应用 -> 程序路径: C:\\Windows\\notepad.exe -> 结果变量: notepad_pid
 \`\`\`
 
 ---
@@ -88,15 +88,15 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 
 ---
 
-## 🪟 窗口管理
+## 窗口管理
 
 ### 激活窗口（desktop_window_activate）
 
 将指定窗口置于前台并获取焦点。
 
 \`\`\`
-连接桌面应用 → 应用变量: app
-激活窗口 → 应用变量: {app}
+连接桌面应用 -> 应用变量: app
+激活窗口 -> 应用变量: {app}
 \`\`\`
 
 ---
@@ -157,7 +157,7 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 
 ---
 
-## 🎛️ 控件操作
+## 控件操作
 
 ### 查找控件（desktop_find_control）
 
@@ -229,8 +229,8 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 **示例**（点击「确定」按钮）：
 
 \`\`\`
-查找控件 → 控件名称: 确定, 控件类型: Button → 结果变量: btn_ok
-点击控件 → 控件变量: {btn_ok}
+查找控件 -> 控件名称: 确定, 控件类型: Button -> 结果变量: btn_ok
+点击控件 -> 控件变量: {btn_ok}
 \`\`\`
 
 ---
@@ -320,9 +320,9 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 **示例**（在记事本中另存为）：
 
 \`\`\`
-连接桌面应用 → 进程名: notepad → 结果变量: app
-激活窗口 → 应用变量: {app}
-点击菜单 → 应用变量: {app}, 菜单路径: 文件>另存为
+连接桌面应用 -> 进程名: notepad -> 结果变量: app
+激活窗口 -> 应用变量: {app}
+点击菜单 -> 应用变量: {app}, 菜单路径: 文件>另存为
 \`\`\`
 
 ---
@@ -387,7 +387,7 @@ export const desktopGuideContent = `# 🖥️ 桌面应用自动化
 
 ---
 
-## 📋 完整示例：自动化填写表单
+## 完整示例：自动化填写表单
 
 以下示例演示如何自动打开记事本、输入内容并保存：
 
@@ -404,18 +404,18 @@ flowchart TD
 
 **完整配置**：
 
-1. **启动桌面应用** → 程序路径: \`C:\\Windows\\notepad.exe\` → 结果变量: \`app\`
-2. **等待应用就绪** → 应用变量: \`{app}\` → 超时: \`10\`
-3. **激活窗口** → 应用变量: \`{app}\`
-4. **查找控件** → 控件类型: \`Edit\` → 结果变量: \`text_box\`
-5. **输入文本** → 控件变量: \`{text_box}\` → 内容: \`Hello WebRPA!\`
-6. **发送按键** → 应用变量: \`{app}\` → 按键: \`{CTRL}s\`
-7. **处理对话框** → 操作: 点击确定
-8. **关闭桌面应用** → 应用变量: \`{app}\`
+1. **启动桌面应用** -> 程序路径: \`C:\\Windows\\notepad.exe\` -> 结果变量: \`app\`
+2. **等待应用就绪** -> 应用变量: \`{app}\` -> 超时: \`10\`
+3. **激活窗口** -> 应用变量: \`{app}\`
+4. **查找控件** -> 控件类型: \`Edit\` -> 结果变量: \`text_box\`
+5. **输入文本** -> 控件变量: \`{text_box}\` -> 内容: \`Hello WebRPA!\`
+6. **发送按键** -> 应用变量: \`{app}\` -> 按键: \`{CTRL}s\`
+7. **处理对话框** -> 操作: 点击确定
+8. **关闭桌面应用** -> 应用变量: \`{app}\`
 
 ---
 
-## 💡 使用技巧
+## 使用技巧
 
 ### 如何获取控件的自动化 ID
 
@@ -444,7 +444,7 @@ A：某些自定义下拉框可能需要先点击展开，再查找并点击选�
 
 ---
 
-## 🌟 影刀级桌面增强模块（v1.32+ 新增）
+## 影刀级桌面增强模块（v1.32+ 新增）
 
 针对复杂桌面应用场景，新增 8 个专业模块，准确率与效率大幅提升。
 
@@ -562,14 +562,14 @@ A：某些自定义下拉框可能需要先点击展开，再查找并点击选�
 
 ---
 
-## 🎯 应用类型决策树
+## 应用类型决策树
 
 不同桌面应用底层渲染机制不同，自动化策略也不同：
 
 | 类型 | 应用举例 | 推荐流程 |
 |------|---------|---------|
 | **A 原生应用** | 记事本、Excel、Windows 系统软件 | \`desktop_find_control_smart\` + \`desktop_click_control\` + \`desktop_input_control\` |
-| **B Electron / Flutter** | VSCode、QQ、微信、Discord | UIA 找窗口外壳 → 用 \`click_text\` / \`click_image\` / \`desktop_hotkey\` |
+| **B Electron / Flutter** | VSCode、QQ、微信、Discord | UIA 找窗口外壳 -> 用 \`click_text\` / \`click_image\` / \`desktop_hotkey\` |
 | **C 游戏 / Canvas** | 全屏游戏、自定义渲染 | \`click_image\` + \`click_text\` + \`real_mouse_click\` + \`desktop_hotkey\` |
 
 判断方法：用「桌面元素选择器」拾取主区域，如果只看到一个根控件而看不到内部按钮，说明是类型 B 或 C，必须降级到图像/OCR/热键策略。

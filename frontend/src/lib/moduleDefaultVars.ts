@@ -31,7 +31,7 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   // ==================== 触发器 ====================
   element_change_trigger: {
     saveNewElementSelector: 'new_element_selector',
-    saveToVariable: 'element_change_info',
+    saveChangeInfo: 'element_change_info',
   },
   webhook_trigger: { saveToVariable: 'webhook_data' },
   file_watcher_trigger: { saveToVariable: 'file_event' },
@@ -62,7 +62,7 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   screenshot: { resultVariable: 'screenshot_path' },
   get_element_info: { resultVariable: 'element_info' },
   download_file: { resultVariable: 'file_downloaded' },
-  extract_table_data: { resultVariable: 'table_data' },
+  extract_table_data: { variableName: 'table_data' },
   run_command: { resultVariable: 'command_output' },
   js_script: { resultVariable: 'js_result' },
   python_script: { resultVariable: 'python_result' },
@@ -112,15 +112,15 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   read_text_file: { resultVariable: 'file_content' },
   input_prompt: { resultVariable: 'user_input' },
   network_capture: { resultVariable: 'network_requests' },
-  firecrawl_scrape: { resultVariable: 'firecrawl_data' },
-  firecrawl_map: { resultVariable: 'firecrawl_links' },
-  firecrawl_crawl: { resultVariable: 'firecrawl_pages' },
+  firecrawl_scrape: { variableName: 'scrape_result' },
+  firecrawl_map: { variableName: 'map_result' },
+  firecrawl_crawl: { variableName: 'crawl_result' },
   ai_smart_scraper: { resultVariable: 'scraped_data' },
   ai_element_selector: { resultVariable: 'selector_result' },
 
   // ==================== 手机自动化 ====================
   phone_screenshot: { resultVariable: 'phone_screenshot' },
-  phone_get_clipboard: { resultVariable: 'phone_clipboard_content' },
+  phone_get_clipboard: { variableName: 'phone_clipboard' },
   phone_click_image: { resultVariable: 'phone_image_clicked' },
   phone_click_text: { resultVariable: 'phone_text_clicked' },
   phone_wait_image: { resultVariable: 'phone_image_found' },
@@ -240,25 +240,25 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   list_to_string_advanced: { resultVariable: 'joined_string' },
 
   // ==================== 桌面应用 ====================
-  desktop_get_text: { resultVariable: 'control_text' },
-  desktop_get_control_info: { resultVariable: 'control_info' },
-  desktop_get_control_tree: { resultVariable: 'control_tree' },
-  desktop_app_get_info: { resultVariable: 'app_info' },
-  desktop_window_list: { resultVariable: 'window_list' },
-  desktop_get_property: { resultVariable: 'property_value' },
-  desktop_window_capture: { resultVariable: 'window_screenshot' },
+  desktop_get_text: { controlVariable: 'desktop_control', saveToVariable: 'control_text' },
+  desktop_get_control_info: { controlVariable: 'desktop_control', saveToVariable: 'control_info' },
+  desktop_get_control_tree: { appVariable: 'desktop_app', saveToVariable: 'control_tree' },
+  desktop_app_get_info: { appVariable: 'desktop_app', saveToVariable: 'app_info' },
+  desktop_window_list: { saveToVariable: 'window_list' },
+  desktop_get_property: { controlVariable: 'desktop_control', saveToVariable: 'property_value' },
+  desktop_window_capture: { appVariable: 'desktop_app', saveToVariable: 'screenshot_path' },
 
   // 桌面影刀级新模块（智能查找/批量抓取/UI快照/XPath 等）
-  desktop_find_control_smart: { saveToVariable: 'desktop_control' },
-  desktop_extract_table: { variableName: 'extracted_data' },
-  desktop_get_app_state: { variableName: 'app_state' },
-  desktop_query_with_xpath: { saveToVariable: 'desktop_control' },
-  desktop_select_text: { variableName: 'selected_text' },
+  desktop_find_control_smart: { appVariable: 'desktop_app', saveToVariable: 'desktop_control' },
+  desktop_extract_table: { appVariable: 'desktop_app', variableName: 'extracted_data' },
+  desktop_get_app_state: { appVariable: 'desktop_app', variableName: 'app_state' },
+  desktop_query_with_xpath: { appVariable: 'desktop_app', saveToVariable: 'desktop_control' },
+  desktop_select_text: { controlVariable: 'desktop_control', variableName: 'selected_text' },
   desktop_get_focused_control: { saveToVariable: 'focused_control' },
 
   // ==================== AI 媒体 ====================
-  ai_generate_image: { resultVariable: 'generated_image' },
-  ai_generate_video: { resultVariable: 'generated_video' },
+  ai_generate_image: { variableName: 'ai_image_urls' },
+  ai_generate_video: { variableName: 'ai_video_url' },
   audio_to_text: { resultVariable: 'audio_text' },
 
   // ==================== Allure 测试 ====================
@@ -267,37 +267,94 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   allure_generate_report: { resultVariable: 'report_path' },
 
   // ==================== 数据库扩展 ====================
-  oracle_query: { resultVariable: 'oracle_result' },
+  oracle_query: { variableName: 'oracle_result' },
   oracle_execute: { resultVariable: 'oracle_affected' },
-  postgresql_query: { resultVariable: 'pg_result' },
+  postgresql_query: { variableName: 'postgresql_result' },
   postgresql_execute: { resultVariable: 'pg_affected' },
-  mongodb_find: { resultVariable: 'mongo_documents' },
-  sqlserver_query: { resultVariable: 'mssql_result' },
+  mongodb_find: { variableName: 'mongodb_result' },
+  sqlserver_query: { variableName: 'sqlserver_result' },
   sqlserver_execute: { resultVariable: 'mssql_affected' },
-  sqlite_query: { resultVariable: 'sqlite_result' },
+  sqlite_query: { variableName: 'sqlite_result' },
   sqlite_execute: { resultVariable: 'sqlite_affected' },
-  redis_get: { resultVariable: 'redis_value' },
-  redis_hget: { resultVariable: 'redis_hash_value' },
+  redis_get: { variableName: 'redis_value' },
+  redis_hget: { variableName: 'redis_hash_value' },
 
   // ==================== SSH ====================
-  ssh_execute_command: { resultVariable: 'ssh_output' },
+  ssh_execute_command: { errorVariable: 'ssh_error', outputVariable: 'ssh_output' },
 
   // ==================== SAP ====================
-  sap_get_field_value: { resultVariable: 'field_value' },
-  sap_get_status_message: { resultVariable: 'status_message' },
-  sap_get_title: { resultVariable: 'title_text' },
-  sap_read_gridview: { resultVariable: 'grid_data' },
+  sap_get_field_value: { saveToVariable: 'sap_value' },
+  sap_get_status_message: { saveToVariable: 'sap_status_message' },
+  sap_get_title: { saveToVariable: 'sap_title' },
+  sap_read_gridview: { saveToVariable: 'sap_table_data' },
   sap_export_gridview_excel: { resultVariable: 'export_path' },
 
   // ==================== Webhook 请求 ====================
-  webhook_request: { resultVariable: 'webhook_response' },
+  webhook_request: { responseVariable: 'webhook_response', statusVariable: 'webhook_status' },
 
   // ==================== 飞书 ====================
-  feishu_bitable_read: { resultVariable: 'bitable_data' },
-  feishu_sheet_read: { resultVariable: 'sheet_data' },
+  feishu_bitable_read: { variableName: 'feishu_data' },
+  feishu_sheet_read: { variableName: 'feishu_sheet_data' },
 
   // ==================== 文本/媒体识别 ====================
   network_monitor_wait: { resultVariable: 'monitored_request' },
+
+  // ==================== 任务 2.3 补登记：后端含非空默认内置变量的模块 ====================
+  // 媒体格式转换 / 录屏
+  audio_format_convert: { resultVariable: 'converted_audio' },
+  batch_format_convert: { resultVariable: 'converted_files' },
+  video_format_convert: { resultVariable: 'converted_video' },
+  video_to_audio: { resultVariable: 'extracted_audio' },
+  video_to_gif: { resultVariable: 'gif_path' },
+  screen_record: { resultVariable: 'recording_path' },
+
+  // 文件/文件夹操作
+  copy_file: { resultVariable: 'copied_path' },
+  move_file: { resultVariable: 'moved_path' },
+  create_folder: { resultVariable: 'folder_path' },
+  rename_folder: { resultVariable: 'new_folder_path' },
+  file_exists: { resultVariable: 'exists' },
+  write_text_file: { resultVariable: 'write_path' },
+
+  // 桌面应用：appVariable=应用句柄变量、controlVariable=控件句柄变量、saveToVariable=输出
+  desktop_app_close: { appVariable: 'desktop_app' },
+  desktop_app_connect: { saveToVariable: 'desktop_app' },
+  desktop_app_wait_ready: { appVariable: 'desktop_app' },
+  desktop_assert_control: { controlVariable: 'desktop_control' },
+  desktop_checkbox: { controlVariable: 'desktop_control' },
+  desktop_click_control: { controlVariable: 'desktop_control' },
+  desktop_drag_control: { controlVariable: 'desktop_control' },
+  desktop_find_control: { appVariable: 'desktop_app', saveToVariable: 'desktop_control' },
+  desktop_input_control: { controlVariable: 'desktop_control' },
+  desktop_list_operate: { controlVariable: 'desktop_control', saveToVariable: 'list_result' },
+  desktop_menu_click: { appVariable: 'desktop_app' },
+  desktop_radio: { controlVariable: 'desktop_control' },
+  desktop_scroll_control: { controlVariable: 'desktop_control' },
+  desktop_select_combo: { controlVariable: 'desktop_control' },
+  desktop_send_keys: { controlVariable: 'desktop_control' },
+  desktop_set_value: { controlVariable: 'desktop_control' },
+  desktop_window_activate: { appVariable: 'desktop_app' },
+  desktop_window_move: { appVariable: 'desktop_app' },
+  desktop_window_resize: { appVariable: 'desktop_app' },
+  desktop_window_state: { appVariable: 'desktop_app' },
+  desktop_window_topmost: { appVariable: 'desktop_app' },
+
+  // QQ（NapCat）即时通讯查询类
+  qq_get_friends: { resultVariable: 'qq_friends' },
+  qq_get_group_members: { resultVariable: 'qq_group_members' },
+  qq_get_groups: { resultVariable: 'qq_groups' },
+  qq_get_login_info: { resultVariable: 'qq_login_info' },
+  qq_wait_message: { resultVariable: 'qq_received_message' },
+
+  // 分享 / 屏幕共享
+  share_file: { resultVariable: 'share_url' },
+  share_folder: { resultVariable: 'share_url' },
+  start_screen_share: { resultVariable: 'screen_share_url' },
+
+  // 其它（页面加载完成 / SAP 登录 / WPS 多维表读取）
+  page_load_complete: { saveToVariable: 'page_loaded' },
+  sap_login: { saveToVariable: 'sap_session' },
+  wps_bitable_read: { variableName: 'wps_data' },
 }
 
 /**
@@ -345,6 +402,29 @@ export const VARIABLE_NAME_FIELDS: string[] = [
   'saveNewElementSelector', 'saveChangeInfo', 'dataSource',
 ]
 
+
+/**
+ * 审计辅助：校验 MODULE_DEFAULT_VARS 中每个字段名都在 VARIABLE_NAME_FIELDS 白名单内。
+ *
+ * 背景：collectNodeVarNames 从「配置侧」提取已填变量名时，只认 VARIABLE_NAME_FIELDS
+ * 白名单里的字段。如果某模块在 MODULE_DEFAULT_VARS 用了一个不在白名单内的字段名，
+ * 那么当用户在该字段填了自定义变量名时（而非沿用默认名），补全/变量追踪就会漏掉它。
+ * 因此「默认变量字段名必须全部收录进白名单」是内置变量补全完整性的硬约束。
+ *
+ * @returns 不在白名单内的 {type, field} 列表；为空表示全部合规（Property 6 通过）。
+ */
+export function findUnregisteredVarFields(): { type: string; field: string }[] {
+  const whitelist = new Set<string>(VARIABLE_NAME_FIELDS)
+  const result: { type: string; field: string }[] = []
+  for (const [type, fields] of Object.entries(MODULE_DEFAULT_VARS)) {
+    for (const field of Object.keys(fields)) {
+      if (!whitelist.has(field)) {
+        result.push({ type, field })
+      }
+    }
+  }
+  return result
+}
 
 /**
  * 收集一个节点在「创建时」应自动建立的变量名集合：

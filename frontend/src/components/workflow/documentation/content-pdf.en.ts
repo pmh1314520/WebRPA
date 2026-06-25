@@ -1,10 +1,10 @@
-export const pdfGuideContentEn = `# 📄 PDF Processing Guide
+export const pdfGuideContentEn = `# PDF Processing Guide
 
 This chapter introduces various PDF file processing features, including format conversion, merge/split, encrypt/decrypt, watermarking, and more.
 
 ---
 
-## 📋 Module Overview
+## Module Overview
 
 | Module | Function | Default Timeout |
 |------|------|----------|
@@ -28,7 +28,7 @@ This chapter introduces various PDF file processing features, including format c
 
 ---
 
-## 🖼️ PDF to Image
+## PDF to Image
 
 Convert each page of a PDF into a separate image file.
 
@@ -71,7 +71,7 @@ Convert specified pages:
 
 ---
 
-## 📷 Image to PDF
+## Image to PDF
 
 Combine multiple images into a single PDF file.
 
@@ -100,7 +100,7 @@ Specify images manually:
 
 ---
 
-## 🔗 PDF Merge
+## PDF Merge
 
 Merge multiple PDF files into one.
 
@@ -127,7 +127,7 @@ Specify files manually:
 
 ---
 
-## ✂️ PDF Split
+## PDF Split
 
 Split a PDF into multiple separate files.
 
@@ -166,7 +166,7 @@ Split by chapter:
 
 ---
 
-## 📝 PDF Extract Text
+## PDF Extract Text
 
 Extract the text content from a PDF.
 
@@ -193,7 +193,7 @@ Extract specified pages:
   Result variable: intro text
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - Scanned PDFs need OCR first before text can be extracted
 - The extracted result may contain formatting characters
@@ -201,7 +201,7 @@ Extract specified pages:
 
 ---
 
-## 🖼️ PDF Extract Images
+## PDF Extract Images
 
 Extract images embedded in a PDF.
 
@@ -231,7 +231,7 @@ Extract only large images:
 
 ---
 
-## 🔐 PDF Encrypt
+## PDF Encrypt
 
 Add password protection to a PDF.
 
@@ -276,7 +276,7 @@ Full protection:
 
 ---
 
-## 🔓 PDF Decrypt
+## PDF Decrypt
 
 Remove the password protection from a PDF.
 
@@ -301,7 +301,7 @@ Decrypt a PDF:
 
 ---
 
-## 💧 PDF Add Watermark
+## PDF Add Watermark
 
 Add a text or image watermark to a PDF.
 
@@ -352,7 +352,7 @@ Add a logo watermark:
 
 ---
 
-## 🔄 PDF Rotate
+## PDF Rotate
 
 Rotate the page orientation of a PDF.
 
@@ -383,7 +383,7 @@ Rotate specified pages:
 
 ---
 
-## 🗑️ PDF Delete Pages
+## PDF Delete Pages
 
 Delete specified pages from a PDF.
 
@@ -412,7 +412,7 @@ Delete multiple pages:
 
 ---
 
-## ℹ️ PDF Get Info
+## PDF Get Info
 
 Get the metadata of a PDF file.
 
@@ -453,7 +453,7 @@ Print log: Author: {PDF info.author}
 
 ---
 
-## 📦 PDF Compress
+## PDF Compress
 
 Compress a PDF file to reduce its size.
 
@@ -486,7 +486,7 @@ Compress a PDF:
 
 ---
 
-## ➕ PDF Insert Pages
+## PDF Insert Pages
 
 Insert pages from another PDF into a target PDF.
 
@@ -520,7 +520,7 @@ Insert an appendix:
 
 ---
 
-## 🔀 PDF Reorder Pages
+## PDF Reorder Pages
 
 Adjust the order of PDF pages.
 
@@ -549,7 +549,7 @@ Reverse order:
 
 ---
 
-## 📝 PDF to Word
+## PDF to Word
 
 Convert a PDF file into an editable Word document.
 
@@ -578,7 +578,7 @@ Convert specified pages:
   Result variable: Word file
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - The conversion quality depends on the complexity of the PDF
 - Scanned PDFs convert poorly
@@ -587,7 +587,7 @@ Convert specified pages:
 
 ---
 
-## 📄 Word to PDF
+## Word to PDF
 
 Convert a Word document into a PDF file.
 
@@ -608,7 +608,7 @@ Convert Word to PDF:
   Result variable: PDF file
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - Requires Microsoft Word or LibreOffice installed on the system
 - The conversion preserves the original formatting and layout
@@ -616,12 +616,12 @@ Convert Word to PDF:
 
 ---
 
-## 💡 PDF Processing Tips
+## PDF Processing Tips
 
 ### 1. Batch Processing
 
 \`\`\`
-Get file list: D:/pdfs/*.pdf → {PDF list}
+Get file list: D:/pdfs/*.pdf -> {PDF list}
 Iterate list: {PDF list}
   PDF compress:
     Input: {current item}
@@ -633,7 +633,7 @@ Iterate list: {PDF list}
 
 \`\`\`
 # 1. Get PDF info
-PDF get info: {PDF file} → {info}
+PDF get info: {PDF file} -> {info}
 
 # 2. Add watermark
 PDF add watermark:
@@ -653,13 +653,13 @@ PDF encrypt:
 
 \`\`\`
 # 1. PDF to image
-PDF to image: {scanned PDF} → {image list}
+PDF to image: {scanned PDF} -> {image list}
 
 # 2. Image OCR recognition
 Iterate list: {image list}
-  Image OCR: {current item} → {text}
+  Image OCR: {current item} -> {text}
   String concat: {all text} + {text}
 
 # 3. Save the recognition result
-Write text file: {all text} → D:/output/ocr_result.txt
+Write text file: {all text} -> D:/output/ocr_result.txt
 \`\`\``

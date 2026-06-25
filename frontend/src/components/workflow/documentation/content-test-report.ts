@@ -3,7 +3,7 @@ export const testReportContent = `
 
 测试报告模块基于 Allure 框架，帮助你生成专业的测试报告，记录工作流执行过程，分析测试结果。
 
-## 📊 模块列表
+## 模块列表
 
 ### 1. Allure初始化
 
@@ -23,7 +23,7 @@ export const testReportContent = `
 \`\`\`
 结果目录：./test-results/{get_time}
 测试套件：登录功能测试
-清空已有结果：✓
+清空已有结果：[√]
 \`\`\`
 
 ---
@@ -117,13 +117,13 @@ export const testReportContent = `
 **常见用法：**
 \`\`\`
 1. 截图后添加附件：
-   屏幕截图 → 添加附件
+   屏幕截图 -> 添加附件
 
 2. 保存日志文件：
-   导出日志 → 添加附件
+   导出日志 -> 添加附件
 
 3. 保存测试数据：
-   导出表格 → 添加附件
+   导出表格 -> 添加附件
 \`\`\`
 
 ---
@@ -171,12 +171,12 @@ export const testReportContent = `
 **示例：**
 \`\`\`
 报告目录：./reports/test-{get_time}
-自动打开报告：✓
+自动打开报告：[√]
 \`\`\`
 
 ---
 
-## 💡 完整示例
+## 完整示例
 
 ### 示例1：简单的登录测试
 
@@ -184,7 +184,7 @@ export const testReportContent = `
 1. Allure初始化
    - 结果目录：./allure-results
    - 测试套件：登录功能测试
-   - 清空已有结果：✓
+   - 清空已有结果：[√]
 
 2. 开始测试用例
    - 名称：用户登录测试
@@ -256,7 +256,7 @@ export const testReportContent = `
 
 21. 生成测试报告
     - 报告目录：./allure-report
-    - 自动打开报告：✓
+    - 自动打开报告：[√]
 \`\`\`
 
 ---
@@ -267,7 +267,7 @@ export const testReportContent = `
 1. Allure初始化
    - 结果目录：./allure-results
    - 测试套件：用户管理功能测试
-   - 清空已有结果：✓
+   - 清空已有结果：[√]
 
 2. 设置变量
    - 变量名：test_cases
@@ -300,12 +300,12 @@ export const testReportContent = `
 
 9. 生成测试报告
    - 报告目录：./allure-report
-   - 自动打开报告：✓
+   - 自动打开报告：[√]
 \`\`\`
 
 ---
 
-## 🎯 最佳实践
+## 最佳实践
 
 ### 1. 测试用例组织
 
@@ -339,7 +339,7 @@ export const testReportContent = `
 
 ---
 
-## ⚠️ 注意事项
+## 注意事项
 
 1. **Allure命令行工具**
    - 生成报告需要单独安装 Allure 命令行工具
@@ -366,7 +366,7 @@ export const testReportContent = `
 
 ---
 
-## 🔗 相关资源
+## 相关资源
 
 - Allure官方文档：https://docs.qameta.io/allure/
 - Allure报告示例：https://demo.qameta.io/allure/

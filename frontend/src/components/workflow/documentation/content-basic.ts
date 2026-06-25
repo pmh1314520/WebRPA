@@ -1,10 +1,10 @@
-export const basicModulesContent = `# ⚡ 基础模块详解
+export const basicModulesContent = `# 基础模块详解
 
 本章详细介绍所有基础模块的功能和配置方法。
 
 ---
 
-## 🌐 浏览器操作模块
+## 浏览器操作模块
 
 ### 打开网页
 
@@ -121,19 +121,19 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 1. **文本内容**：获取元素显示的文字
    \`\`\`html
    <span class="price">¥99.00</span>
-   → 提取结果：¥99.00
+   -> 提取结果：¥99.00
    \`\`\`
 
 2. **属性值**：获取元素的HTML属性
    \`\`\`html
    <a href="https://example.com">链接</a>
-   → 提取 href 属性：https://example.com
+   -> 提取 href 属性：https://example.com
    \`\`\`
 
 3. **HTML内容**：获取元素的完整HTML
    \`\`\`html
    <div class="content"><p>段落</p></div>
-   → 提取结果：<p>段落</p>
+   -> 提取结果：<p>段落</p>
    \`\`\`
 
 **数据采集技巧**：
@@ -249,7 +249,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 
 ---
 
-## ⏰ 等待模块
+## 等待模块
 
 ### 等待（固定时间）
 
@@ -300,7 +300,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 
 ---
 
-## 📝 表单操作模块
+## 表单操作模块
 
 ### 下拉框选择
 
@@ -319,13 +319,13 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 1. **按值选择**：使用 option 的 value 属性
    \`\`\`html
    <option value="beijing">北京</option>
-   → 选项值填：beijing
+   -> 选项值填：beijing
    \`\`\`
 
 2. **按文本选择**：使用 option 显示的文字
    \`\`\`html
    <option value="beijing">北京</option>
-   → 选项值填：北京
+   -> 选项值填：北京
    \`\`\`
 
 3. **按索引选择**：使用选项的位置（从0开始）
@@ -378,13 +378,13 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 - **input[type="file"]**：标准文件输入框，直接设置文件
 - **按钮元素**：点击后弹出文件选择器的按钮，自动监听文件选择器
 
-**路径选择**：点击输入框右侧的 📁 按钮可以通过资源管理器选择文件
+**路径选择**：点击输入框右侧的 按钮可以通过资源管理器选择文件
 
 **注意**：不支持选择文件夹的上传控件（webkitdirectory）
 
 ---
 
-## 📜 滚动模块
+## 滚动模块
 
 ### 滚动页面
 
@@ -433,7 +433,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 - 普通滚动方式无效时
 - 需要最真实的滚动模拟时
 
-**⚠️ 重要提示**：
+**重要提示**：
 - 使用此模块时，鼠标必须位于需要滚动的页面区域内
 - 这是系统级操作，会真实移动鼠标滚轮
 - 适用于任何网页，无法被网页检测或阻止
@@ -448,7 +448,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 
 ---
 
-## 📸 截图模块
+## 截图模块
 
 ### 网页截图
 
@@ -467,7 +467,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 - **可视区域**：只截取当前可见部分
 - **指定元素**：截取特定元素的图片
 
-💡 如需截取整个屏幕（包括浏览器外的内容），请使用系统操作分类中的「屏幕截图」模块
+如需截取整个屏幕（包括浏览器外的内容），请使用系统操作分类中的「屏幕截图」模块
 
 ---
 
@@ -489,7 +489,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 
 ---
 
-## 📊 数据处理模块
+## 数据处理模块
 
 ### 设置变量
 
@@ -562,7 +562,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 
 ---
 
-## 📋 辅助工具模块
+## 辅助工具模块
 
 ### 打印日志
 
@@ -646,7 +646,7 @@ export const basicModulesContent = `# ⚡ 基础模块详解
 
 ---
 
-## 💻 脚本模块
+## 脚本模块
 
 ### JS脚本
 

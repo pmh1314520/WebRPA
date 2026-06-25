@@ -1,10 +1,10 @@
-export const sapGuideContent = `# 🏢 SAP自动化指南
+export const sapGuideContent = `# SAP自动化指南
 
 > 通过WebRPA实现SAP GUI自动化操作，支持登录、事务码执行、字段操作等功能
 
 ---
 
-## 📋 目录
+## 目录
 
 - [模块概览](#模块概览)
 - [连接与登录](#连接与登录)
@@ -412,7 +412,7 @@ graph LR
 ### Q4: 如何获取控件ID？
 
 **A**: 使用SAP GUI脚本录制器：
-1. 在SAP GUI中，选择"自定义本地布局" → "脚本录制和回放"
+1. 在SAP GUI中，选择"自定义本地布局" -> "脚本录制和回放"
 2. 开始录制
 3. 执行操作
 4. 停止录制
@@ -427,7 +427,7 @@ graph LR
 
 ---
 
-## 💡 最佳实践
+## 最佳实践
 
 1. **错误处理**：每个关键操作后检查状态消息
 2. **等待时间**：根据SAP系统响应速度调整等待时间
@@ -437,12 +437,12 @@ graph LR
 
 ---
 
-## 🔗 相关文档
+## 相关文档
 
-- [🔀 流程控制](./advanced-features) - 循环、条件判断
-- [📊 数据表格](./excel-guide) - Excel数据读取
-- [📢 消息通知](./notifications-guide) - 日志记录
-- [🐛 调试与错误处理](./debug-guide) - 错误处理技巧
+- [流程控制](./advanced-features) - 循环、条件判断
+- [数据表格](./excel-guide) - Excel数据读取
+- [消息通知](./notifications-guide) - 日志记录
+- [调试与错误处理](./debug-guide) - 错误处理技巧
 
 ---
 

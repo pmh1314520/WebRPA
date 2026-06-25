@@ -1,10 +1,10 @@
-export const imageGuideContentEn = `# 🖼️ Image Processing
+export const imageGuideContentEn = `# Image Processing
 
 This chapter introduces the image editing and processing modules provided by WebRPA, built on the Pillow (PIL) library.
 
 ---
 
-## 📐 Image Transformations
+## Image Transformations
 
 ### Resize Image (image_resize)
 
@@ -54,7 +54,7 @@ Quickly generate a thumbnail while keeping the aspect ratio.
 
 ---
 
-## 🎨 Image Color Adjustment
+## Image Color Adjustment
 
 ### Brightness Adjustment (image_brightness)
 
@@ -107,7 +107,7 @@ Add rounded corners to an image.
 
 ---
 
-## 📝 Image Content Operations
+## Image Content Operations
 
 ### Add Text to Image (image_add_text)
 
@@ -155,7 +155,7 @@ Remove the image background based on a color threshold.
 
 ---
 
-## 🛠️ Image Tools
+## Image Tools
 
 ### Get Image Info (image_get_info)
 
@@ -200,7 +200,7 @@ Recognize and decode a QR code or barcode from an image.
 
 ---
 
-## 🔄 Format Factory
+## Format Factory
 
 The Format Factory module supports batch conversion of image, video, and audio formats.
 
@@ -256,7 +256,7 @@ Batch convert the formats of all media files in an entire folder.
 
 ---
 
-## 💡 Tips
+## Tips
 
 - When the **output path** of any image processing module is left empty, a new file is generated in the same directory as the source file
 - For batch processing, combine the "Loop List" module with the "Get File List" module
@@ -265,7 +265,7 @@ Batch convert the formats of all media files in an entire folder.
 
 ---
 
-## 🫥 Blind Watermark (Invisible Digital Watermark)
+## Blind Watermark (Invisible Digital Watermark)
 
 WebRPA integrates **blind_watermark** (frequency-domain DWT-DCT-SVD), embedding "text" or a "small image" into an image in a way invisible to the human eye. It can resist common re-processing such as screenshots, JPEG recompression, and slight scaling/cropping.
 
@@ -316,13 +316,13 @@ WebRPA integrates **blind_watermark** (frequency-domain DWT-DCT-SVD), embedding 
 | Watermark height / Watermark width | The two components of the \`shape\` returned during embedding; you can use \`{{shape}}[0]\` and \`{{shape}}[1]\` |
 | Watermark password/Image password | Must match those used during embedding |
 
-### Complete Workflow Example (Embed → Extract Text)
+### Complete Workflow Example (Embed -> Extract Text)
 
 \`\`\`mermaid
 flowchart LR
-  A[source.png] --> B[Blind Watermark · Embed Text<br/>text='© Me'<br/>password_wm=42]
+  A[source.png] --> B[Blind Watermark · Embed Text<br/>text='Me'<br/>password_wm=42]
   B -- output_wm.png + wm_bit_len --> C[Image<br/>Save As / Share / Upload]
   C --> D[Blind Watermark · Extract Text<br/>password_wm=42<br/>wm_bit_len={{wm_bit_len}}]
-  D --> E[Got text '© Me']
+  D --> E[Got text 'Me']
 \`\`\`
 `

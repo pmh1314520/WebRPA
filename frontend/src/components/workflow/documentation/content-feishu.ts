@@ -1,10 +1,10 @@
-export const feishuGuideContent = `# 🚀 飞书自动化指南
+export const feishuGuideContent = `# 飞书自动化指南
 
 > 通过WebRPA实现飞书多维表格和电子表格的自动化操作
 
 ---
 
-## 📋 目录
+## 目录
 
 - [模块概览](#模块概览)
 - [前置准备](#前置准备)
@@ -387,7 +387,7 @@ graph LR
 **A**: 打开多维表格，从URL中获取：
 \`\`\`
 https://xxx.feishu.cn/base/bascnxxxxxxxxxxxxxx?table=tblxxxxxxxxxxxxxx
-                                                      ↑ 这里是table_id
+                                                      上 这里是table_id
 \`\`\`
 
 ### Q2: 如何处理大量数据？
@@ -445,7 +445,7 @@ https://xxx.feishu.cn/base/bascnxxxxxxxxxxxxxx?table=tblxxxxxxxxxxxxxx
 
 ---
 
-## 💡 最佳实践
+## 最佳实践
 
 1. **凭证管理**：将App ID和App Secret存储在全局变量中，避免硬编码
 2. **错误处理**：每次API调用后检查返回状态
@@ -455,12 +455,12 @@ https://xxx.feishu.cn/base/bascnxxxxxxxxxxxxxx?table=tblxxxxxxxxxxxxxx
 
 ---
 
-## 🔗 相关文档
+## 相关文档
 
-- [📊 数据表格](./excel-guide) - Excel数据处理
-- [🌐 网络请求](./network-guide) - API调用
-- [🔀 流程控制](./advanced-features) - 循环、条件判断
-- [📢 多渠道通知](./notify-guide) - 飞书通知
+- [数据表格](./excel-guide) - Excel数据处理
+- [网络请求](./network-guide) - API调用
+- [流程控制](./advanced-features) - 循环、条件判断
+- [多渠道通知](./notify-guide) - 飞书通知
 
 ---
 

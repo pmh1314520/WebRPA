@@ -1,10 +1,10 @@
-export const filesGuideContentEn = `# 📁 File Operations Guide
+export const filesGuideContentEn = `# File Operations Guide
 
 This chapter covers operations on files and folders.
 
 ---
 
-## 📋 Module overview
+## Module overview
 
 | Module | Function | Default timeout |
 |------|------|----------|
@@ -22,7 +22,7 @@ This chapter covers operations on files and folders.
 
 ---
 
-## 📂 List files
+## List files
 
 List all files and folders in a directory.
 
@@ -69,7 +69,7 @@ A list of full file paths:
 
 ---
 
-## 📋 Copy file
+## Copy file
 
 Copy a file to a new location.
 
@@ -95,7 +95,7 @@ Copy to a new dir:
 ### Batch copy
 
 \`\`\`
-List files: D:/source/*.txt → {fileList}
+List files: D:/source/*.txt -> {fileList}
 Iterate: {fileList}
   Copy file:
     Source: {item}
@@ -104,7 +104,7 @@ Iterate: {fileList}
 
 ---
 
-## 📦 Move file
+## Move file
 
 Move a file to a new location (the original is removed).
 
@@ -128,7 +128,7 @@ Archive by date:
 
 ---
 
-## 🗑️ Delete file
+## Delete file
 
 Delete a file.
 
@@ -137,7 +137,7 @@ Delete a file.
 | File path | The file to delete |
 | To recycle bin | Move to the recycle bin instead of permanent delete |
 
-### ⚠️ Notes
+### Notes
 
 - Deletion is irreversible (unless using the recycle bin)
 - Back up important files first
@@ -153,13 +153,13 @@ Delete a temp file:
 Safe delete:
   File exists: {filePath}
   Condition: {fileExists}
-    ├─ yes → Delete file: {filePath}
-    └─ no → Print log: file does not exist
+    ├─ yes -> Delete file: {filePath}
+    └─ no -> Print log: file does not exist
 \`\`\`
 
 ---
 
-## 📁 Create folder
+## Create folder
 
 Create a new directory.
 
@@ -176,13 +176,13 @@ Create an output dir:
   Recursive: yes  # auto-creates output, 2024, 01
 
 Create a dated dir:
-  Get time → {today}
+  Get time -> {today}
   Create folder: D:/data/{today}
 \`\`\`
 
 ---
 
-## ❓ File exists
+## File exists
 
 Check whether a file or folder exists.
 
@@ -199,13 +199,13 @@ Check a config file:
   Save to: configExists
 
 Condition: {configExists}
-  ├─ yes → read the config
-  └─ no → use defaults
+  ├─ yes -> read the config
+  └─ no -> use defaults
 \`\`\`
 
 ---
 
-## 📊 Get file info
+## Get file info
 
 Get detailed info about a file.
 
@@ -234,15 +234,15 @@ Get detailed info about a file.
 
 \`\`\`
 Check the file size:
-  Get file info: D:/downloads/video.mp4 → {fileInfo}
+  Get file info: D:/downloads/video.mp4 -> {fileInfo}
   Condition: {fileInfo.size} > 104857600  # 100MB
-    ├─ yes → Print log: too large, compress it
-    └─ no → continue
+    ├─ yes -> Print log: too large, compress it
+    └─ no -> continue
 \`\`\`
 
 ---
 
-## 📖 Read text file
+## Read text file
 
 Read a text file's content.
 
@@ -267,12 +267,12 @@ Read a config:
   Encoding: UTF-8
   Save to: configText
 
-JSON parse: {configText} → {configObj}
+JSON parse: {configText} -> {configObj}
 \`\`\`
 
 ---
 
-## ✏️ Write text file
+## Write text file
 
 Write content to a text file.
 
@@ -306,7 +306,7 @@ Append a log:
 
 ---
 
-## 🏷️ Rename file/folder
+## Rename file/folder
 
 Rename a file or folder.
 
@@ -332,7 +332,7 @@ Batch rename:
 
 ---
 
-## 💡 File operation tips
+## File operation tips
 
 ### 1. Join paths
 
@@ -355,27 +355,27 @@ Regex extract: {fullPath}
 
 \`\`\`
 # 1. Check the source
-File exists: {source} → {srcExists}
+File exists: {source} -> {srcExists}
 Condition: {srcExists} == false
-  └─ yes → Print log: source missing, skip
+  └─ yes -> Print log: source missing, skip
 
 # 2. Ensure the target dir exists
 Create folder: {targetDir}
 
 # 3. Check the target
-File exists: {targetFile} → {tgtExists}
+File exists: {targetFile} -> {tgtExists}
 Condition: {tgtExists}
-  └─ yes → Print log: target exists, skip
+  └─ yes -> Print log: target exists, skip
 
 # 4. Do the operation
-Copy file: {source} → {targetFile}
+Copy file: {source} -> {targetFile}
 \`\`\`
 
 ### 4. Batch-processing template
 
 \`\`\`
 # Get files to process
-List files: {inputDir}/*.jpg → {fileList}
+List files: {inputDir}/*.jpg -> {fileList}
 Print log: found {fileList.length} files
 
 # Create the output dir
@@ -384,7 +384,7 @@ Create folder: {outputDir}
 # Iterate
 Iterate: {fileList}
   # Extract the file name
-  Regex extract: {item} → {fileName}
+  Regex extract: {item} -> {fileName}
   
   # Process the file
   Compress image:

@@ -1,10 +1,10 @@
-export const feishuGuideContentEn = `# 🚀 Feishu Automation Guide
+export const feishuGuideContentEn = `# Feishu Automation Guide
 
 > Automate Feishu Bitable and Sheets operations with WebRPA
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Module Overview](#module-overview)
 - [Prerequisites](#prerequisites)
@@ -387,7 +387,7 @@ Config:
 **A**: Open the Bitable and get it from the URL:
 \`\`\`
 https://xxx.feishu.cn/base/bascnxxxxxxxxxxxxxx?table=tblxxxxxxxxxxxxxx
-                                                      ↑ this is the table_id
+                                                      Up this is the table_id
 \`\`\`
 
 ### Q2: How do I handle large amounts of data?
@@ -445,7 +445,7 @@ Config:
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 1. **Credential management**: Store the App ID and App Secret in global variables; avoid hardcoding
 2. **Error handling**: Check the return status after each API call
@@ -455,12 +455,12 @@ Config:
 
 ---
 
-## 🔗 Related Docs
+## Related Docs
 
-- [📊 Data Tables](./excel-guide) - Excel data processing
-- [🌐 Network Requests](./network-guide) - API calls
-- [🔀 Flow Control](./advanced-features) - Loops, condition checks
-- [📢 Multi-channel Notifications](./notify-guide) - Feishu notifications
+- [Data Tables](./excel-guide) - Excel data processing
+- [Network Requests](./network-guide) - API calls
+- [Flow Control](./advanced-features) - Loops, condition checks
+- [Multi-channel Notifications](./notify-guide) - Feishu notifications
 
 ---
 

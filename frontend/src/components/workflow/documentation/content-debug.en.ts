@@ -1,10 +1,10 @@
-export const debugGuideContentEn = `# 🐛 Debugging & Error Handling
+export const debugGuideContentEn = `# Debugging & Error Handling
 
 This chapter covers debugging workflows, handling errors and optimizing performance.
 
 ---
 
-## 📋 Log panel
+## Log panel
 
 The log panel is the core debugging tool, at the bottom of the interface.
 
@@ -30,7 +30,7 @@ Shows all variables and current values: live updates, type display, manual add/e
 
 ---
 
-## 🔍 Debugging tips
+## Debugging tips
 
 ### 1. Print log
 
@@ -62,14 +62,14 @@ Watch variables live in the variables panel:
 
 Use the variable-tracking panel for deep analysis:
 
-**Open it**: click "More" in the toolbar → "Variable tracking".
+**Open it**: click "More" in the toolbar -> "Variable tracking".
 
 **Features**:
-- 📊 Records the create/update history of all variables
-- 🔍 Filter by variable name, module name, action type
-- ⏱️ Shows the timestamp and module of each change
-- 📈 Counts how many times each variable changed
-- 💾 Export to JSON
+- Records the create/update history of all variables
+- Filter by variable name, module name, action type
+- Shows the timestamp and module of each change
+- Counts how many times each variable changed
+- Export to JSON
 
 **Use cases**:
 \`\`\`
@@ -92,12 +92,12 @@ Variable tracking shows:
 Use a condition to create a "breakpoint":
 \`\`\`
 Condition: {debugMode} == true
-  └─ true → User input (pause and wait)
+  └─ true -> User input (pause and wait)
 \`\`\`
 
 ---
 
-## ⚠️ Common errors
+## Common errors
 
 ### Element not found
 
@@ -187,15 +187,15 @@ Invalid JSON format
 
 ---
 
-## 🛡️ Error-handling strategies
+## Error-handling strategies
 
 ### 1. Preventive checks
 
 Check conditions before acting:
 \`\`\`
 Condition: {elementExists} == true
-  ├─ true → click
-  └─ false → print a warning
+  ├─ true -> click
+  └─ false -> print a warning
 \`\`\`
 
 ### 2. Retry mechanism
@@ -208,8 +208,8 @@ Set variable: success = false
 While loop: {success} == false AND {retries} < 3
   ├─ try the operation
   ├─ Condition: did it succeed?
-  │   ├─ yes → Set variable: success = true
-  │   └─ no → Set variable: retries = {retries} + 1
+  │   ├─ yes -> Set variable: success = true
+  │   └─ no -> Set variable: retries = {retries} + 1
   │           Wait 2000 ms
 \`\`\`
 
@@ -219,11 +219,11 @@ When the main method fails, try a fallback:
 \`\`\`
 Try method A
 Condition: A succeeded?
-  ├─ yes → continue
-  └─ no → try method B
+  ├─ yes -> continue
+  └─ no -> try method B
           Condition: B succeeded?
-            ├─ yes → continue
-            └─ no → log the error, skip
+            ├─ yes -> continue
+            └─ no -> log the error, skip
 \`\`\`
 
 ### 4. Error logging
@@ -240,25 +240,25 @@ Print log (error level):
 
 ---
 
-## ⚡ Performance optimization
+## Performance optimization
 
 ### Reduce wait time
 
 \`\`\`
-❌ Not recommended:
+[×] Not recommended:
 Wait 5000 ms (fixed)
 
-✅ Recommended:
+[√] Recommended:
 Wait for element #content to appear (smart)
 \`\`\`
 
 ### Optimize selectors
 
 \`\`\`
-❌ Slow:
+[×] Slow:
 body > div > div > div > ul > li:nth-child(1) > a
 
-✅ Fast:
+[√] Fast:
 #menu > li:first-child > a
 .nav-item.active
 \`\`\`
@@ -266,10 +266,10 @@ body > div > div > div > ul > li:nth-child(1) > a
 ### Batch operations
 
 \`\`\`
-❌ Inefficient:
+[×] Inefficient:
 loop 100 times, save one record each time
 
-✅ Efficient:
+[√] Efficient:
 loop 100 times to collect, save once at the end
 \`\`\`
 
@@ -282,20 +282,20 @@ Independent tasks can run in parallel:
   └─ Task C (independent)
 
 Dependent tasks must run in order:
-Task A → Task B (depends on A) → Task C
+Task A -> Task B (depends on A) -> Task C
 \`\`\`
 
 ---
 
-## 📊 Monitoring & stats
+## Monitoring & stats
 
 ### Execution time
 
 Record the time of key operations in the log:
 \`\`\`
-Get time → save to: startTime
+Get time -> save to: startTime
 run operations...
-Get time → save to: endTime
+Get time -> save to: endTime
 Print log: elapsed = {endTime} - {startTime}
 \`\`\`
 
@@ -309,14 +309,14 @@ Loop
   ├─ Set variable: total = {total} + 1
   ├─ run operation
   ├─ Condition: succeeded?
-  │   └─ yes → Set variable: success = {success} + 1
+  │   └─ yes -> Set variable: success = {success} + 1
 
 Print log: success rate = {success}/{total}
 \`\`\`
 
 ---
 
-## 🔧 Debug checklist
+## Debug checklist
 
 Before running:
 - [ ] Are the selectors correct?
@@ -334,7 +334,7 @@ After a failure:
 
 ---
 
-## 💡 Debugging best practices
+## Debugging best practices
 
 ### 1. Start simple
 
@@ -347,11 +347,11 @@ Export data periodically to avoid losing everything.
 ### 3. Use meaningful logs
 
 \`\`\`
-❌ Bad:
+[×] Bad:
 Print log: 111
 Print log: got here
 
-✅ Good:
+[√] Good:
 Print log: [Step 1] start login
 Print log: [Step 2] logged in, user={username}
 \`\`\`

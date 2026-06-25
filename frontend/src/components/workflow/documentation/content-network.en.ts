@@ -1,10 +1,10 @@
-export const networkGuideContentEn = `# 🌐 Network Requests & Capture
+export const networkGuideContentEn = `# Network Requests & Capture
 
 This chapter covers HTTP requests, webhook requests, network capture and related modules.
 
 ---
 
-## 🌐 HTTP request (api_request)
+## HTTP request (api_request)
 
 Send HTTP/HTTPS requests (GET, POST, PUT, DELETE, etc.) — the core module for talking to external APIs.
 
@@ -21,18 +21,18 @@ Send HTTP/HTTPS requests (GET, POST, PUT, DELETE, etc.) — the core module for 
 
 **Example** (GET data):
 \`\`\`
-HTTP request → method: GET, URL: https://httpbin.org/get → result variable: resp
-JSON parse → input: {resp} → result variable: data
-Print log → {data}
+HTTP request -> method: GET, URL: https://httpbin.org/get -> result variable: resp
+JSON parse -> input: {resp} -> result variable: data
+Print log -> {data}
 \`\`\`
 
 **Example** (POST a form):
 \`\`\`
-HTTP request → method: POST
+HTTP request -> method: POST
           URL: https://api.example.com/login
           headers: {"Content-Type": "application/json"}
           body: {"username": "{user}", "password": "{pwd}"}
-          → result variable: login_resp
+          -> result variable: login_resp
 \`\`\`
 
 **Cookie/Token auth**:
@@ -46,7 +46,7 @@ Headers:
 
 ---
 
-## 📨 Send email (send_email)
+## Send email (send_email)
 
 Send email via SMTP, supporting HTML content and attachments.
 
@@ -70,13 +70,13 @@ Send email via SMTP, supporting HTML content and attachments.
 | Gmail | smtp.gmail.com | 587 |
 | Outlook | smtp.office365.com | 587 |
 
-> **Get a QQ Mail app code**: QQ Mail → Settings → Account → enable SMTP → generate an app code
+> **Get a QQ Mail app code**: QQ Mail -> Settings -> Account -> enable SMTP -> generate an app code
 
-**Global config**: preset sender info under Global settings → Email to avoid re-entering it.
+**Global config**: preset sender info under Global settings -> Email to avoid re-entering it.
 
 ---
 
-## 🔗 Webhook request (webhook_request)
+## Webhook request (webhook_request)
 
 Send a webhook notification to a URL — for integrating with third-party systems.
 
@@ -90,7 +90,7 @@ Send a webhook notification to a URL — for integrating with third-party system
 
 ---
 
-## 🕵️ Network capture (network_capture)
+## Network capture (network_capture)
 
 Intercept and analyze the browser's network requests to extract API data — no HTML parsing needed.
 
@@ -112,7 +112,7 @@ flowchart TD
 
 ---
 
-## 📡 Network monitor (network_monitor_start/wait/stop)
+## Network monitor (network_monitor_start/wait/stop)
 
 Continuously monitor network requests — for long-running scenarios.
 
@@ -137,15 +137,15 @@ Continuously monitor network requests — for long-running scenarios.
 
 ---
 
-## 💡 Tips
+## Tips
 
 ### Handling JSON responses
 
 An HTTP request returns a string; use "JSON parse" to convert it to a dict before accessing fields:
 \`\`\`
-HTTP request → result variable: resp_str
-JSON parse → input: {resp_str} → result variable: resp_data
-Set variable → variableName: user_id, value: {resp_data["data"]["id"]}
+HTTP request -> result variable: resp_str
+JSON parse -> input: {resp_str} -> result variable: resp_data
+Set variable -> variableName: user_id, value: {resp_data["data"]["id"]}
 \`\`\`
 
 ### API auth
@@ -158,6 +158,6 @@ Set variable → variableName: user_id, value: {resp_data["data"]["id"]}
 
 Check the status-code variable; 200-series means success:
 \`\`\`
-Condition → {status_code} == 200 → success path
-                              → else → failure path (send an alert)
+Condition -> {status_code} == 200 -> success path
+                              -> else -> failure path (send an alert)
 \`\`\``

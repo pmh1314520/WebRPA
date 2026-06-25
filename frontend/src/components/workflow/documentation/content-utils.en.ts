@@ -1,10 +1,10 @@
-export const utilsGuideContentEn = `# 🛠️ Utilities
+export const utilsGuideContentEn = `# Utilities
 
 This chapter covers WebRPA's utility modules: file comparison, encryption, encoding, color conversion, UUID, printing and more.
 
 ---
 
-## 🔐 Encryption & hashing
+## Encryption & hashing
 
 ### MD5 (md5_encrypt)
 
@@ -43,7 +43,7 @@ Base64-encode or -decode a string or file.
 
 ---
 
-## 🔗 URL encode/decode (url_encode_decode)
+## URL encode/decode (url_encode_decode)
 
 Encode (escape special characters) or decode a URL string.
 
@@ -53,11 +53,11 @@ Encode (escape special characters) or decode a URL string.
 | Input URL | The URL or parameter to process | \`hello world\` |
 | Result variable | The result | \`url_result\` |
 
-**Example**: \`你好\` → \`%E4%BD%A0%E5%A5%BD\`
+**Example**: \`你好\` -> \`%E4%BD%A0%E5%A5%BD\`
 
 ---
 
-## 📁 File comparison
+## File comparison
 
 ### File hash compare (file_hash_compare)
 
@@ -107,7 +107,7 @@ Deeply compare the file lists of two folders.
 
 ---
 
-## 🎲 Random generation
+## Random generation
 
 ### Random password (random_password_generator)
 
@@ -138,13 +138,13 @@ Generate a globally unique identifier (UUID) — for unique IDs.
 
 ---
 
-## 🕐 Timestamp converter (timestamp_converter)
+## Timestamp converter (timestamp_converter)
 
 Convert between Unix timestamps and readable time strings.
 
 | Parameter | Description | Example |
 |------|------|------|
-| Direction | timestamp→string / string→timestamp | timestamp→string |
+| Direction | timestamp->string / string->timestamp | timestamp->string |
 | Input | A timestamp or time string | \`1700000000\` |
 | Time format | Python strftime format | \`%Y-%m-%d %H:%M:%S\` |
 | Time zone | Time-zone name | \`Asia/Shanghai\` |
@@ -152,7 +152,7 @@ Convert between Unix timestamps and readable time strings.
 
 ---
 
-## 🎨 Color conversion
+## Color conversion
 
 ### RGB to HSV (rgb_to_hsv)
 
@@ -187,7 +187,7 @@ Convert a hex color (e.g. \`#FF8000\`) to CMYK.
 
 ---
 
-## 🖨️ Printer (printer_call)
+## Printer (printer_call)
 
 Send a file to a printer.
 
@@ -199,7 +199,7 @@ Send a file to a printer.
 
 ---
 
-## 💡 Tips
+## Tips
 
 ### File-integrity workflow
 

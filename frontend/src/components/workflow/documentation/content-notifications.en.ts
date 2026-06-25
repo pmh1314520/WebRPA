@@ -1,10 +1,10 @@
-export const notificationsGuideContentEn = `# 🔔 Notifications & Interaction
+export const notificationsGuideContentEn = `# Notifications & Interaction
 
 This chapter introduces various notification and user interaction features.
 
 ---
 
-## 📝 Print Log
+## Print Log
 
 Output information to the log panel for debugging and monitoring.
 
@@ -45,7 +45,7 @@ Print log (error): Login failed: {error message}
 
 ---
 
-## 🔊 Play Beep
+## Play Beep
 
 Play a system beep to remind the user.
 
@@ -75,7 +75,7 @@ When a target product is found:
 
 ---
 
-## 🎵 Play Music
+## Play Music
 
 Play an audio file from a specified URL.
 
@@ -115,11 +115,11 @@ Play background music in the background:
 ### Player Features
 
 A player popup appears while the music plays, supporting:
-- ▶️ Play/pause control
-- 🔄 Loop playback toggle
-- 📊 Progress bar dragging
-- 🔊 Volume adjustment
-- ❌ Close the player (stop playback)
+- Play/pause control
+- Loop playback toggle
+- Progress bar dragging
+- Volume adjustment
+- [×] Close the player (stop playback)
 
 ### Notes
 
@@ -131,7 +131,7 @@ A player popup appears while the music plays, supporting:
 
 ---
 
-## 🎬 Play Video
+## Play Video
 
 Play a video file from a specified URL, opening a video player popup.
 
@@ -152,12 +152,12 @@ Play a video file from a specified URL, opening a video player popup.
 ### Player Features
 
 A player popup appears while the video plays, supporting:
-- ▶️ Play/pause control
-- 🔄 Loop playback toggle
-- 📊 Progress bar dragging
-- 🔊 Volume adjustment/mute
-- 🖥️ Fullscreen playback
-- ❌ Close the player (stop playback)
+- Play/pause control
+- Loop playback toggle
+- Progress bar dragging
+- Volume adjustment/mute
+- Fullscreen playback
+- [×] Close the player (stop playback)
 
 ### Playback Modes
 
@@ -188,7 +188,7 @@ Play a hint animation:
 
 ---
 
-## 🖼️ View Image
+## View Image
 
 Open an image viewer to display an image from a specified URL.
 
@@ -212,11 +212,11 @@ Open an image viewer to display an image from a specified URL.
 ### Viewer Features
 
 An image viewer popup appears while viewing, supporting:
-- 🔍 Zoom in/out (mouse wheel supported)
-- 🔄 Rotate the image (90° each time)
-- 🖥️ Fullscreen view
-- 💾 Download the image
-- ❌ Close the viewer
+- Zoom in/out (mouse wheel supported)
+- Rotate the image (90° each time)
+- Fullscreen view
+- Download the image
+- [×] Close the viewer
 
 ### Example
 
@@ -241,7 +241,7 @@ Auto-cycle images:
 
 ---
 
-## 🗣️ Voice Announcement
+## Voice Announcement
 
 Convert text to speech and play it (TTS).
 
@@ -271,7 +271,7 @@ Price reminder:
 
 ---
 
-## 💬 User Input
+## User Input
 
 Open a dialog for the user to enter content.
 
@@ -315,8 +315,8 @@ User input:
   Save to: confirm text
 
 Condition check: {confirm text} == "confirm"
-  ├─ Yes → Perform deletion
-  └─ No → Cancel the operation
+  ├─ Yes -> Perform deletion
+  └─ No -> Cancel the operation
 \`\`\`
 
 #### 4. Dynamic Parameter
@@ -333,7 +333,7 @@ Open page: https://www.baidu.com/s?wd={keyword}
 
 ---
 
-## 📧 Send Email
+## Send Email
 
 Automatically send an email notification.
 
@@ -352,7 +352,7 @@ Automatically send an email notification.
 ### Getting a QQ Mail Authorization Code
 
 1. Log in to the QQ Mail web version
-2. Settings → Account
+2. Settings -> Account
 3. Enable the POP3/SMTP service
 4. Complete SMS verification
 5. Get the 16-character authorization code
@@ -388,34 +388,34 @@ This email was sent automatically by WebRPA
 
 ---
 
-## 🔔 Notification Best Practices
+## Notification Best Practices
 
 ### 1. Tiered Notifications
 
 \`\`\`
-Normal progress → Print log
-Important event → Play beep
-Task complete → Send email
-Emergency → Voice announcement + email
+Normal progress -> Print log
+Important event -> Play beep
+Task complete -> Send email
+Emergency -> Voice announcement + email
 \`\`\`
 
 ### 2. Avoid Over-notifying
 
 \`\`\`
-❌ Bad:
+[×] Bad:
 Play a beep on every loop iteration
 
-✅ Good:
+[√] Good:
 Play a beep once after the loop ends
 \`\`\`
 
 ### 3. Meaningful Messages
 
 \`\`\`
-❌ Bad:
+[×] Bad:
 Print log: Done
 
-✅ Good:
+[√] Good:
 Print log: Data collection complete, total {count} items, took {duration} seconds
 \`\`\`
 
@@ -430,7 +430,7 @@ When an error occurs:
 
 ---
 
-## 📱 Extended Notification Methods
+## Extended Notification Methods
 
 ### WeChat Notification (via API)
 
@@ -473,4 +473,18 @@ API request:
       "content": "{message content}"
     }
   }
-\`\`\``
+\`\`\`
+---
+
+## Media Playback
+
+WebRPA can play media directly inside a workflow and pop up a player / viewer window.
+
+| Module | Description |
+|------|------|
+| **play_music** | Play audio (audio URL), optionally wait until it finishes |
+| **play_video** | Play video (video URL), optionally wait until it finishes |
+| **view_image** | Show an image viewer (image URL), with optional auto-close and display time |
+
+Playing music / video waits for playback to finish before continuing by default; uncheck "wait until finished" to play in the background and continue immediately. Image viewing can auto-close after a configurable display time.
+`

@@ -3,7 +3,7 @@ export const testReportContentEn = `
 
 The Test Report module is based on the Allure framework, helping you generate professional test reports, record the workflow execution process, and analyze test results.
 
-## 📊 Module List
+## Module List
 
 ### 1. Allure Init
 
@@ -23,7 +23,7 @@ Initialize the Allure test environment and set the basic information for the tes
 \`\`\`
 Results directory: ./test-results/{get_time}
 Test suite: Login Feature Test
-Clear existing results: ✓
+Clear existing results: [√]
 \`\`\`
 
 ---
@@ -117,13 +117,13 @@ Attachment type: image
 **Common usage:**
 \`\`\`
 1. Add attachment after a screenshot:
-   Screenshot → Add attachment
+   Screenshot -> Add attachment
 
 2. Save a log file:
-   Export log → Add attachment
+   Export log -> Add attachment
 
 3. Save test data:
-   Export table → Add attachment
+   Export table -> Add attachment
 \`\`\`
 
 ---
@@ -171,12 +171,12 @@ Generate a polished HTML test report based on the test results.
 **Example:**
 \`\`\`
 Report directory: ./reports/test-{get_time}
-Auto-open report: ✓
+Auto-open report: [√]
 \`\`\`
 
 ---
 
-## 💡 Full Examples
+## Full Examples
 
 ### Example 1: A Simple Login Test
 
@@ -184,7 +184,7 @@ Auto-open report: ✓
 1. Allure Init
    - Results directory: ./allure-results
    - Test suite: Login Feature Test
-   - Clear existing results: ✓
+   - Clear existing results: [√]
 
 2. Start Test Case
    - Name: User Login Test
@@ -256,7 +256,7 @@ Auto-open report: ✓
 
 21. Generate Test Report
     - Report directory: ./allure-report
-    - Auto-open report: ✓
+    - Auto-open report: [√]
 \`\`\`
 
 ---
@@ -267,7 +267,7 @@ Auto-open report: ✓
 1. Allure Init
    - Results directory: ./allure-results
    - Test suite: User Management Feature Test
-   - Clear existing results: ✓
+   - Clear existing results: [√]
 
 2. Set variable
    - Variable name: test_cases
@@ -300,12 +300,12 @@ Auto-open report: ✓
 
 9. Generate Test Report
    - Report directory: ./allure-report
-   - Auto-open report: ✓
+   - Auto-open report: [√]
 \`\`\`
 
 ---
 
-## 🎯 Best Practices
+## Best Practices
 
 ### 1. Test Case Organization
 
@@ -339,7 +339,7 @@ Auto-open report: ✓
 
 ---
 
-## ⚠️ Notes
+## Notes
 
 1. **Allure command-line tool**
    - Generating a report requires installing the Allure command-line tool separately
@@ -366,7 +366,7 @@ Auto-open report: ✓
 
 ---
 
-## 🔗 Related Resources
+## Related Resources
 
 - Allure official docs: https://docs.qameta.io/allure/
 - Allure report demo: https://demo.qameta.io/allure/

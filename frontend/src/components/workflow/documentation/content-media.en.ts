@@ -1,10 +1,10 @@
-export const mediaGuideContentEn = `# 🎬 Media Processing Guide
+export const mediaGuideContentEn = `# Media Processing Guide
 
 This chapter introduces processing features for media files such as video, audio, and images. All media processing is implemented based on FFmpeg, the M3U8 download feature uses a professional download engine, **online video download is based on yt-dlp** (supporting 1000+ sites), and the audio-to-text feature is implemented based on a local Whisper model.
 
 ---
 
-## 📋 Module Overview
+## Module Overview
 
 | Module | Function | Default Timeout |
 |------|------|----------|
@@ -29,7 +29,7 @@ This chapter introduces processing features for media files such as video, audio
 
 ---
 
-## 📥 M3U8 Download
+## M3U8 Download
 
 Download online streaming video in HLS (M3U8) format.
 
@@ -79,7 +79,7 @@ Download with a proxy:
   Custom proxy: http://127.0.0.1:7890
 \`\`\`
 
-### ⚠️ FAQ
+### FAQ
 
 | Error | Cause | Solution |
 |------|------|----------|
@@ -98,7 +98,7 @@ Download with a proxy:
 
 ---
 
-## 🌐 Online Video Download (yt-dlp series)
+## Online Video Download (yt-dlp series)
 
 WebRPA includes 6 download modules based on **yt-dlp**, covering single video, audio, subtitles, playlists, info query, and other scenarios. yt-dlp supports **1000+ video sites**, including:
 
@@ -127,7 +127,7 @@ WebRPA includes 6 download modules based on **yt-dlp**, covering single video, a
 
 ---
 
-### 🎬 Module 1: Online Video Download
+### Module 1: Online Video Download
 
 Download a single video, with the quality and container specifiable.
 
@@ -164,7 +164,7 @@ Capture a segment only:
 
 ---
 
-### 🎵 Module 2: Online Audio Download
+### Module 2: Online Audio Download
 
 Download audio only and transcode it. Commonly used to use YouTube/Bilibili as a music source.
 
@@ -184,13 +184,13 @@ Download audio only and transcode it. Commonly used to use YouTube/Bilibili as a
 Video link: https://www.youtube.com/watch?v=...
 Audio format: mp3
 Quality level: 0 (VBR highest)
-Embed thumbnail: ✓
-Embed metadata: ✓
+Embed thumbnail: [√]
+Embed metadata: [√]
 \`\`\`
 
 ---
 
-### ℹ️ Module 3: Video Info Query
+### Module 3: Video Info Query
 
 Don't download the video itself, just get the metadata. Often used as a pre-check node before downloading.
 
@@ -213,15 +213,15 @@ Don't download the video itself, just get the metadata. Often used as a pre-chec
 **Example: Decide whether to download based on duration**
 
 \`\`\`
-1. Video info query → Result variable: info
+1. Video info query -> Result variable: info
 2. Condition check: {info.duration} > 7200 ?
-   ✗ → Online video download
-   ✓ → Skip (video too long)
+   [×] -> Online video download
+   [√] -> Skip (video too long)
 \`\`\`
 
 ---
 
-### 📐 Module 4: Available Formats List
+### Module 4: Available Formats List
 
 List all downloadable quality/codec combinations for the video. Use it when presets such as \`best\`/\`1080p\` cannot meet fine-grained needs.
 
@@ -233,7 +233,7 @@ After getting a format_id, you can fill it directly into the quality field of "O
 
 ---
 
-### 📝 Module 5: Online Subtitle Download
+### Module 5: Online Subtitle Download
 
 Download video subtitles, with the option to also pull auto-generated subtitles.
 
@@ -258,7 +258,7 @@ Download video subtitles, with the option to also pull auto-generated subtitles.
 
 ---
 
-### 📚 Module 6: Playlist Download
+### Module 6: Playlist Download
 
 Batch download an entire playlist, channel, or collection.
 
@@ -278,22 +278,22 @@ Batch download an entire playlist, channel, or collection.
 URL: https://www.youtube.com/@channelname/videos
 Quality: 1080p
 Max download count: 30
-Skip existing: ✓
+Skip existing: [√]
 \`\`\`
 
 **Example: Convert an entire Bilibili collection to mp3**
 
 \`\`\`
 URL: https://space.bilibili.com/uid/lists/xxx
-Audio only: ✓
+Audio only: [√]
 Audio format: mp3
-Skip existing: ✓
+Skip existing: [√]
 Read cookies from browser: edge
 \`\`\`
 
 ---
 
-### ⚠️ yt-dlp FAQ
+### yt-dlp FAQ
 
 | Symptom | Cause / Solution |
 |------|------|
@@ -305,7 +305,7 @@ Read cookies from browser: edge
 | Douyin/Weibo link errors | Copy the web URL, not the share code |
 | Garbled naming | Add \`%(id)s\` instead of \`%(title)s\` in the filename template |
 
-### 💡 Design Recommendations
+### Design Recommendations
 
 1. For **large batch tasks**, use "Video Info Query" first to learn each item's duration and quality, then use the main download module
 2. **Resume from breakpoint**: when batch downloading, be sure to check "Skip existing files"
@@ -314,7 +314,7 @@ Read cookies from browser: edge
 
 ---
 
-## 🔄 Format Conversion
+## Format Conversion
 
 Convert a media file from one format to another.
 
@@ -353,7 +353,7 @@ Audio format conversion:
 
 ---
 
-## 🖼️ Image Compression
+## Image Compression
 
 Compress an image file to reduce its size.
 
@@ -395,7 +395,7 @@ Batch compress (with a loop):
 
 ---
 
-## 🎥 Video Compression
+## Video Compression
 
 Compress a video file to reduce its size.
 
@@ -435,7 +435,7 @@ Extreme compression (sacrificing quality):
   Video bitrate: 1M
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - Video compression is time-consuming; large files may take tens of minutes
 - The default timeout is 30 minutes; increase it appropriately for large files
@@ -443,7 +443,7 @@ Extreme compression (sacrificing quality):
 
 ---
 
-## 🎵 Extract Audio
+## Extract Audio
 
 Extract the audio track from a video file.
 
@@ -473,7 +473,7 @@ Extract lossless audio:
 
 ---
 
-## ✂️ Video Trim
+## Video Trim
 
 Cut a specified time range from a video.
 
@@ -510,7 +510,7 @@ Cut the first 30 seconds:
 
 ---
 
-## 🔗 Media Merge
+## Media Merge
 
 Merge multiple media files into one, or add audio to a video.
 
@@ -581,7 +581,7 @@ Mix in background music:
   Output: D:/videos/vlog_with_bgm.mp4
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - Files to concatenate should have the same encoding format
 - Concatenating videos of different resolutions may cause issues
@@ -590,7 +590,7 @@ Mix in background music:
 
 ---
 
-## 💧 Add Watermark
+## Add Watermark
 
 Add an image or text watermark to a video.
 
@@ -627,12 +627,12 @@ Add a logo watermark:
 
 ---
 
-## 💡 Media Processing Tips
+## Media Processing Tips
 
 ### 1. Batch Processing
 
 \`\`\`
-Get file list: D:/videos/*.mp4 → {video list}
+Get file list: D:/videos/*.mp4 -> {video list}
 Iterate list: {video list}
   Video compression:
     Input: {current item}
@@ -663,13 +663,13 @@ Video compression: ...
   Retry count: 1
 
 Condition check: {previous step succeeded}
-  ├─ Yes → Continue processing
-  └─ No → Print log: Compression failed, skip this file
+  ├─ Yes -> Continue processing
+  └─ No -> Print log: Compression failed, skip this file
 \`\`\`
 
 ---
 
-## 🎤 Audio to Text
+## Audio to Text
 
 Convert speech in an audio file to text, running entirely locally without a network.
 
@@ -711,7 +711,7 @@ Speech to text:
 Print log: {recognized text}
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - The first time you use a model, it is downloaded automatically and you need to wait
 - Model files are saved in the backend/data/whisper_models directory
@@ -720,7 +720,7 @@ Print log: {recognized text}
 
 ---
 
-## 🖥️ Desktop Recording
+## Desktop Recording
 
 Record screen content as a video file.
 
@@ -743,7 +743,7 @@ Record an operation demo:
   Area: Full screen
 \`\`\`
 
-### ⚠️ Notes
+### Notes
 
 - Do not move windows during recording
 - The recording duration matches the actual video length
@@ -751,7 +751,7 @@ Record an operation demo:
 
 ---
 
-## 📱 QR Code Generation
+## QR Code Generation
 
 Generate a QR code image containing the specified content.
 
@@ -784,7 +784,7 @@ Print log: QR code saved to {qr code path}
 
 ---
 
-## 🔍 QR Code Recognition
+## QR Code Recognition
 
 Recognize the QR code content in an image.
 
@@ -803,6 +803,6 @@ Recognize a QR code:
   Result variable: qr code content
 
 Condition check: {qr code content} is not empty
-  ├─ Yes → Print log: Recognition result: {qr code content}
-  └─ No → Print log: No QR code recognized
+  ├─ Yes -> Print log: Recognition result: {qr code content}
+  └─ No -> Print log: No QR code recognized
 \`\`\``

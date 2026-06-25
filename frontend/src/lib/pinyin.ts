@@ -64,3 +64,35 @@ export function pinyinMatch(text: string, query: string): boolean {
 
   return false
 }
+
+/** 模块统一搜索的可匹配字段 */
+export interface ModuleSearchFields {
+  /** 中文 label（拼音搜索基础） */
+  label?: string
+  /** 英文类型名（module_type） */
+  type?: string
+  /** 所属分类名（仅部分入口参与匹配） */
+  category?: string
+  /** 搜索关键词 */
+  keywords?: string[]
+}
+
+/**
+ * 模块统一搜索匹配。
+ *
+ * 对模块的「中文 label + 英文名 + 关键词（以及可选的分类名）」逐项调用 pinyinMatch，
+ * 命中任一即返回 true。借助 pinyinMatch，天然支持中文原文 / 全拼 / 首字母 / 英文、
+ * 且大小写不敏感的模糊搜索。
+ *
+ * 三处模块搜索入口（ModuleSidebar 主搜索、QuickModulePicker、BlockFlowView 画布内搜索）
+ * 统一复用本函数，确保过滤逻辑一致、不产生回归。
+ */
+export function moduleMatchesQuery(query: string, fields: ModuleSearchFields): boolean {
+  const q = query.trim()
+  if (!q) return true
+  if (fields.label && pinyinMatch(fields.label, q)) return true
+  if (fields.type && pinyinMatch(fields.type, q)) return true
+  if (fields.category && pinyinMatch(fields.category, q)) return true
+  if (fields.keywords && fields.keywords.some((kw) => pinyinMatch(kw, q))) return true
+  return false
+}
