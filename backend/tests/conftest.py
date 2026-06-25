@@ -47,7 +47,9 @@ def client():
     from fastapi.testclient import TestClient
     from app.main import app
 
-    return TestClient(app)
+    # 以本机(loopback)来源构造客户端：命中鉴权/RBAC 中间件的"本机豁免"，
+    # 测试无需携带 Token/会话即可访问，且不修改磁盘上的安全配置。
+    return TestClient(app, client=("127.0.0.1", 12345))
 
 
 @pytest.fixture

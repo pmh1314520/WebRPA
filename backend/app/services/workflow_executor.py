@@ -1124,6 +1124,8 @@ class WorkflowExecutor:
                     'isTimeout': False,
                     'skipped': True,
                 })
+                # 重试耗尽后按策略跳过：按"成功(跳过)"计入模块结果去重统计
+                self._node_outcomes[node.id] = True
                 return ModuleResult(success=True, message=f"重试耗尽后跳过: {error_msg}", duration=duration, skipped=True)
             else:
                 print(f"[ERROR] 节点 {node.id} ({label}) 最终失败: {error_msg}")
@@ -1136,6 +1138,10 @@ class WorkflowExecutor:
                     'isTimeout': is_timeout,
                     'skipped': False,
                 })
+                # 关键修复：节点最终失败必须按节点 id 记录失败结果，
+                # 否则 executed_nodes/failed_nodes 统计漏掉本节点，工作流会误报"成功"。
+                # （后续若经错误回流/循环重跑成功，第 1166 行会以最后一次结果覆盖为 True。）
+                self._node_outcomes[node.id] = False
                 return ModuleResult(success=False, error=error_msg, duration=duration, is_timeout=is_timeout)
         
         print(f"[DEBUG] 执行器返回: success={result.success}, message={result.message}, error={result.error}")

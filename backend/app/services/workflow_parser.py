@@ -102,6 +102,9 @@ class WorkflowParser:
         
         # 构建邻接表
         nodes_with_incoming = set()
+        # 仅统计"普通入边"（排除 error 回流边）：用于起始节点兜底判定，
+        # 避免"出错→回流到入口节点重试"被误判为无起始节点而整流程无法启动。
+        nodes_with_normal_incoming = set()
         # 用 set 去重每个 source 的下游边集合（同一对 source/target 不重复）
         seen_adjacency: dict[str, set[str]] = defaultdict(set)
         seen_reverse: dict[str, set[str]] = defaultdict(set)
@@ -158,11 +161,22 @@ class WorkflowParser:
                 seen_reverse[target_id].add(source_id)
                 graph.reverse_adjacency[target_id].append(source_id)
             nodes_with_incoming.add(target_id)
+            if edge.sourceHandle != 'error':
+                nodes_with_normal_incoming.add(target_id)
         
         # 找出起始节点（没有入边的节点）
         for node_id in graph.nodes:
             if node_id not in nodes_with_incoming:
                 graph.start_nodes.append(node_id)
+        
+        # 兜底：若所有节点都有入边（错误回流边构成环，例如"出错→回到入口节点重试"），
+        # 上面会判定为无起始节点导致整个工作流无法启动。此时改用"普通入边"重新判定，
+        # 把仅被错误边指向的节点（如入口节点）识别为起始节点。仅在常规判定为空时触发，
+        # 不影响存在真实起始节点的普通工作流。
+        if not graph.start_nodes:
+            for node_id in graph.nodes:
+                if node_id not in nodes_with_normal_incoming:
+                    graph.start_nodes.append(node_id)
         
         return graph
     
