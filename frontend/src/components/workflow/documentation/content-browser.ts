@@ -378,5 +378,7 @@ DrissionPage（DP）以“控制真实浏览器内核 + 收发数据包”的方
 
 定位符直接透传 DrissionPage 语法：#id、.class、tag:xx、text:xx、xpath://...、css:...。
 
-使用流程：先用 dp_open_page 打开页面（会创建并复用一个浏览器实例），再用 dp_click / dp_input 等操作，最后用 dp_close 关闭。首次使用需安装依赖：在 WebRPA 目录执行 Python313/python.exe -m pip install DrissionPage。
+使用流程：先用 dp_open_page 打开页面（同一工作流内会复用一个浏览器会话），再用 dp_click / dp_input 等操作，最后用 dp_close 关闭。工作流结束时 DP 浏览器会自动关闭，下次运行始终是干净会话，不会复用上次残留；若上次页面已失活也会自动重建。
+
+浏览器内核：DrissionPage 同样基于 Chromium，Edge 和 Chrome 都支持。dp_open_page 默认优先使用系统 Edge（与 WebRPA 其它模块一致），也可在配置里选择 Chrome 或填写浏览器路径；采集类任务可把"复用浏览器"设为"每次打开干净会话"。首次使用需安装依赖：在 WebRPA 目录执行 Python313/python.exe -m pip install DrissionPage。
 `

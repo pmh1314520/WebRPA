@@ -23,12 +23,42 @@ export function DpOpenPageConfig({ data, onChange }: ConfigProps) {
         <VariableInput value={(data.url as string) || ''} onChange={(v) => onChange('url', v)} placeholder="https://example.com" />
       </div>
       <div className="space-y-2">
+        <Label>浏览器内核</Label>
+        <Select value={String(data.browserType ?? '')} onChange={(e) => onChange('browserType', e.target.value)}>
+          <option value="">跟随 WebRPA（默认优先 Edge）</option>
+          <option value="msedge">Microsoft Edge</option>
+          <option value="chrome">Google Chrome</option>
+        </Select>
+        <p className="text-xs text-muted-foreground">DrissionPage 同样基于 Chromium 内核，Edge / Chrome 都支持。默认优先使用系统 Edge（与 WebRPA 其它模块一致），避免“只装了 Edge 没装 Chrome”时打不开。</p>
+      </div>
+      <div className="space-y-2">
+        <Label>浏览器路径（可选）</Label>
+        <VariableInput value={(data.browserPath as string) || ''} onChange={(v) => onChange('browserPath', v)} placeholder="留空自动探测，如 C:\\...\\msedge.exe" />
+      </div>
+      <div className="space-y-2">
+        <Label>复用浏览器</Label>
+        <Select value={String(data.reuseBrowser ?? 'true')} onChange={(e) => onChange('reuseBrowser', e.target.value)}>
+          <option value="true">复用同一会话（同一工作流内多步共享，推荐）</option>
+          <option value="false">每次打开干净会话（采集类避免脏状态）</option>
+        </Select>
+        <p className="text-xs text-muted-foreground">工作流结束会自动关闭 DP 浏览器；下次运行始终是干净会话，不会复用上次残留。检测到上次页面已失活时也会自动重建。</p>
+      </div>
+      <div className="space-y-2">
+        <Label>窗口尺寸（可选）</Label>
+        <VariableInput value={(data.viewport as string) || ''} onChange={(v) => onChange('viewport', v)} placeholder="如 1280,800（留空用默认）" />
+      </div>
+      <div className="space-y-2">
         <Label>无头模式</Label>
         <Select value={String(data.headless ?? 'false')} onChange={(e) => onChange('headless', e.target.value)}>
           <option value="false">否（显示浏览器窗口）</option>
           <option value="true">是（后台无界面）</option>
         </Select>
         <p className="text-xs text-muted-foreground">DrissionPage 控制真实浏览器内核，对反自动化检测更隐蔽，适合常规方式被风控拦截的站点。</p>
+      </div>
+      <div className="space-y-2">
+        <Label>保存页面信息到变量（可选）</Label>
+        <VariableNameInput value={(data.outputVariable as string) || ''} onChange={(v) => onChange('outputVariable', v)} placeholder="dp_page" />
+        <p className="text-xs text-muted-foreground">存入 {'{url, title, engine}'}，便于下游引用与排查实际使用的浏览器内核。</p>
       </div>
     </div>
   )

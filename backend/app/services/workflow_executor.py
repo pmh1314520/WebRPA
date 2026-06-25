@@ -2563,6 +2563,12 @@ class WorkflowExecutor:
     
     async def cleanup(self):
         """清理浏览器资源（公共方法，仅清理浏览器）"""
+        # DrissionPage 全局单例：工作流结束自动关闭，避免残留到下次运行复用脏/死页面
+        try:
+            from app.executors import drissionpage as _dp
+            await asyncio.to_thread(_dp.cleanup_dp)
+        except Exception:
+            pass
         try:
             # 检查是否在使用共享的 browser_engine context，如果是则不关闭
             from app.services import browser_engine as _be
@@ -2851,6 +2857,12 @@ class WorkflowExecutor:
         
         # 3. 强制关闭浏览器以中断正在进行的操作
         try:
+            # DrissionPage 单例同样在停止时关闭，避免残留进程
+            try:
+                from app.executors import drissionpage as _dp
+                await asyncio.to_thread(_dp.cleanup_dp, True)
+            except Exception:
+                pass
             if self._using_shared_browser():
                 # 复用全局浏览器：停止流程时仅解除引用，不关闭用户手动打开的浏览器
                 self.context.page = None

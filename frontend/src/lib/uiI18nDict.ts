@@ -3541,3 +3541,22 @@ Object.assign(PHRASES, {
   '向上': 'up',
   '向下': 'down',
 })
+
+// ============================================================
+// DrissionPage 打开页面配置新增文案（浏览器选择/复用/视口/输出变量）
+// ============================================================
+Object.assign(UI_DICT, {
+  '浏览器内核': 'Browser engine',
+  '跟随 WebRPA（默认优先 Edge）': 'Follow WebRPA (Edge preferred by default)',
+  'DrissionPage 同样基于 Chromium 内核，Edge / Chrome 都支持。默认优先使用系统 Edge（与 WebRPA 其它模块一致），避免“只装了 Edge 没装 Chrome”时打不开。': 'DrissionPage is also Chromium-based and supports both Edge and Chrome. It prefers the system Edge by default (consistent with other WebRPA modules), avoiding failures when only Edge is installed and Chrome is not.',
+  '浏览器路径（可选）': 'Browser path (optional)',
+  '留空自动探测，如 C:\\...\\msedge.exe': 'Leave blank to auto-detect, e.g. C:\\...\\msedge.exe',
+  '复用浏览器': 'Reuse browser',
+  '复用同一会话（同一工作流内多步共享，推荐）': 'Reuse the same session (shared across steps in one workflow, recommended)',
+  '每次打开干净会话（采集类避免脏状态）': 'Open a clean session each time (avoids dirty state for scraping)',
+  '工作流结束会自动关闭 DP 浏览器；下次运行始终是干净会话，不会复用上次残留。检测到上次页面已失活时也会自动重建。': 'The DP browser is closed automatically when the workflow ends; the next run always starts a clean session and never reuses leftovers. If the previous page is detected as dead, it is recreated automatically.',
+  '窗口尺寸（可选）': 'Window size (optional)',
+  '如 1280,800（留空用默认）': 'e.g. 1280,800 (leave blank for default)',
+  '保存页面信息到变量（可选）': 'Save page info to a variable (optional)',
+  '存入 {url, title, engine}，便于下游引用与排查实际使用的浏览器内核。': 'Stores {url, title, engine} for downstream reference and to check which browser engine is actually used.',
+})

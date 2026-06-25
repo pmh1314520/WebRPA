@@ -380,5 +380,7 @@ DrissionPage (DP) works by controlling a real browser kernel plus sending/receiv
 
 Locators pass through DrissionPage syntax directly: #id, .class, tag:xx, text:xx, xpath://..., css:....
 
-Flow: open with dp_open_page (it creates and reuses one browser instance), then use dp_click / dp_input, and finally dp_close. First-time use needs the dependency: run Python313/python.exe -m pip install DrissionPage in the WebRPA folder.
+Flow: open with dp_open_page (it reuses one browser session within a single workflow), then use dp_click / dp_input, and finally dp_close. The DP browser is closed automatically when the workflow ends, so the next run always starts a clean session and never reuses leftovers; a dead previous page is recreated automatically.
+
+Browser engine: DrissionPage is also Chromium-based and supports both Edge and Chrome. dp_open_page prefers the system Edge by default (consistent with other WebRPA modules); you can also choose Chrome or specify a browser path in its config, and set "Reuse browser" to "open a clean session each time" for scraping tasks. First-time use needs the dependency: run Python313/python.exe -m pip install DrissionPage in the WebRPA folder.
 `
