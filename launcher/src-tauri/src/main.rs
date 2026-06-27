@@ -1199,6 +1199,46 @@ fn animate_move(win: &tauri::WebviewWindow, fx: i32, fy: i32, tx: i32, ty: i32) 
     let _ = win.set_position(PhysicalPosition::new(tx, ty));
 }
 
+// ---- 启动器偏好设置（启动时是否自动隐藏到托盘）----
+// 独立存储于 launcher_settings.json，与 WebRPAConfig.json / save_config 解耦，
+// 避免保存服务配置时被覆盖。
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct LauncherSettings {
+    #[serde(rename = "startHidden", default)]
+    start_hidden: bool,
+}
+
+fn launcher_settings_path() -> Option<std::path::PathBuf> {
+    std::env::current_dir().ok().map(|d| d.join("launcher_settings.json"))
+}
+
+fn read_launcher_settings() -> LauncherSettings {
+    if let Some(p) = launcher_settings_path() {
+        if let Ok(c) = std::fs::read_to_string(&p) {
+            if let Ok(s) = serde_json::from_str::<LauncherSettings>(&c) {
+                return s;
+            }
+        }
+    }
+    LauncherSettings::default()
+}
+
+// 查询：启动器启动时是否自动隐藏到托盘
+#[tauri::command]
+async fn get_start_hidden() -> Result<bool, String> {
+    Ok(read_launcher_settings().start_hidden)
+}
+
+// 设置：启动器启动时是否自动隐藏到托盘
+#[tauri::command]
+async fn set_start_hidden(enable: bool) -> Result<(), String> {
+    let p = launcher_settings_path().ok_or_else(|| "无法定位设置文件目录".to_string())?;
+    let s = LauncherSettings { start_hidden: enable };
+    let json = serde_json::to_string_pretty(&s).map_err(|e| format!("序列化启动器设置失败: {}", e))?;
+    std::fs::write(&p, json).map_err(|e| format!("保存启动器设置失败: {}", e))?;
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_autostart::init(
@@ -1217,6 +1257,14 @@ fn main() {
                 // 用 default_window_icon (从 tauri.conf.json 的 icon 列表里编译进来的)
                 if let Some(icon) = app.default_window_icon() {
                     let _ = window.set_icon(icon.clone());
+                }
+                // 启动显隐：主窗口在 tauri.conf.json 中默认 visible:false（避免闪窗）。
+                // 若用户开启了"启动时自动隐藏到托盘"，则保持隐藏、仅驻留托盘；否则正常显示。
+                if read_launcher_settings().start_hidden {
+                    let _ = window.hide();
+                } else {
+                    let _ = window.show();
+                    let _ = window.set_focus();
                 }
             }
 
@@ -1284,6 +1332,8 @@ fn main() {
             open_frontend_log,
             set_autostart,
             get_autostart,
+            get_start_hidden,
+            set_start_hidden,
             open_assistant_agent_window,
             sync_assistant_agent_lang
         ])

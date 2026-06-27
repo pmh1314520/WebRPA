@@ -709,6 +709,16 @@
               </div>
               <div class="cfg-row cfg-row-toggle">
                 <div class="cfg-toggle-text">
+                  <div class="cfg-toggle-title">启动时自动隐藏到托盘</div>
+                  <div class="cfg-toggle-sub">启动器开启后不显示主窗口，直接最小化到系统托盘，可随时点击托盘图标唤出</div>
+                </div>
+                <label class="cfg-switch" :class="{ on: startHiddenToTray }">
+                  <input type="checkbox" v-model="startHiddenToTray" />
+                  <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                </label>
+              </div>
+              <div class="cfg-row cfg-row-toggle">
+                <div class="cfg-toggle-text">
                   <div class="cfg-toggle-title">启动时弹出赞助提示</div>
                   <div class="cfg-toggle-sub">关闭后不再每次启动都弹窗，仍可通过右上角"支持作者"打开</div>
                 </div>
@@ -882,6 +892,23 @@ watch(autoLaunchOnBoot, async (v) => {
     suppressAutoLaunchWrite = true
     autoLaunchOnBoot.value = !v
     setTimeout(() => { suppressAutoLaunchWrite = false }, 0)
+  }
+})
+
+// 启动时自动隐藏到托盘（调用 Rust 端 set_start_hidden，持久化到 launcher_settings.json）
+const startHiddenToTray = ref(false)
+let suppressStartHiddenWrite = false
+watch(startHiddenToTray, async (v) => {
+  if (suppressStartHiddenWrite) return
+  try {
+    await invoke('set_start_hidden', { enable: v })
+    showToast(v ? '已开启：启动时自动隐藏到托盘' : '已关闭：启动时显示主窗口', 'success')
+  } catch (e) {
+    showToast(`设置启动隐藏失败: ${e}`, 'error')
+    // 失败时回滚开关状态
+    suppressStartHiddenWrite = true
+    startHiddenToTray.value = !v
+    setTimeout(() => { suppressStartHiddenWrite = false }, 0)
   }
 })
 const saving = ref(false)
@@ -1266,6 +1293,13 @@ onMounted(async () => {
     autoLaunchOnBoot.value = !!enabled
     setTimeout(() => { suppressAutoLaunchWrite = false }, 0)
   } catch (e) { console.error('读取开机自启动状态失败:', e) }
+  // 读取"启动时自动隐藏到托盘"设置，同步到开关（避免触发反向写入）
+  try {
+    const hidden = await invoke('get_start_hidden')
+    suppressStartHiddenWrite = true
+    startHiddenToTray.value = !!hidden
+    setTimeout(() => { suppressStartHiddenWrite = false }, 0)
+  } catch (e) { console.error('读取启动隐藏设置失败:', e) }
   await checkServiceStatus()
   startStatusCheck()
   setTimeout(checkUpdate, 1500)
