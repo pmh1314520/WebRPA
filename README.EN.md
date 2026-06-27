@@ -18,13 +18,12 @@ WebRPA - Web Robotic Process Automation Tool
   <a href="README.md">中文</a> · <b>EN</b>
 </p>
 
-
 **A powerful visual web automation tool (with some support for Windows desktop automation and Android automation). Build automation workflows quickly by dragging and dropping modules — no coding required — to accomplish web data scraping, form filling, automated testing and more.**
 
 > **Important notice: This software is provided only as a technical tool. Users must comply with all applicable laws and regulations; the developer assumes no liability for how users use it. See the [Disclaimer](#disclaimer).**
 
 > **【Please download the latest 7z archive from Releases — the latest source code and runtime are all inside; extract and run.】**
->
+> 
 > Support WebRPA development: [Afdian page](https://ifdian.net/a/qypmh)
 
 ## Overview
@@ -132,6 +131,7 @@ Download the latest 7z archive from Releases, extract it, and launch the project
 4. The launcher automatically opens your browser to the frontend UI
 
 Default URLs:
+
 - Backend: http://localhost:5241 (default port, configurable in the launcher)
 - Frontend: http://localhost:5921 (default port, configurable in the launcher)
 
@@ -158,6 +158,7 @@ The `WebRPAConfig.json` file in the project root lets you customize service port
 ```
 
 **Configuration notes:**
+
 - `host`: service listening address (`0.0.0.0` allows LAN access, `127.0.0.1` is local-only)
 - `port`: service port (customizable to avoid conflicts)
 - `reload`: backend hot reload (`true` for development, `false` recommended for production)
@@ -165,6 +166,7 @@ The `WebRPAConfig.json` file in the project root lets you customize service port
 Restart the services after changing the configuration for it to take effect.
 
 **Notes:**
+
 - If a configured port is already in use, the service will fail to start and report a port conflict
 - Make sure the configured ports are free, or change them to other available ports
 - On Windows, use `netstat -ano | findstr :PORT` to check port usage
@@ -399,11 +401,13 @@ This project uses a **dual-license model**:
 ### Usage responsibility
 
 1. **User responsibility**
+   
    - When using WebRPA, users must strictly comply with the laws and regulations of their country and region
    - Users bear full responsibility for all activities conducted with this software
    - Users must ensure their use does not infringe others' rights or violate any laws or regulations
 
 2. **Prohibited uses**
+   
    - Do not use this software for any illegal or criminal activity
    - Do not use this software to infringe others' privacy, intellectual property or other lawful rights
    - Do not use this software for network attacks, data theft, malicious crawling, etc.
@@ -411,6 +415,7 @@ This project uses a **dual-license model**:
    - Do not use this software for any activity that could harm others' interests
 
 3. **Developer disclaimer**
+   
    - **The WebRPA developer (QingYun Studio · Peng Minghang) assumes no responsibility for any actions users take with this software**
    - **The developer does not endorse, support or encourage any illegal use of this software**
    - **The developer is not liable for any direct or indirect loss caused by users' use of this software**
@@ -419,11 +424,13 @@ This project uses a **dual-license model**:
 ### Technical tool statement
 
 1. **Nature of the tool**
+   
    - WebRPA is a technical tool, similar to general-purpose software such as browsers and text editors
    - The software itself contains no illegal content or features
    - The legality depends on how and for what purpose the user uses it
 
 2. **Recommendations**
+   
    - Use this software only for lawful, legitimate automation tasks
    - Carefully read the target website's terms of service and robots.txt before use
    - Control access frequency reasonably to avoid overloading target servers
@@ -432,10 +439,12 @@ This project uses a **dual-license model**:
 ### Applicable law
 
 1. **Jurisdiction**
+   
    - This disclaimer is governed by the laws of the People's Republic of China
    - Any dispute arising from use of this software shall be under the jurisdiction of the people's court at the developer's location
 
 2. **Effect of the statement**
+   
    - This disclaimer is an important part of the software license agreement
    - Downloading, installing or using this software constitutes agreement to all of this disclaimer
    - If you disagree with this disclaimer, stop using the software immediately and delete all related files
@@ -544,82 +553,9 @@ This project uses a **dual-license model**:
 
 <div align="center">
     <img src="png/微信收款码.png" width="200" alt="WeChat payment QR"/>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          
     <img src="png/支付宝收款码.jpg" width="183" alt="Alipay payment QR"/>
 </div>
-
-**Sponsor list (ordered by time):**
-
-| No. | Payment account | Date | Amount |
-| :------: | :--: | :--: | :--: |
-| 1 | 稀饭_ | 2026-01-25 12:32:15 | 20.00 |
-| 2 | 无懈可击 | 2026-01-31 16:50:27 | 100.00 |
-| 3 | 某風 | 2026-02-01 14:43:17 | 10.00 |
-| 4 | 雨墨 | 2026-02-02 18:53:10 | 16.00 |
-| 5 | 雨墨 | 2026-02-14 22:06:28 | 20.00 |
-| 6 | 无懈可击 | 2026-02-16 22:30:03 | 166.00 |
-| 7 | 千秋叶 | 2026-02-17 10:20:06 | 200.00 |
-| 8 | 键鼠自动化为您解放双手 | 2026-02-24 20:54:11 | 20.00 |
-| 9 | 某 | 2026-02-24 21:05:45 | 15.00 |
-| 10 | 滚蛋~坏丫头 | 2026-02-25 14:29:05 | 50.00 |
-| 11 | | 2026-02-27 12:58:24 | 20.00 |
-| 12 | 小帅 | 2026-03-03 14:50:38 | 50.00 |
-| 13 | 键鼠自动化为您解放双手 | 2026-03-03 14:54:45 | 100.00 |
-| 14 | Man In Black | 2026-03-03 17:03:15 | 66.00 |
-| 15 | 黑黑黑影 | 2026-03-07 21:27:27 | 20.00 |
-| 16 | 黑黑黑影 | 2026-03-11 16:48:30 | 30.00 |
-| 17 | 雨墨 | 2026-03-12 20:11:16 | 20.48 |
-| 18 | buffet | 2026-03-12 20:14:14 | 9.42 |
-| 19 | 东木雨 | 2026-03-13 00:09:41 | 25.00 |
-| 20 | 某息 | 2026-03-13 00:27:15 | 20.00 |
-| 21 | ice 唐 | 2026-03-13 09:03:13 | 10.00 |
-| 22 | ice 唐 | 2026-03-13 09:05:40 | 10.00 |
-| 23 | 滚蛋~坏丫头 | 2026-03-13 12:12:52 | 50.00 |
-| 24 | 黑黑黑影 | 2026-03-13 16:52:22 | 20.00 |
-| 25 | Merlin | 2026-03-13 17:50:47 | 20.00 |
-| 26 | 黑黑黑影 | 2026-03-14 14:24:01 | 10.00 |
-| 27 | 黑黑黑影 | 2026-03-16 21:45:54 | 100.00 |
-| 28 | 黑黑黑影 | 2026-03-16 22:31:38 | 400.00 |
-| 29 | 黑黑黑影 | 2026-03-17 14:12:57 | 100.00 |
-| 30 | 黑黑黑影 | 2026-03-17 08:25:26 | 100.00 |
-| 31 | *煜 | 2026-03-18 17:37:43 | 50.00 |
-| 32 | 滚蛋~坏丫头 | 2026-03-22 10:23:04 | 50.00 |
-| 33 | 黑黑黑影 | 2026-03-22 21:46:42 | 300.00 |
-| 34 | 多年以后 | 2026-03-27 21:20:21 | 20.00 |
-| 35 | sapsprocn | 2026-03-28 16:26:40 | 28.88 |
-| 36 | 悠离 | 2026-04-01 15:47:08 | 8.88 |
-| 37 | 悠离 | 2026-04-01 18:46:58 | 8.88 |
-| 38 | 迷一样的男人 | 2026-04-09 15:13:13 | 30.00 |
-| 39 | 小乐 | 2026-04-09 15:16:03 | 1.00 |
-| 40 | 小乐 | 2026-04-09 15:19:42 | 0.01 |
-| 41 | 宋代: | 2026-04-09 15:31:26 | 50.00 |
-| 42 | 自挂东南枝 | 2026-04-10 09:40:06 | 20.00 |
-| 43 | 青山里de小矮人 | 2026-04-10 22:29:47 | 50.00 |
-| 44 | 怕脏 | 2026-04-12 10:06:18 | 88.00 |
-| 45 | 怕脏 | 2026-04-12 14:37:43 | 50.00 |
-| 46 | 沝沝 | 2026-04-12 17:48:27 | 20.00 |
-| 47 | 沝沝 | 2026-04-15 19:31:35 | 500.00 |
-| 48 | *琛 | 2026-04-16 16:30:36 | 100.00 |
-| 49 | 路人_羽 | 2026-04-20 00:37:17 | 20.00 |
-| 50 | 滚蛋~坏丫头 | 2026-04-20 00:45:17 | 50.00 |
-| 51 | Slow Down | 2026-04-20 08:20:14 | 50.00 |
-| 52 | XSS | 2026-04-20 09:58:28 | 10.00 |
-| 53 | 多年以后 | 2026-04-20 17:40:43 | 50.00 |
-| 54 | Cy. | 2026-04-28 19:40:01 | 8.88 |
-| 55 | 无懈可击 | 2026-04-30 19:27:02 | 500.00 |
-| 56 | 无懈可击 | 2026-05-01 21:08:40 | 500.00 |
-| 57 | Ctrl+C | 2026-05-19 11:28:45 | 5.00 |
-| 58 | dive2space | 2026-05-20 10:11:27 | 30.00 |
-| 59 | dive2space | 2026-05-26 11:50:47 | 30.00 |
-| 60 | 多年以后 | 2026-05-27 10:19:25 | 30.00 |
-| 61 | Merlin | 2026-06-01 15:17:57 | 5.00 |
-| 62 | 夜雨扰心弦 | 2026-06-01 23:09:45 | 20.00 |
-| 63 | 键鼠自动化为您解放双手 | 2026-06-09 11:44:31 | 50.00 |
-| 64 | Sway | 2026-06-09 18:28:21 | 10.00 |
-| 65 | 鸟铭润 | 2026-06-17 09:13:15 | 5.00 |
-| 66 | IRON MAN | 2026-06-17 11:30:59 | 88.00 |
-| 67 | B*n | 2026-06-17 11:57:24 | 20.00 |
-| 68 | m*y | 2026-06-17 12:18:56 | 20.00 |
 
 ---
 
@@ -629,26 +565,28 @@ This project uses a **dual-license model**:
 <br>
 
 ## Commercial license (monthly / yearly)
-| License | Scenario | Monthly (CNY) | Yearly (CNY)<br>(10-month discount) |
-| :--------- | :--------------------------------- | :------------: | :--------------------------------: |
-| Individual | Freelancer / personal studio commercial use |       80       |                800                 |
-| Micro business | Under 10 people, single/multi-scenario commercial use |      140       |                1400                |
-| Small business | 10-30 people, multi-scenario commercial use |      260       |                2600                |
-| Small business | 30-50 people, multi-scenario commercial use |      340       |                3400                |
-| Medium/large business | 50-100 people, multi-department commercial use |      480       |                4800                |
-| Medium/large business | 100+ people, large-scale commercial use |      720       |                7200                |
+
+| License               | Scenario                                              | Monthly (CNY) | Yearly (CNY)<br>(10-month discount) |
+|:--------------------- |:----------------------------------------------------- |:-------------:|:-----------------------------------:|
+| Individual            | Freelancer / personal studio commercial use           | 80            | 800                                 |
+| Micro business        | Under 10 people, single/multi-scenario commercial use | 140           | 1400                                |
+| Small business        | 10-30 people, multi-scenario commercial use           | 260           | 2600                                |
+| Small business        | 30-50 people, multi-scenario commercial use           | 340           | 3400                                |
+| Medium/large business | 50-100 people, multi-department commercial use        | 480           | 4800                                |
+| Medium/large business | 100+ people, large-scale commercial use               | 720           | 7200                                |
 
 <br>
 
 ## Perpetual license
-| License | Scenario | Price (CNY) |
-| :--------- | :------------------------------ | :--------: |
-| Individual | Freelancer / personal studio perpetual license |    4000    |
-| Micro business | Under 10 people, multi-scenario perpetual license |    8400    |
-| Small business | 10-30 people, multi-scenario perpetual license |   15600    |
-| Small business | 30-50 people, multi-scenario perpetual license |   20400    |
-| Medium/large business | 50-100 people, multi-department perpetual license |   28800    |
-| Medium/large business | 100+ people, large-scale perpetual license |   43200    |
+
+| License               | Scenario                                          | Price (CNY) |
+|:--------------------- |:------------------------------------------------- |:-----------:|
+| Individual            | Freelancer / personal studio perpetual license    | 1000        |
+| Micro business        | Under 10 people, multi-scenario perpetual license | 1800        |
+| Small business        | 10-30 people, multi-scenario perpetual license    | 3400        |
+| Small business        | 30-50 people, multi-scenario perpetual license    | 4500        |
+| Medium/large business | 50-100 people, multi-department perpetual license | 6200        |
+| Medium/large business | 100+ people, large-scale perpetual license        | 10000       |
 
 <br>
 
@@ -661,20 +599,24 @@ This project uses a **dual-license model**:
 ### Special dependencies
 
 1. **NapCat framework** (non-commercial license)
+   
    - Purpose: QQ bot features
    - License: non-commercial use agreement
    - Restriction: personal non-commercial use only
 
 2. **pdf2docx library** (GPL v3)
+   
    - Purpose: PDF-to-Word feature
    - License: GPL v3
    - Restriction: non-commercial use only, or you must comply with GPL v3
 
 3. **Other PDF libraries** (MIT/BSD - commercial-friendly)
+   
    - pypdf (MIT), reportlab (BSD), pdf2image (MIT), pdfplumber (MIT)
    - These libraries are kept in the commercial edition
 
 4. **External tools** (GPL - invoked as standalone programs)
+   
    - FFmpeg, Pandoc, poppler
    - Note: invoked as standalone programs (not linked libraries), compliant with GPL usage
 
@@ -717,6 +659,7 @@ After purchasing a commercial license, you get the full commercial edition:
 ---
 
 > **Important note**
+> 
 > - Personal non-commercial use is **completely free**— free to use, modify and distribute.
 > - Any modification or derivative work must be open-sourced under **AGPL-3.0**, with **attribution to the original author**.
 > - Providing a service over a network (e.g. SaaS) must also open-source the complete code.

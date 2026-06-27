@@ -138,6 +138,23 @@ Object.assign(UI_DICT, {
   '选择工作流': 'Select workflow',
   '程序名称': 'App name',
   '打包方式': 'Packaging mode',
+  // —— 赞助与致谢 ——
+  '赞助与致谢': 'Sponsor & Thanks',
+  '微信收款码': 'WeChat QR code',
+  '支付宝收款码': 'Alipay QR code',
+  '收款码待配置': 'QR code not set yet',
+  'WebRPA 由作者一个人独立开发维护，对个人永久免费、无广告、无付费墙':
+    'WebRPA is built and maintained by a single developer — free forever for individuals, with no ads or paywalls',
+  '它能不断更新、走到今天，靠的是认可它的你们一点一滴的支持。如果 WebRPA 帮到了你，欢迎请作者喝杯咖啡 —— 完全随心，多少都是莫大的鼓励 ❤':
+    'It keeps improving thanks to the support of people who believe in it. If WebRPA has helped you, feel free to buy the author a coffee — any amount is hugely encouraging ❤',
+  '赞助时请备注「WebRPA」，方便作者把你登记进下个版本的致谢名单':
+    'Please note "WebRPA" when sponsoring, so the author can add you to the next version\u2019s thank-you list',
+  '已赞助的伙伴们': 'Our wonderful sponsors',
+  '还没有人赞助 —— 期待你成为第一位让作者记住的人 ❤':
+    'No sponsors yet — be the first the author remembers ❤',
+  '名单随每次版本更新手动收录，由作者一条条写入，可能不会立刻出现，敬请谅解 ❤':
+    'The list is updated manually with each release, added one by one by the author, so it may not appear instantly — thanks for understanding ❤',
+  '谢谢你愿意看到这里 ❤': 'Thank you for reading this far ❤',
   '自包含（拷给任何电脑都能跑，体积大）': 'Self-contained (runs on any PC, large)',
   '轻量（依赖本机已装 WebRPA，体积小）': 'Lite (requires WebRPA on the machine, small)',
   '后台运行（不显示浏览器）': 'Run in background (no browser UI)',

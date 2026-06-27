@@ -756,3 +756,19 @@ export interface PluginReview {
   comment: string
   createdAt: string
 }
+
+
+// ==================== 赞助与致谢 API ====================
+export interface SponsorItem {
+  name: string
+  date?: string
+  amount?: string
+}
+export const sponsorApi = {
+  /** 赞助者名单（从 README 解析，随版本更新，非实时） */
+  list: () => apiRequest<{ sponsors: SponsorItem[]; count: number }>('/sponsors/list'),
+  /** 收款码是否已配置 */
+  status: () => apiRequest<{ wechat: boolean; alipay: boolean }>('/sponsors/status'),
+  /** 收款码图片直链（带时间戳避免缓存旧图） */
+  qrUrl: (kind: 'wechat' | 'alipay') => `${getBackendUrl()}/api/sponsors/qr/${kind}?t=${Date.now()}`,
+}

@@ -27,6 +27,7 @@ import { ScheduledTasksDialog } from '../scheduled-tasks/ScheduledTasksDialog'
 import { PhoneMirrorDialog } from './PhoneMirrorDialog'
 import { VariableTrackingPanel } from './VariableTrackingPanel'
 import { ScreensaverDialog } from './ScreensaverDialog'
+import { SponsorDialog } from './SponsorDialog'
 import { ScreenshotNameDialog, ScreenshotErrorDialog } from './ScreenshotNameDialog'
 import { useClipboardImageMonitor } from '@/hooks/useClipboardImageMonitor'
 import { customModulesApi, workflowBundleApi } from '@/services/api'
@@ -61,6 +62,7 @@ import {
   Video,
   GitCommit,
   MousePointerClick,
+  Heart,
   X,
 } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -87,6 +89,7 @@ export function Toolbar() {
   const [showPhoneMirror, setShowPhoneMirror] = useState(false)
   const [showVariableTracking, setShowVariableTracking] = useState(false)
   const [showScreensaver, setShowScreensaver] = useState(false)
+  const [showSponsor, setShowSponsor] = useState(false)
   const [defaultFolder, setDefaultFolder] = useState('')
   const [showScreenshotNameDialog, setShowScreenshotNameDialog] = useState(false)
   const [screenshotAsset, setScreenshotAsset] = useState<any>(null)
@@ -1711,6 +1714,11 @@ export function Toolbar() {
               <Package className="w-4 h-4 mr-2 text-[hsl(var(--brand-600))]" />
               打包为EXE
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setShowSponsor(true)}>
+              <Heart className="w-4 h-4 mr-2 text-[hsl(var(--danger-500))]" />
+              赞助与致谢
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -1798,6 +1806,12 @@ export function Toolbar() {
       <ScreensaverDialog
         open={showScreensaver}
         onClose={() => setShowScreensaver(false)}
+      />
+
+      {/* 赞助与致谢对话框 */}
+      <SponsorDialog
+        open={showSponsor}
+        onClose={() => setShowSponsor(false)}
       />
       
       {/* 确认对话框 */}
