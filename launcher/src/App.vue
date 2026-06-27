@@ -1031,6 +1031,14 @@ const checkUpdate = async () => {
   if (checking.value) return
   checking.value = true
   try {
+    // 版本号无效时先重新读取，避免用 "?" 去比较导致误报"有新版本"
+    if (!version.value || version.value === '?') {
+      try { version.value = await invoke('get_version') } catch {}
+    }
+    if (!version.value || version.value === '?') {
+      showToast('暂时无法读取本地版本，请稍后重试', 'info')
+      return
+    }
     const result = await invoke('check_update', { currentVersion: version.value })
     updateInfo.value = result
     if (!result.has_update) showToast('当前已是最新版本', 'success')
@@ -1285,6 +1293,14 @@ onMounted(async () => {
   try { uiLang.value = (window.__getLauncherLang && window.__getLauncherLang()) || 'zh' } catch (e) {}
   try { const t = localStorage.getItem(THEME_KEY); uiTheme.value = (t === 'dark' || t === 'gray') ? t : 'default'; applyTheme(uiTheme.value) } catch (e) {}
   try { version.value = await invoke('get_version') } catch { version.value = '?' }
+  // 防御：版本号偶发读取为空/失败时重试几次（路径问题已在 Rust 端用 exe 目录修复，
+  // 这里再兜底，避免左上角短暂显示 v?，以及据此误判"非最新版"）
+  if (!version.value || version.value === '?') {
+    for (let i = 0; i < 5 && (!version.value || version.value === '?'); i++) {
+      await new Promise((r) => setTimeout(r, 400))
+      try { version.value = await invoke('get_version') } catch {}
+    }
+  }
   await loadConfig()
   // 读取系统真实的开机自启动状态，同步到开关（避免触发反向写入）
   try {
@@ -1424,9 +1440,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 600px 200px at 20% 100%, rgba(139, 92, 246, 0.4), transparent 70%),
-    radial-gradient(ellipse 500px 200px at 80% 100%, rgba(236, 72, 153, 0.3), transparent 70%),
-    linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #7c3aed 100%);
+    radial-gradient(ellipse 620px 220px at 18% 120%, rgba(59, 130, 246, 0.35), transparent 70%),
+    linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);
 }
 .brand-bar-bg::after {
   content: '';
@@ -1489,7 +1504,7 @@ body {
   overflow: visible;
 }
 .brand-pill .brand-letter {
-  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1761,7 +1776,7 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   right: 100px;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 60%);
 }
 .hero-row {
   position: relative;
@@ -1816,7 +1831,7 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   margin-bottom: 6px;
 }
 .hero-highlight {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1855,7 +1870,7 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   letter-spacing: 0.01em;
 }
 .cta-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   box-shadow:
     0 4px 12px rgba(37, 99, 235, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -1987,8 +2002,8 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   box-shadow: 0 3px 8px rgba(37, 99, 235, 0.3);
 }
 .service-icon-purple {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.3);
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3);
 }
 .service-text { flex: 1; min-width: 0; }
 .service-name {
@@ -2308,8 +2323,8 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
 }
 .config-banner {
   background:
-    radial-gradient(ellipse 400px 200px at 100% 100%, rgba(139, 92, 246, 0.5), transparent 60%),
-    linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #7c3aed 100%);
+    radial-gradient(ellipse 400px 200px at 100% 100%, rgba(59, 130, 246, 0.4), transparent 60%),
+    linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);
 }
 .modal-banner-pattern {
   position: absolute;
@@ -2870,9 +2885,9 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   flex-shrink: 0;
 }
 .cfg-block-icon-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.cfg-block-icon-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.cfg-block-icon-purple { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
 .cfg-block-icon-pink { background: linear-gradient(135deg, #ec4899, #db2777); }
-.cfg-block-icon-indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.cfg-block-icon-indigo { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
 
 /* 偏好开关行：左文本块 + 右开关 */
 .cfg-row-toggle {
@@ -2930,7 +2945,7 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   transition: background 180ms ease;
 }
 .cfg-switch.on .cfg-switch-track {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
 }
 .cfg-switch-thumb {
   position: absolute;

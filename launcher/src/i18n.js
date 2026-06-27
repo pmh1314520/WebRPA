@@ -112,6 +112,7 @@ Object.assign(DICT, {
   '配置已保存': 'Configuration saved',
   '服务已停止': 'Services stopped',
   '当前已是最新版本': 'You are on the latest version',
+  '暂时无法读取本地版本，请稍后重试': 'Unable to read the local version for now, please try again later',
   '已开启开机自启动': 'Auto-start on boot enabled',
   '已关闭开机自启动': 'Auto-start on boot disabled',
   '读取开机自启动状态失败': 'Failed to read auto-start status',

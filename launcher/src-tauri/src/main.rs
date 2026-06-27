@@ -119,11 +119,22 @@ fn strip_ansi_codes(text: &str) -> String {
     
     result
 }
+// 应用根目录：始终以启动器 exe 所在目录为基准定位 Python313/backend/frontend/配置/版本文件等。
+// 关键：不能用 current_dir()，因为开机自启动或从快捷方式启动时，工作目录可能是 System32
+// 之类的位置，导致找不到资源（表现为版本号变 "?"、误报非最新版、服务起不来）。
+// 仅当无法解析 exe 路径时才回退到 current_dir()。
+fn app_root() -> std::path::PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+}
+
 // 读取配置文件
 #[tauri::command]
 async fn read_config() -> Result<Config, String> {
-    let config_path = std::env::current_dir()
-        .map_err(|e| e.to_string())?
+    let config_path = app_root()
         .join("WebRPAConfig.json");
     
     let content = std::fs::read_to_string(&config_path)
@@ -138,8 +149,7 @@ async fn read_config() -> Result<Config, String> {
 // 保存配置文件
 #[tauri::command]
 async fn save_config(config: Config) -> Result<(), String> {
-    let current_dir = std::env::current_dir()
-        .map_err(|e| e.to_string())?;
+    let current_dir = app_root();
 
     let config_path = current_dir.join("WebRPAConfig.json");
     
@@ -174,7 +184,7 @@ async fn start_backend(_window: Window, state: tauri::State<'_, AppState>) -> Re
         return Err(format!("后端服务已在运行（端口{}已被占用）", config.backend.port));
     }
     
-    let root_dir = std::env::current_dir().map_err(|e| e.to_string())?;
+    let root_dir = app_root();
     let python_exe = root_dir.join("Python313").join("python.exe");
     let backend_script = root_dir.join("backend").join("run.py");
     
@@ -325,7 +335,7 @@ async fn start_frontend(_window: Window, state: tauri::State<'_, AppState>) -> R
         return Err(format!("前端服务已在运行（端口{}已被占用）", config.frontend.port));
     }
     
-    let root_dir = std::env::current_dir().map_err(|e| e.to_string())?;
+    let root_dir = app_root();
     let frontend_dir = root_dir.join("frontend");
     
     if !frontend_dir.exists() {
@@ -645,8 +655,7 @@ async fn stop_services(app: tauri::AppHandle, state: tauri::State<'_, AppState>)
 
 // 读取本地版本号
 fn get_local_version() -> Result<String, String> {
-    let version_file = std::env::current_dir()
-        .map_err(|e| e.to_string())?
+    let version_file = app_root()
         .join("frontend")
         .join("src")
         .join("services")
@@ -836,8 +845,7 @@ fn open_url_in_default_browser(file_url: &str) -> Result<(), String> {
 
 #[tauri::command]
 async fn open_backend_log() -> Result<(), String> {
-    let log_path = std::env::current_dir()
-        .map_err(|e| e.to_string())?
+    let log_path = app_root()
         .join("backend")
         .join("logs")
         .join("backend.log");
@@ -873,8 +881,7 @@ async fn open_backend_log() -> Result<(), String> {
 // 打开前端日志文件
 #[tauri::command]
 async fn open_frontend_log() -> Result<(), String> {
-    let log_path = std::env::current_dir()
-        .map_err(|e| e.to_string())?
+    let log_path = app_root()
         .join("frontend")
         .join("logs")
         .join("frontend.log");
@@ -1209,7 +1216,7 @@ struct LauncherSettings {
 }
 
 fn launcher_settings_path() -> Option<std::path::PathBuf> {
-    std::env::current_dir().ok().map(|d| d.join("launcher_settings.json"))
+    Some(app_root().join("launcher_settings.json"))
 }
 
 fn read_launcher_settings() -> LauncherSettings {
