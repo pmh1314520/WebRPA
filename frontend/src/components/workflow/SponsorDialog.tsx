@@ -57,7 +57,7 @@ function QrCard({ kind, title, onZoom }: QrCardProps) {
         type="button"
         onClick={() => clickable && onZoom(src, title)}
         className="relative flex h-44 w-44 items-center justify-center overflow-hidden rounded-lg transition-transform duration-150 group-hover:scale-[1.02]"
-        style={{ background: '#f8f8f8', cursor: clickable ? 'zoom-in' : 'default' }}
+        style={{ background: 'transparent', cursor: clickable ? 'zoom-in' : 'default' }}
         title={clickable ? '点击放大查看' : ''}
       >
         {clickable ? (
