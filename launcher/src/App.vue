@@ -1440,8 +1440,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 620px 220px at 18% 120%, rgba(59, 130, 246, 0.35), transparent 70%),
-    linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);
+    radial-gradient(ellipse 560px 220px at 88% -40%, rgba(56, 189, 248, 0.45), transparent 65%),
+    linear-gradient(120deg, #1d4ed8 0%, #2563eb 48%, #0ea5e9 100%);
 }
 .brand-bar-bg::after {
   content: '';
@@ -1831,7 +1831,7 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
   margin-bottom: 6px;
 }
 .hero-highlight {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(120deg, #2563eb 0%, #0ea5e9 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -2323,8 +2323,8 @@ html.lang-en .chip-btn svg { width: 13px; height: 13px; }
 }
 .config-banner {
   background:
-    radial-gradient(ellipse 400px 200px at 100% 100%, rgba(59, 130, 246, 0.4), transparent 60%),
-    linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);
+    radial-gradient(ellipse 400px 200px at 100% 100%, rgba(56, 189, 248, 0.45), transparent 60%),
+    linear-gradient(120deg, #1d4ed8 0%, #2563eb 48%, #0ea5e9 100%);
 }
 .modal-banner-pattern {
   position: absolute;
