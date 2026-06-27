@@ -30,7 +30,7 @@ function ensureTipEl(): HTMLDivElement {
   tipEl.setAttribute('aria-hidden', 'true')
   tipEl.style.cssText = [
     'position:fixed',
-    'z-index:99999',
+    'z-index:2147483647',
     'pointer-events:none',
     'opacity:0',
     'transform:translate(-50%, 4px) scale(0.96)',
@@ -78,6 +78,12 @@ function ensureTipEl(): HTMLDivElement {
 
 function show(target: Element, text: string) {
   const el = ensureTipEl()
+  // 始终把浮窗移到 body 末尾：当页面上存在同为最高层级（z-index 2147483647）的
+  // 弹窗/灯箱/下拉浮层时，纯靠 z-index 无法再分高下，此时由 DOM 顺序决定层叠，
+  // 让 tooltip 永远是最后插入的节点，确保它始终显示在最上层，不会被弹窗盖住。
+  if (el.parentElement !== document.body || el !== document.body.lastElementChild) {
+    document.body.appendChild(el)
+  }
   if (textNode) textNode.nodeValue = text
 
   // 隐藏测量
