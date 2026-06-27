@@ -124,7 +124,7 @@ export function SponsorDialog({ open, onClose }: Props) {
   return createPortal(
     <div
       className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: 2147483646, background: 'rgba(76, 5, 25, 0.45)', backdropFilter: 'blur(3px)' }}
+      style={{ zIndex: 2147483646, background: 'rgba(17, 24, 39, 0.5)', backdropFilter: 'blur(3px)' }}
       onClick={onClose}
     >
       <div
@@ -255,7 +255,7 @@ export function SponsorDialog({ open, onClose }: Props) {
       {zoom ? (
         <div
           className="fixed inset-0 flex flex-col items-center justify-center gap-3 p-6"
-          style={{ zIndex: 2147483647, background: 'rgba(76, 5, 25, 0.75)', backdropFilter: 'blur(4px)' }}
+          style={{ zIndex: 2147483647, background: 'rgba(17, 24, 39, 0.8)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => {
             e.stopPropagation()
             setZoom(null)
