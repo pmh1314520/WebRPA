@@ -145,8 +145,8 @@ Object.assign(UI_DICT, {
   '收款码待配置': 'QR code not set yet',
   'WebRPA 由作者一个人独立开发维护，对个人永久免费、无广告、无付费墙':
     'WebRPA is built and maintained by a single developer — free forever for individuals, with no ads or paywalls',
-  '它能不断更新、走到今天，靠的是认可它的你们一点一滴的支持。如果 WebRPA 帮到了你，欢迎请作者喝杯咖啡 —— 完全随心，多少都是莫大的鼓励 ❤':
-    'It keeps improving thanks to the support of people who believe in it. If WebRPA has helped you, feel free to buy the author a coffee — any amount is hugely encouraging ❤',
+  '若 WebRPA 帮到了你，希望能赞助一下开发工作。它能不断更新、走到今天，靠的就是各位一点一滴的支持 —— 完全随心，多少都是莫大的鼓励 ❤':
+    'If WebRPA has helped you, please consider sponsoring its development. It keeps improving and has come this far thanks to everyone\u2019s little bits of support — entirely up to you, any amount is hugely encouraging ❤',
   '赞助时请备注「WebRPA」，方便作者把你登记进下个版本的致谢名单':
     'Please note "WebRPA" when sponsoring, so the author can add you to the next version\u2019s thank-you list',
   '已赞助的伙伴们': 'Our wonderful sponsors',

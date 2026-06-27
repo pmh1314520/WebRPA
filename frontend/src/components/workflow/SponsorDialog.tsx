@@ -49,15 +49,15 @@ function QrCard({ kind, title, onZoom }: QrCardProps) {
 
   return (
     <div
-      className="group flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm transition-all"
+      className="group flex flex-col items-center gap-2 rounded-xl border bg-white p-4 shadow-sm transition-all"
       style={{ borderColor: C.border }}
     >
       <div className="text-sm font-semibold" style={{ color: C.title }}>{title}</div>
       <button
         type="button"
         onClick={() => clickable && onZoom(src, title)}
-        className="relative flex h-44 w-44 items-center justify-center overflow-hidden rounded-xl transition-transform duration-150 group-hover:scale-[1.02]"
-        style={{ background: C.softBg, cursor: clickable ? 'zoom-in' : 'default' }}
+        className="relative flex h-44 w-44 items-center justify-center overflow-hidden rounded-lg transition-transform duration-150 group-hover:scale-[1.02]"
+        style={{ background: '#f8f8f8', cursor: clickable ? 'zoom-in' : 'default' }}
         title={clickable ? '点击放大查看' : ''}
       >
         {clickable ? (
@@ -128,8 +128,8 @@ export function SponsorDialog({ open, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
-        style={{ boxShadow: '0 24px 70px -12px rgba(190,18,60,0.45)' }}
+        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        style={{ boxShadow: '0 24px 70px -12px rgba(190,18,60,0.30)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 —— 喜庆红粉渐变 */}
@@ -156,17 +156,14 @@ export function SponsorDialog({ open, onClose }: Props) {
         </div>
 
         {/* 内容（可滚动） */}
-        <div className="flex-1 overflow-y-auto px-6 py-5" style={{ background: 'linear-gradient(180deg, #fff7f8 0%, #ffffff 160px)' }}>
+        <div className="flex-1 overflow-y-auto px-6 py-5" style={{ background: '#ffffff' }}>
           {/* 暖心引导语 */}
-          <div className="mb-5 rounded-2xl border p-4 text-sm leading-relaxed" style={{ background: C.softBg, borderColor: C.border, color: C.text }}>
+          <div className="mb-5 rounded-lg border p-4 text-sm leading-relaxed" style={{ background: '#ffffff', borderColor: C.border, color: C.text }}>
             <p className="mb-1.5 flex items-center gap-1.5 font-semibold" style={{ color: C.redDeep }}>
               <Sparkles className="h-4 w-4" />
               WebRPA 由作者一个人独立开发维护，对个人永久免费、无广告、无付费墙
             </p>
-            <p>
-              它能不断更新、走到今天，靠的是认可它的你们一点一滴的支持。如果 WebRPA 帮到了你，
-              欢迎请作者喝杯咖啡 —— 完全随心，多少都是莫大的鼓励 ❤
-            </p>
+            <p>若 WebRPA 帮到了你，希望能赞助一下开发工作。它能不断更新、走到今天，靠的就是各位一点一滴的支持 —— 完全随心，多少都是莫大的鼓励 ❤</p>
           </div>
 
           {/* 收款码 */}
@@ -177,8 +174,8 @@ export function SponsorDialog({ open, onClose }: Props) {
 
           {/* 备注提示 */}
           <div
-            className="mb-6 flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-center text-sm font-medium"
-            style={{ background: C.softBg2, borderColor: C.border, color: C.redDeep }}
+            className="mb-6 flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-center text-sm font-medium"
+            style={{ background: '#ffffff', borderColor: C.border, color: C.redDeep }}
           >
             <Heart className="h-4 w-4 flex-shrink-0 fill-current" style={{ color: C.heart }} />
             赞助时请备注「WebRPA」，方便作者把你登记进下个版本的致谢名单
@@ -199,7 +196,7 @@ export function SponsorDialog({ open, onClose }: Props) {
             {loading ? (
               <div className="py-6 text-center text-sm" style={{ color: C.muted }}>加载中…</div>
             ) : sponsors.length === 0 ? (
-              <div className="rounded-xl py-6 text-center text-sm" style={{ background: C.softBg, color: C.redDeep }}>
+              <div className="rounded-lg border py-6 text-center text-sm" style={{ background: '#ffffff', borderColor: C.border, color: C.redDeep }}>
                 还没有人赞助 —— 期待你成为第一位让作者记住的人 ❤
               </div>
             ) : (
@@ -207,7 +204,7 @@ export function SponsorDialog({ open, onClose }: Props) {
                 {sponsors.map((s, i) => (
                   <div
                     key={`${s.name}-${i}`}
-                    className="flex items-start gap-2 rounded-xl border bg-white px-3 py-2 transition-colors hover:shadow-sm"
+                    className="flex items-start gap-2 rounded-lg border bg-white px-3 py-2 transition-colors hover:shadow-sm"
                     style={{ borderColor: C.border }}
                   >
                     <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 fill-current" style={{ color: C.heart }} />
@@ -236,7 +233,7 @@ export function SponsorDialog({ open, onClose }: Props) {
         </div>
 
         {/* 底部 */}
-        <div className="flex items-center justify-between border-t px-6 py-3" style={{ borderColor: C.border, background: C.softBg }}>
+        <div className="flex items-center justify-between border-t px-6 py-3" style={{ borderColor: C.border, background: '#ffffff' }}>
           <span className="flex items-center gap-1 text-sm" style={{ color: C.redDeep }}>
             <Heart className="h-3.5 w-3.5 fill-current" style={{ color: C.heart }} />
             谢谢你愿意看到这里 ❤
