@@ -317,6 +317,20 @@ export function InputPromptDialog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptData?.requestId])
 
+  // Esc 取消输入（与其它弹窗一致的键盘可达性）
+  useEffect(() => {
+    if (!promptData) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        handleCancel()
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [promptData?.requestId])
+
   if (!promptData) return null
 
   const { inputMode } = promptData
@@ -386,7 +400,7 @@ export function InputPromptDialog() {
   return (
     <DialogPortal>
     <div className="fixed inset-0 bg-[hsl(217_45%_15%_/_0.55)] backdrop-blur-[3px] flex items-center justify-center p-4 animate-fade-in" style={{ zIndex: 2147483646 }}>
-      <div className="modern-dialog w-full max-w-md max-h-[90vh] overflow-y-auto p-0 animate-scale-in-bounce">
+      <div className="modern-dialog w-full max-w-md max-h-[90vh] overflow-y-auto p-0 animate-scale-in-bounce" role="dialog" aria-modal="true" aria-label={promptData.title || '需要你输入'}>
         <div className="modern-dialog-header">
           <div className="modern-dialog-header-icon">
             {getModeIcon()}
