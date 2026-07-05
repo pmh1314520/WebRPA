@@ -25,6 +25,26 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const confirmBtnRef = useRef<HTMLButtonElement>(null)
+
+  // Esc 关闭（alert 也可用 Esc 确认关闭）+ 打开时聚焦主按钮，提升键盘可达性
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        if (type === 'alert') onConfirm()
+        else onCancel?.()
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    const raf = requestAnimationFrame(() => confirmBtnRef.current?.focus())
+    return () => {
+      window.removeEventListener('keydown', onKey, true)
+      cancelAnimationFrame(raf)
+    }
+  }, [isOpen, type, onConfirm, onCancel])
+
   if (!isOpen) return null
 
   const isAlertOnly = type === 'alert'
@@ -96,6 +116,9 @@ export function ConfirmDialog({
       <div
         className="relative bg-[hsl(var(--card))] rounded-[14px] border border-[hsl(var(--border))] shadow-pop-2xl w-full max-w-sm overflow-hidden animate-scale-in-bounce"
         onClick={(e) => e.stopPropagation()}
+        role={isAlertOnly ? 'alertdialog' : 'dialog'}
+        aria-modal="true"
+        aria-label={titleText}
       >
         {/* 顶部彩色装饰条 */}
         <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stripeColor}`} />
@@ -123,6 +146,7 @@ export function ConfirmDialog({
             </Button>
           )}
           <Button
+            ref={confirmBtnRef}
             size="sm"
             variant={
               type === 'warning' ? 'destructive'
