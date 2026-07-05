@@ -44,6 +44,21 @@ _CMP_OPS = {
 # 幂运算上限，防止 10**10**10 之类的资源耗尽
 _MAX_POW_EXP = 1000
 
+# 允许的内置函数（数据处理常用，均无副作用/无法逃逸）
+_SAFE_FUNCS: dict[str, Any] = {
+    "len": len, "abs": abs, "int": int, "float": float, "str": str,
+    "bool": bool, "round": round, "min": min, "max": max, "sum": sum,
+    "sorted": sorted, "any": any, "all": all,
+}
+
+# 允许在值上调用的方法名（字符串/列表/字典常用；一律不含下划线，杜绝 dunder）
+_SAFE_METHODS = frozenset({
+    "startswith", "endswith", "lower", "upper", "strip", "lstrip", "rstrip",
+    "split", "rsplit", "replace", "find", "rfind", "count", "isdigit",
+    "isalpha", "isalnum", "isspace", "title", "capitalize", "join",
+    "get", "keys", "values", "items", "index",
+})
+
 
 class UnsafeExpressionError(Exception):
     """表达式包含不允许的语法（属性访问/函数调用/导入等）或无法安全求值。"""
@@ -125,5 +140,29 @@ def _eval(node: ast.AST, vars: dict[str, Any]) -> Any:
     if isinstance(node, ast.Dict):
         return {_eval(k, vars): _eval(v, vars) for k, v in zip(node.keys, node.values)}
 
-    # 其余节点（Attribute / Call / Lambda / Comprehension / Subscript / Starred 等）一律拒绝
+    # 受限函数调用：仅允许 白名单内置函数 或 值上的白名单方法（方法名不得含下划线）
+    if isinstance(node, ast.Call):
+        if getattr(node, "keywords", None):
+            raise UnsafeExpressionError("不允许关键字参数")
+        args = [_eval(a, vars) for a in node.args]
+        func_node = node.func
+        if isinstance(func_node, ast.Name):
+            fn = _SAFE_FUNCS.get(func_node.id)
+            if fn is None:
+                raise UnsafeExpressionError(f"不允许的函数: {func_node.id}")
+            return fn(*args)
+        if isinstance(func_node, ast.Attribute):
+            attr = func_node.attr
+            if attr.startswith("_") or attr not in _SAFE_METHODS:
+                raise UnsafeExpressionError(f"不允许的方法: {attr}")
+            obj = _eval(func_node.value, vars)
+            method = getattr(obj, attr, None)
+            if not callable(method):
+                raise UnsafeExpressionError(f"不可调用的方法: {attr}")
+            return method(*args)
+        raise UnsafeExpressionError("不允许的调用形式")
+
+    # 属性访问：仅在“方法调用”里通过上面的 ast.Call 分支处理；
+    # 独立的属性访问（尤其 __class__ 等 dunder）一律拒绝，杜绝沙箱逃逸。
+    # 其余节点（Lambda / Comprehension / Subscript / Starred 等）一律拒绝
     raise UnsafeExpressionError(f"不允许的表达式节点: {type(node).__name__}")

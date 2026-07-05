@@ -39,6 +39,40 @@ class TestSafeEvalNormal:
         assert safe_eval("None") is None
 
 
+class TestSafeEvalSafeCalls:
+    """常见的、安全的函数/方法调用应可用（避免误伤合法条件表达式）。"""
+
+    def test_len_builtin(self):
+        assert safe_eval("len(items) > 0", {"items": [1, 2, 3]}) is True
+        assert safe_eval("len(items) > 0", {"items": []}) is False
+
+    def test_numeric_builtins(self):
+        assert safe_eval("abs(x) == 5", {"x": -5}) is True
+        assert safe_eval("int(s) + 1", {"s": "9"}) == 10
+        assert safe_eval("max(a, b)", {"a": 3, "b": 7}) == 7
+
+    def test_string_methods(self):
+        assert safe_eval("name.startswith('web')", {"name": "webrpa"}) is True
+        assert safe_eval("name.upper() == 'WEB'", {"name": "web"}) is True
+        assert safe_eval("s.strip() == 'x'", {"s": "  x  "}) is True
+
+    def test_membership_with_method(self):
+        assert safe_eval("'a' in text.lower()", {"text": "ABC"}) is True
+
+    def test_reject_format_method(self):
+        # format 可通过格式串访问属性，属危险方法，应被拒绝
+        with pytest.raises(UnsafeExpressionError):
+            safe_eval("'{0.__class__}'.format(x)", {"x": 1})
+
+    def test_reject_unknown_function(self):
+        with pytest.raises(UnsafeExpressionError):
+            safe_eval("open('f')")
+
+    def test_reject_dunder_method_call(self):
+        with pytest.raises(UnsafeExpressionError):
+            safe_eval("x.__class__()", {"x": 1})
+
+
 class TestSafeEvalRejectsDangerous:
     def test_reject_attribute_access(self):
         # 经典沙箱逃逸的第一步：属性访问 __class__
