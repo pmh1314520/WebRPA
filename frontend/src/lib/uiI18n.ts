@@ -48,6 +48,13 @@ function translateString(zh: string): string {
   // 1b) 折叠内部空白后再尝试整句匹配（覆盖 JSX 多行文本：换行+缩进会被渲染为空格）
   const collapsed = key.replace(/\s+/g, ' ')
   if (collapsed !== key && UI_DICT[collapsed] !== undefined) return UI_DICT[collapsed]
+  // 1c) 历史词典中多行文案的 key 把换行写成了字面 'n'（源码里 \n 的反斜杠在早期迁移时被去掉）。
+  //     运行时 DOM 文本是真实换行，这里把换行归一成 'n' 再尝试整句匹配，
+  //     使多行 confirm/alert 等对话框在英文模式下也能整句翻译。
+  if (key.indexOf('\n') !== -1) {
+    const nlNorm = key.replace(/\r\n/g, '\n').replace(/\n/g, 'n')
+    if (UI_DICT[nlNorm] !== undefined) return UI_DICT[nlNorm]
+  }
   // 2) 短语级替换（覆盖动态拼接，如日志）
   if (!hasCJK(zh)) return zh
   let out = zh

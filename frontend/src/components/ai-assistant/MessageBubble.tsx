@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { marked } from 'marked'
+import { renderSafeMarkdown } from '@/lib/safeMarkdown'
 import type { ChatMessage, ToolCall } from '@/store/aiAssistantStore'
 
 // marked 配置 - 启用 GFM (GitHub 风格 Markdown：表格/任务列表/删除线/换行)
@@ -255,15 +256,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 // 把 marked 输出的 HTML 包成可交互的 React 内容
 function MarkdownContent({ content }: { content: string }) {
-  const html = useMemo(() => {
-    try {
-      return marked.parse(content) as string
-    } catch {
-      return content.replace(/[&<>"']/g, (c) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-      }[c] || c))
-    }
-  }, [content])
+  const html = useMemo(() => renderSafeMarkdown(content), [content])
 
   return (
     <div className="ai-md">

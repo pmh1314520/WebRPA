@@ -50,10 +50,14 @@ app = FastAPI(
 )
 
 # 配置CORS
+# 说明：WebRPA 的鉴权走请求头 X-WebRPA-Token（见 security_manager，本机免验/远程需 Token），
+# 前端 fetch 不使用 Cookie 凭证（未设置 credentials:'include'），后端也不下发会话 Cookie。
+# 因此关闭 allow_credentials：既避免 "allow_origins=* + allow_credentials=true" 这一浏览器规范
+# 上非法/需回显来源的组合，也杜绝跨站携带凭证的风险；同时保留 * 源以兼容本机/局域网/Tauri/打包等多种访问路径。
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

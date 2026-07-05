@@ -2076,7 +2076,8 @@ class WorkflowExecutor:
                         while_should_continue = resolved
                     elif isinstance(resolved, str):
                         try:
-                            while_should_continue = bool(eval(resolved, {"__builtins__": {}}, dict(self.context.variables)))
+                            from app.utils.safe_expr import safe_eval
+                            while_should_continue = bool(safe_eval(resolved, dict(self.context.variables)))
                         except Exception:
                             while_should_continue = resolved.lower() in ('true', '1') and resolved.strip() != ''
                     else:
@@ -2323,10 +2324,8 @@ class WorkflowExecutor:
                             # 如果是字符串,尝试作为表达式评估
                             # 支持的表达式: {count} < 10, {index} >= 5, {value} == "test" 等
                             try:
-                                # 创建安全的评估环境,只包含变量
-                                eval_globals = {"__builtins__": {}}
-                                eval_locals = dict(self.context.variables)
-                                should_continue = bool(eval(resolved_condition, eval_globals, eval_locals))
+                                from app.utils.safe_expr import safe_eval
+                                should_continue = bool(safe_eval(resolved_condition, dict(self.context.variables)))
                             except Exception as e:
                                 # 如果表达式评估失败,尝试作为布尔值判断
                                 should_continue = resolved_condition.lower() in ('true', '1') and resolved_condition.strip() != ''
