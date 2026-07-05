@@ -140,7 +140,7 @@ class SapLoginExecutor(ModuleExecutor):
             if eng.Connections.Count > 0:
                 for c in eng.Connections:
                     try: c.CloseSession('ses[0]')
-                    except: pass
+                    except Exception: pass
             conn = eng.OpenConnectionByConnectionString(conn_string) if conn_string else eng.OpenConnection(conn_name, True)
             if conn.DisabledByServer: raise RuntimeError('服务器已禁用 SAP GUI 脚本')
             ses = conn.Children(0)
@@ -518,7 +518,7 @@ class SapReadGridViewExecutor(ModuleExecutor):
                 rd = {}
                 for c in cols:
                     try: rd[c] = g.GetCellValue(r, c)
-                    except: rd[c] = ''
+                    except Exception: rd[c] = ''
                 rows.append(rd)
             return rows
         finally:
@@ -554,13 +554,13 @@ class SapExportGridViewExecutor(ModuleExecutor):
             titles = {}
             for c in cols:
                 try: titles[c] = g.GetDisplayedColumnTitle(c).strip() or c
-                except: titles[c] = c
+                except Exception: titles[c] = c
             rows = []
             for r in range(g.RowCount):
                 rd = {}
                 for c in cols:
                     try: rd[titles[c]] = g.GetCellValue(r, c)
-                    except: rd[titles[c]] = ''
+                    except Exception: rd[titles[c]] = ''
                 rows.append(rd)
             pd.DataFrame(rows).to_excel(save_path, index=False)
         finally:

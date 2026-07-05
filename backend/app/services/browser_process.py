@@ -432,7 +432,7 @@ async def main():
     lock_file = user_data_dir / "SingletonLock"
     if lock_file.exists():
         try: lock_file.unlink()
-        except: pass
+        except Exception: pass
     
     # 启动 stdin 读取线程
     reader_thread = threading.Thread(target=stdin_reader, daemon=True)
@@ -833,7 +833,7 @@ async def main():
                 elif action == 'start_picker':
                     try:
                         await page.wait_for_load_state('domcontentloaded', timeout=5000)
-                    except: pass
+                    except Exception: pass
                     await page.evaluate(PICKER_SCRIPT)
                     picker_active = True  # 设置全局标志
                     print(f"[BrowserProcess] 选择器已启动，将自动应用到所有页面", file=sys.stderr)
@@ -855,7 +855,7 @@ async def main():
                                 document.querySelectorAll('.__picker_highlight').forEach(function(h) { h.remove(); });
                                 window.__elementPickerActive = false;
                             }""")
-                        except: pass
+                        except Exception: pass
                     print(f"[BrowserProcess] 选择器已停止", file=sys.stderr)
                     result["data"] = {"message": "选择器已停止"}
                 elif action == 'get_selected':
@@ -893,16 +893,16 @@ async def main():
     finally:
         if page:
             try: await page.close()
-            except: pass
+            except Exception: pass
         if context:
             try: await context.close()
-            except: pass
+            except Exception: pass
         if browser:
             try: await browser.close()
-            except: pass
+            except Exception: pass
         if playwright:
             try: await playwright.stop()
-            except: pass
+            except Exception: pass
         print(json.dumps({"status": "closed"}), flush=True)
 
 
