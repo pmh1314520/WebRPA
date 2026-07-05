@@ -122,6 +122,8 @@ class OracleQueryExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[OracleQueryExecutor] 执行失败: {error_detail}")
@@ -182,6 +184,8 @@ class OracleExecuteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[OracleExecuteExecutor] 执行失败: {error_detail}")

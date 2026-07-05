@@ -71,6 +71,8 @@ class OracleInsertExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[OracleInsertExecutor] 执行失败: {error_detail}")
@@ -150,6 +152,8 @@ class OracleUpdateExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[OracleUpdateExecutor] 执行失败: {error_detail}")
@@ -216,6 +220,8 @@ class OracleDeleteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[OracleDeleteExecutor] 执行失败: {error_detail}")
