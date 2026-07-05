@@ -317,6 +317,8 @@ class PostgreSQLQueryExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[PostgreSQLQueryExecutor] 执行失败: {error_detail}")
@@ -377,6 +379,8 @@ class PostgreSQLExecuteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[PostgreSQLExecuteExecutor] 执行失败: {error_detail}")
@@ -823,6 +827,8 @@ class SQLServerQueryExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLServerQueryExecutor] 执行失败: {error_detail}")
@@ -883,6 +889,8 @@ class SQLServerExecuteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLServerExecuteExecutor] 执行失败: {error_detail}")
@@ -1003,6 +1011,8 @@ class SQLiteQueryExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLiteQueryExecutor] 执行失败: {error_detail}")
@@ -1063,6 +1073,8 @@ class SQLiteExecuteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLiteExecuteExecutor] 执行失败: {error_detail}")

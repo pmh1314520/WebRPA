@@ -301,6 +301,8 @@ class PostgreSQLInsertExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[PostgreSQLInsertExecutor] 执行失败: {error_detail}")
@@ -381,6 +383,8 @@ class PostgreSQLUpdateExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[PostgreSQLUpdateExecutor] 执行失败: {error_detail}")
@@ -447,6 +451,8 @@ class PostgreSQLDeleteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[PostgreSQLDeleteExecutor] 执行失败: {error_detail}")

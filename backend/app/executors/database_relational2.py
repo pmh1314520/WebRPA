@@ -71,6 +71,8 @@ class SQLServerInsertExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLServerInsertExecutor] 执行失败: {error_detail}")
@@ -150,6 +152,8 @@ class SQLServerUpdateExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLServerUpdateExecutor] 执行失败: {error_detail}")
@@ -216,6 +220,8 @@ class SQLServerDeleteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLServerDeleteExecutor] 执行失败: {error_detail}")
@@ -295,6 +301,8 @@ class SQLiteInsertExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLiteInsertExecutor] 执行失败: {error_detail}")
@@ -374,6 +382,8 @@ class SQLiteUpdateExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLiteUpdateExecutor] 执行失败: {error_detail}")
@@ -440,6 +450,8 @@ class SQLiteDeleteExecutor(ModuleExecutor):
             )
             
         except Exception as e:
+            try: cursor.close()
+            except Exception: pass
             import traceback
             error_detail = traceback.format_exc()
             print(f"[SQLiteDeleteExecutor] 执行失败: {error_detail}")
