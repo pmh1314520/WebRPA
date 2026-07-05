@@ -3580,3 +3580,54 @@ Object.assign(UI_DICT, {
   '保存页面信息到变量（可选）': 'Save page info to a variable (optional)',
   '存入 {url, title, engine}，便于下游引用与排查实际使用的浏览器内核。': 'Stores {url, title, engine} for downstream reference and to check which browser engine is actually used.',
 })
+
+// ============================================================
+// 补充：必填项字段中文标签 + 自定义模块/回滚相关新增文案（修复英文模式残留）
+// ============================================================
+Object.assign(UI_DICT, {
+  // —— 必填校验中字段的中文标签（fieldLabels.ts）——
+  '链接变量': 'URL variable',
+  '源变量': 'Source variable',
+  '响应头变量': 'Response headers variable',
+  '响应体变量': 'Response body variable',
+  '状态码变量': 'Status code variable',
+  '计数变量': 'Count variable',
+  '求和变量': 'Sum variable',
+  '平均值变量': 'Average variable',
+  '最大值变量': 'Max variable',
+  '最小值变量': 'Min variable',
+  '共享变量': 'Shared variable',
+  '标准输出变量': 'Stdout variable',
+  '标准错误变量': 'Stderr variable',
+  '返回码变量': 'Return code variable',
+  '索引变量': 'Index variable',
+  '循环索引变量': 'Loop index variable',
+  '键变量': 'Key variable',
+  '值变量': 'Value variable',
+  '键': 'Key',
+  '数量': 'Count',
+  '延迟时间': 'Delay',
+  '持续时间': 'Duration',
+  '模式': 'Mode',
+  '来源': 'Source',
+  '关键词': 'Keyword',
+  '颜色': 'Color',
+  '起点 X': 'Start X',
+  '起点 Y': 'Start Y',
+  '终点 X': 'End X',
+  '终点 Y': 'End Y',
+  '源路径': 'Source path',
+  '工作表名称': 'Sheet name',
+  '单元格区域': 'Cell range',
+  '行号': 'Row number',
+  '请求头': 'Request headers',
+  '请求体': 'Request body',
+  '识别区域': 'Detection region',
+  // —— 自定义模块编辑 / AI 回滚新增文案 ——
+  '退出编辑后会自动恢复当前画布。': 'The current canvas is restored automatically after you exit editing.',
+  '已退出编辑模式，画布已恢复': 'Exited edit mode; the canvas has been restored',
+  '回滚到此消息之前': 'Roll back to before this message',
+  '确定回滚': 'Roll back',
+  // 回滚确认（单行，运行时与审计均可整句命中）
+  '回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并删除这条消息之后的对话记录，同时把该消息重新填回输入框，方便你修改后重发。确定回滚吗？': 'Rolling back restores the canvas (nodes, edges, global variables) to the state before this message was sent, deletes the conversation after this message, and puts the message back into the input box so you can edit and resend it. Are you sure you want to roll back?',
+})

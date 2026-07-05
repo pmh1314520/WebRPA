@@ -1292,7 +1292,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               const snap = getRollbackSnapshot(m.id)
               if (!snap) return
               const ok = await confirmDialog(
-                '回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并删除这条消息之后的对话记录，同时把该消息重新填回输入框，方便你修改后重发。\n\n确定回滚吗？',
+                '回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并删除这条消息之后的对话记录，同时把该消息重新填回输入框，方便你修改后重发。确定回滚吗？',
                 { type: 'warning', title: '回滚到此消息之前', confirmText: '确定回滚', cancelText: '取消' }
               )
               if (!ok) return

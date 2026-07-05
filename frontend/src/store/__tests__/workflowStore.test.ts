@@ -45,3 +45,46 @@ describe('workflowStore 变量操作', () => {
     expect(names).not.toContain('')
   })
 })
+
+describe('workflowStore 快照恢复（回滚 / 自定义模块退出编辑复用）', () => {
+  beforeEach(() => {
+    store.setState({ nodes: [], edges: [], variables: [], name: '未命名工作流' })
+  })
+
+  it('restoreSnapshot 恢复节点/连线/名称', () => {
+    store.getState().restoreSnapshot({
+      nodes: [{ id: 'n1', type: 'moduleNode', position: { x: 0, y: 0 }, data: {} } as any],
+      edges: [{ id: 'e1', source: 'n1', target: 'n1' } as any],
+      name: '主工作流',
+    })
+    const s = store.getState()
+    expect(s.nodes).toHaveLength(1)
+    expect(s.edges).toHaveLength(1)
+    expect(s.name).toBe('主工作流')
+  })
+
+  it('restoreSnapshot 提供 variables 时恢复全局变量', () => {
+    store.getState().restoreSnapshot({
+      nodes: [],
+      edges: [],
+      variables: [{ name: 'g', value: 1, type: 'number', scope: 'global' } as any],
+    })
+    expect(store.getState().variables.find((v) => v.name === 'g')?.value).toBe(1)
+  })
+
+  it('restoreSnapshot 未提供 variables 时保留当前变量', () => {
+    store.setState({ variables: [{ name: 'keep', value: 't', type: 'string', scope: 'global' } as any] })
+    store.getState().restoreSnapshot({ nodes: [], edges: [] })
+    expect(store.getState().variables.find((v) => v.name === 'keep')).toBeTruthy()
+  })
+
+  it('restoreSnapshot 对脏节点兜底不崩溃（缺 position）', () => {
+    expect(() => {
+      store.getState().restoreSnapshot({
+        nodes: [{ id: 'bad', type: 'moduleNode', data: {} } as any],
+        edges: [],
+      })
+    }).not.toThrow()
+    expect(store.getState().nodes).toHaveLength(1)
+  })
+})

@@ -2372,7 +2372,11 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
                       <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-[hsl(var(--warning-500))] text-white flex items-center justify-center text-[10px] font-bold">!</span>
                       <div className="text-[12px] leading-relaxed">
                         <span className="font-semibold">有 {missing.length} 个必填项未填写：</span>
-                        <span>{missing.join('、')}</span>
+                        <span>
+                          {missing.map((label, i) => (
+                            <span key={i}>{i > 0 ? '、' : ''}{label}</span>
+                          ))}
+                        </span>
                         <div className="text-[11px] text-[hsl(var(--warning-600))] mt-0.5">未填写可能导致该模块执行失败</div>
                       </div>
                     </div>
