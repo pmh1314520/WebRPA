@@ -75,6 +75,7 @@ class AssistantConfig(BaseModel):
     auto_approve: bool = False        # 是否自动通过工具调用（无需用户确认）
     max_heal_rounds: int = 5          # 自愈循环最大轮数（可配置，默认 5；复杂问题可延伸）
     supports_vision: bool = False     # 当前模型是否支持多模态（图片输入）
+    is_thinking: bool = False         # 当前模型是否为深度思考/推理模型（如 DeepSeek-Reasoner、o1）
     agent_mode: bool = False          # 是否来自独立 Agent 窗口（以操作电脑为主）
 
 

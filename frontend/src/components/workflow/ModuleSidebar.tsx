@@ -2412,12 +2412,12 @@ function ModuleSidebarRaw() {
               onEditWorkflow={async (module) => {
                 // 编辑自定义模块的工作流
                 console.log('编辑自定义模块工作流:', module.name)
-                
+
                 // 1. 使用自定义确认对话框
                 const shouldEdit = await confirmDialog(
                   `确定要编辑"${module.display_name || module.name}"的内部工作流吗？\n\n` +
                   `当前画布内容将被替换为该模块的工作流。\n` +
-                  `建议先保存当前工作流。`,
+                  `退出编辑后会自动恢复当前画布。`,
                   {
                     type: 'warning',
                     title: '编辑模块工作流',
@@ -2425,13 +2425,42 @@ function ModuleSidebarRaw() {
                     cancelText: '取消'
                   }
                 )
-                
+
                 if (!shouldEdit) return
-                
-                // 2. 转换节点类型：后端类型 -> 前端类型
-                const convertedNodes = module.workflow.nodes.map((node: any) => {
+
+                const store = useWorkflowStore.getState()
+
+                // 2. 备份当前主工作流（仅在尚未进入编辑模式时备份，避免用编辑态覆盖真正的主工作流）
+                const alreadyEditing = !!sessionStorage.getItem('editingCustomModuleId')
+                if (!alreadyEditing) {
+                  try {
+                    const backup = {
+                      nodes: store.nodes,
+                      edges: store.edges,
+                      name: store.name,
+                      variables: store.variables,
+                    }
+                    sessionStorage.setItem('preEditWorkflowBackup', JSON.stringify(backup))
+                  } catch (e) {
+                    console.warn('[ModuleSidebar] 备份主工作流失败:', e)
+                  }
+                }
+
+                // 3. 拉取最新的模块数据（避免使用列表里的过期缓存——保存后再次编辑仍显示旧配置的根因）
+                let latest = module
+                try {
+                  const fresh = await useCustomModuleStore.getState().getModule(module.id)
+                  if (fresh) latest = fresh
+                } catch (e) {
+                  console.warn('[ModuleSidebar] 获取最新模块数据失败，使用本地缓存:', e)
+                }
+
+                const wf = latest.workflow || { nodes: [], edges: [] }
+
+                // 4. 转换节点类型：后端类型 -> 前端类型
+                const convertedNodes = (wf.nodes || []).map((node: any) => {
                   let frontendType = 'moduleNode'  // 默认类型
-                  
+
                   // 特殊节点类型转换
                   if (node.type === 'group') {
                     frontendType = 'groupNode'
@@ -2440,7 +2469,7 @@ function ModuleSidebarRaw() {
                   } else if (node.type === 'subflow_header') {
                     frontendType = 'subflowHeaderNode'
                   }
-                  
+
                   return {
                     ...node,
                     type: frontendType,
@@ -2450,19 +2479,19 @@ function ModuleSidebarRaw() {
                     }
                   }
                 })
-                
-                // 3. 加载模块的工作流到画布
-                const { loadWorkflow } = useWorkflowStore.getState()
-                loadWorkflow({
+
+                // 5. 先清空再加载，确保画布可见地被替换（解决"进入编辑后画布没清空"的问题）
+                store.clearWorkflow()
+                store.loadWorkflow({
                   nodes: convertedNodes,
-                  edges: module.workflow.edges,
-                  name: `编辑模块: ${module.display_name || module.name}`
+                  edges: wf.edges || [],
+                  name: `编辑模块: ${latest.display_name || latest.name}`
                 })
-                
-                // 4. 保存模块ID到sessionStorage，用于后续保存
-                sessionStorage.setItem('editingCustomModuleId', module.id)
-                sessionStorage.setItem('editingCustomModuleName', module.display_name || module.name)
-                
+
+                // 6. 保存模块ID到sessionStorage，用于后续保存
+                sessionStorage.setItem('editingCustomModuleId', latest.id)
+                sessionStorage.setItem('editingCustomModuleName', latest.display_name || latest.name)
+
                 // 触发自定义事件通知Toolbar
                 window.dispatchEvent(new CustomEvent('editingModuleChanged'))
               }}

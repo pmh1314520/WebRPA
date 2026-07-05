@@ -1,7 +1,7 @@
 import { useWorkflowStore, moduleTypeLabels, getModuleDefaultTimeout, type NodeData, type ErrorPolicy } from '@/store/workflowStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useRequiredFields, getMissingRequired } from '@/lib/requiredFields'
+import { useRequiredFields, getMissingRequiredLabels } from '@/lib/requiredFields'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
 import { Input } from '@/components/ui/input'
 import { NumberInput } from '@/components/ui/number-input'
@@ -2365,7 +2365,7 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
               <div className="space-y-4 animate-fade-in">
                 {/* 必填校验提示 */}
                 {(() => {
-                  const missing = getMissingRequired(String(nodeData.moduleType), nodeData as Record<string, unknown>, requiredFieldsMap)
+                  const missing = getMissingRequiredLabels(String(nodeData.moduleType), nodeData as Record<string, unknown>, requiredFieldsMap)
                   if (missing.length === 0) return null
                   return (
                     <div className="flex items-start gap-2 px-3 py-2 rounded-[8px] bg-[hsl(var(--warning-50))] border border-[hsl(var(--warning-500)/0.3)] text-[hsl(var(--warning-700))]">

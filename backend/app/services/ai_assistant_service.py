@@ -121,6 +121,28 @@ def delete_session(session_id: str) -> bool:
         return False
 
 
+def truncate_session(session_id: str, message_id: str) -> ChatSession | None:
+    """把会话截断到指定消息「之前」：删除该消息（含）及其之后的所有消息。
+
+    用于"消息回滚"：用户对某条消息回滚后，服务端会话历史也应回到发送该消息之前，
+    否则重发时模型仍会看到被回滚掉的那一轮对话，造成上下文错乱。
+    找不到该消息 id 时返回 None，不做任何改动。
+    """
+    session = load_session(session_id)
+    if not session:
+        return None
+    idx = None
+    for i, m in enumerate(session.messages):
+        if getattr(m, "id", None) == message_id:
+            idx = i
+            break
+    if idx is None:
+        return None
+    session.messages = session.messages[:idx]
+    save_session(session)
+    return session
+
+
 # ---------- LLM 调用 ----------
 
 class LLMError(Exception):
@@ -297,6 +319,10 @@ async def _call_llm(
             "max_tokens": config.max_tokens,
             "stream": stream_flag,
         }
+        # 深度思考/推理模型（DeepSeek-Reasoner、o1 系列等）不接受或直接忽略 temperature，
+        # o1 甚至会因 temperature!=1 直接 400。标记为思考模型时不下发 temperature，交由模型默认。
+        if getattr(config, "is_thinking", False):
+            b.pop("temperature", None)
         if tools and level < 2:
             b["tools"] = tools
             if level == 0:

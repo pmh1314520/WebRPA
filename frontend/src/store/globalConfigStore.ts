@@ -71,6 +71,9 @@ export interface GlobalConfig {
     systemPrompt: string   // 用户追加的系统提示词
     enableTools: boolean   // 启用 Skills 工具调用
     autoApprove: boolean   // 自动批准工具调用（不弹确认）
+    // 单模型能力声明（未配置多模型时生效）：是否多模态/思考模型
+    supportsVision?: boolean   // 该模型支持多模态（图片输入）；不填则按模型名自动判断
+    isThinking?: boolean       // 该模型为深度思考/推理模型（如 DeepSeek-Reasoner）
     // 权限模式：approval=逐项确认(每次操作前都要授权) / smart=智能放行(仅高风险才确认) / full=自由执行(完全不拦)
     permissionMode?: 'approval' | 'smart' | 'full'
     // ===== 多模型支持 =====

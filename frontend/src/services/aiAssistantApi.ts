@@ -52,6 +52,13 @@ export const aiAssistantApi = {
       body: JSON.stringify({ title }),
     }),
 
+  /** 消息回滚：把会话截断到指定消息之前（删除该消息及其之后的所有消息） */
+  truncateSession: (id: string, messageId: string) =>
+    apiRequest<{ success: boolean; messages: ChatMessage[] }>(
+      `/ai-assistant/sessions/${id}/truncate`,
+      { method: 'POST', body: JSON.stringify({ message_id: messageId }) }
+    ),
+
   chat: (req: ChatRequestPayload, signal?: AbortSignal) =>
     apiRequest<ChatResponsePayload>('/ai-assistant/chat', {
       method: 'POST',

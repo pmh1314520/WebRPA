@@ -43,6 +43,7 @@ import {
 } from '@/services/aiAssistantSkills'
 import { MessageBubble, getToolDisplayLabel } from './MessageBubble'
 import { PanelResizer } from '@/components/workflow/PanelResizer'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useLayoutStore, LAYOUT_LIMITS } from '@/store/layoutStore'
 import { isTauriRuntime, agentSetAlwaysOnTop, agentMinimize, agentClose } from '@/lib/tauriAgentWindow'
 
@@ -61,8 +62,16 @@ const AGENT_QUICK_PROMPTS = [
   { text: '查找并打开电脑上的某个程序', icon: ListTree, color: 'icon-chip-warning' },
 ]
 
-export function AIAssistantPanel({ standalone = false }: { standalone?: boolean } = {}) {
-  const isOpen = useAIAssistantStore((s) => s.isPanelOpen)
+/** 把毫秒格式化为「X.X 秒 / X 分 X 秒」的耗时文本 */
+function formatWorkDuration(ms: number): string {
+  const totalSec = ms / 1000
+  if (totalSec < 60) return `${totalSec.toFixed(1)} 秒`
+  const m = Math.floor(totalSec / 60)
+  const s = Math.round(totalSec % 60)
+  return `${m} 分 ${s} 秒`
+}
+
+export function AIAssistantPanel({ standalone = false }: { standalone?: boolean } = {}) {  const isOpen = useAIAssistantStore((s) => s.isPanelOpen)
   const setOpen = useAIAssistantStore((s) => s.setPanelOpen)
   const pendingApproval = useAIPermissionStore((s) => s.pending)
   const messages = useAIAssistantStore((s) => s.messages)
@@ -76,6 +85,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   const setSessions = useAIAssistantStore((s) => s.setSessions)
   const setRollbackSnapshot = useAIAssistantStore((s) => s.setRollbackSnapshot)
   const getRollbackSnapshot = useAIAssistantStore((s) => s.getRollbackSnapshot)
+  const rollbackSnapshots = useAIAssistantStore((s) => s.rollbackSnapshots)
 
   const aiAssistantConfig = useGlobalConfigStore((s) => s.config.aiAssistant)
   const aiFallbackConfig = useGlobalConfigStore((s) => s.config.ai)
@@ -94,6 +104,28 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   }
 
   const [input, setInput] = useState('')
+
+  // 自定义确认弹窗（禁止使用浏览器原生 confirm/alert）
+  const { confirm: confirmDialog, ConfirmDialog: AssistantConfirmDialog } = useConfirm()
+
+  // 本次工作耗时：从发送到本回合完全结束的用时
+  const workStartRef = useRef<number | null>(null)
+  const [nowTick, setNowTick] = useState(0)
+  const [lastWorkMs, setLastWorkMs] = useState<number | null>(null)
+
+  // 跟踪本回合工作耗时：isSending 开始计时，结束时定格总用时
+  useEffect(() => {
+    if (isSending) {
+      if (workStartRef.current == null) workStartRef.current = Date.now()
+      setLastWorkMs(null)
+      const timer = setInterval(() => setNowTick(Date.now()), 200)
+      return () => clearInterval(timer)
+    }
+    if (workStartRef.current != null) {
+      setLastWorkMs(Date.now() - workStartRef.current)
+      workStartRef.current = null
+    }
+  }, [isSending])
 
   // 语音指挥：录音 → Whisper 转文字 → 填入输入框
   const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle')
@@ -469,7 +501,9 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       enable_tools: a?.enableTools ?? true,
       auto_approve: a?.autoApprove ?? false,
       max_heal_rounds: (a as any)?.maxHealRounds ?? 5,
-      supports_vision: isVisionModelName(model),
+      // 多模态：用户手动声明优先，未声明时按模型名自动判断
+      supports_vision: a?.supportsVision ?? isVisionModelName(model),
+      is_thinking: a?.isThinking ?? false,
       agent_mode: standalone,
     }
   })()
@@ -512,6 +546,8 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       max_heal_rounds: (a as any)?.maxHealRounds ?? 5,
       // 模型支持多模态：勾选了「多模态」场景，或模型名命中视觉关键词
       supports_vision: (m.scenes || []).includes('vision') || isVisionModelName(m.model || ''),
+      // 勾选了「深度思考」场景即视为思考模型（不下发 temperature）
+      is_thinking: (m.scenes || []).includes('thinking'),
       agent_mode: standalone,
     }
   }
@@ -552,6 +588,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
     setCurrentSessionId(null)
     setError(null)
     setInput('')
+    setLastWorkMs(null)
     setAttachedImages([])
     setAttachedDocs([])
     textareaRef.current?.focus()
@@ -691,6 +728,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   async function handleSelectSession(id: string) {
     setShowSessions(false)
     setError(null)
+    setLastWorkMs(null)  // 切换会话清除上一次的耗时提示，避免误导
     const res = await aiAssistantApi.getSession(id)
     if (res.success && res.data) {
       setCurrentSessionId(res.data.id)
@@ -1249,13 +1287,40 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
             message={m}
             onEdit={(t) => { setInput(t); setTimeout(() => textareaRef.current?.focus(), 50) }}
             onResend={(t) => handleSend(t)}
-            canRollback={m.role === 'user' && !!getRollbackSnapshot(m.id)}
-            onRollback={() => {
+            canRollback={m.role === 'user' && !!rollbackSnapshots[m.id]}
+            onRollback={async () => {
               const snap = getRollbackSnapshot(m.id)
               if (!snap) return
-              if (!window.confirm('回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并把该消息重新填回输入框，方便你修改后重发。确定回滚吗？')) return
+              const ok = await confirmDialog(
+                '回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并删除这条消息之后的对话记录，同时把该消息重新填回输入框，方便你修改后重发。\n\n确定回滚吗？',
+                { type: 'warning', title: '回滚到此消息之前', confirmText: '确定回滚', cancelText: '取消' }
+              )
+              if (!ok) return
+              // 若正在生成，先打断当前任务，避免回滚后又被后续流式消息覆盖
+              if (isSending) {
+                try { await stopCurrent() } catch { /* ignore */ }
+              }
               try {
+                // 1) 恢复画布
                 useWorkflowStore.getState().restoreSnapshot({ nodes: snap.nodes, edges: snap.edges, name: snap.name, variables: snap.variables })
+                // 2) 截断对话：本地删除这条消息及其之后的所有消息，并清理它们的回滚快照
+                const idx = messages.findIndex((mm) => mm.id === m.id)
+                if (idx >= 0) {
+                  const removed = messages.slice(idx)
+                  setMessages(messages.slice(0, idx))
+                  const snaps = useAIAssistantStore.getState().rollbackSnapshots
+                  const nextSnaps = { ...snaps }
+                  for (const r of removed) delete nextSnaps[r.id]
+                  useAIAssistantStore.setState({ rollbackSnapshots: nextSnaps })
+                }
+                // 3) 同步截断服务端会话历史，避免重发时模型仍看到被回滚掉的这一轮
+                if (currentSessionId) {
+                  aiAssistantApi.truncateSession(currentSessionId, m.id)
+                    .then(() => aiAssistantApi.listSessions())
+                    .then((res) => { if (res.success && Array.isArray(res.data)) setSessions(res.data) })
+                    .catch(() => { /* 服务端截断失败不阻断本地回滚 */ })
+                }
+                // 4) 回填输入框
                 setInput(snap.text || '')
                 setTimeout(() => textareaRef.current?.focus(), 60)
               } catch { /* ignore */ }
@@ -1274,6 +1339,17 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
                 ? `小助手正在：${currentActivity}…（可在下方再次发送来打断）`
                 : '小助手工作中…可在下方再次发送来打断'}
             </span>
+            {workStartRef.current != null && (
+              <span className="text-[11px] font-mono text-[hsl(var(--brand-600))] tabular-nums">
+                {formatWorkDuration(Math.max(0, (nowTick || Date.now()) - workStartRef.current))}
+              </span>
+            )}
+          </div>
+        )}
+        {!isSending && lastWorkMs != null && messages.length > 0 && (
+          <div className="flex items-center gap-1.5 pl-11 text-[11px] text-[hsl(var(--muted-foreground))] animate-fade-in">
+            <Clock className="w-3 h-3 flex-shrink-0" />
+            <span>本次工作耗时 {formatWorkDuration(lastWorkMs)}</span>
           </div>
         )}
         {error && (
@@ -1518,6 +1594,8 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
           </div>
         </div>
       </div>
+      {/* 自定义确认弹窗（回滚等操作使用，禁止浏览器原生弹窗） */}
+      <AssistantConfirmDialog />
     </div>
   )
 }

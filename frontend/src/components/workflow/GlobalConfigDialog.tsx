@@ -821,6 +821,30 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                   </p>
                 </div>
 
+                {/* 单模型能力声明：多模态 / 思考模型 */}
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium text-gray-700">多模态（视觉）模型</Label>
+                      <p className="text-xs text-gray-500 mt-1">开启后可给小助手发图片/自动截图分析。不填则按模型名自动判断（如 gpt-4o、glm-4v 等）。</p>
+                    </div>
+                    <Switch
+                      checked={config.aiAssistant?.supportsVision ?? false}
+                      onCheckedChange={(c) => updateAIAssistantConfig({ supportsVision: c })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium text-gray-700">深度思考（推理）模型</Label>
+                      <p className="text-xs text-gray-500 mt-1">如 DeepSeek-Reasoner、o1 等推理模型。开启后请求不再下发 temperature，避免部分推理模型报错。</p>
+                    </div>
+                    <Switch
+                      checked={config.aiAssistant?.isThinking ?? false}
+                      onCheckedChange={(c) => updateAIAssistantConfig({ isThinking: c })}
+                    />
+                  </div>
+                </div>
+
                 {/* 测试连接：发一条极简请求，当场校验 地址/密钥/模型 是否正确 */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">

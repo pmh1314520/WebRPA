@@ -20,6 +20,7 @@ from app.services.ai_assistant_service import (
     list_sessions,
     load_session,
     save_session,
+    truncate_session,
     cancel_session,
 )
 from app.services.ai_assistant_skills import registry as skill_registry
@@ -78,6 +79,20 @@ async def api_rename_session(session_id: str, req: RenameSessionRequest):
     session.title = (req.title or "").strip() or session.title
     save_session(session)
     return {"success": True, "title": session.title}
+
+
+class TruncateSessionRequest(BaseModel):
+    message_id: str
+
+
+@router.post("/sessions/{session_id}/truncate")
+async def api_truncate_session(session_id: str, req: TruncateSessionRequest):
+    """消息回滚：把会话截断到指定消息之前（删除该消息及其之后的所有消息）。
+    返回截断后剩余的消息，供前端同步 UI。"""
+    session = truncate_session(session_id, req.message_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在或消息不存在")
+    return {"success": True, "messages": session.messages}
 
 
 # ---------- 对话 ----------

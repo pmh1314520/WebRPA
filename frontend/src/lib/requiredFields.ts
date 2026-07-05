@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/services/api'
+import { getFieldLabel } from '@/lib/fieldLabels'
 
 interface ConditionalSpec {
   field?: string
@@ -13,6 +14,7 @@ interface ConditionalSpec {
 
 let cache: Record<string, string[]> | null = null
 let condCache: Record<string, ConditionalSpec> = {}
+let labelCache: Record<string, Record<string, string>> = {}
 let inflight: Promise<Record<string, string[]>> | null = null
 
 async function fetchRequiredFields(): Promise<Record<string, string[]>> {
@@ -20,12 +22,14 @@ async function fetchRequiredFields(): Promise<Record<string, string[]>> {
   if (inflight) return inflight
   inflight = (async () => {
     try {
-      const res = await apiRequest<{ requiredFields?: Record<string, string[]>; conditionalRequired?: Record<string, ConditionalSpec> }>('/system/module-required-fields')
+      const res = await apiRequest<{ requiredFields?: Record<string, string[]>; conditionalRequired?: Record<string, ConditionalSpec>; fieldLabels?: Record<string, Record<string, string>> }>('/system/module-required-fields')
       cache = (res as any)?.data?.requiredFields || (res as any)?.requiredFields || {}
       condCache = (res as any)?.data?.conditionalRequired || (res as any)?.conditionalRequired || {}
+      labelCache = (res as any)?.data?.fieldLabels || (res as any)?.fieldLabels || {}
     } catch {
       cache = {}
       condCache = {}
+      labelCache = {}
     }
     inflight = null
     return cache!
@@ -69,4 +73,15 @@ export function getMissingRequired(
     if (Array.isArray(v)) return v.length === 0
     return false
   })
+}
+
+/** 计算缺失必填字段，并返回其中文标签（优先后端 desc，其次通用映射，最后字段名本身） */
+export function getMissingRequiredLabels(
+  moduleType: string,
+  data: Record<string, unknown>,
+  reqMap: Record<string, string[]>,
+): string[] {
+  const missing = getMissingRequired(moduleType, data, reqMap)
+  const moduleLabels = labelCache[moduleType]
+  return missing.map((f) => getFieldLabel(f, moduleLabels))
 }

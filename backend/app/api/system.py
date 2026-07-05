@@ -241,9 +241,16 @@ async def module_required_fields():
         from app.services.ai_assistant_module_schemas import get_all_module_schemas, conditional_required_map
         schemas = get_all_module_schemas()
         result = {}
+        field_labels = {}
         for mtype, schema in schemas.items():
             if not isinstance(schema, dict):
                 continue
+            # 字段中文说明（desc）作为前端必填提示的字段标签来源
+            desc = schema.get("desc")
+            if isinstance(desc, dict) and desc:
+                labels = {k: v for k, v in desc.items() if isinstance(v, str) and v.strip()}
+                if labels:
+                    field_labels[mtype] = labels
             req = schema.get("required")
             if isinstance(req, list) and req:
                 # 有默认值的必填字段在执行时会自动补默认值（见 apply_default_config），
@@ -252,7 +259,11 @@ async def module_required_fields():
                 filtered = [f for f in req if f not in defaults]
                 if filtered:
                     result[mtype] = filtered
-        return {"requiredFields": result, "conditionalRequired": conditional_required_map()}
+        return {
+            "requiredFields": result,
+            "conditionalRequired": conditional_required_map(),
+            "fieldLabels": field_labels,
+        }
     except Exception as e:
         return {"requiredFields": {}, "conditionalRequired": {}, "error": str(e)}
 

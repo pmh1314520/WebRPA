@@ -1,5 +1,6 @@
 import { useWorkflowStore } from '@/store/workflowStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
+import { useCustomModuleStore } from '@/store/customModuleStore'
 import { lazy, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -1298,6 +1299,14 @@ export function Toolbar() {
         return
       }
 
+      // 同步更新自定义模块 store 缓存，避免再次编辑时读到旧的工作流（保存不生效的根因之一）
+      if (result.data) {
+        const updated = result.data
+        useCustomModuleStore.setState((state) => ({
+          modules: state.modules.map((m) => (m.id === editingCustomModuleId ? updated : m)),
+        }))
+      }
+
       addLog({ level: 'success', message: `模块"${editingCustomModuleName}"的工作流已保存` })
       markAsSaved()
 
@@ -1328,13 +1337,34 @@ export function Toolbar() {
     sessionStorage.removeItem('editingCustomModuleName')
     setEditingCustomModuleId(null)
     setEditingCustomModuleName('')
-    
+
     // 触发自定义事件通知其他组件
     window.dispatchEvent(new CustomEvent('editingModuleChanged'))
-    
-    // 清空画布
-    clearWorkflow()
-    addLog({ level: 'info', message: '已退出自定义模块编辑模式' })
+
+    // 恢复进入编辑模式前的主工作流（避免退出后画布一片空白）
+    const backupRaw = sessionStorage.getItem('preEditWorkflowBackup')
+    if (backupRaw) {
+      try {
+        const backup = JSON.parse(backupRaw)
+        useWorkflowStore.getState().restoreSnapshot({
+          nodes: backup.nodes || [],
+          edges: backup.edges || [],
+          name: backup.name,
+          variables: backup.variables,
+        })
+        addLog({ level: 'info', message: '已退出编辑模式，画布已恢复' })
+      } catch (e) {
+        console.warn('[Toolbar] 恢复主工作流失败，清空画布:', e)
+        clearWorkflow()
+        addLog({ level: 'info', message: '已退出自定义模块编辑模式' })
+      } finally {
+        sessionStorage.removeItem('preEditWorkflowBackup')
+      }
+    } else {
+      // 没有备份时才清空画布
+      clearWorkflow()
+      addLog({ level: 'info', message: '已退出自定义模块编辑模式' })
+    }
   }, [clearWorkflow, addLog])
 
   return (

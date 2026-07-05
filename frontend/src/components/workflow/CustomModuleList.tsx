@@ -9,6 +9,7 @@ import { Search, Plus, Settings, Package, Edit, Star, StarOff, Trash2 } from 'lu
 import { useCustomModuleStore } from '@/store/customModuleStore'
 import { pinyinMatch } from '@/lib/pinyin'
 import { EditCustomModuleDialog } from './EditCustomModuleDialog'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import type { CustomModule } from '@/types/customModule'
 
 interface CustomModuleListProps {
@@ -20,6 +21,7 @@ interface CustomModuleListProps {
 
 export function CustomModuleList({ onCreateNew, onManage, onDragStart, onEditWorkflow }: CustomModuleListProps) {
   const { modules, updateModule, deleteModule } = useCustomModuleStore()
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [editingModule, setEditingModule] = useState<CustomModule | null>(null)
@@ -107,7 +109,11 @@ export function CustomModuleList({ onCreateNew, onManage, onDragStart, onEditWor
   // 删除模块
   const handleDelete = async (module: CustomModule, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (confirm(`确定要删除模块"${module.display_name || module.name}"吗？`)) {
+    const ok = await confirmDialog(
+      `确定要删除模块"${module.display_name || module.name}"吗？此操作不可撤销。`,
+      { type: 'warning', title: '删除自定义模块', confirmText: '删除', cancelText: '取消' }
+    )
+    if (ok) {
       await deleteModule(module.id)
     }
   }
@@ -318,6 +324,9 @@ export function CustomModuleList({ onCreateNew, onManage, onDragStart, onEditWor
           onEditWorkflow={onEditWorkflow ? handleEditWorkflow : undefined}
         />
       )}
+
+      {/* 自定义确认弹窗（禁止浏览器原生弹窗） */}
+      <ConfirmDialog />
     </>
   )
 }
