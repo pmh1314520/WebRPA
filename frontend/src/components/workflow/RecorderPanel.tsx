@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { nanoid } from 'nanoid'
-import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard } from 'lucide-react'
+import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard, Move } from 'lucide-react'
 import { recorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
@@ -9,9 +9,11 @@ import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
-  type: 'navigate' | 'click' | 'dblclick' | 'input' | 'select' | 'check' | 'keypress'
+  type: 'navigate' | 'click' | 'dblclick' | 'input' | 'select' | 'check' | 'keypress' | 'drag'
   selector?: string
+  targetSelector?: string
   hints?: Record<string, any>
+  targetHints?: Record<string, any>
   value?: any
   text?: string
   url?: string
@@ -34,6 +36,7 @@ const EVENT_META: Record<string, { icon: any; label: string; color: string }> = 
   select: { icon: ChevronDown, label: '下拉选择', color: 'text-violet-500' },
   check: { icon: CheckSquare, label: '勾选', color: 'text-amber-500' },
   keypress: { icon: Keyboard, label: '按键', color: 'text-rose-500' },
+  drag: { icon: Move, label: '拖拽', color: 'text-teal-500' },
 }
 
 export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
@@ -251,6 +254,16 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         if (!ev.selector) continue
         ensureFrame(ev)
         mkNode('set_checkbox', { selector: ev.selector, checked: !!ev.value, ...(ev.hints ? { selectorHints: ev.hints } : {}) })
+      } else if (ev.type === 'drag') {
+        if (!ev.selector || !ev.targetSelector) continue
+        ensureFrame(ev)
+        lastActionTs = ev.ts || 0
+        mkNode('drag_element', {
+          sourceSelector: ev.selector,
+          targetSelector: ev.targetSelector,
+          ...(ev.hints ? { selectorHints: ev.hints } : {}),
+          ...(ev.targetHints ? { targetSelectorHints: ev.targetHints } : {}),
+        }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'keypress') {
         if (!ev.key) continue
         ensureFrame(ev)
@@ -330,6 +343,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
                 : ev.type === 'select' ? (ev.text || String(ev.value ?? ''))
                 : ev.type === 'check' ? (ev.value ? '勾选' : '取消勾选')
                 : ev.type === 'keypress' ? ev.key
+                : ev.type === 'drag' ? `${ev.text || ev.selector} → ${ev.targetSelector}`
                 : (ev.text || ev.selector)
               return (
                 <li key={i} className="group flex items-start gap-2 px-2 py-1.5 rounded hover:bg-[hsl(var(--muted))] text-xs">

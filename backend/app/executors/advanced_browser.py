@@ -196,10 +196,21 @@ class DragElementExecutor(ModuleExecutor):
         
         try:
             await context.switch_to_latest_page()
-            source = context.page.locator(escape_css_selector(source_selector))
+            # 选择器自愈：录制/拾取保存了元素提示时，主选择器失效用锚点重定位
+            _src_hints = config.get('selectorHints')
+            if _src_hints:
+                source = await smart_wait_locator(context.page, escape_css_selector(source_selector), hints=_src_hints,
+                                                  state='visible', node_config=config, config_key='sourceSelector', context=context)
+            else:
+                source = context.page.locator(escape_css_selector(source_selector))
             
             if target_selector:
-                target = context.page.locator(escape_css_selector(target_selector))
+                _tgt_hints = config.get('targetSelectorHints')
+                if _tgt_hints:
+                    target = await smart_wait_locator(context.page, escape_css_selector(target_selector), hints=_tgt_hints,
+                                                      state='visible', node_config=config, config_key='targetSelector', context=context)
+                else:
+                    target = context.page.locator(escape_css_selector(target_selector))
                 await source.drag_to(target)
             elif target_position:
                 box = await source.bounding_box()

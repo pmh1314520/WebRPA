@@ -190,6 +190,15 @@ RECORDER_SCRIPT = r"""(function () {
     var t = (el.getAttribute && (el.getAttribute('aria-label') || el.getAttribute('title'))) || el.innerText || el.value || '';
     return String(t).replace(/\s+/g, ' ').trim().slice(0, 60);
   }
+  // 向上查找 draggable 祖先（HTML5 拖拽的拖动源常在祖先上）
+  function draggableTarget(el) {
+    var cur = el, hops = 0;
+    while (cur && cur.nodeType === 1 && cur !== document.body && hops < 4) {
+      if (cur.getAttribute && cur.getAttribute('draggable') === 'true') return cur;
+      cur = cur.parentElement; hops++;
+    }
+    return el;
+  }
   function ensureBadge() {
     try {
       // 角标只在顶层窗口显示；iframe（含跨域）内不注入，避免污染子框架
@@ -214,8 +223,14 @@ RECORDER_SCRIPT = r"""(function () {
   if (!window.__webrpaRecorderListenersAttached) {
     window.__webrpaRecorderListenersAttached = true;
 
+    // 拖拽状态（供 click 抑制、去重使用）
+    var __md = null;                 // mousedown 起点 {el,x,y,dragging}
+    var __suppressClickUntil = 0;    // 拖拽结束后短时间内抑制误触发的 click
+    var __htmlDragActive = false;    // HTML5 原生拖拽进行中（避免与 mouse 版重复）
+
     document.addEventListener('click', function (e) {
       if (e.button && e.button !== 0) return;   // 只录左键，忽略右键/中键（右键菜单等原生行为不录）
+      if (Date.now() < __suppressClickUntil) return;  // 拖拽刚结束，抑制误触 click
       var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
       var el = clickableTarget(raw);
       var tag = (el.tagName || '').toLowerCase();
@@ -282,6 +297,46 @@ RECORDER_SCRIPT = r"""(function () {
       if (ed && !combo && editKeys.indexOf(k) !== -1) return;
       var seq = (e.ctrlKey ? 'Control+' : '') + (e.altKey ? 'Alt+' : '') + (e.metaKey ? 'Meta+' : '') + (e.shiftKey && combo ? 'Shift+' : '') + k;
       pushEvent({ type: 'keypress', key: seq, url: location.href, ts: Date.now() });
+    }, true);
+
+    // 拖拽录制（自定义拖拽/滑块/排序）：mousedown→move 超阈值→mouseup 生成 drag 事件
+    document.addEventListener('mousedown', function (e) {
+      if (e.button && e.button !== 0) return;
+      var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') { __md = null; return; }
+      __md = { el: raw, x: e.clientX, y: e.clientY, dragging: false };
+    }, true);
+    document.addEventListener('mousemove', function (e) {
+      if (!__md || __md.dragging) return;
+      var dx = e.clientX - __md.x, dy = e.clientY - __md.y;
+      if (dx * dx + dy * dy > 64) __md.dragging = true;   // 位移 > 8px 判定为拖拽
+    }, true);
+    document.addEventListener('mouseup', function (e) {
+      var md = __md; __md = null;
+      if (!md || !md.dragging) return;          // 普通点击交给 click 处理
+      if (__htmlDragActive) return;             // HTML5 拖拽已由 drop 记录，避免重复
+      var srcEl = draggableTarget(md.el), tgtEl = e.target;
+      if (!srcEl || !tgtEl) return;
+      __suppressClickUntil = Date.now() + 400;  // 抑制拖拽尾随的 click
+      pushEvent({ type: 'drag', selector: computeSelector(srcEl), targetSelector: computeSelector(tgtEl),
+        hints: collectHints(srcEl), targetHints: collectHints(tgtEl), text: bestText(srcEl), url: location.href, ts: Date.now() });
+    }, true);
+
+    // HTML5 原生拖拽（draggable=true + drop 目标）
+    document.addEventListener('dragstart', function (e) {
+      __htmlDragActive = true;
+      __md = { el: draggableTarget(e.target), x: 0, y: 0, dragging: true };
+    }, true);
+    document.addEventListener('dragend', function () {
+      setTimeout(function () { __htmlDragActive = false; }, 50);
+      __md = null;
+    }, true);
+    document.addEventListener('drop', function (e) {
+      var md = __md;
+      if (!md || !md.el) { __htmlDragActive = false; return; }
+      var srcEl = md.el, tgtEl = e.target;
+      __suppressClickUntil = Date.now() + 400;
+      pushEvent({ type: 'drag', selector: computeSelector(srcEl), targetSelector: computeSelector(tgtEl),
+        hints: collectHints(srcEl), targetHints: collectHints(tgtEl), text: bestText(srcEl), url: location.href, ts: Date.now() });
     }, true);
   }
 
