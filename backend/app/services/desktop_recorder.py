@@ -24,6 +24,7 @@ _kbd_listener = None
 _type_buffer: list[str] = []
 _type_buffer_ts: float = 0.0
 _type_ctrl_initial: Optional[str] = None  # 本段输入开始时焦点控件的原始文本（用于取增量还原 IME 中文）
+_type_ctrl = None                          # 本段输入所在的控件引用（flush 时读它的最终值，避免焦点已转移读错）
 _mods: set[str] = set()        # 当前按住的修饰键（ctrl/alt/shift/win）
 _press: Optional[dict] = None  # 鼠标按下点，用于识别拖拽
 _DRAG_THRESH2 = 100            # 拖拽判定阈值：位移平方 > 100（即 >10px）
@@ -52,42 +53,96 @@ def resume() -> dict:
     return {"success": True, "paused": False}
 
 
-def _focused_control_value():
-    """读取当前焦点控件的文本值（ValuePattern 优先，回退 TextPattern）。失败返回 None。"""
+def _ensure_com():
+    """确保当前线程已初始化 COM（pynput 键盘/鼠标回调运行在各自线程，UIAutomation 需要 COM）。"""
     try:
-        import uiautomation as auto
-        ctrl = auto.GetFocusedControl()
-        if not ctrl:
-            return None
+        import comtypes
         try:
-            vp = ctrl.GetValuePattern()
-            if vp is not None:
-                return vp.Value or ""
+            comtypes.CoInitialize()
         except Exception:
             pass
-        try:
-            tp = ctrl.GetTextPattern()
-            if tp is not None:
-                return tp.DocumentRange.GetText(-1) or ""
-        except Exception:
-            pass
+    except Exception:
+        pass
+
+
+# 需要忽略的窗口标题关键词（WebRPA 自身界面：录制器面板、启动器等，避免点"停止"按钮被录进去）
+_exclude_titles: list[str] = ["WebRPA"]
+
+
+def _skip_title(title: str) -> bool:
+    if not title:
+        return False
+    t = title.lower()
+    return any(kw and kw.lower() in t for kw in _exclude_titles)
+
+
+def _title_at(x: int, y: int) -> str:
+    """获取坐标 (x,y) 处顶层窗口的标题。"""
+    try:
+        import win32gui
+        hwnd = win32gui.WindowFromPoint((x, y))
+        top = win32gui.GetAncestor(hwnd, 2)  # GA_ROOT
+        return win32gui.GetWindowText(top) or ""
+    except Exception:
+        return ""
+
+
+def _foreground_title() -> str:
+    """获取当前前台窗口标题（用于键盘/滚动等无坐标事件的窗口归属判断）。"""
+    try:
+        import win32gui
+        return win32gui.GetWindowText(win32gui.GetForegroundWindow()) or ""
+    except Exception:
+        return ""
+
+
+def _control_value(ctrl):
+    """读取指定控件的文本值（ValuePattern 优先，回退 TextPattern）。失败返回 None。"""
+    if ctrl is None:
+        return None
+    try:
+        vp = ctrl.GetValuePattern()
+        if vp is not None:
+            return vp.Value or ""
+    except Exception:
+        pass
+    try:
+        tp = ctrl.GetTextPattern()
+        if tp is not None:
+            return tp.DocumentRange.GetText(-1) or ""
     except Exception:
         pass
     return None
 
 
+def _focused_control_and_value():
+    """获取当前焦点控件及其文本值。返回 (control, value)；失败返回 (None, None)。"""
+    try:
+        _ensure_com()
+        import uiautomation as auto
+        ctrl = auto.GetFocusedControl()
+        if not ctrl:
+            return None, None
+        return ctrl, _control_value(ctrl)
+    except Exception:
+        return None, None
+
+
 def _flush_type_buffer():
     """把累积输入合并成一个 type 事件。
-    IME 修正：优先用焦点控件的真实文本增量（还原中文），拿不到才回退按键流拼串。"""
-    global _type_buffer, _type_ctrl_initial
+    IME 修正：读"本段输入所在控件"的最终文本增量（还原中文），拿不到才回退按键流拼串。
+    关键：读的是记录下来的输入控件（_type_ctrl），而非当前焦点——因为点击等操作会先转移焦点。"""
+    global _type_buffer, _type_ctrl_initial, _type_ctrl
     if not _type_buffer:
         _type_ctrl_initial = None
+        _type_ctrl = None
         return
     typed = "".join(_type_buffer)
     _type_buffer = []
     text = typed
     try:
-        cur = _focused_control_value()
+        _ensure_com()
+        cur = _control_value(_type_ctrl)
         init = _type_ctrl_initial
         if cur is not None:
             if init is not None and cur.startswith(init) and len(cur) > len(init):
@@ -100,6 +155,7 @@ def _flush_type_buffer():
     except Exception:
         pass
     _type_ctrl_initial = None
+    _type_ctrl = None
     if text:
         _events.append({"type": "type", "text": text, "ts": time.time()})
 
@@ -115,6 +171,7 @@ def _describe_control_at(x: int, y: int) -> dict:
     except Exception:
         pass
     try:
+        _ensure_com()
         import uiautomation as auto
         ctrl = auto.ControlFromPoint(x, y)
         if ctrl:
@@ -148,8 +205,11 @@ def _on_click(x, y, button, pressed):
             return
         p = _press
         _press = None
-        _flush_type_buffer()
         rx, ry = int(x), int(y)
+        # 忽略对 WebRPA 自身窗口的操作（如点击"停止录制"按钮）
+        if _skip_title(_title_at(rx, ry)):
+            return
+        _flush_type_buffer()
         if p and p["btn"] == btn and ((rx - p["x"]) ** 2 + (ry - p["y"]) ** 2) > _DRAG_THRESH2:
             # 拖拽：起点→终点
             _events.append({
@@ -170,6 +230,8 @@ def _on_scroll(x, y, dx, dy):
     """滚轮：桌面无自动滚动，滚动是真实操作，需录制（合并连续同向）。"""
     with _lock:
         if not _active or _paused:
+            return
+        if _skip_title(_title_at(int(x), int(y))):
             return
         _flush_type_buffer()
         last = _events[-1] if _events else None
@@ -223,14 +285,17 @@ _SPECIAL_KEYS = {
 
 
 def _on_press(key):
-    global _type_buffer_ts, _type_ctrl_initial
+    global _type_buffer_ts, _type_ctrl_initial, _type_ctrl
     with _lock:
         if not _active or _paused:
             return
-        # 修饰键：记入活动集合，不单独成事件
+        # 修饰键：记入活动集合，不单独成事件（即使在自身窗口也维护状态，避免残留）
         m = _mod_name(key)
         if m:
             _mods.add(m)
+            return
+        # 忽略在 WebRPA 自身窗口内的按键
+        if _skip_title(_foreground_title()):
             return
         active_mods = _mods - {'shift'}  # shift 单独不算组合（大小写由 char 体现）
         name = getattr(key, 'name', None)
@@ -238,13 +303,13 @@ def _on_press(key):
         # 普通可见字符且无 ctrl/alt/win：并入文本输入
         if ch is not None and ch.isprintable() and not active_mods and ch not in ('\x16', '\x03'):
             if not _type_buffer:
-                _type_ctrl_initial = _focused_control_value()  # 记录本段输入起始时的原始文本
+                _type_ctrl, _type_ctrl_initial = _focused_control_and_value()  # 记录本段输入的控件与原始文本
             _type_buffer.append(ch)
             _type_buffer_ts = time.time()
             return
         if name == 'space' and not active_mods:
             if not _type_buffer:
-                _type_ctrl_initial = _focused_control_value()
+                _type_ctrl, _type_ctrl_initial = _focused_control_and_value()
             _type_buffer.append(' ')
             _type_buffer_ts = time.time()
             return
@@ -272,12 +337,19 @@ def _on_release(key):
             _mods.discard(m)
 
 
-def start_recorder() -> dict:
-    """开始桌面录制（启动全局键鼠钩子）"""
-    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press, _type_ctrl_initial
+def start_recorder(exclude_titles: Optional[list] = None) -> dict:
+    """开始桌面录制（启动全局键鼠钩子）。
+    exclude_titles: 需要忽略的窗口标题关键词（前端传入自身窗口标题，避免录到 WebRPA 界面操作）。"""
+    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press, _type_ctrl_initial, _type_ctrl, _exclude_titles
     with _lock:
         if _active:
             return {"success": True, "message": "已在录制中"}
+        # 合并默认与前端传入的排除标题（去重、去空）
+        merged = ["WebRPA"]
+        for t in (exclude_titles or []):
+            if t and t not in merged:
+                merged.append(t)
+        _exclude_titles = merged
         try:
             from pynput import mouse as _mouse, keyboard as _kb
         except Exception as e:
@@ -285,6 +357,7 @@ def start_recorder() -> dict:
         _events = []
         _type_buffer = []
         _type_ctrl_initial = None
+        _type_ctrl = None
         _paused = False
         _mods.clear()
         _press = None

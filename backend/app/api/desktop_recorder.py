@@ -1,16 +1,22 @@
 # -*- coding: utf-8 -*-
 """桌面智能录制器 API"""
 from fastapi import APIRouter
+from pydantic import BaseModel
+from typing import Optional
 
 from app.services import desktop_recorder as drec
 
 router = APIRouter(prefix="/api/desktop-recorder", tags=["desktop-recorder"])
 
 
+class StartRequest(BaseModel):
+    excludeTitles: Optional[list] = None
+
+
 @router.post("/start")
-async def api_start():
-    """开始桌面录制（全局键鼠钩子）"""
-    return drec.start_recorder()
+async def api_start(req: Optional[StartRequest] = None):
+    """开始桌面录制（全局键鼠钩子）。可传 excludeTitles 忽略 WebRPA 自身窗口。"""
+    return drec.start_recorder(exclude_titles=(req.excludeTitles if req else None))
 
 
 @router.post("/stop")

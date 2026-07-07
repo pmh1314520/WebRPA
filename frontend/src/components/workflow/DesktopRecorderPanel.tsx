@@ -92,7 +92,9 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
   const startRec = useCallback(async () => {
     setBusy(true)
     try {
-      const res = await desktopRecorderApi.start()
+      // 传入自身窗口标题，让录制器忽略对 WebRPA 界面的操作（如点"停止录制"按钮）
+      const excl = [document.title, 'WebRPA'].filter(Boolean)
+      const res = await desktopRecorderApi.start(excl)
       if (res.data?.success === false || res.error) {
         addLog({ level: 'error', message: `桌面录制启动失败: ${res.data?.error || res.error}` })
         return
