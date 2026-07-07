@@ -28,6 +28,8 @@ _type_ctrl = None                          # 本段输入所在的控件引用�
 _mods: set[str] = set()        # 当前按住的修饰键（ctrl/alt/shift/win）
 _press: Optional[dict] = None  # 鼠标按下点，用于识别拖拽
 _DRAG_THRESH2 = 100            # 拖拽判定阈值：位移平方 > 100（即 >10px）
+_record_move = True            # 是否录制鼠标移动（全局完整录制默认开）
+_last_move: Optional[dict] = None  # 上次记录的移动点（节流用）
 
 
 def is_active() -> bool:
@@ -226,6 +228,29 @@ def _on_click(x, y, button, pressed):
         })
 
 
+def _on_move(x, y):
+    """鼠标移动：节流采样记录（位移 >80px 或间隔 >400ms 记一个点），全局录制的一部分。
+    按下拖拽期间不记（由 drag 事件负责）；忽略 WebRPA 自身窗口。"""
+    global _last_move
+    if not _record_move:
+        return
+    with _lock:
+        if not _active or _paused or _press is not None:
+            return
+        now = time.time()
+        xi, yi = int(x), int(y)
+        lm = _last_move
+        if lm is not None:
+            ddx = xi - lm["x"]
+            ddy = yi - lm["y"]
+            if (ddx * ddx + ddy * ddy) < 6400 and (now - lm["ts"]) < 0.4:
+                return  # 位移 <80px 且 间隔 <400ms：节流跳过
+        _last_move = {"x": xi, "y": yi, "ts": now}
+        if _skip_title(_title_at(xi, yi)):
+            return
+        _events.append({"type": "move", "x": xi, "y": yi, "ts": now})
+
+
 def _on_scroll(x, y, dx, dy):
     """滚轮：桌面无自动滚动，滚动是真实操作，需录制（合并连续同向）。"""
     with _lock:
@@ -337,10 +362,11 @@ def _on_release(key):
             _mods.discard(m)
 
 
-def start_recorder(exclude_titles: Optional[list] = None) -> dict:
+def start_recorder(exclude_titles: Optional[list] = None, record_move: bool = True) -> dict:
     """开始桌面录制（启动全局键鼠钩子）。
-    exclude_titles: 需要忽略的窗口标题关键词（前端传入自身窗口标题，避免录到 WebRPA 界面操作）。"""
-    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press, _type_ctrl_initial, _type_ctrl, _exclude_titles
+    exclude_titles: 需要忽略的窗口标题关键词（前端传入自身窗口标题，避免录到 WebRPA 界面操作）。
+    record_move: 是否录制鼠标移动轨迹（全局完整录制默认开）。"""
+    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press, _type_ctrl_initial, _type_ctrl, _exclude_titles, _record_move, _last_move
     with _lock:
         if _active:
             return {"success": True, "message": "已在录制中"}
@@ -350,6 +376,8 @@ def start_recorder(exclude_titles: Optional[list] = None) -> dict:
             if t and t not in merged:
                 merged.append(t)
         _exclude_titles = merged
+        _record_move = bool(record_move)
+        _last_move = None
         try:
             from pynput import mouse as _mouse, keyboard as _kb
         except Exception as e:
@@ -362,7 +390,7 @@ def start_recorder(exclude_titles: Optional[list] = None) -> dict:
         _mods.clear()
         _press = None
         try:
-            _mouse_listener = _mouse.Listener(on_click=_on_click, on_scroll=_on_scroll)
+            _mouse_listener = _mouse.Listener(on_click=_on_click, on_scroll=_on_scroll, on_move=_on_move)
             _kbd_listener = _kb.Listener(on_press=_on_press, on_release=_on_release)
             _mouse_listener.start()
             _kbd_listener.start()

@@ -3069,6 +3069,7 @@ Object.assign(UI_DICT, {
   "支持拼音搜索 · Esc 关闭": "Supports pinyin search · Press Esc to close",
   "在浏览器里操作，步骤会实时出现在这里…": "Perform actions in the browser, and the steps will appear here in real time…",
   "••••••（密码已隐藏）": "•••••• (password hidden)",
+  "记录鼠标移动轨迹（全局完整录制）。关闭后只录点击/输入等有效操作": "Record mouse movement trajectory (full global capture). Turn off to record only effective actions like clicks/typing",
   "自动化浏览器未启动": "Automation browser not started",
   "无法开始录制": "Cannot start recording",
   "请先启动自动化浏览器，再开始录制。": "Please start the automation browser before recording.",

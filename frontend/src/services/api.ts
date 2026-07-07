@@ -510,7 +510,7 @@ export const securityApi = {
 
 // ==================== 桌面智能录制器 API ====================
 export const desktopRecorderApi = {
-  start: (excludeTitles?: string[]) => apiRequest('/desktop-recorder/start', { method: 'POST', body: JSON.stringify({ excludeTitles: excludeTitles || [] }) }),
+  start: (excludeTitles?: string[], recordMove: boolean = true) => apiRequest('/desktop-recorder/start', { method: 'POST', body: JSON.stringify({ excludeTitles: excludeTitles || [], recordMove }) }),
   stop: () => apiRequest('/desktop-recorder/stop', { method: 'POST' }),
   pause: () => apiRequest('/desktop-recorder/pause', { method: 'POST' }),
   resume: () => apiRequest('/desktop-recorder/resume', { method: 'POST' }),

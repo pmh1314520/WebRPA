@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { nanoid } from 'nanoid'
-import { Circle, Square, X, MousePointerClick, Type, Keyboard, Wand2, Pause, Play, Move, MoveVertical } from 'lucide-react'
+import { Circle, Square, X, MousePointerClick, Type, Keyboard, Wand2, Pause, Play, Move, MoveVertical, MousePointer2 } from 'lucide-react'
 import { desktopRecorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
@@ -9,7 +9,7 @@ import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface DeskEvent {
-  type: 'click' | 'type' | 'hotkey' | 'drag' | 'scroll'
+  type: 'click' | 'type' | 'hotkey' | 'drag' | 'scroll' | 'move'
   x?: number
   y?: number
   x2?: number
@@ -39,6 +39,7 @@ const META: Record<string, { icon: any; label: string; color: string }> = {
   hotkey: { icon: Keyboard, label: '按键', color: 'text-amber-500' },
   drag: { icon: Move, label: '拖拽', color: 'text-teal-500' },
   scroll: { icon: MoveVertical, label: '滚动', color: 'text-cyan-500' },
+  move: { icon: MousePointer2, label: '移动', color: 'text-slate-400' },
 }
 
 export function DesktopRecorderPanel({ open, onClose }: Props) {
@@ -46,6 +47,7 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
   const [paused, setPaused] = useState(false)
   const [semantic, setSemantic] = useState(true)
   const [autoWait, setAutoWait] = useState(true)
+  const [recordMove, setRecordMove] = useState(true)
   const [events, setEvents] = useState<DeskEvent[]>([])
   const [busy, setBusy] = useState(false)
   const pollRef = useRef<number | null>(null)
@@ -94,7 +96,7 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
     try {
       // 传入自身窗口标题，让录制器忽略对 WebRPA 界面的操作（如点"停止录制"按钮）
       const excl = [document.title, 'WebRPA'].filter(Boolean)
-      const res = await desktopRecorderApi.start(excl)
+      const res = await desktopRecorderApi.start(excl, recordMove)
       if (res.data?.success === false || res.error) {
         addLog({ level: 'error', message: `桌面录制启动失败: ${res.data?.error || res.error}` })
         return
@@ -110,7 +112,7 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
     } finally {
       setBusy(false)
     }
-  }, [addLog, appendEvents])
+  }, [addLog, appendEvents, recordMove])
 
   const stopRec = useCallback(async () => {
     setBusy(true)
@@ -213,6 +215,8 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
         const dir = (ev.dy ?? 0) < 0 ? 'down' : 'up'   // pynput：dy<0 向下
         const count = Math.max(1, Math.round(Math.abs(ev.dy ?? 1)))
         mkNode('real_mouse_scroll', { direction: dir, scrollAmount: 3, scrollCount: count })
+      } else if (ev.type === 'move') {
+        mkNode('real_mouse_move', { x: String(ev.x ?? 0), y: String(ev.y ?? 0), duration: 0 }, `(${ev.x},${ev.y})`)
       } else if (ev.type === 'type') {
         if (!ev.text) continue
         mkNode('real_keyboard', { inputType: 'text', text: ev.text })
@@ -271,6 +275,10 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
             <Checkbox checked={semantic} onCheckedChange={(c) => setSemantic(c)} disabled={recording} className="h-3.5 w-3.5" />
             语义优先
           </label>
+          <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap" title="记录鼠标移动轨迹（全局完整录制）。关闭后只录点击/输入等有效操作">
+            <Checkbox checked={recordMove} onCheckedChange={(c) => setRecordMove(c)} disabled={recording} className="h-3.5 w-3.5" />
+            记录移动
+          </label>
         </div>
       </div>
 
@@ -288,6 +296,7 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
           else if (ev.type === 'hotkey') desc = ev.keys || ''
           else if (ev.type === 'drag') desc = `(${ev.x},${ev.y}) → (${ev.x2},${ev.y2})`
           else if (ev.type === 'scroll') desc = `${(ev.dy ?? 0) < 0 ? '向下' : '向上'}滚动`
+          else if (ev.type === 'move') desc = `(${ev.x}, ${ev.y})`
           return (
             <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-[hsl(var(--accent))]">
               <Icon className={`w-3.5 h-3.5 shrink-0 ${m?.color || ''}`} />

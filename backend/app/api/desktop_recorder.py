@@ -11,12 +11,16 @@ router = APIRouter(prefix="/api/desktop-recorder", tags=["desktop-recorder"])
 
 class StartRequest(BaseModel):
     excludeTitles: Optional[list] = None
+    recordMove: Optional[bool] = True
 
 
 @router.post("/start")
 async def api_start(req: Optional[StartRequest] = None):
-    """开始桌面录制（全局键鼠钩子）。可传 excludeTitles 忽略 WebRPA 自身窗口。"""
-    return drec.start_recorder(exclude_titles=(req.excludeTitles if req else None))
+    """开始桌面录制（全局键鼠钩子）。可传 excludeTitles 忽略 WebRPA 自身窗口，recordMove 控制是否录鼠标移动。"""
+    return drec.start_recorder(
+        exclude_titles=(req.excludeTitles if req else None),
+        record_move=(req.recordMove if req and req.recordMove is not None else True),
+    )
 
 
 @router.post("/stop")
