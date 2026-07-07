@@ -1,22 +1,20 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { nanoid } from 'nanoid'
-import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard, MoveVertical } from 'lucide-react'
+import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard } from 'lucide-react'
 import { recorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
-  type: 'navigate' | 'click' | 'input' | 'select' | 'check' | 'scroll' | 'keypress'
+  type: 'navigate' | 'click' | 'input' | 'select' | 'check' | 'keypress'
   selector?: string
   hints?: Record<string, any>
   value?: any
   text?: string
   url?: string
   key?: string
-  dy?: number
-  y?: number
   ts?: number
   _frame?: { main?: boolean; index?: number; name?: string; selector?: string }
 }
@@ -32,7 +30,6 @@ const EVENT_META: Record<string, { icon: any; label: string; color: string }> = 
   input: { icon: Type, label: '输入', color: 'text-emerald-500' },
   select: { icon: ChevronDown, label: '下拉选择', color: 'text-violet-500' },
   check: { icon: CheckSquare, label: '勾选', color: 'text-amber-500' },
-  scroll: { icon: MoveVertical, label: '滚动', color: 'text-cyan-500' },
   keypress: { icon: Keyboard, label: '按键', color: 'text-rose-500' },
 }
 
@@ -141,6 +138,8 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
     const newEdges: any[] = []
     let prevId: string | null = null
     let lastNavUrl: string | null = null
+    let seenFirstNav = false      // 是否已生成过初始"打开网页"
+    let lastActionTs = 0          // 最近一次可能触发跳转的交互(click/回车)时间戳
     let curFrameKey = '__main__'  // 当前所处 frame（回放上下文），'__main__' 表示主文档
 
     const mkNode = (moduleType: string, cfg: Record<string, any>, name?: string) => {
@@ -197,16 +196,29 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         }
       }
       if (ev.type === 'navigate') {
-        // 仅主文档的顶层导航生成"打开网页"；iframe 内导航是页面内部行为，忽略
+        // iframe 内导航是页面内部行为，忽略
         if (ev._frame && !ev._frame.main) continue
         const u = ev.url || ''
-        if (!u || u.startsWith('about:') || u === lastNavUrl) continue
+        if (!u || u.startsWith('about:')) continue
+        if (seenFirstNav && u === lastNavUrl) continue  // 同 URL 重复导航
         lastNavUrl = u
-        curFrameKey = '__main__'  // 打开新页面后回放上下文回到主文档
-        mkNode('open_page', { url: u })
+        curFrameKey = '__main__'  // 页面变化后回放上下文回到主文档
+        if (!seenFirstNav) {
+          // 首个导航 = 录制起始页面 → 生成"打开网页"
+          seenFirstNav = true
+          mkNode('open_page', { url: u })
+        } else if (lastActionTs && (ev.ts || 0) - lastActionTs < 10000) {
+          // 由点击/回车等交互引起的跳转（含重定向链）→ 不单独生成节点，
+          // 点击节点回放时会自然触发跳转（新标签页由后续节点 switch_to_latest 处理）
+          continue
+        } else {
+          // 与任何交互无因果关系的导航（如用户在地址栏主动输入 URL）→ 生成"打开网页"
+          mkNode('open_page', { url: u })
+        }
       } else if (ev.type === 'click') {
         if (!ev.selector) continue
         ensureFrame(ev)
+        lastActionTs = ev.ts || 0
         mkNode('click_element', { selector: ev.selector, ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'input') {
         if (!ev.selector) continue
@@ -220,13 +232,11 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         if (!ev.selector) continue
         ensureFrame(ev)
         mkNode('set_checkbox', { selector: ev.selector, checked: !!ev.value, ...(ev.hints ? { selectorHints: ev.hints } : {}) })
-      } else if (ev.type === 'scroll') {
-        ensureFrame(ev)
-        const dir = (ev.dy ?? 0) >= 0 ? 'down' : 'up'
-        mkNode('scroll_page', { direction: dir, distance: Math.abs(ev.dy ?? 300) || 300 })
       } else if (ev.type === 'keypress') {
         if (!ev.key) continue
         ensureFrame(ev)
+        // 回车/Tab 可能触发表单提交跳转，视为"可致跳转的交互"
+        if (ev.key === 'Enter' || ev.key === 'Tab' || /Enter$/.test(ev.key)) lastActionTs = ev.ts || 0
         mkNode('keyboard_action', { keySequence: ev.key }, ev.key)
       }
     }
@@ -288,7 +298,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
       <div className="flex-1 overflow-y-auto px-2 py-2 min-h-[80px]">
         {events.length === 0 ? (
           <div className="text-center text-xs text-[hsl(var(--muted-foreground))] py-8 px-3">
-            {recording ? '在浏览器里操作，步骤会实时出现在这里…' : '点击「开始录制」，然后在自动化浏览器里点击 / 输入 / 选择 / 滚动 / 按键，WebRPA 会自动记录成步骤。跳转新页面、新标签页也会持续录制。'}
+            {recording ? '在浏览器里操作，步骤会实时出现在这里…' : '点击「开始录制」，然后在自动化浏览器里点击 / 输入 / 选择 / 按键，WebRPA 会自动记录成步骤。跳转新页面、新标签页也会持续录制。'}
           </div>
         ) : (
           <ol className="space-y-1">
@@ -299,7 +309,6 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
                 : ev.type === 'input' ? `"${String(ev.value ?? '').slice(0, 24)}"`
                 : ev.type === 'select' ? (ev.text || String(ev.value ?? ''))
                 : ev.type === 'check' ? (ev.value ? '勾选' : '取消勾选')
-                : ev.type === 'scroll' ? `${(ev.dy ?? 0) >= 0 ? '向下' : '向上'} ${Math.abs(ev.dy ?? 0)}px`
                 : ev.type === 'keypress' ? ev.key
                 : (ev.text || ev.selector)
               return (

@@ -26,8 +26,6 @@ RECORDER_SCRIPT = r"""(function () {
       var last = arr.length ? arr[arr.length - 1] : null;
       if (ev.type === 'input' && last && last.type === 'input' && last.selector === ev.selector) {
         arr[arr.length - 1] = ev;
-      } else if (ev.type === 'scroll' && last && last.type === 'scroll') {
-        last.dy = (last.dy || 0) + (ev.dy || 0); last.y = ev.y; last.ts = ev.ts;
       } else if (ev.type === 'navigate' && last && last.type === 'navigate' && last.url === ev.url) {
         // 跳过重复导航
       } else {
@@ -183,6 +181,7 @@ RECORDER_SCRIPT = r"""(function () {
     window.__webrpaRecorderListenersAttached = true;
 
     document.addEventListener('click', function (e) {
+      if (e.button && e.button !== 0) return;   // 只录左键，忽略右键/中键（右键菜单等原生行为不录）
       var el = e.target; if (!el || el.id === '__webrpa_rec_badge') return;
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
@@ -221,16 +220,6 @@ RECORDER_SCRIPT = r"""(function () {
       if (k === 'Control' || k === 'Alt' || k === 'Meta' || k === 'Shift') return;
       var seq = (e.ctrlKey ? 'Control+' : '') + (e.altKey ? 'Alt+' : '') + (e.metaKey ? 'Meta+' : '') + (e.shiftKey && combo ? 'Shift+' : '') + k;
       pushEvent({ type: 'keypress', key: seq, url: location.href, ts: Date.now() });
-    }, true);
-
-    var __scrollTimer = null, __lastScrollY = window.scrollY || 0;
-    window.addEventListener('scroll', function () {
-      if (__scrollTimer) clearTimeout(__scrollTimer);
-      __scrollTimer = setTimeout(function () {
-        var y = window.scrollY || 0, dy = y - __lastScrollY; __lastScrollY = y;
-        if (Math.abs(dy) < 40) return;
-        pushEvent({ type: 'scroll', dy: dy, y: y, url: location.href, ts: Date.now() });
-      }, 350);
     }, true);
   }
 
