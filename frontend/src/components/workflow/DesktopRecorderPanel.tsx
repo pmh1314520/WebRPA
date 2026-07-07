@@ -158,7 +158,8 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
           ...cfg,
         },
       })
-      if (prevId) newEdges.push({ id: `e-${prevId}-${id}`, source: prevId, target: id })
+      // 与项目默认连线一致：smoothstep + 流光动画
+      if (prevId) newEdges.push({ id: `e-${prevId}-${id}`, source: prevId, target: id, type: 'smoothstep', animated: true })
       prevId = id
     }
 

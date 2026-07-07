@@ -26,6 +26,8 @@ RECORDER_SCRIPT = r"""(function () {
       var last = arr.length ? arr[arr.length - 1] : null;
       if (ev.type === 'input' && last && last.type === 'input' && last.selector === ev.selector) {
         arr[arr.length - 1] = ev;
+      } else if (ev.type === 'scroll' && last && last.type === 'scroll' && (last.dy > 0) === (ev.dy > 0)) {
+        last.dy = (last.dy || 0) + (ev.dy || 0); last.y = ev.y; last.ts = ev.ts;   // 合并连续同向滚动
       } else if (ev.type === 'dblclick') {
         // 双击前浏览器会先派发两次单击，移除紧邻的同选择器单击，避免重复录入
         var removed = 0;
@@ -387,6 +389,19 @@ RECORDER_SCRIPT = r"""(function () {
       pushEvent({ type: 'drag', selector: computeSelector(srcEl), targetSelector: computeSelector(tgtEl),
         endX: Math.round(e.clientX), endY: Math.round(e.clientY),
         hints: collectHints(srcEl), targetHints: collectHints(tgtEl), text: bestText(srcEl), url: location.href, ts: Date.now() });
+    }, true);
+
+    // 页面滚动：防抖 + 阈值过滤 + 合并连续同向，避免细碎噪音（记录净位移，回放按距离滚动）
+    var __scrollTimer = null, __lastScrollY = (window.scrollY || (document.documentElement ? document.documentElement.scrollTop : 0) || 0);
+    window.addEventListener('scroll', function () {
+      if (!recording()) return;
+      if (__scrollTimer) clearTimeout(__scrollTimer);
+      __scrollTimer = setTimeout(function () {
+        var y = window.scrollY || (document.documentElement ? document.documentElement.scrollTop : 0) || 0;
+        var dy = y - __lastScrollY; __lastScrollY = y;
+        if (Math.abs(dy) < 80) return;   // 过滤细碎滚动
+        pushEvent({ type: 'scroll', dy: dy, y: y, url: location.href, ts: Date.now() });
+      }, 400);
     }, true);
   }
 
