@@ -5,6 +5,7 @@ import { Circle, Square, X, MousePointerClick, Type, Keyboard, Wand2, Pause, Pla
 import { desktopRecorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
+import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface DeskEvent {
@@ -190,12 +191,13 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
       return
     }
     const store = useWorkflowStore.getState()
+    // 蛇形（横向长方形）排版，替代原竖排线性布局
+    applySerpentineLayout(newNodes as any, store.nodes as any)
     store.loadWorkflow({
       nodes: [...store.nodes, ...newNodes] as any,
       edges: [...store.edges, ...newEdges] as any,
       name: store.name,
     })
-    try { await store.autoLayoutNodes({ direction: 'DOWN' }) } catch {}
     emitAssistantUiEvent('fit_view', {})
     addLog({ level: 'success', message: `已根据桌面录制生成 ${newNodes.length} 个节点` })
     setEvents([])

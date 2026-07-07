@@ -5,6 +5,7 @@ import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, G
 import { recorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
+import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
@@ -247,12 +248,13 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
     }
 
     const store = useWorkflowStore.getState()
+    // 蛇形（横向长方形）排版：录制链纯竖排太长，改为逐行折返、连线自动拐弯
+    applySerpentineLayout(newNodes as any, store.nodes as any)
     store.loadWorkflow({
       nodes: [...store.nodes, ...newNodes] as any,
       edges: [...store.edges, ...newEdges] as any,
       name: store.name,
     })
-    try { await store.autoLayoutNodes({ direction: 'DOWN' }) } catch {}
     emitAssistantUiEvent('fit_view', {})
     addLog({ level: 'success', message: `已根据录制生成 ${newNodes.length} 个节点` })
     setEvents([])

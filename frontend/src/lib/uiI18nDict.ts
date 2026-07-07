@@ -3068,7 +3068,7 @@ Object.assign(UI_DICT, {
   "双击画布 = 收藏的模块 · 右键画布 = 全部模块": "Double-click canvas = favorite modules · Right-click canvas = all modules",
   "支持拼音搜索 · Esc 关闭": "Supports pinyin search · Press Esc to close",
   "在浏览器里操作，步骤会实时出现在这里…": "Perform actions in the browser, and the steps will appear here in real time…",
-  "点击「开始录制」，然后在自动化浏览器里点击 / 输入 / 选择 / 滚动 / 按键，WebRPA 会自动记录成步骤。跳转新页面、新标签页也会持续录制。": "Click \"Start Recording\", then click / type / select / scroll / press keys in the automation browser, and WebRPA will automatically record them as steps. Navigating to new pages or new tabs will also continue recording.",
+  "点击「开始录制」，然后在自动化浏览器里点击 / 输入 / 选择 / 按键，WebRPA 会自动记录成步骤。跳转新页面、新标签页也会持续录制。": "Click \"Start Recording\", then click / type / select / press keys in the automation browser, and WebRPA will automatically record them as steps. Navigating to new pages or new tabs will also continue recording.",
   "· 可拖删/排序后生成": " · Drag to delete/reorder before generating",
   "经典深色": "Classic Dark",
   "炫彩荧光绿": "Vivid Neon Green",
