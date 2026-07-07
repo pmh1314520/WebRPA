@@ -2,10 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { nanoid } from 'nanoid'
 import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard, Move, Upload } from 'lucide-react'
-import { recorderApi } from '@/services/api'
+import { recorderApi, browserApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
 import { applySerpentineLayout } from '@/lib/recorderLayout'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
@@ -52,6 +53,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
   const pollRef = useRef<number | null>(null)
   const eventsRef = useRef<RecEvent[]>([])
   const addLog = useWorkflowStore((s) => s.addLog)
+  const { alert: alertDialog, ConfirmDialog } = useConfirm()
 
   useEffect(() => { eventsRef.current = events }, [events])
 
@@ -106,10 +108,28 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
   const startRecording = useCallback(async () => {
     setBusy(true)
     try {
+      // 录制前先检查自动化浏览器是否已启动，未启动则明确提示（不用浏览器原生弹窗）
+      try {
+        const st: any = await browserApi.getStatus()
+        if (!st?.data?.isOpen) {
+          setBusy(false)
+          await alertDialog('请先启动自动化浏览器，再开始录制。可点击工具栏的「打开浏览器」按钮启动后重试。', {
+            title: '自动化浏览器未启动', confirmText: '我知道了',
+          })
+          return
+        }
+      } catch {
+        // 状态查询失败不阻断，继续尝试启动（由后端兜底返回错误）
+      }
       const res: any = await recorderApi.start()
-      if (res?.error || res?.success === false) {
-        addLog({ level: 'error', message: `录制启动失败：${res?.error || '未知错误'}` })
+      if (res?.error || res?.success === false || res?.data?.success === false) {
+        const errMsg = res?.data?.error || res?.error || '未知错误'
         setBusy(false)
+        // 后端兜底：没有活跃浏览器等错误，用醒目弹窗提示
+        await alertDialog(String(errMsg).includes('浏览器') ? '请先启动自动化浏览器，再开始录制。' : `录制启动失败：${errMsg}`, {
+          title: '无法开始录制', confirmText: '我知道了',
+        })
+        addLog({ level: 'error', message: `录制启动失败：${errMsg}` })
         return
       }
       setEvents([])
@@ -128,7 +148,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
     } finally {
       setBusy(false)
     }
-  }, [addLog, appendEvents])
+  }, [addLog, appendEvents, alertDialog])
 
   const stopRecording = useCallback(async () => {
     setBusy(true)
@@ -325,7 +345,9 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
 
   if (!open) return null
 
-  return createPortal(
+  return (
+    <>
+    {createPortal(
     <div className="fixed bottom-20 right-5 z-[1000] w-[340px] rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: '70vh' }}>
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--brand-50))]">
         <Wand2 className="w-4 h-4 text-[hsl(var(--brand-600))]" />
@@ -398,5 +420,8 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
       </div>
     </div>,
     document.body,
+    )}
+    <ConfirmDialog />
+    </>
   )
 }
