@@ -246,6 +246,7 @@ RECORDER_SCRIPT = r"""(function () {
     var __htmlDragActive = false;    // HTML5 原生拖拽进行中（避免与 mouse 版重复）
 
     document.addEventListener('click', function (e) {
+      if (!e.isTrusted) return;   // 只录真实用户操作，忽略页面脚本派发的合成事件（避免一次点击录出多条）
       if (e.button && e.button !== 0) return;   // 只录左键，忽略右键/中键（右键菜单等原生行为不录）
       if (Date.now() < __suppressClickUntil) return;  // 拖拽刚结束，抑制误触 click
       // composedPath()[0] 取 Shadow DOM 内真实元素（e.target 会被重定向到 shadow 宿主）
@@ -269,6 +270,7 @@ RECORDER_SCRIPT = r"""(function () {
     }, true);
 
     document.addEventListener('dblclick', function (e) {
+      if (!e.isTrusted) return;
       if (e.button && e.button !== 0) return;
       var raw = (e.composedPath && e.composedPath()[0]) || e.target;
       if (!raw || raw.id === '__webrpa_rec_badge') return;
@@ -280,6 +282,7 @@ RECORDER_SCRIPT = r"""(function () {
     }, true);
 
     document.addEventListener('change', function (e) {
+      if (!e.isTrusted) return;
       var el = (e.composedPath && e.composedPath()[0]) || e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
       if (t === 'file') {
@@ -310,6 +313,7 @@ RECORDER_SCRIPT = r"""(function () {
     }, true);
 
     document.addEventListener('input', function (e) {
+      if (!e.isTrusted) return;
       var el = (e.composedPath && e.composedPath()[0]) || e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
       if (t === 'file') return;
@@ -320,6 +324,7 @@ RECORDER_SCRIPT = r"""(function () {
     }, true);
 
     document.addEventListener('keydown', function (e) {
+      if (!e.isTrusted) return;
       var k = e.key;
       var special = ['Enter','Tab','Escape','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','Delete','Home','End','PageUp','PageDown'];
       var combo = e.ctrlKey || e.altKey || e.metaKey;
@@ -340,6 +345,7 @@ RECORDER_SCRIPT = r"""(function () {
 
     // 拖拽录制（自定义拖拽/滑块/排序）：mousedown→move 超阈值→mouseup 生成 drag 事件
     document.addEventListener('mousedown', function (e) {
+      if (!e.isTrusted) return;
       if (e.button && e.button !== 0) return;
       var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') { __md = null; return; }
       __md = { el: raw, x: e.clientX, y: e.clientY, dragging: false };
@@ -350,6 +356,7 @@ RECORDER_SCRIPT = r"""(function () {
       if (dx * dx + dy * dy > 64) __md.dragging = true;   // 位移 > 8px 判定为拖拽
     }, true);
     document.addEventListener('mouseup', function (e) {
+      if (!e.isTrusted) { return; }
       var md = __md; __md = null;
       if (!md || !md.dragging) return;          // 普通点击交给 click 处理
       if (__htmlDragActive) return;             // HTML5 拖拽已由 drop 记录，避免重复
@@ -363,6 +370,7 @@ RECORDER_SCRIPT = r"""(function () {
 
     // HTML5 原生拖拽（draggable=true + drop 目标）
     document.addEventListener('dragstart', function (e) {
+      if (!e.isTrusted) return;
       __htmlDragActive = true;
       __md = { el: draggableTarget(e.target), x: 0, y: 0, dragging: true };
     }, true);
@@ -371,6 +379,7 @@ RECORDER_SCRIPT = r"""(function () {
       __md = null;
     }, true);
     document.addEventListener('drop', function (e) {
+      if (!e.isTrusted) return;
       var md = __md;
       if (!md || !md.el) { __htmlDragActive = false; return; }
       var srcEl = md.el, tgtEl = (e.composedPath && e.composedPath()[0]) || e.target;
