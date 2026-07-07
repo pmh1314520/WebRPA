@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { nanoid } from 'nanoid'
-import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard, Move } from 'lucide-react'
+import { Circle, Square, X, MousePointerClick, Type, ChevronDown, CheckSquare, Globe, Wand2, Trash2, ArrowUp, ArrowDown, Clock, Keyboard, Move, Upload } from 'lucide-react'
 import { recorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
@@ -9,7 +9,7 @@ import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
-  type: 'navigate' | 'click' | 'dblclick' | 'input' | 'select' | 'check' | 'keypress' | 'drag'
+  type: 'navigate' | 'click' | 'dblclick' | 'input' | 'select' | 'check' | 'keypress' | 'drag' | 'upload'
   selector?: string
   targetSelector?: string
   hints?: Record<string, any>
@@ -18,6 +18,7 @@ interface RecEvent {
   text?: string
   url?: string
   key?: string
+  fileName?: string
   ts?: number
   sensitive?: boolean
   _frame?: { main?: boolean; index?: number; name?: string; selector?: string }
@@ -37,6 +38,7 @@ const EVENT_META: Record<string, { icon: any; label: string; color: string }> = 
   check: { icon: CheckSquare, label: '勾选', color: 'text-amber-500' },
   keypress: { icon: Keyboard, label: '按键', color: 'text-rose-500' },
   drag: { icon: Move, label: '拖拽', color: 'text-teal-500' },
+  upload: { icon: Upload, label: '上传文件', color: 'text-orange-500' },
 }
 
 export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
@@ -264,6 +266,11 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
           ...(ev.hints ? { selectorHints: ev.hints } : {}),
           ...(ev.targetHints ? { targetSelectorHints: ev.targetHints } : {}),
         }, ev.text ? ev.text.slice(0, 20) : undefined)
+      } else if (ev.type === 'upload') {
+        if (!ev.selector) continue
+        ensureFrame(ev)
+        // 浏览器安全限制拿不到真实路径，生成占位节点（filePath 留空，用户补填）
+        mkNode('upload_file', { selector: ev.selector, filePath: '', ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.fileName ? ev.fileName.slice(0, 20) : undefined)
       } else if (ev.type === 'keypress') {
         if (!ev.key) continue
         ensureFrame(ev)
@@ -344,6 +351,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
                 : ev.type === 'check' ? (ev.value ? '勾选' : '取消勾选')
                 : ev.type === 'keypress' ? ev.key
                 : ev.type === 'drag' ? `${ev.text || ev.selector} → ${ev.targetSelector}`
+                : ev.type === 'upload' ? (ev.fileName ? ev.fileName + '（需补填路径）' : '需补填文件路径')
                 : (ev.text || ev.selector)
               return (
                 <li key={i} className="group flex items-start gap-2 px-2 py-1.5 rounded hover:bg-[hsl(var(--muted))] text-xs">

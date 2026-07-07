@@ -262,7 +262,13 @@ RECORDER_SCRIPT = r"""(function () {
     document.addEventListener('change', function (e) {
       var el = e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
-      if (t === 'file') return;  // 文件选择框无法回放（浏览器禁止设置 value），跳过
+      if (t === 'file') {
+        // 浏览器安全禁止读取真实路径，无法回放原文件；仍生成"上传文件"占位节点（含选择器+文件名提示），用户只需补填路径
+        var fn = '';
+        try { if (el.files && el.files.length) fn = el.files[0].name; } catch (_) {}
+        pushEvent({ type: 'upload', selector: computeSelector(el), hints: collectHints(el), fileName: fn, url: location.href, ts: Date.now() });
+        return;
+      }
       if (tag === 'select') {
         var opt = el.options[el.selectedIndex];
         pushEvent({ type: 'select', selector: computeSelector(el), hints: collectHints(el), value: el.value, text: opt ? opt.text : '', url: location.href, ts: Date.now() });
