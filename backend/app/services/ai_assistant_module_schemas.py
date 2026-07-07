@@ -4485,6 +4485,48 @@ except ImportError:
     pass  # autofix 文件可能不存在（开发环境跳过）
 
 
+# ============================================================================
+# 多模式模块「条件必填」修正（覆盖 autofix）
+# autofix 由扫描 config.get('xxx') 生成，会把多模式模块里"某模式才需要"的字段
+# 误标成"始终必填"（如 real_keyboard 的 text），且丢掉 conditional_required，
+# 导致选了「单个按键/组合键」也提示"要键盘输入的文本 未填写"。此处按模式恢复。
+# ============================================================================
+_MULTIMODE_REQUIRED_FIX: dict = {
+    "real_keyboard": {
+        "required": [],
+        "optional": ["inputType", "text", "key", "hotkey", "pressMode", "interval", "holdDuration", "windowTitle", "keyInputMode"],
+        "conditional_required": {
+            "field": "inputType",
+            "default": "text",
+            "map": {"text": ["text"], "key": ["key"], "hotkey": ["hotkey"]},
+        },
+        "defaults": {"inputType": "text"},
+        "desc": {
+            "inputType": "输入方式：text 文本 / key 单个按键 / hotkey 组合键",
+            "text": "要输入的文本（inputType=text 时）",
+            "key": "按键名如 enter/backspace（inputType=key 时）",
+            "hotkey": "组合键如 ctrl+c（inputType=hotkey 时）",
+            "interval": "字符间隔秒",
+        },
+        "example": {"inputType": "key", "key": "backspace"},
+        "combo": "",
+    },
+    "keyboard_action": {
+        "required": [],
+        "optional": ["action", "keys", "targetType", "selector", "keySequence", "pressMode", "holdDuration", "delay"],
+        "conditional_required": {
+            "field": "action",
+            "default": "press",
+            "map": {"hotkey": ["keys"], "press": ["keys"], "down": ["keys"], "up": ["keys"]},
+        },
+        "defaults": {"action": "press"},
+        "desc": {"action": "press/down/up/hotkey", "keys": "组合键如 ctrl+c"},
+        "example": {"action": "hotkey", "keys": "ctrl+a"},
+        "combo": "",
+    },
+}
+_ALL_SCHEMAS.update(_MULTIMODE_REQUIRED_FIX)
+
 
 # ============================================================================
 # 高优先级常用模块的精确 schema（手工校准，覆盖 autofix）

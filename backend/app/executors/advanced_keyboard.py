@@ -168,6 +168,47 @@ class RealKeyboardExecutor(ModuleExecutor):
         'multiply': 0x6A, 'add': 0x6B, 'subtract': 0x6D, 'decimal': 0x6E, 'divide': 0x6F,
     }
 
+    @staticmethod
+    def _activate_window_by_title(title_substr: str) -> bool:
+        """按标题子串查找顶层窗口并激活到前台（Alt 键技巧绕过前台锁定）。找到并激活返回 True。"""
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        found = {"hwnd": None}
+
+        @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        def _enum(hwnd, _lparam):
+            if not user32.IsWindowVisible(hwnd):
+                return True
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length <= 0:
+                return True
+            buf = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(hwnd, buf, length + 1)
+            if title_substr.lower() in (buf.value or "").lower():
+                found["hwnd"] = hwnd
+                return False
+            return True
+
+        try:
+            user32.EnumWindows(_enum, 0)
+        except Exception:
+            pass
+        hwnd = found["hwnd"]
+        if not hwnd:
+            return False
+        try:
+            SW_RESTORE = 9
+            user32.ShowWindow(hwnd, SW_RESTORE)
+            user32.keybd_event(0x12, 0, 0, 0)       # Alt down（绕过前台锁定）
+            user32.keybd_event(0x12, 0, 0x0002, 0)  # Alt up
+            user32.SetForegroundWindow(hwnd)
+            user32.BringWindowToTop(hwnd)
+            user32.SetActiveWindow(hwnd)
+        except Exception:
+            pass
+        return True
+
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         import ctypes
         from ctypes import wintypes, POINTER, c_ulong, sizeof, byref
@@ -175,7 +216,18 @@ class RealKeyboardExecutor(ModuleExecutor):
         input_type = context.resolve_value(config.get("inputType", "text"))  # 支持变量引用
         press_mode = context.resolve_value(config.get("pressMode", "click"))  # 支持变量引用
         hold_duration = to_float(config.get("holdDuration", 1), 1, context)  # 长按时长(秒)
-        
+
+        # 发送硬件按键前先激活目标窗口，否则按键会打进 WebRPA 自己的窗口，表现为"完全没反应"
+        window_title = context.resolve_value(config.get("windowTitle", "") or "")
+        if window_title:
+            try:
+                if self._activate_window_by_title(str(window_title)):
+                    await asyncio.sleep(0.35)
+                else:
+                    print(f"[real_keyboard] 未找到标题包含『{window_title}』的窗口，按键将发往当前前台窗口")
+            except Exception as _e:
+                print(f"[real_keyboard] 激活窗口失败: {_e}")
+
         try:
             # SendInput 结构体定义 - 使用正确的内存布局
             INPUT_KEYBOARD = 1
