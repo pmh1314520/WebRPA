@@ -222,7 +222,8 @@ class ListSortExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         list_variable = context.resolve_value(config.get('listVariable', ''))
-        sort_order = context.resolve_value(config.get('sortOrder', 'asc'))
+        # 字段与前端面板对齐: order(asc/desc)，兼容旧字段名 sortOrder
+        sort_order = context.resolve_value(config.get('sortOrder', config.get('order', 'asc')))
         result_variable = config.get('resultVariable', '')
         
         if not list_variable:
@@ -363,7 +364,8 @@ class MathRoundExecutor(ModuleExecutor):
         return "math_round"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         decimals = context.resolve_value(config.get('decimals', '0'))
         result_variable = config.get('resultVariable', '')
         
@@ -399,7 +401,8 @@ class MathBaseConvertExecutor(ModuleExecutor):
         return "math_base_convert"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         from_base = context.resolve_value(config.get('fromBase', '10'))
         to_base = context.resolve_value(config.get('toBase', '16'))
         result_variable = config.get('resultVariable', '')
@@ -467,7 +470,8 @@ class MathFloorExecutor(ModuleExecutor):
         return "math_floor"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -543,7 +547,8 @@ class MathAbsExecutor(ModuleExecutor):
         return "math_abs"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -577,7 +582,8 @@ class MathSqrtExecutor(ModuleExecutor):
         return "math_sqrt"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         root = context.resolve_value(config.get('root', '2'))
         result_variable = config.get('resultVariable', '')
         

@@ -216,6 +216,8 @@ class NormalizeExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
             list_variable = context.resolve_value(config.get('listVariable', ''))
+            # 字段与前端面板对齐: method(minmax/custom) + newMin/newMax(自定义目标范围)
+            method = context.resolve_value(config.get('method', 'minmax'))
             result_variable = config.get('resultVariable', '')
             
             if not list_variable:
@@ -235,16 +237,28 @@ class NormalizeExecutor(ModuleExecutor):
             if not numbers:
                 return ModuleResult(success=False, error="列表中没有数字")
             
+            # 目标范围：minmax 固定 [0,1]；custom 使用用户配置的 newMin/newMax
+            if method == 'custom':
+                try:
+                    new_min = float(context.resolve_value(config.get('newMin', '0')))
+                    new_max = float(context.resolve_value(config.get('newMax', '1')))
+                except (ValueError, TypeError):
+                    return ModuleResult(success=False, error="自定义范围的最小值/最大值必须是数字")
+            else:
+                new_min, new_max = 0.0, 1.0
+            
             min_val = min(numbers)
             max_val = max(numbers)
             
             if min_val == max_val:
-                result = [0.5] * len(numbers)
+                mid = (new_min + new_max) / 2
+                result = [mid] * len(numbers)
             else:
-                result = [(x - min_val) / (max_val - min_val) for x in numbers]
+                span = new_max - new_min
+                result = [new_min + (x - min_val) / (max_val - min_val) * span for x in numbers]
             
             context.set_variable(result_variable, result)
-            return ModuleResult(success=True, message=f"归一化完成，范围[0,1]", data=result)
+            return ModuleResult(success=True, message=f"归一化完成，范围[{new_min},{new_max}]", data=result)
         except Exception as e:
             return ModuleResult(success=False, error=f"归一化失败: {str(e)}")
 

@@ -228,17 +228,16 @@ class ListMergeExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            list_variables = context.resolve_value(config.get('listVariables', ''))
+            # 字段与前端面板对齐: list1/list2 两个变量名；兼容旧字段 listVariables(逗号分隔)
+            var_names = self._collect_var_names(config, context)
             result_variable = config.get('resultVariable', '')
             
-            if not list_variables:
+            if not var_names:
                 return ModuleResult(success=False, error="列表变量名不能为空")
             if not result_variable:
                 return ModuleResult(success=False, error="结果变量名不能为空")
             
-            var_names = [v.strip() for v in list_variables.split(',')]
             result = []
-            
             for var_name in var_names:
                 list_data = context.get_variable(var_name)
                 if list_data is not None and isinstance(list_data, list):
@@ -248,6 +247,22 @@ class ListMergeExecutor(ModuleExecutor):
             return ModuleResult(success=True, message=f"合并完成，共 {len(result)} 个元素", data=result)
         except Exception as e:
             return ModuleResult(success=False, error=f"合并失败: {str(e)}")
+
+    @staticmethod
+    def _collect_var_names(config, context):
+        """收集列表变量名：优先面板的 list1/list2，其次旧的 listVariables(逗号分隔)。"""
+        names = []
+        l1 = context.resolve_value(config.get('list1', ''))
+        l2 = context.resolve_value(config.get('list2', ''))
+        if l1:
+            names.append(str(l1).strip())
+        if l2:
+            names.append(str(l2).strip())
+        if not names:
+            list_variables = context.resolve_value(config.get('listVariables', ''))
+            if list_variables:
+                names = [v.strip() for v in str(list_variables).split(',') if v.strip()]
+        return names
 
 
 @register_executor
@@ -371,8 +386,9 @@ class ListIntersectionExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            list1_variable = context.resolve_value(config.get('list1Variable', ''))
-            list2_variable = context.resolve_value(config.get('list2Variable', ''))
+            # 字段与前端面板对齐: list1/list2，兼容旧字段名 list1Variable/list2Variable
+            list1_variable = context.resolve_value(config.get('list1', config.get('list1Variable', '')))
+            list2_variable = context.resolve_value(config.get('list2', config.get('list2Variable', '')))
             result_variable = config.get('resultVariable', '')
             
             if not list1_variable or not list2_variable:
@@ -405,8 +421,9 @@ class ListUnionExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            list1_variable = context.resolve_value(config.get('list1Variable', ''))
-            list2_variable = context.resolve_value(config.get('list2Variable', ''))
+            # 字段与前端面板对齐: list1/list2，兼容旧字段名 list1Variable/list2Variable
+            list1_variable = context.resolve_value(config.get('list1', config.get('list1Variable', '')))
+            list2_variable = context.resolve_value(config.get('list2', config.get('list2Variable', '')))
             result_variable = config.get('resultVariable', '')
             
             if not list1_variable or not list2_variable:
@@ -439,8 +456,9 @@ class ListDifferenceExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            list1_variable = context.resolve_value(config.get('list1Variable', ''))
-            list2_variable = context.resolve_value(config.get('list2Variable', ''))
+            # 字段与前端面板对齐: list1/list2，兼容旧字段名 list1Variable/list2Variable
+            list1_variable = context.resolve_value(config.get('list1', config.get('list1Variable', '')))
+            list2_variable = context.resolve_value(config.get('list2', config.get('list2Variable', '')))
             result_variable = config.get('resultVariable', '')
             
             if not list1_variable or not list2_variable:
@@ -473,17 +491,16 @@ class ListCartesianProductExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            list_variables = context.resolve_value(config.get('listVariables', ''))
+            # 字段与前端面板对齐: list1/list2；兼容旧字段 listVariables(逗号分隔)
+            var_names = ListMergeExecutor._collect_var_names(config, context)
             result_variable = config.get('resultVariable', '')
             
-            if not list_variables:
+            if not var_names:
                 return ModuleResult(success=False, error="列表变量名不能为空")
             if not result_variable:
                 return ModuleResult(success=False, error="结果变量名不能为空")
             
-            var_names = [v.strip() for v in list_variables.split(',')]
             lists = []
-            
             for var_name in var_names:
                 list_data = context.get_variable(var_name)
                 if list_data is None:
@@ -542,7 +559,8 @@ class ListSampleExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
             list_variable = context.resolve_value(config.get('listVariable', ''))
-            sample_count = context.resolve_value(config.get('sampleCount', '1'))
+            # 字段与前端面板对齐: sampleSize，兼容旧字段名 sampleCount
+            sample_count = context.resolve_value(config.get('sampleSize', config.get('sampleCount', '1')))
             result_variable = config.get('resultVariable', '')
             
             if not list_variable:

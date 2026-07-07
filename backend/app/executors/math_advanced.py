@@ -20,9 +20,31 @@ class MathLogExecutor(ModuleExecutor):
         return "math_log"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
-        log_type = context.resolve_value(config.get('logType', 'ln'))  # ln, log10, custom
-        base = context.resolve_value(config.get('base', ''))
+        # 字段与前端面板对齐: value + base(选择器 e/10/2/custom) + customBase(自定义底数)
+        # 兼容旧字段名: numberValue + logType(ln/log10/log2/custom) + base(自定义底数数值)
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
+        log_type = context.resolve_value(config.get('logType', ''))
+        panel_base = context.resolve_value(config.get('base', ''))
+        custom_base_value = context.resolve_value(config.get('customBase', ''))
+        # 若无旧 logType，则根据面板 base 选择器推导对数类型
+        if not log_type:
+            if panel_base == 'e':
+                log_type = 'ln'
+            elif panel_base == '10':
+                log_type = 'log10'
+            elif panel_base == '2':
+                log_type = 'log2'
+            elif panel_base == 'custom':
+                log_type = 'custom'
+            else:
+                log_type = 'ln'
+        # 自定义底数：面板用 customBase；旧工作流直接把数值放在 base 字段
+        if custom_base_value not in ('', None):
+            base = custom_base_value
+        elif panel_base not in ('e', '10', '2', 'custom', '', None):
+            base = panel_base
+        else:
+            base = ''
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -79,9 +101,10 @@ class MathTrigExecutor(ModuleExecutor):
         return "math_trig"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
-        trig_type = context.resolve_value(config.get('trigType', 'sin'))
-        angle_unit = context.resolve_value(config.get('angleUnit', 'degree'))  # degree or radian
+        # 字段与前端面板对齐: value/function/unit，兼容旧字段名 numberValue/trigType/angleUnit
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
+        trig_type = context.resolve_value(config.get('trigType', config.get('function', 'sin')))
+        angle_unit = context.resolve_value(config.get('angleUnit', config.get('unit', 'degree')))  # degree or radian
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -147,7 +170,8 @@ class MathExpExecutor(ModuleExecutor):
         return "math_exp"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -183,7 +207,12 @@ class MathGcdExecutor(ModuleExecutor):
         return "math_gcd"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
+        # 字段与前端面板对齐: value1/value2 两个数；兼容旧字段名 numbers(逗号分隔)
         numbers_str = context.resolve_value(config.get('numbers', ''))
+        if not numbers_str:
+            _v1 = context.resolve_value(config.get('value1', ''))
+            _v2 = context.resolve_value(config.get('value2', ''))
+            numbers_str = ','.join(str(x) for x in (_v1, _v2) if x not in ('', None))
         result_variable = config.get('resultVariable', '')
         
         if not numbers_str:
@@ -230,7 +259,12 @@ class MathLcmExecutor(ModuleExecutor):
         return "math_lcm"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
+        # 字段与前端面板对齐: value1/value2 两个数；兼容旧字段名 numbers(逗号分隔)
         numbers_str = context.resolve_value(config.get('numbers', ''))
+        if not numbers_str:
+            _v1 = context.resolve_value(config.get('value1', ''))
+            _v2 = context.resolve_value(config.get('value2', ''))
+            numbers_str = ','.join(str(x) for x in (_v1, _v2) if x not in ('', None))
         result_variable = config.get('resultVariable', '')
         
         if not numbers_str:
@@ -277,7 +311,8 @@ class MathFactorialExecutor(ModuleExecutor):
         return "math_factorial"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
+        # 字段与前端面板对齐: value，兼容旧字段名 numberValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -373,7 +408,8 @@ class MathPercentageExecutor(ModuleExecutor):
         return "math_percentage"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        calc_type = context.resolve_value(config.get('calcType', 'percent_of'))
+        # 字段与前端面板对齐: operation(of/increase/decrease)，兼容旧字段名 calcType(percent_of/what_percent/percent_change)
+        calc_type = context.resolve_value(config.get('calcType', config.get('operation', 'percent_of')))
         value1 = context.resolve_value(config.get('value1', ''))
         value2 = context.resolve_value(config.get('value2', ''))
         result_variable = config.get('resultVariable', '')
@@ -411,6 +447,29 @@ class MathPercentageExecutor(ModuleExecutor):
                     return ModuleResult(success=False, error="原始值不能为0")
                 result = ((val1 - val2) / val2) * 100
                 desc = f"从{val2}到{val1}的增长率"
+            elif calc_type == 'of':
+                # 面板“X是Y的百分之几”: value1 是 value2 的百分之几
+                if value2 == '' or value2 is None:
+                    return ModuleResult(success=False, error="第二个值不能为空")
+                val2 = float(value2)
+                if val2 == 0:
+                    return ModuleResult(success=False, error="除数不能为0")
+                result = (val1 / val2) * 100
+                desc = f"{val1}是{val2}的百分之几"
+            elif calc_type == 'increase':
+                # 面板“增加百分比”: value1 增加 value2%
+                if value2 == '' or value2 is None:
+                    return ModuleResult(success=False, error="第二个值不能为空")
+                val2 = float(value2)
+                result = val1 * (1 + val2 / 100)
+                desc = f"{val1}增加{val2}%"
+            elif calc_type == 'decrease':
+                # 面板“减少百分比”: value1 减少 value2%
+                if value2 == '' or value2 is None:
+                    return ModuleResult(success=False, error="第二个值不能为空")
+                val2 = float(value2)
+                result = val1 * (1 - val2 / 100)
+                desc = f"{val1}减少{val2}%"
             else:
                 return ModuleResult(success=False, error=f"不支持的计算类型: {calc_type}")
             
@@ -437,9 +496,10 @@ class MathClampExecutor(ModuleExecutor):
         return "math_clamp"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        number_value = context.resolve_value(config.get('numberValue', ''))
-        min_value = context.resolve_value(config.get('minValue', ''))
-        max_value = context.resolve_value(config.get('maxValue', ''))
+        # 字段与前端面板对齐: value/min/max，兼容旧字段名 numberValue/minValue/maxValue
+        number_value = context.resolve_value(config.get('numberValue', config.get('value', '')))
+        min_value = context.resolve_value(config.get('minValue', config.get('min', '')))
+        max_value = context.resolve_value(config.get('maxValue', config.get('max', '')))
         result_variable = config.get('resultVariable', '')
         
         if number_value == '' or number_value is None:
@@ -485,57 +545,80 @@ class MathRandomAdvancedExecutor(ModuleExecutor):
         return "math_random_advanced"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        random_type = context.resolve_value(config.get('randomType', 'uniform'))
-        min_value = context.resolve_value(config.get('minValue', '0'))
-        max_value = context.resolve_value(config.get('maxValue', '100'))
-        count = context.resolve_value(config.get('count', '1'))
+        # 字段与前端面板对齐: type(uniform/normal/exponential) + min/max/mean/stddev/lambda
+        # 同时向后兼容旧字段名 randomType/minValue/maxValue 与旧取值 int/gauss
+        random_type = context.resolve_value(
+            config.get('type', config.get('randomType', 'uniform'))
+        )
         result_variable = config.get('resultVariable', '')
-        
+
         if not result_variable:
             return ModuleResult(success=False, error="结果变量名不能为空")
-        
+
+        # 归一化类型别名: gauss -> normal
+        if random_type == 'gauss':
+            random_type = 'normal'
+
         try:
-            min_val = float(min_value)
-            max_val = float(max_value)
-            count_val = int(float(count))
-            
-            if min_val > max_val:
-                return ModuleResult(success=False, error="最小值不能大于最大值")
+            # 数量与小数位（面板未暴露，保留可选，默认 1 个 / 不四舍五入）
+            count_val = int(float(context.resolve_value(config.get('count', '1'))))
+            decimals_raw = context.resolve_value(config.get('decimals', ''))
+            decimals = None
+            if decimals_raw not in (None, ''):
+                decimals = int(float(decimals_raw))
+
             if count_val < 1:
                 return ModuleResult(success=False, error="数量必须大于0")
             if count_val > 10000:
                 return ModuleResult(success=False, error="数量不能超过10000")
-            
+
+            def _round(v):
+                return round(v, decimals) if decimals is not None else v
+
             results = []
-            for _ in range(count_val):
-                if random_type == 'uniform':
-                    # 均匀分布
-                    results.append(random.uniform(min_val, max_val))
-                elif random_type == 'int':
-                    # 整数随机
-                    results.append(random.randint(int(min_val), int(max_val)))
-                elif random_type == 'gauss':
-                    # 正态分布（高斯分布）
-                    mean = (min_val + max_val) / 2
-                    stddev = (max_val - min_val) / 6  # 99.7%的值在范围内
-                    val = random.gauss(mean, stddev)
-                    # 限制在范围内
-                    val = max(min_val, min(max_val, val))
-                    results.append(val)
-                else:
-                    return ModuleResult(success=False, error=f"不支持的随机类型: {random_type}")
-            
+
+            if random_type in ('uniform', 'int'):
+                min_val = float(context.resolve_value(config.get('min', config.get('minValue', '0'))))
+                max_val = float(context.resolve_value(config.get('max', config.get('maxValue', '100'))))
+                if min_val > max_val:
+                    return ModuleResult(success=False, error="最小值不能大于最大值")
+                for _ in range(count_val):
+                    if random_type == 'int':
+                        results.append(random.randint(int(min_val), int(max_val)))
+                    else:
+                        results.append(_round(random.uniform(min_val, max_val)))
+            elif random_type == 'normal':
+                # 正态分布：读取用户配置的均值 μ 与标准差 σ
+                mean = float(context.resolve_value(config.get('mean', '0')))
+                stddev = float(context.resolve_value(config.get('stddev', '1')))
+                if stddev < 0:
+                    return ModuleResult(success=False, error="标准差不能为负数")
+                for _ in range(count_val):
+                    results.append(_round(random.gauss(mean, stddev)))
+            elif random_type == 'exponential':
+                # 指数分布：读取用户配置的 λ 参数
+                lambd = float(context.resolve_value(config.get('lambda', '1')))
+                if lambd <= 0:
+                    return ModuleResult(success=False, error="λ参数必须大于0")
+                for _ in range(count_val):
+                    results.append(_round(random.expovariate(lambd)))
+            else:
+                return ModuleResult(success=False, error=f"不支持的随机类型: {random_type}")
+
             # 如果只有一个结果，直接返回数字，否则返回列表
             result = results[0] if count_val == 1 else results
             context.set_variable(result_variable, result)
-            
-            type_text = {"uniform": "均匀分布", "int": "整数", "gauss": "正态分布"}.get(random_type, random_type)
+
+            type_text = {
+                "uniform": "均匀分布", "int": "整数",
+                "normal": "正态分布", "exponential": "指数分布",
+            }.get(random_type, random_type)
             return ModuleResult(
                 success=True,
                 message=f"生成{count_val}个{type_text}随机数",
                 data=result
             )
-        
+
         except (ValueError, TypeError) as e:
             return ModuleResult(success=False, error=f"无效的参数: {str(e)}")
         except Exception as e:

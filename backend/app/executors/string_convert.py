@@ -20,7 +20,8 @@ class CsvParseExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            csv_string = context.resolve_value(config.get('csvString', ''))
+            # 字段与前端面板对齐: csvContent，兼容旧字段名 csvString
+            csv_string = context.resolve_value(config.get('csvString', config.get('csvContent', '')))
             has_header = context.resolve_value(config.get('hasHeader', 'true'))
             delimiter = context.resolve_value(config.get('delimiter', ','))
             result_variable = config.get('resultVariable', '')
@@ -60,7 +61,8 @@ class CsvGenerateExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
-            list_variable = context.resolve_value(config.get('listVariable', ''))
+            # 字段与前端面板对齐: dataVariable，兼容旧字段名 listVariable
+            list_variable = context.resolve_value(config.get('listVariable', config.get('dataVariable', '')))
             include_header = context.resolve_value(config.get('includeHeader', 'true'))
             delimiter = context.resolve_value(config.get('delimiter', ','))
             result_variable = config.get('resultVariable', '')

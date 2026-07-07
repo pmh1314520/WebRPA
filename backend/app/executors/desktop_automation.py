@@ -125,10 +125,12 @@ class DesktopAppStartExecutor(ModuleExecutor):
             import subprocess
             
             app_path = context.resolve_value(config.get("appPath", ""))
-            app_args = context.resolve_value(config.get("appArgs", ""))
+            # 字段与前端面板对齐: args/workDir/saveToVariable，同时兼容旧字段名
+            app_args = context.resolve_value(config.get("args", config.get("appArgs", "")))
+            work_dir = context.resolve_value(config.get("workDir", ""))
             wait_ready = to_bool(config.get("waitReady", True), True, context)
             wait_timeout = to_int(config.get("waitTimeout", 10), 10, context)
-            connection_var = config.get("connectionVariable", "")
+            connection_var = config.get("saveToVariable", config.get("connectionVariable", "desktop_app"))
             
             if not app_path:
                 return ModuleResult(success=False, error="应用路径不能为空")
@@ -136,12 +138,19 @@ class DesktopAppStartExecutor(ModuleExecutor):
             if not Path(app_path).exists():
                 return ModuleResult(success=False, error=f"应用文件不存在: {app_path}")
             
+            # 工作目录（可选）：为空则继承当前进程工作目录
+            popen_cwd = None
+            if work_dir:
+                if not Path(work_dir).is_dir():
+                    return ModuleResult(success=False, error=f"工作目录不存在: {work_dir}")
+                popen_cwd = work_dir
+            
             # 启动应用
             cmd = [app_path]
             if app_args:
                 cmd.extend(app_args.split())
             
-            process = subprocess.Popen(cmd)
+            process = subprocess.Popen(cmd, cwd=popen_cwd)
             
             # 等待窗口就绪
             if wait_ready:
@@ -566,9 +575,22 @@ class DesktopWindowCaptureExecutor(ModuleExecutor):
             if not window or not window.Exists(0, 0):
                 return ModuleResult(success=False, error="窗口不存在")
             
-            # 获取窗口位置
-            rect = window.BoundingRectangle
-            bbox = (rect.left, rect.top, rect.right, rect.bottom)
+            # 截图类型（与前端面板对齐）：window=整个窗口, client=仅客户区（不含标题栏/边框）
+            capture_type = context.resolve_value(config.get("captureType", "window"))
+            bbox = None
+            if capture_type == "client":
+                try:
+                    import win32gui
+                    left, top, right, bottom = win32gui.GetClientRect(int(handle))
+                    sx, sy = win32gui.ClientToScreen(int(handle), (left, top))
+                    ex, ey = win32gui.ClientToScreen(int(handle), (right, bottom))
+                    bbox = (sx, sy, ex, ey)
+                except ImportError:
+                    return ModuleResult(success=False, error="客户区截图需要安装 pywin32 库: pip install pywin32")
+            if bbox is None:
+                # 整个窗口
+                rect = window.BoundingRectangle
+                bbox = (rect.left, rect.top, rect.right, rect.bottom)
             
             # 截图
             screenshot = ImageGrab.grab(bbox)
@@ -708,6 +730,22 @@ class DesktopFindControlExecutor(ModuleExecutor):
                 automation_id = context.resolve_value(config.get("automationId", ""))
                 class_name = context.resolve_value(config.get("className", ""))
                 search_depth = to_int(config.get("searchDepth", 10), 10, context)
+
+                # 与前端面板对齐：面板使用简化的 findType + findValue（单值）录入，
+                # 在此映射到对应的属性字段（旧的分离字段优先，保证向后兼容）
+                find_value = context.resolve_value(config.get("findValue", ""))
+                if find_value:
+                    if find_type in ("title", "name") and not name:
+                        name = find_value
+                    elif find_type in ("class_name", "classname") and not class_name:
+                        class_name = find_value
+                    elif find_type in ("control_type", "controltype") and not control_type:
+                        control_type = find_value
+                    elif find_type in ("automation_id", "automationid") and not automation_id:
+                        automation_id = find_value
+
+                if not (control_type or name or automation_id or class_name):
+                    return ModuleResult(success=False, error="查找值不能为空，请填写查找值或切换为控件路径模式")
                 
                 # 构建查找条件
                 search_params = {"searchDepth": search_depth}
@@ -812,39 +850,133 @@ class DesktopWaitControlExecutor(ModuleExecutor):
         try:
             import uiautomation as auto
             
-            control_info = context.resolve_value(config.get("controlInfo", ""))
             wait_type = context.resolve_value(config.get("waitType", "appear"))  # appear, disappear
             timeout = to_int(config.get("timeout", 10), 10, context)
-            
-            if not control_info:
-                return ModuleResult(success=False, error="控件信息不能为空")
-            
-            if isinstance(control_info, dict):
-                handle = control_info.get("handle")
+
+            # 兼容旧用法：直接提供 controlInfo（句柄）时按句柄等待出现/消失
+            control_info = context.resolve_value(config.get("controlInfo", ""))
+            if control_info:
+                if isinstance(control_info, dict):
+                    handle = control_info.get("handle")
+                else:
+                    handle = control_info
+                start_time = time.time()
+                while time.time() - start_time < timeout:
+                    try:
+                        control = auto.ControlFromHandle(int(handle))
+                        exists = control and control.Exists(0, 0)
+                        if wait_type == "appear" and exists:
+                            return ModuleResult(success=True, message="控件已出现")
+                        elif wait_type == "disappear" and not exists:
+                            return ModuleResult(success=True, message="控件已消失")
+                    except Exception:
+                        if wait_type == "disappear":
+                            return ModuleResult(success=True, message="控件已消失")
+                    await asyncio.sleep(0.3)
+                return ModuleResult(
+                    success=False,
+                    error=f"在 {timeout} 秒内控件未{'出现' if wait_type == 'appear' else '消失'}"
+                )
+
+            # 与前端面板对齐：在应用窗口内按 控件路径 / findType+findValue 搜索并等待其出现
+            app_variable = config.get("appVariable", "desktop_app")
+            window_handle = context.get_variable(app_variable)
+            if not window_handle:
+                window_handle = context.resolve_value(config.get("windowHandle", ""))
+            if not window_handle:
+                return ModuleResult(success=False, error=f"未找到应用窗口，请确保变量 '{app_variable}' 已创建")
+
+            if isinstance(window_handle, dict):
+                win_handle = window_handle.get("handle")
             else:
-                handle = control_info
-            
+                win_handle = window_handle
+            window = auto.ControlFromHandle(int(win_handle))
+            if not window or not window.Exists(0, 0):
+                return ModuleResult(success=False, error="应用窗口不存在或已关闭")
+
+            find_type = config.get("findType", "control_path")
+            save_to_variable = config.get("saveToVariable", "desktop_control")
+
+            def _locate():
+                """尝试定位一次控件，找到返回控件对象，否则返回 None。"""
+                if find_type == "control_path":
+                    control_path = context.resolve_value(config.get("controlPath", ""))
+                    if not control_path:
+                        return None
+                    current = window
+                    for part in control_path.split(">"):
+                        part = part.strip()
+                        if not part or ":" not in part:
+                            return None
+                        key, value = part.split(":", 1)
+                        key = key.strip().lower()
+                        value = value.strip()
+                        params = {"searchDepth": 10}
+                        if key == "name":
+                            params["Name"] = value
+                        elif key == "automationid":
+                            params["AutomationId"] = value
+                        elif key == "classname":
+                            params["ClassName"] = value
+                        else:
+                            return None
+                        try:
+                            nxt = current.Control(**params)
+                            if nxt and nxt.Exists(0, 0):
+                                current = nxt
+                            else:
+                                return None
+                        except Exception:
+                            return None
+                    return current
+                else:
+                    find_value = context.resolve_value(config.get("findValue", ""))
+                    if not find_value:
+                        return None
+                    params = {"searchDepth": 10}
+                    if find_type in ("title", "name"):
+                        params["Name"] = find_value
+                    elif find_type in ("class_name", "classname"):
+                        params["ClassName"] = find_value
+                    elif find_type in ("automation_id", "automationid"):
+                        params["AutomationId"] = find_value
+                    elif find_type in ("control_type", "controltype"):
+                        # 控件类型无法直接作为 Name 匹配，退化为在窗口下按类型查找第一个
+                        pass
+                    try:
+                        ctrl = window.Control(**params)
+                        if ctrl and ctrl.Exists(0, 0):
+                            return ctrl
+                    except Exception:
+                        return None
+                    return None
+
             start_time = time.time()
-            
+            found_control = None
             while time.time() - start_time < timeout:
-                try:
-                    control = auto.ControlFromHandle(int(handle))
-                    exists = control and control.Exists(0, 0)
-                    
-                    if wait_type == "appear" and exists:
-                        return ModuleResult(success=True, message="控件已出现")
-                    elif wait_type == "disappear" and not exists:
-                        return ModuleResult(success=True, message="控件已消失")
-                except Exception:
-                    if wait_type == "disappear":
-                        return ModuleResult(success=True, message="控件已消失")
-                
+                found_control = _locate()
+                exists = found_control is not None
+                if wait_type == "appear" and exists:
+                    break
+                if wait_type == "disappear" and not exists:
+                    return ModuleResult(success=True, message="控件已消失")
                 await asyncio.sleep(0.3)
-            
-            return ModuleResult(
-                success=False,
-                error=f"在 {timeout} 秒内控件未{'出现' if wait_type == 'appear' else '消失'}"
-            )
+
+            if wait_type == "appear":
+                if not found_control:
+                    return ModuleResult(success=False, error=f"在 {timeout} 秒内控件未出现")
+                control_info_data = {
+                    "name": found_control.Name,
+                    "automation_id": found_control.AutomationId,
+                    "class_name": found_control.ClassName,
+                    "control_type": found_control.ControlTypeName,
+                    "handle": found_control.NativeWindowHandle,
+                }
+                if save_to_variable:
+                    context.set_variable(save_to_variable, control_info_data)
+                return ModuleResult(success=True, message="控件已出现", data=control_info_data)
+            else:
+                return ModuleResult(success=False, error=f"在 {timeout} 秒内控件未消失")
             
         except ImportError:
             return ModuleResult(success=False, error="需要安装 uiautomation 库: pip install uiautomation")
@@ -943,7 +1075,8 @@ class DesktopInputControlExecutor(ModuleExecutor):
                 return ModuleResult(success=False, error=f"控件信息不能为空，请确保变量 '{control_variable}' 已创建")
             
             text = context.resolve_value(config.get("text", ""))
-            clear_before = to_bool(config.get("clearBefore", True), True, context)
+            # 字段与前端面板对齐: clearFirst，兼容旧字段名 clearBefore
+            clear_before = to_bool(config.get("clearFirst", config.get("clearBefore", True)), True, context)
             input_method = context.resolve_value(config.get("inputMethod", "set"))  # set, send_keys
             
             if not control_info:
@@ -1090,7 +1223,10 @@ class DesktopSelectComboExecutor(ModuleExecutor):
             if not control_info:
                 return ModuleResult(success=False, error=f"控件信息不能为空，请确保变量 '{control_variable}' 已创建")
             
-            select_by = context.resolve_value(config.get("selectBy", "name"))  # name, index
+            # 字段与前端面板对齐: selectType(text/index)，兼容旧字段名 selectBy(name/index)
+            select_by = context.resolve_value(config.get("selectType", config.get("selectBy", "name")))
+            if select_by == "text":
+                select_by = "name"
             select_value = context.resolve_value(config.get("selectValue", ""))
             
             if not control_info:
@@ -1767,6 +1903,9 @@ class DesktopWindowListExecutor(ModuleExecutor):
             
             filter_visible = to_bool(config.get("filterVisible", True), True, context)
             filter_enabled = to_bool(config.get("filterEnabled", False), False, context)
+            # 标题过滤（与前端面板对齐）：留空则不过滤，非空则做不区分大小写的子串匹配
+            filter_title = context.resolve_value(config.get("filterTitle", "")) or ""
+            filter_title = filter_title.strip()
             # 保存到变量，默认使用 window_list
             save_to_variable = config.get("saveToVariable", "window_list")
             
@@ -1779,6 +1918,8 @@ class DesktopWindowListExecutor(ModuleExecutor):
                     if filter_visible and not window.IsVisible:
                         continue
                     if filter_enabled and not window.IsEnabled:
+                        continue
+                    if filter_title and filter_title.lower() not in (window.Name or "").lower():
                         continue
                     
                     windows.append({
@@ -2171,7 +2312,8 @@ class DesktopDialogHandleExecutor(ModuleExecutor):
             import uiautomation as auto
             
             dialog_title = context.resolve_value(config.get("dialogTitle", ""))
-            button_name = context.resolve_value(config.get("buttonName", "确定"))
+            # 字段与前端面板对齐: buttonText，兼容旧字段名 buttonName
+            button_name = context.resolve_value(config.get("buttonText", config.get("buttonName", "确定")))
             timeout = to_int(config.get("timeout", 10), 10, context)
             wait_appear = to_bool(config.get("waitAppear", True), True, context)
             

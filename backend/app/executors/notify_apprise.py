@@ -25,9 +25,9 @@ class AppriseNotifyExecutor(ModuleExecutor):
             return ModuleResult(success=False, error="Apprise库未安装，请先安装: pip install apprise")
         
         try:
-            # 获取通知内容
+            # 获取通知内容（字段与前端面板对齐: message，兼容旧字段名 body）
             title = context.resolve_value(config.get('title', ''))
-            body = context.resolve_value(config.get('body', ''))
+            body = context.resolve_value(config.get('message', config.get('body', '')))
             
             if not body:
                 return ModuleResult(success=False, error="通知内容不能为空")
@@ -76,8 +76,15 @@ class NotifyDiscordExecutor(AppriseNotifyExecutor):
         return "notify_discord"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: webhookUrl(完整 Discord Webhook 地址)；兼容旧字段 webhookId/webhookToken
         webhook_id = context.resolve_value(config.get('webhookId', ''))
         webhook_token = context.resolve_value(config.get('webhookToken', ''))
+        webhook_url = context.resolve_value(config.get('webhookUrl', ''))
+        if (not webhook_id or not webhook_token) and webhook_url:
+            # 形如 https://discord.com/api/webhooks/{id}/{token}
+            parts = [p for p in webhook_url.split('?')[0].split('/') if p]
+            if len(parts) >= 2:
+                webhook_id, webhook_token = parts[-2], parts[-1]
         
         if not webhook_id or not webhook_token:
             return ""
@@ -112,8 +119,18 @@ class NotifyDingTalkExecutor(AppriseNotifyExecutor):
         return "notify_dingtalk"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: webhookUrl(含 access_token 参数) + secret；兼容旧字段 accessToken
         access_token = context.resolve_value(config.get('accessToken', ''))
         secret = context.resolve_value(config.get('secret', ''))
+        webhook_url = context.resolve_value(config.get('webhookUrl', ''))
+        if not access_token and webhook_url:
+            # 形如 https://oapi.dingtalk.com/robot/send?access_token=XXX
+            try:
+                from urllib.parse import urlparse, parse_qs
+                qs = parse_qs(urlparse(webhook_url).query)
+                access_token = (qs.get('access_token') or [''])[0]
+            except Exception:
+                access_token = ''
         
         if not access_token:
             return ""
@@ -131,6 +148,42 @@ class NotifyWeComExecutor(AppriseNotifyExecutor):
     @property
     def module_type(self) -> str:
         return "notify_wecom"
+
+    async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
+        # 前端面板提供的是"群机器人 Webhook 地址"(含 ?key=)，与应用消息 API(corpId/secret/agentId)
+        # 是两套不同接口，apprise 无法用 key 直接构建。故有 webhookUrl 时直接 POST 到机器人地址。
+        webhook_url = context.resolve_value(config.get('webhookUrl', ''))
+        if webhook_url:
+            body = context.resolve_value(config.get('message', config.get('body', '')))
+            if not body:
+                return ModuleResult(success=False, error="通知内容不能为空")
+            try:
+                import requests
+                loop = asyncio.get_event_loop()
+
+                def _post():
+                    return requests.post(
+                        webhook_url,
+                        json={"msgtype": "text", "text": {"content": str(body)}},
+                        timeout=15,
+                    )
+
+                resp = await loop.run_in_executor(None, _post)
+                data = {}
+                try:
+                    data = resp.json()
+                except Exception:
+                    pass
+                if resp.status_code == 200 and data.get("errcode", 0) == 0:
+                    return ModuleResult(success=True, message="通知发送成功")
+                return ModuleResult(
+                    success=False,
+                    error="通知发送失败: %s" % (data.get("errmsg") or resp.text[:200]),
+                )
+            except Exception as e:
+                return ModuleResult(success=False, error=f"发送通知时出错: {str(e)}")
+        # 未提供 webhookUrl 时，退回应用消息 API(wxteams)
+        return await super().execute(config, context)
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
         corp_id = context.resolve_value(config.get('corpId', ''))
@@ -152,7 +205,14 @@ class NotifyFeishuExecutor(AppriseNotifyExecutor):
         return "notify_feishu"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: webhookUrl(完整飞书机器人地址)；兼容旧字段 webhookToken
         webhook_token = context.resolve_value(config.get('webhookToken', ''))
+        webhook_url = context.resolve_value(config.get('webhookUrl', ''))
+        if not webhook_token and webhook_url:
+            # 形如 https://open.feishu.cn/open-apis/bot/v2/hook/{token}
+            parts = [p for p in webhook_url.split('?')[0].split('/') if p]
+            if parts:
+                webhook_token = parts[-1]
         
         if not webhook_token:
             return ""
@@ -186,9 +246,18 @@ class NotifySlackExecutor(AppriseNotifyExecutor):
         return "notify_slack"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: webhookUrl(完整 Slack Webhook 地址)；兼容旧字段 tokenA/tokenB/tokenC
         token_a = context.resolve_value(config.get('tokenA', ''))
         token_b = context.resolve_value(config.get('tokenB', ''))
         token_c = context.resolve_value(config.get('tokenC', ''))
+        webhook_url = context.resolve_value(config.get('webhookUrl', ''))
+        if (not token_a or not token_b or not token_c) and webhook_url:
+            # 形如 https://hooks.slack.com/services/T.../B.../xxxx
+            after = webhook_url.split('/services/', 1)
+            if len(after) == 2:
+                segs = [p for p in after[1].split('?')[0].split('/') if p]
+                if len(segs) >= 3:
+                    token_a, token_b, token_c = segs[0], segs[1], segs[2]
         
         if not token_a or not token_b or not token_c:
             return ""
@@ -267,13 +336,25 @@ class NotifyGotifyExecutor(AppriseNotifyExecutor):
         return "notify_gotify"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: serverUrl + appToken；兼容旧字段 hostname/token
         hostname = context.resolve_value(config.get('hostname', ''))
-        token = context.resolve_value(config.get('token', ''))
+        token = context.resolve_value(config.get('token', '') or config.get('appToken', ''))
+        server_url = context.resolve_value(config.get('serverUrl', ''))
+        scheme = 'gotify'
+        if not hostname and server_url:
+            try:
+                from urllib.parse import urlparse
+                u = urlparse(server_url if '://' in server_url else 'http://' + server_url)
+                hostname = u.netloc or u.path
+                if u.scheme == 'https':
+                    scheme = 'gotifys'
+            except Exception:
+                hostname = server_url
         
         if not hostname or not token:
             return ""
         
-        return f"gotify://{hostname}/{token}"
+        return f"{scheme}://{hostname}/{token}"
 
 
 @register_executor
@@ -285,7 +366,8 @@ class NotifyServerChanExecutor(AppriseNotifyExecutor):
         return "notify_serverchan"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
-        sendkey = context.resolve_value(config.get('sendkey', ''))
+        # 字段与前端面板对齐: sendKey，兼容旧字段名 sendkey
+        sendkey = context.resolve_value(config.get('sendKey', config.get('sendkey', '')))
         
         if not sendkey:
             return ""
@@ -342,13 +424,27 @@ class NotifyNtfyExecutor(AppriseNotifyExecutor):
         return "notify_ntfy"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: serverUrl + topic；兼容旧字段 hostname
         topic = context.resolve_value(config.get('topic', ''))
-        hostname = context.resolve_value(config.get('hostname', 'ntfy.sh'))
+        hostname = context.resolve_value(config.get('hostname', ''))
+        server_url = context.resolve_value(config.get('serverUrl', ''))
+        scheme = 'ntfy'
+        if not hostname and server_url:
+            try:
+                from urllib.parse import urlparse
+                u = urlparse(server_url if '://' in server_url else 'https://' + server_url)
+                hostname = u.netloc or u.path
+                if u.scheme == 'https':
+                    scheme = 'ntfys'
+            except Exception:
+                hostname = server_url
+        if not hostname:
+            hostname = 'ntfy.sh'
         
         if not topic:
             return ""
         
-        return f"ntfy://{hostname}/{topic}"
+        return f"{scheme}://{hostname}/{topic}"
 
 
 @register_executor
@@ -360,11 +456,29 @@ class NotifyMatrixExecutor(AppriseNotifyExecutor):
         return "notify_matrix"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: homeserver + accessToken + roomId(令牌模式)；兼容旧字段 user/password/hostname/room
         user = context.resolve_value(config.get('user', ''))
         password = context.resolve_value(config.get('password', ''))
         hostname = context.resolve_value(config.get('hostname', ''))
-        room = context.resolve_value(config.get('room', ''))
-        
+        room = context.resolve_value(config.get('room', '') or config.get('roomId', ''))
+        access_token = context.resolve_value(config.get('accessToken', ''))
+        homeserver = context.resolve_value(config.get('homeserver', ''))
+        # 从 homeserver URL 解析主机名与协议
+        scheme = 'matrix'
+        if not hostname and homeserver:
+            try:
+                from urllib.parse import urlparse
+                u = urlparse(homeserver if '://' in homeserver else 'https://' + homeserver)
+                hostname = u.netloc or u.path
+                if u.scheme == 'https':
+                    scheme = 'matrixs'
+            except Exception:
+                hostname = homeserver
+        # 令牌模式（面板）：matrixs://{token}@{host}/{room}
+        if access_token and hostname:
+            base = f"{scheme}://{access_token}@{hostname}"
+            return f"{base}/{room}" if room else base
+        # 旧的用户名密码模式
         if not user or not password or not hostname or not room:
             return ""
         
@@ -380,11 +494,29 @@ class NotifyRocketChatExecutor(AppriseNotifyExecutor):
         return "notify_rocketchat"
     
     def get_service_url(self, config: dict, context: ExecutionContext) -> str:
+        # 字段与前端面板对齐: webhookUrl(Rocket.Chat 传入 Webhook)；兼容旧字段 user/password/hostname/room
         user = context.resolve_value(config.get('user', ''))
         password = context.resolve_value(config.get('password', ''))
         hostname = context.resolve_value(config.get('hostname', ''))
         room = context.resolve_value(config.get('room', ''))
-        
+        webhook_url = context.resolve_value(config.get('webhookUrl', ''))
+        # Webhook 模式（面板）：从 https://{host}/hooks/{token} 解析 → rockets://{token}@{host}
+        if webhook_url:
+            try:
+                from urllib.parse import urlparse
+                u = urlparse(webhook_url if '://' in webhook_url else 'https://' + webhook_url)
+                host = u.netloc
+                segs = [p for p in u.path.split('/') if p]
+                # 去掉 hooks 前缀，剩余作为 webhook token（可能含 token/附加token 两段）
+                if segs and segs[0] == 'hooks':
+                    segs = segs[1:]
+                token = '/'.join(segs)
+                if host and token:
+                    scheme = 'rockets' if u.scheme == 'https' else 'rocket'
+                    return f"{scheme}://{token}@{host}"
+            except Exception:
+                pass
+        # 旧的用户名密码模式
         if not user or not password or not hostname or not room:
             return ""
         

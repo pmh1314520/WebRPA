@@ -3484,15 +3484,17 @@ class RenameFolderExecutor(ModuleExecutor):
         return "rename_folder"
 
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
-        source_path = context.resolve_value(config.get("sourcePath", ""))
+        # 字段与前端面板对齐: oldPath(源) + newPath(新完整路径)；兼容旧字段 sourcePath + newName(仅名字)
+        source_path = context.resolve_value(config.get("sourcePath", "") or config.get("oldPath", ""))
         new_name = context.resolve_value(config.get("newName", ""))
+        new_path_full = context.resolve_value(config.get("newPath", ""))
         variable_name = config.get("resultVariable", "new_folder_path")
 
         if not source_path:
             return ModuleResult(success=False, error="源文件夹路径不能为空")
 
-        if not new_name:
-            return ModuleResult(success=False, error="新文件夹名不能为空")
+        if not new_name and not new_path_full:
+            return ModuleResult(success=False, error="新文件夹名/新路径不能为空")
 
         try:
             source = Path(source_path)
@@ -3503,8 +3505,12 @@ class RenameFolderExecutor(ModuleExecutor):
             if not source.is_dir():
                 return ModuleResult(success=False, error=f"路径不是文件夹: {source_path}")
 
-            # 构建新路径（保持在同一父目录）
-            new_path = source.parent / new_name
+            # 目标路径：优先使用面板的完整新路径 newPath；否则用 newName 在同一父目录下重命名
+            if new_path_full:
+                new_path = Path(new_path_full)
+                new_name = new_path.name
+            else:
+                new_path = source.parent / new_name
 
             # 检查目标是否已存在
             if new_path.exists():

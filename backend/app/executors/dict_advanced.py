@@ -20,15 +20,21 @@ class DictMergeExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
+            # 字段与前端面板对齐: dict1/dict2 两个字典变量名；兼容旧字段 dictVariables(逗号分隔)
             dict_variables = context.resolve_value(config.get('dictVariables', ''))
+            if dict_variables:
+                var_names = [v.strip() for v in str(dict_variables).split(',') if v.strip()]
+            else:
+                d1 = context.resolve_value(config.get('dict1', ''))
+                d2 = context.resolve_value(config.get('dict2', ''))
+                var_names = [str(x).strip() for x in (d1, d2) if x not in ('', None)]
             result_variable = config.get('resultVariable', '')
             
-            if not dict_variables:
+            if not var_names:
                 return ModuleResult(success=False, error="字典变量名不能为空")
             if not result_variable:
                 return ModuleResult(success=False, error="结果变量名不能为空")
             
-            var_names = [v.strip() for v in dict_variables.split(',')]
             result = {}
             
             for var_name in var_names:
@@ -176,7 +182,8 @@ class DictSortExecutor(ModuleExecutor):
         try:
             dict_variable = context.resolve_value(config.get('dictVariable', ''))
             sort_by = context.resolve_value(config.get('sortBy', 'key'))
-            sort_order = context.resolve_value(config.get('sortOrder', 'asc'))
+            # 字段与前端面板对齐: order(asc/desc)，兼容旧字段名 sortOrder
+            sort_order = context.resolve_value(config.get('sortOrder', config.get('order', 'asc')))
             result_variable = config.get('resultVariable', '')
             
             if not dict_variable:
