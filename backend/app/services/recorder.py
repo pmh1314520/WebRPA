@@ -190,6 +190,18 @@ RECORDER_SCRIPT = r"""(function () {
     var t = (el.getAttribute && (el.getAttribute('aria-label') || el.getAttribute('title'))) || el.innerText || el.value || '';
     return String(t).replace(/\s+/g, ' ').trim().slice(0, 60);
   }
+  // 忠实优先：录用户实际点击的元素；仅当该元素无法生成"唯一稳定"选择器时，
+  // 才回退到最近的语义可点击祖先（点击效果等价——事件会向上冒泡，同时选择器更稳）。
+  function resolveClickable(raw) {
+    var sel = computeSelector(raw);
+    if (uniqueOK(sel)) return { el: raw, selector: sel };
+    var alt = clickableTarget(raw);
+    if (alt && alt !== raw) {
+      var altSel = computeSelector(alt);
+      if (uniqueOK(altSel)) return { el: alt, selector: altSel };
+    }
+    return { el: raw, selector: sel };
+  }
   // 向上查找 draggable 祖先（HTML5 拖拽的拖动源常在祖先上）
   function draggableTarget(el) {
     var cur = el, hops = 0;
@@ -232,7 +244,7 @@ RECORDER_SCRIPT = r"""(function () {
       if (e.button && e.button !== 0) return;   // 只录左键，忽略右键/中键（右键菜单等原生行为不录）
       if (Date.now() < __suppressClickUntil) return;  // 拖拽刚结束，抑制误触 click
       var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
-      var el = clickableTarget(raw);
+      var r = resolveClickable(raw), el = r.el;
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
       if (tag === 'select') return;  // 原生下拉的选择由 change 事件（select）负责，点击不另录
@@ -245,17 +257,17 @@ RECORDER_SCRIPT = r"""(function () {
           if (ctrl) { var ct = (ctrl.type || '').toLowerCase(); if (ct === 'checkbox' || ct === 'radio') return; }
         } catch (_) {}
       }
-      pushEvent({ type: 'click', selector: computeSelector(el), hints: collectHints(el), tag: tag,
+      pushEvent({ type: 'click', selector: r.selector, hints: collectHints(el), tag: tag,
         text: bestText(el), url: location.href, ts: Date.now() });
     }, true);
 
     document.addEventListener('dblclick', function (e) {
       if (e.button && e.button !== 0) return;
       var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
-      var el = clickableTarget(raw);
+      var r = resolveClickable(raw), el = r.el;
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
-      pushEvent({ type: 'dblclick', selector: computeSelector(el), hints: collectHints(el), tag: tag,
+      pushEvent({ type: 'dblclick', selector: r.selector, hints: collectHints(el), tag: tag,
         text: bestText(el), url: location.href, ts: Date.now() });
     }, true);
 

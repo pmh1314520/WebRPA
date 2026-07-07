@@ -247,7 +247,8 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
       } else if (ev.type === 'input') {
         if (!ev.selector) continue
         ensureFrame(ev)
-        mkNode('input_text', { selector: ev.selector, text: String(ev.value ?? ''), ...(ev.hints ? { selectorHints: ev.hints } : {}) })
+        // typeSequential：逐字键入，忠实还原用户打字触发的联想/校验等行为
+        mkNode('input_text', { selector: ev.selector, text: String(ev.value ?? ''), typeSequential: true, ...(ev.hints ? { selectorHints: ev.hints } : {}) })
       } else if (ev.type === 'select') {
         if (!ev.selector) continue
         ensureFrame(ev)

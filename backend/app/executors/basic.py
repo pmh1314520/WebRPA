@@ -668,6 +668,11 @@ class InputTextExecutor(ModuleExecutor):
         if isinstance(clear_before_raw, str):
             clear_before_raw = context.resolve_value(clear_before_raw)
         clear_before = clear_before_raw in [True, 'true', 'True', '1', 1]
+        # 逐字输入（忠实还原键入过程：搜索联想/输入掩码/字数校验等按键触发的行为）
+        type_sequential_raw = config.get('typeSequential', False)
+        if isinstance(type_sequential_raw, str):
+            type_sequential_raw = context.resolve_value(type_sequential_raw)
+        type_sequential = type_sequential_raw in [True, 'true', 'True', '1', 1]
         # 获取超时配置（秒），转换为毫秒传给 Playwright
         timeout_ms = to_int(config.get('timeout', 30), 30, context) * 1000
 
@@ -713,7 +718,16 @@ class InputTextExecutor(ModuleExecutor):
             else:
                 if clear_before:
                     await element.clear()
-                await element.fill(text)
+                if type_sequential and text:
+                    # 逐字键入：忠实触发每一次 keydown/input，与用户实际打字一致
+                    await element.click(timeout=click_timeout)
+                    try:
+                        await element.press_sequentially(text, delay=20)
+                    except AttributeError:
+                        # 兼容旧版 Playwright（press_sequentially 不可用时回退 type）
+                        await element.type(text, delay=20)
+                else:
+                    await element.fill(text)
                 suffix = f" (在内部{input_type}元素)" if input_type == 'inner' else ""
                 return ModuleResult(success=True, message=f"已输入文本到: {selector}{suffix}")
         
