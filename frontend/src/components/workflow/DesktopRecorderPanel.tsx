@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { nanoid } from 'nanoid'
-import { Circle, Square, X, MousePointerClick, Type, Keyboard, Wand2, Pause, Play } from 'lucide-react'
+import { Circle, Square, X, MousePointerClick, Type, Keyboard, Wand2, Pause, Play, Move, MoveVertical } from 'lucide-react'
 import { desktopRecorderApi } from '@/services/api'
 import { useWorkflowStore, moduleTypeLabels } from '@/store/workflowStore'
 import { emitAssistantUiEvent } from '@/services/aiAssistantSkills'
@@ -9,9 +9,12 @@ import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface DeskEvent {
-  type: 'click' | 'type' | 'hotkey'
+  type: 'click' | 'type' | 'hotkey' | 'drag' | 'scroll'
   x?: number
   y?: number
+  x2?: number
+  y2?: number
+  dy?: number
   button?: string
   window?: string
   control?: string
@@ -20,6 +23,8 @@ interface DeskEvent {
   className?: string
   text?: string
   keys?: string
+  combo?: boolean
+  double?: boolean
   ts?: number
 }
 
@@ -32,6 +37,8 @@ const META: Record<string, { icon: any; label: string; color: string }> = {
   click: { icon: MousePointerClick, label: '点击', color: 'text-indigo-500' },
   type: { icon: Type, label: '输入', color: 'text-emerald-500' },
   hotkey: { icon: Keyboard, label: '按键', color: 'text-amber-500' },
+  drag: { icon: Move, label: '拖拽', color: 'text-teal-500' },
+  scroll: { icon: MoveVertical, label: '滚动', color: 'text-cyan-500' },
 }
 
 export function DesktopRecorderPanel({ open, onClose }: Props) {
@@ -60,6 +67,20 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
         // 连续 type 合并为一条
         if (ev.type === 'type' && last && last.type === 'type') {
           next[next.length - 1] = { ...last, text: (last.text || '') + (ev.text || '') }
+        } else if (
+          ev.type === 'click' && last && last.type === 'click' && !last.double &&
+          last.button === ev.button &&
+          Math.abs((last.x ?? 0) - (ev.x ?? 0)) <= 6 && Math.abs((last.y ?? 0) - (ev.y ?? 0)) <= 6 &&
+          (ev.ts ?? 0) - (last.ts ?? 0) <= 0.4
+        ) {
+          // 同位置、同键、0.4s 内的两次点击 → 合并为双击
+          next[next.length - 1] = { ...last, double: true, ts: ev.ts }
+        } else if (
+          ev.type === 'scroll' && last && last.type === 'scroll' &&
+          (((last.dy ?? 0) > 0) === ((ev.dy ?? 0) > 0))
+        ) {
+          // 跨批次连续同向滚动合并
+          next[next.length - 1] = { ...last, dy: (last.dy ?? 0) + (ev.dy ?? 0), ts: ev.ts }
         } else {
           next.push(ev)
         }
@@ -147,12 +168,14 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
       // 自动等待：按真实操作间隔插入等待节点（桌面无自动等待，停顿很关键）
       // 桌面事件 ts 为秒
       if (autoWait && idx > 0) {
+        // 桌面 ts 为秒；wait 执行器对 <1000 的数值按"秒"处理，故直接传秒（限幅 30s）
         const gap = (ev.ts || 0) - (evs[idx - 1].ts || 0)
         if (gap >= 0.3) {
-          mkNode('wait', { duration: Math.min(Math.round(gap * 1000), 30000) })
+          mkNode('wait', { duration: Math.min(Math.round(gap * 10) / 10, 30) })
         }
       }
       if (ev.type === 'click') {
+        const clickType = ev.double ? 'double' : (ev.button === 'right' ? 'right' : 'single')
         const hasControl = semantic && !!(ev.control || ev.automationId)
         if (hasControl) {
           if (ev.window && ev.window !== curWindow) {
@@ -167,22 +190,34 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
             controlPath: pathKey, saveToVariable: 'desktop_control',
           }, ev.control ? ev.control.slice(0, 20) : ev.automationId)
           mkNode('desktop_click_control', {
-            controlVariable: 'desktop_control',
-            clickType: ev.button === 'right' ? 'right' : 'single',
+            controlVariable: 'desktop_control', clickType,
           }, ev.control ? ev.control.slice(0, 16) : undefined)
         } else {
           const label = ev.control ? ev.control.slice(0, 20) : `(${ev.x},${ev.y})`
           mkNode('real_mouse_click', {
             x: String(ev.x ?? 0), y: String(ev.y ?? 0),
-            button: ev.button || 'left', clickType: 'single',
+            button: ev.button || 'left', clickType,
           }, label)
         }
+      } else if (ev.type === 'drag') {
+        // 桌面拖拽：起点→终点坐标（换分辨率会失效，属坐标类操作固有限制）
+        mkNode('real_mouse_drag', {
+          startX: String(ev.x ?? 0), startY: String(ev.y ?? 0),
+          endX: String(ev.x2 ?? 0), endY: String(ev.y2 ?? 0),
+          button: ev.button || 'left',
+        }, `(${ev.x},${ev.y})→(${ev.x2},${ev.y2})`)
+      } else if (ev.type === 'scroll') {
+        const dir = (ev.dy ?? 0) < 0 ? 'down' : 'up'   // pynput：dy<0 向下
+        const count = Math.max(1, Math.round(Math.abs(ev.dy ?? 1)))
+        mkNode('real_mouse_scroll', { direction: dir, scrollAmount: 3, scrollCount: count })
       } else if (ev.type === 'type') {
         if (!ev.text) continue
         mkNode('real_keyboard', { inputType: 'text', text: ev.text })
       } else if (ev.type === 'hotkey') {
         if (!ev.keys) continue
-        mkNode('real_keyboard', { inputType: 'key', key: ev.keys.toLowerCase() }, ev.keys)
+        // 组合键用 hotkey 模式（ctrl+c）；单个功能键用 key 模式（enter）
+        if (ev.combo) mkNode('real_keyboard', { inputType: 'hotkey', hotkey: ev.keys.toLowerCase() }, ev.keys)
+        else mkNode('real_keyboard', { inputType: 'key', key: ev.keys.toLowerCase() }, ev.keys)
       }
     }
 
@@ -245,9 +280,11 @@ export function DesktopRecorderPanel({ open, onClose }: Props) {
           const m = META[ev.type]
           const Icon = m?.icon || MousePointerClick
           let desc = ''
-          if (ev.type === 'click') desc = ev.control ? `${ev.control}` : `(${ev.x}, ${ev.y})`
+          if (ev.type === 'click') desc = (ev.double ? '双击 ' : '') + (ev.control ? `${ev.control}` : `(${ev.x}, ${ev.y})`)
           else if (ev.type === 'type') desc = ev.text || ''
           else if (ev.type === 'hotkey') desc = ev.keys || ''
+          else if (ev.type === 'drag') desc = `(${ev.x},${ev.y}) → (${ev.x2},${ev.y2})`
+          else if (ev.type === 'scroll') desc = `${(ev.dy ?? 0) < 0 ? '向下' : '向上'}滚动`
           return (
             <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-[hsl(var(--accent))]">
               <Icon className={`w-3.5 h-3.5 shrink-0 ${m?.color || ''}`} />

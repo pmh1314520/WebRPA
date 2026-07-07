@@ -23,6 +23,9 @@ _mouse_listener = None
 _kbd_listener = None
 _type_buffer: list[str] = []
 _type_buffer_ts: float = 0.0
+_mods: set[str] = set()        # 当前按住的修饰键（ctrl/alt/shift/win）
+_press: Optional[dict] = None  # 鼠标按下点，用于识别拖拽
+_DRAG_THRESH2 = 100            # 拖拽判定阈值：位移平方 > 100（即 >10px）
 
 
 def is_active() -> bool:
@@ -88,24 +91,83 @@ def _describe_control_at(x: int, y: int) -> dict:
 
 
 def _on_click(x, y, button, pressed):
-    if not pressed:
-        return
+    """按下记录起点；释放时判定：位移大→拖拽，否则→点击（在释放点识别控件）。"""
+    global _press
     with _lock:
         if not _active or _paused:
             return
-        _flush_type_buffer()
-        btn = "left"
         try:
             btn = button.name  # 'left' / 'right' / 'middle'
         except Exception:
-            pass
-        ctrl = _describe_control_at(int(x), int(y))
+            btn = "left"
+        if pressed:
+            _press = {"x": int(x), "y": int(y), "btn": btn, "ts": time.time()}
+            return
+        p = _press
+        _press = None
+        _flush_type_buffer()
+        rx, ry = int(x), int(y)
+        if p and p["btn"] == btn and ((rx - p["x"]) ** 2 + (ry - p["y"]) ** 2) > _DRAG_THRESH2:
+            # 拖拽：起点→终点
+            _events.append({
+                "type": "drag", "x": p["x"], "y": p["y"], "x2": rx, "y2": ry,
+                "button": btn, "ts": time.time(),
+            })
+            return
+        ctrl = _describe_control_at(rx, ry)
         _events.append({
-            "type": "click", "x": int(x), "y": int(y), "button": btn,
+            "type": "click", "x": rx, "y": ry, "button": btn,
             "window": ctrl["window"], "control": ctrl["control"],
             "controlType": ctrl["controlType"], "automationId": ctrl.get("automationId", ""),
             "className": ctrl.get("className", ""), "ts": time.time(),
         })
+
+
+def _on_scroll(x, y, dx, dy):
+    """滚轮：桌面无自动滚动，滚动是真实操作，需录制（合并连续同向）。"""
+    with _lock:
+        if not _active or _paused:
+            return
+        _flush_type_buffer()
+        last = _events[-1] if _events else None
+        if last and last.get("type") == "scroll" and (last.get("dy", 0) > 0) == (dy > 0):
+            last["dy"] = last.get("dy", 0) + dy
+            last["ts"] = time.time()
+            return
+        _events.append({"type": "scroll", "x": int(x), "y": int(y), "dy": dy, "ts": time.time()})
+
+
+def _mod_name(key) -> str:
+    """pynput 修饰键 → 归一化名（ctrl/alt/shift/win）；非修饰键返回 ''。"""
+    n = getattr(key, 'name', '') or ''
+    if n.startswith('ctrl'):
+        return 'ctrl'
+    if n.startswith('alt'):
+        return 'alt'
+    if n.startswith('shift'):
+        return 'shift'
+    if n.startswith('cmd') or n == 'cmd':
+        return 'win'
+    return ''
+
+
+def _key_token(key) -> str:
+    """按键 token（组合键用）：字母/数字优先用 vk，避免受 Ctrl 影响导致取到控制字符。"""
+    vk = getattr(key, 'vk', None)
+    if vk is not None:
+        if 0x41 <= vk <= 0x5A:
+            return chr(vk).lower()
+        if 0x30 <= vk <= 0x39:
+            return chr(vk)
+        if 0x60 <= vk <= 0x69:
+            return 'numpad' + str(vk - 0x60)
+    ch = getattr(key, 'char', None)
+    if ch and ch.isprintable():
+        return ch.lower()
+    name = getattr(key, 'name', None)
+    if name:
+        return _SPECIAL_KEYS.get(name, name).lower()
+    return ''
 
 
 # 功能键名映射（pynput Key -> 友好名）
@@ -122,36 +184,50 @@ def _on_press(key):
     with _lock:
         if not _active or _paused:
             return
-        try:
-            from pynput import keyboard as _kb
-        except Exception:
+        # 修饰键：记入活动集合，不单独成事件
+        m = _mod_name(key)
+        if m:
+            _mods.add(m)
             return
-        # 普通可见字符：累积到输入缓冲
+        active_mods = _mods - {'shift'}  # shift 单独不算组合（大小写由 char 体现）
+        name = getattr(key, 'name', None)
         ch = getattr(key, 'char', None)
-        if ch is not None and ch.isprintable() and ch not in ('\x16', '\x03'):
+        # 普通可见字符且无 ctrl/alt/win：并入文本输入
+        if ch is not None and ch.isprintable() and not active_mods and ch not in ('\x16', '\x03'):
             _type_buffer.append(ch)
             _type_buffer_ts = time.time()
             return
-        # 功能键 / 组合键：先冲刷文本缓冲，再记录为 hotkey
-        _flush_type_buffer()
-        name = None
-        try:
-            name = key.name  # 特殊键有 .name
-        except Exception:
-            name = None
-        if name == 'space':
-            # 空格当作可见输入更自然
+        if name == 'space' and not active_mods:
             _type_buffer.append(' ')
             _type_buffer_ts = time.time()
             return
-        friendly = _SPECIAL_KEYS.get(name or '', None)
-        if friendly:
-            _events.append({"type": "hotkey", "keys": friendly, "ts": time.time()})
+        # 组合键 或 功能键：先冲刷文本缓冲
+        _flush_type_buffer()
+        token = _key_token(key)
+        if not token:
+            return
+        if active_mods or ('shift' in _mods and name):
+            # 组合键：按 ctrl/alt/shift/win 顺序 + 主键（如 ctrl+shift+s）
+            order = [mm for mm in ('ctrl', 'alt', 'shift', 'win') if mm in _mods]
+            combo = '+'.join(order + [token])
+            _events.append({"type": "hotkey", "keys": combo, "combo": True, "ts": time.time()})
+        else:
+            friendly = _SPECIAL_KEYS.get(name or '', None)
+            if friendly:
+                _events.append({"type": "hotkey", "keys": friendly, "ts": time.time()})
+
+
+def _on_release(key):
+    """释放修饰键时从活动集合移除（即使暂停也维护，避免状态残留）。"""
+    m = _mod_name(key)
+    if m:
+        with _lock:
+            _mods.discard(m)
 
 
 def start_recorder() -> dict:
     """开始桌面录制（启动全局键鼠钩子）"""
-    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused
+    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press
     with _lock:
         if _active:
             return {"success": True, "message": "已在录制中"}
@@ -162,9 +238,11 @@ def start_recorder() -> dict:
         _events = []
         _type_buffer = []
         _paused = False
+        _mods.clear()
+        _press = None
         try:
-            _mouse_listener = _mouse.Listener(on_click=_on_click)
-            _kbd_listener = _kb.Listener(on_press=_on_press)
+            _mouse_listener = _mouse.Listener(on_click=_on_click, on_scroll=_on_scroll)
+            _kbd_listener = _kb.Listener(on_press=_on_press, on_release=_on_release)
             _mouse_listener.start()
             _kbd_listener.start()
             _active = True
