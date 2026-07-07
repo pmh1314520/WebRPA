@@ -15,6 +15,7 @@ interface RecEvent {
   hints?: Record<string, any>
   targetHints?: Record<string, any>
   value?: any
+  values?: string[]
   text?: string
   url?: string
   key?: string
@@ -252,7 +253,10 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
       } else if (ev.type === 'select') {
         if (!ev.selector) continue
         ensureFrame(ev)
-        mkNode('select_dropdown', { selector: ev.selector, value: String(ev.value ?? ''), ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
+        const selCfg = Array.isArray(ev.values) && ev.values.length > 1
+          ? { selector: ev.selector, values: ev.values }                       // 多选下拉：选中全部
+          : { selector: ev.selector, value: String(ev.value ?? '') }
+        mkNode('select_dropdown', { ...selCfg, ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'check') {
         if (!ev.selector) continue
         ensureFrame(ev)
@@ -277,7 +281,9 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         ensureFrame(ev)
         // 回车/Tab 可能触发表单提交跳转，视为"可致跳转的交互"
         if (ev.key === 'Enter' || ev.key === 'Tab' || /Enter$/.test(ev.key)) lastActionTs = ev.ts || 0
-        mkNode('keyboard_action', { keySequence: ev.key }, ev.key)
+        // 若按键发生在具体输入元素上，用 element 目标模式（先聚焦该元素再按键），忠实还原作用目标
+        const keyCfg = ev.selector ? { keySequence: ev.key, targetType: 'element', selector: ev.selector } : { keySequence: ev.key }
+        mkNode('keyboard_action', keyCfg, ev.key)
       }
     }
 

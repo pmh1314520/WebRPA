@@ -282,8 +282,17 @@ RECORDER_SCRIPT = r"""(function () {
         return;
       }
       if (tag === 'select') {
-        var opt = el.options[el.selectedIndex];
-        pushEvent({ type: 'select', selector: computeSelector(el), hints: collectHints(el), value: el.value, text: opt ? opt.text : '', url: location.href, ts: Date.now() });
+        if (el.multiple) {
+          // 多选下拉：忠实记录所有选中项，避免只录首个导致回放不等价
+          var vals = [], txts = [];
+          for (var oi = 0; oi < el.options.length; oi++) {
+            if (el.options[oi].selected) { vals.push(el.options[oi].value); txts.push(el.options[oi].text); }
+          }
+          pushEvent({ type: 'select', selector: computeSelector(el), hints: collectHints(el), value: el.value, values: vals, text: txts.join(', '), url: location.href, ts: Date.now() });
+        } else {
+          var opt = el.options[el.selectedIndex];
+          pushEvent({ type: 'select', selector: computeSelector(el), hints: collectHints(el), value: el.value, text: opt ? opt.text : '', url: location.href, ts: Date.now() });
+        }
       } else if (tag === 'input' || tag === 'textarea') {
         if (t === 'checkbox' || t === 'radio') pushEvent({ type: 'check', selector: computeSelector(el), hints: collectHints(el), value: !!el.checked, url: location.href, ts: Date.now() });
         else pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, sensitive: (t === 'password'), url: location.href, ts: Date.now() });
@@ -314,7 +323,10 @@ RECORDER_SCRIPT = r"""(function () {
       var editKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','Delete','Home','End','PageUp','PageDown'];
       if (ed && !combo && editKeys.indexOf(k) !== -1) return;
       var seq = (e.ctrlKey ? 'Control+' : '') + (e.altKey ? 'Alt+' : '') + (e.metaKey ? 'Meta+' : '') + (e.shiftKey && combo ? 'Shift+' : '') + k;
-      pushEvent({ type: 'keypress', key: seq, url: location.href, ts: Date.now() });
+      // 在输入类元素上按键时记录其选择器：回放定位到该元素再按键，忠实还原按键作用目标
+      var kt = null;
+      if (ed) { try { kt = computeSelector(e.target); } catch (_) {} }
+      pushEvent({ type: 'keypress', key: seq, selector: kt, url: location.href, ts: Date.now() });
     }, true);
 
     // 拖拽录制（自定义拖拽/滑块/排序）：mousedown→move 超阈值→mouseup 生成 drag 事件

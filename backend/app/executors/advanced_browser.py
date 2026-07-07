@@ -52,6 +52,15 @@ class SelectDropdownExecutor(ModuleExecutor):
                 await pw_wait_for_element(context.page, escape_css_selector(selector), state='visible', timeout=wait_timeout)
                 element = context.page.locator(escape_css_selector(selector))
 
+            # 多选下拉：values 为数组时一次性选中全部（录制多选场景）
+            multi_values = config.get('values')
+            if isinstance(multi_values, list) and multi_values:
+                try:
+                    await element.select_option(value=[str(v) for v in multi_values])
+                    return ModuleResult(success=True, message=f"已多选: {multi_values}")
+                except Exception:
+                    pass  # 原生多选失败则继续走单值/自定义下拉逻辑
+
             # 1) 先按原生 <select> 处理
             try:
                 if select_by == 'value':
