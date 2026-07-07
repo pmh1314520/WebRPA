@@ -23,6 +23,7 @@ _mouse_listener = None
 _kbd_listener = None
 _type_buffer: list[str] = []
 _type_buffer_ts: float = 0.0
+_type_ctrl_initial: Optional[str] = None  # 本段输入开始时焦点控件的原始文本（用于取增量还原 IME 中文）
 _mods: set[str] = set()        # 当前按住的修饰键（ctrl/alt/shift/win）
 _press: Optional[dict] = None  # 鼠标按下点，用于识别拖拽
 _DRAG_THRESH2 = 100            # 拖拽判定阈值：位移平方 > 100（即 >10px）
@@ -51,14 +52,56 @@ def resume() -> dict:
     return {"success": True, "paused": False}
 
 
+def _focused_control_value():
+    """读取当前焦点控件的文本值（ValuePattern 优先，回退 TextPattern）。失败返回 None。"""
+    try:
+        import uiautomation as auto
+        ctrl = auto.GetFocusedControl()
+        if not ctrl:
+            return None
+        try:
+            vp = ctrl.GetValuePattern()
+            if vp is not None:
+                return vp.Value or ""
+        except Exception:
+            pass
+        try:
+            tp = ctrl.GetTextPattern()
+            if tp is not None:
+                return tp.DocumentRange.GetText(-1) or ""
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return None
+
+
 def _flush_type_buffer():
-    """把累积的可见字符合并成一个 type 事件"""
-    global _type_buffer
-    if _type_buffer:
-        text = "".join(_type_buffer)
-        _type_buffer = []
-        if text:
-            _events.append({"type": "type", "text": text, "ts": time.time()})
+    """把累积输入合并成一个 type 事件。
+    IME 修正：优先用焦点控件的真实文本增量（还原中文），拿不到才回退按键流拼串。"""
+    global _type_buffer, _type_ctrl_initial
+    if not _type_buffer:
+        _type_ctrl_initial = None
+        return
+    typed = "".join(_type_buffer)
+    _type_buffer = []
+    text = typed
+    try:
+        cur = _focused_control_value()
+        init = _type_ctrl_initial
+        if cur is not None:
+            if init is not None and cur.startswith(init) and len(cur) > len(init):
+                delta = cur[len(init):]
+                if delta:
+                    text = delta            # 本段真实输入（IME 上屏后的中文/符号）
+            elif (init in (None, "")) and cur:
+                text = cur                  # 空框输入，直接用控件全文
+            # 若控件文本与按键流一致（纯 ASCII），text 仍为 typed，等价
+    except Exception:
+        pass
+    _type_ctrl_initial = None
+    if text:
+        _events.append({"type": "type", "text": text, "ts": time.time()})
 
 
 def _describe_control_at(x: int, y: int) -> dict:
@@ -180,7 +223,7 @@ _SPECIAL_KEYS = {
 
 
 def _on_press(key):
-    global _type_buffer_ts
+    global _type_buffer_ts, _type_ctrl_initial
     with _lock:
         if not _active or _paused:
             return
@@ -194,10 +237,14 @@ def _on_press(key):
         ch = getattr(key, 'char', None)
         # 普通可见字符且无 ctrl/alt/win：并入文本输入
         if ch is not None and ch.isprintable() and not active_mods and ch not in ('\x16', '\x03'):
+            if not _type_buffer:
+                _type_ctrl_initial = _focused_control_value()  # 记录本段输入起始时的原始文本
             _type_buffer.append(ch)
             _type_buffer_ts = time.time()
             return
         if name == 'space' and not active_mods:
+            if not _type_buffer:
+                _type_ctrl_initial = _focused_control_value()
             _type_buffer.append(' ')
             _type_buffer_ts = time.time()
             return
@@ -227,7 +274,7 @@ def _on_release(key):
 
 def start_recorder() -> dict:
     """开始桌面录制（启动全局键鼠钩子）"""
-    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press
+    global _active, _mouse_listener, _kbd_listener, _events, _type_buffer, _paused, _press, _type_ctrl_initial
     with _lock:
         if _active:
             return {"success": True, "message": "已在录制中"}
@@ -237,6 +284,7 @@ def start_recorder() -> dict:
             return {"success": False, "error": f"缺少 pynput 库，无法桌面录制: {e}"}
         _events = []
         _type_buffer = []
+        _type_ctrl_initial = None
         _paused = False
         _mods.clear()
         _press = None

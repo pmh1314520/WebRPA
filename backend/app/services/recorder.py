@@ -49,7 +49,10 @@ RECORDER_SCRIPT = r"""(function () {
     return String(s).replace(/([^\w-])/g, '\\$1');
   }
   function attrEsc(s) { return String(s).replace(/(["\\])/g, '\\$1'); }
-  function uniqueOK(sel) { try { return document.querySelectorAll(sel).length === 1; } catch (e) { return false; } }
+  // 唯一性校验：ctx 为查询根（普通元素=document；Shadow DOM 内元素=其 shadowRoot），
+  // 使选择器在正确的作用域内校验唯一。Playwright 的 CSS 定位默认穿透 open shadow，回放可命中。
+  function uniqueOK(sel, ctx) { try { return (ctx || document).querySelectorAll(sel).length === 1; } catch (e) { return false; } }
+  function rootOf(el) { try { var r = el.getRootNode && el.getRootNode(); return (r && r.querySelectorAll) ? r : document; } catch (e) { return document; } }
 
   // id 是否为框架生成的不稳定值（React useId ":r1:"、hash、纯数字序号等）
   function isBadId(id) {
@@ -85,24 +88,25 @@ RECORDER_SCRIPT = r"""(function () {
   function attrSelector(el) {
     if (!el || el.nodeType !== 1) return '';
     var tag = el.tagName.toLowerCase();
+    var root = rootOf(el);
     if (el.id && !isBadId(el.id)) {
       var sid = '#' + cssEsc(el.id);
-      if (uniqueOK(sid)) return sid;
+      if (uniqueOK(sid, root)) return sid;
     }
     var testAttrs = ['data-testid', 'data-test', 'data-cy', 'data-qa', 'data-test-id', 'data-id'];
     for (var i = 0; i < testAttrs.length; i++) {
       var tv = el.getAttribute && el.getAttribute(testAttrs[i]);
-      if (tv) { var st = '[' + testAttrs[i] + '="' + attrEsc(tv) + '"]'; if (uniqueOK(st)) return st; }
+      if (tv) { var st = '[' + testAttrs[i] + '="' + attrEsc(tv) + '"]'; if (uniqueOK(st, root)) return st; }
     }
     var nm = el.getAttribute && el.getAttribute('name');
-    if (nm) { var sn = tag + '[name="' + attrEsc(nm) + '"]'; if (uniqueOK(sn)) return sn; }
+    if (nm) { var sn = tag + '[name="' + attrEsc(nm) + '"]'; if (uniqueOK(sn, root)) return sn; }
     var al = el.getAttribute && el.getAttribute('aria-label');
-    if (al && al.length <= 50) { var sa = tag + '[aria-label="' + attrEsc(al) + '"]'; if (uniqueOK(sa)) return sa; }
+    if (al && al.length <= 50) { var sa = tag + '[aria-label="' + attrEsc(al) + '"]'; if (uniqueOK(sa, root)) return sa; }
     var ph = el.getAttribute && el.getAttribute('placeholder');
-    if (ph && ph.length <= 50) { var sp = '[placeholder="' + attrEsc(ph) + '"]'; if (uniqueOK(sp)) return sp; }
+    if (ph && ph.length <= 50) { var sp = '[placeholder="' + attrEsc(ph) + '"]'; if (uniqueOK(sp, root)) return sp; }
     if (tag === 'a') {
       var href = el.getAttribute('href');
-      if (href && href !== '#' && href.length <= 80) { var sh = 'a[href="' + attrEsc(href) + '"]'; if (uniqueOK(sh)) return sh; }
+      if (href && href !== '#' && href.length <= 80) { var sh = 'a[href="' + attrEsc(href) + '"]'; if (uniqueOK(sh, root)) return sh; }
     }
     return '';
   }
@@ -131,11 +135,12 @@ RECORDER_SCRIPT = r"""(function () {
       cur = cur.parentElement; depth++;
     }
     var rel = parts.join(' > ');
+    var root = rootOf(el);
     if (anchorSel) {
       var full = rel ? anchorSel + ' > ' + rel : anchorSel;
-      if (uniqueOK(full)) return full;
+      if (uniqueOK(full, root)) return full;
       var loose = rel ? anchorSel + ' ' + rel : anchorSel;  // 放宽为后代组合，抗中间层增删
-      if (uniqueOK(loose)) return loose;
+      if (uniqueOK(loose, root)) return loose;
       return full;
     }
     return rel || el.tagName.toLowerCase();
@@ -243,7 +248,9 @@ RECORDER_SCRIPT = r"""(function () {
     document.addEventListener('click', function (e) {
       if (e.button && e.button !== 0) return;   // 只录左键，忽略右键/中键（右键菜单等原生行为不录）
       if (Date.now() < __suppressClickUntil) return;  // 拖拽刚结束，抑制误触 click
-      var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
+      // composedPath()[0] 取 Shadow DOM 内真实元素（e.target 会被重定向到 shadow 宿主）
+      var raw = (e.composedPath && e.composedPath()[0]) || e.target;
+      if (!raw || raw.id === '__webrpa_rec_badge') return;
       var r = resolveClickable(raw), el = r.el;
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
@@ -263,7 +270,8 @@ RECORDER_SCRIPT = r"""(function () {
 
     document.addEventListener('dblclick', function (e) {
       if (e.button && e.button !== 0) return;
-      var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
+      var raw = (e.composedPath && e.composedPath()[0]) || e.target;
+      if (!raw || raw.id === '__webrpa_rec_badge') return;
       var r = resolveClickable(raw), el = r.el;
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
@@ -272,7 +280,7 @@ RECORDER_SCRIPT = r"""(function () {
     }, true);
 
     document.addEventListener('change', function (e) {
-      var el = e.target; if (!el) return;
+      var el = (e.composedPath && e.composedPath()[0]) || e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
       if (t === 'file') {
         // 浏览器安全禁止读取真实路径，无法回放原文件；仍生成"上传文件"占位节点（含选择器+文件名提示），用户只需补填路径
@@ -302,7 +310,7 @@ RECORDER_SCRIPT = r"""(function () {
     }, true);
 
     document.addEventListener('input', function (e) {
-      var el = e.target; if (!el) return;
+      var el = (e.composedPath && e.composedPath()[0]) || e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
       if (t === 'file') return;
       if ((tag === 'input' && t !== 'checkbox' && t !== 'radio') || tag === 'textarea')
@@ -318,14 +326,15 @@ RECORDER_SCRIPT = r"""(function () {
       if (special.indexOf(k) === -1 && !combo) return;
       if (k === 'Control' || k === 'Alt' || k === 'Meta' || k === 'Shift') return;
       // 编辑框内的方向/删除键属于打字过程本身，不单独录（Enter/Tab/Escape 与组合键仍录，含语义）
+      var a = (e.composedPath && e.composedPath()[0]) || e.target;
       var ed = false;
-      try { var a = e.target, atag = (a && a.tagName || '').toLowerCase(); ed = (atag === 'input' || atag === 'textarea' || (a && a.isContentEditable)); } catch (_) {}
+      try { var atag = (a && a.tagName || '').toLowerCase(); ed = (atag === 'input' || atag === 'textarea' || (a && a.isContentEditable)); } catch (_) {}
       var editKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','Delete','Home','End','PageUp','PageDown'];
       if (ed && !combo && editKeys.indexOf(k) !== -1) return;
       var seq = (e.ctrlKey ? 'Control+' : '') + (e.altKey ? 'Alt+' : '') + (e.metaKey ? 'Meta+' : '') + (e.shiftKey && combo ? 'Shift+' : '') + k;
       // 在输入类元素上按键时记录其选择器：回放定位到该元素再按键，忠实还原按键作用目标
       var kt = null;
-      if (ed) { try { kt = computeSelector(e.target); } catch (_) {} }
+      if (ed) { try { kt = computeSelector(a); } catch (_) {} }
       pushEvent({ type: 'keypress', key: seq, selector: kt, url: location.href, ts: Date.now() });
     }, true);
 
@@ -344,10 +353,11 @@ RECORDER_SCRIPT = r"""(function () {
       var md = __md; __md = null;
       if (!md || !md.dragging) return;          // 普通点击交给 click 处理
       if (__htmlDragActive) return;             // HTML5 拖拽已由 drop 记录，避免重复
-      var srcEl = draggableTarget(md.el), tgtEl = e.target;
+      var srcEl = draggableTarget(md.el), tgtEl = (e.composedPath && e.composedPath()[0]) || e.target;
       if (!srcEl || !tgtEl) return;
       __suppressClickUntil = Date.now() + 400;  // 抑制拖拽尾随的 click
       pushEvent({ type: 'drag', selector: computeSelector(srcEl), targetSelector: computeSelector(tgtEl),
+        endX: Math.round(e.clientX), endY: Math.round(e.clientY),
         hints: collectHints(srcEl), targetHints: collectHints(tgtEl), text: bestText(srcEl), url: location.href, ts: Date.now() });
     }, true);
 
@@ -363,9 +373,10 @@ RECORDER_SCRIPT = r"""(function () {
     document.addEventListener('drop', function (e) {
       var md = __md;
       if (!md || !md.el) { __htmlDragActive = false; return; }
-      var srcEl = md.el, tgtEl = e.target;
+      var srcEl = md.el, tgtEl = (e.composedPath && e.composedPath()[0]) || e.target;
       __suppressClickUntil = Date.now() + 400;
       pushEvent({ type: 'drag', selector: computeSelector(srcEl), targetSelector: computeSelector(tgtEl),
+        endX: Math.round(e.clientX), endY: Math.round(e.clientY),
         hints: collectHints(srcEl), targetHints: collectHints(tgtEl), text: bestText(srcEl), url: location.href, ts: Date.now() });
     }, true);
   }

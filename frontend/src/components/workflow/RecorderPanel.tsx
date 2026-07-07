@@ -20,6 +20,8 @@ interface RecEvent {
   url?: string
   key?: string
   fileName?: string
+  endX?: number
+  endY?: number
   ts?: number
   sensitive?: boolean
   _frame?: { main?: boolean; index?: number; name?: string; selector?: string }
@@ -262,15 +264,20 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         ensureFrame(ev)
         mkNode('set_checkbox', { selector: ev.selector, checked: !!ev.value, ...(ev.hints ? { selectorHints: ev.hints } : {}) })
       } else if (ev.type === 'drag') {
-        if (!ev.selector || !ev.targetSelector) continue
+        if (!ev.selector) continue
         ensureFrame(ev)
         lastActionTs = ev.ts || 0
-        mkNode('drag_element', {
-          sourceSelector: ev.selector,
-          targetSelector: ev.targetSelector,
-          ...(ev.hints ? { selectorHints: ev.hints } : {}),
-          ...(ev.targetHints ? { targetSelectorHints: ev.targetHints } : {}),
-        }, ev.text ? ev.text.slice(0, 20) : undefined)
+        // 源与目标是同一元素(如滑块) → 用坐标拖拽(targetPosition)，否则元素到元素拖拽
+        const sameEl = !ev.targetSelector || ev.selector === ev.targetSelector
+        const dragCfg = sameEl && ev.endX != null
+          ? { sourceSelector: ev.selector, targetPosition: { x: ev.endX, y: ev.endY ?? 0 }, ...(ev.hints ? { selectorHints: ev.hints } : {}) }
+          : {
+              sourceSelector: ev.selector,
+              targetSelector: ev.targetSelector,
+              ...(ev.hints ? { selectorHints: ev.hints } : {}),
+              ...(ev.targetHints ? { targetSelectorHints: ev.targetHints } : {}),
+            }
+        mkNode('drag_element', dragCfg, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'upload') {
         if (!ev.selector) continue
         ensureFrame(ev)
