@@ -410,7 +410,7 @@ def run_ffmpeg(args: list, timeout: int = 600) -> tuple[bool, str]:
         return False, str(e)
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class FormatConvertExecutor(ModuleExecutor):
     """格式转换模块执行器"""
     
@@ -484,7 +484,7 @@ class FormatConvertExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"格式转换失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class CompressImageExecutor(ModuleExecutor):
     """图片压缩模块执行器"""
     
@@ -576,7 +576,7 @@ class CompressImageExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"图片压缩失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class CompressVideoExecutor(ModuleExecutor):
     """视频压缩模块执行器"""
     
@@ -663,7 +663,7 @@ class CompressVideoExecutor(ModuleExecutor):
 
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ExtractAudioExecutor(ModuleExecutor):
     """提取音频模块执行器"""
     
@@ -744,7 +744,7 @@ class ExtractAudioExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"提取音频失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class TrimVideoExecutor(ModuleExecutor):
     """视频裁剪模块执行器"""
     
@@ -808,7 +808,7 @@ class TrimVideoExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"视频裁剪失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class MergeMediaExecutor(ModuleExecutor):
     """媒体合并模块执行器"""
     
@@ -985,7 +985,7 @@ class MergeMediaExecutor(ModuleExecutor):
                     pass
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class AddWatermarkExecutor(ModuleExecutor):
     """添加水印模块执行器"""
     
@@ -1104,7 +1104,7 @@ class AddWatermarkExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"添加水印失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class FaceRecognitionExecutor(ModuleExecutor):
     """人脸识别模块执行器"""
     
@@ -1220,7 +1220,7 @@ def get_easyocr_reader():
     return _easyocr_reader
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ImageOCRExecutor(ModuleExecutor):
     """图片OCR模块执行器 - 支持图片文件和屏幕区域识别"""
     
@@ -1421,7 +1421,7 @@ class ImageOCRExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"OCR识别失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RotateVideoExecutor(ModuleExecutor):
     """视频旋转/翻转模块执行器"""
     
@@ -1509,7 +1509,7 @@ class RotateVideoExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"视频旋转失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class VideoSpeedExecutor(ModuleExecutor):
     """视频倍速播放模块执行器"""
     
@@ -1609,7 +1609,7 @@ class VideoSpeedExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"视频倍速处理失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ExtractFrameExecutor(ModuleExecutor):
     """视频截取帧模块执行器"""
     
@@ -1670,7 +1670,7 @@ class ExtractFrameExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"提取视频帧失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class AddSubtitleExecutor(ModuleExecutor):
     """视频添加字幕模块执行器"""
     
@@ -1745,7 +1745,7 @@ class AddSubtitleExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"添加字幕失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class AdjustVolumeExecutor(ModuleExecutor):
     """音频调节音量模块执行器"""
     
@@ -1816,7 +1816,7 @@ class AdjustVolumeExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"音量调整失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ResizeVideoExecutor(ModuleExecutor):
     """视频分辨率调整模块执行器"""
     
@@ -1909,7 +1909,7 @@ class ResizeVideoExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"分辨率调整失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ImageGrayscaleExecutor(ModuleExecutor):
     """图片去色模块执行器 - 将彩色图片转换为灰度图"""
     
@@ -1960,7 +1960,7 @@ class ImageGrayscaleExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"图片去色失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ImageRoundCornersExecutor(ModuleExecutor):
     """图片圆角化模块执行器 - 为图片添加圆角效果"""
     
@@ -2021,7 +2021,7 @@ class ImageRoundCornersExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"图片圆角化失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class AudioToTextExecutor(ModuleExecutor):
     """音频转文本模块执行器 - 使用本地 Whisper 模型进行语音识别"""
     
@@ -2128,7 +2128,7 @@ class AudioToTextExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"音频转文本失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class QRGenerateExecutor(ModuleExecutor):
     """二维码生成器模块执行器"""
     
@@ -2200,7 +2200,7 @@ class QRGenerateExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"二维码生成失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class QRDecodeExecutor(ModuleExecutor):
     """二维码解码器模块执行器"""
     
@@ -2407,7 +2407,7 @@ class ScreenRecordManager:
 screen_record_manager = ScreenRecordManager()
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ScreenRecordExecutor(ModuleExecutor):
     """桌面录屏模块执行器 - 非阻塞式录屏"""
     

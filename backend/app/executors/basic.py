@@ -1950,7 +1950,7 @@ class RandomNumberExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"生成随机数失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class GetTimeExecutor(ModuleExecutor):
     """获取时间模块执行器"""
     

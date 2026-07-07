@@ -251,7 +251,7 @@ class Base64Executor(ModuleExecutor):
             return ModuleResult(success=False, error=f"Base64处理失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class SelectDropdownExecutor(ModuleExecutor):
     """下拉框选择模块执行器"""
 
@@ -305,7 +305,7 @@ class SelectDropdownExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"选择下拉框失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class SetCheckboxExecutor(ModuleExecutor):
     """设置复选框模块执行器"""
     
@@ -348,7 +348,7 @@ class SetCheckboxExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"设置复选框失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class DragElementExecutor(ModuleExecutor):
     """拖拽元素模块执行器"""
     
@@ -393,7 +393,7 @@ class DragElementExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"拖拽元素失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ScrollPageExecutor(ModuleExecutor):
     """滚动页面模块执行器"""
     
@@ -466,7 +466,7 @@ class ScrollPageExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"滚动页面失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class UploadFileExecutor(ModuleExecutor):
     """上传文件模块执行器（已由 advanced_browser.UploadFileExecutor 覆盖，保持同步）"""
 
@@ -481,7 +481,7 @@ class UploadFileExecutor(ModuleExecutor):
         return await _Impl().execute(config, context)
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class DownloadFileExecutor(ModuleExecutor):
     """下载文件模块执行器"""
 
@@ -571,7 +571,7 @@ class DownloadFileExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"下载文件失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class SaveImageExecutor(ModuleExecutor):
     """保存图片模块执行器"""
     
@@ -1143,7 +1143,7 @@ class GetClipboardExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"获取剪贴板失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class KeyboardActionExecutor(ModuleExecutor):
     """键盘操作模块执行器"""
 
@@ -1249,7 +1249,7 @@ class KeyboardActionExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"键盘操作失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RealMouseScrollExecutor(ModuleExecutor):
     """真实鼠标滚动模块执行器 - 使用 SendInput API 实现真正的硬件级滚轮模拟"""
 
@@ -1550,7 +1550,7 @@ class WindowFocusExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"窗口聚焦失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RealMouseClickExecutor(ModuleExecutor):
     """真实鼠标点击模块执行器 - 使用 SendInput API 实现真正的硬件级鼠标点击"""
 
@@ -1691,7 +1691,7 @@ class RealMouseClickExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"鼠标点击失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RealMouseMoveExecutor(ModuleExecutor):
     """真实鼠标移动模块执行器 - 使用 SetCursorPos 实现精确的鼠标移动"""
 
@@ -1756,7 +1756,7 @@ class RealMouseMoveExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"鼠标移动失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RealMouseDragExecutor(ModuleExecutor):
     """真实鼠标拖拽模块执行器 - 使用 SetCursorPos + SendInput 实现精确的鼠标拖拽"""
 
@@ -1894,7 +1894,7 @@ class RealMouseDragExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"鼠标拖拽失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RealKeyboardExecutor(ModuleExecutor):
     """真实键盘操作模块执行器 - 使用 SendInput API 实现真正的硬件级键盘输入"""
 
@@ -2522,7 +2522,7 @@ class _DeprecatedClickImageExecutor(ModuleExecutor):
         return names.get(position, "中心")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class GetMousePositionExecutor(ModuleExecutor):
     """获取鼠标位置模块执行器"""
 
@@ -2637,7 +2637,7 @@ class ScreenshotScreenExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"屏幕截图失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class RenameFileExecutor(ModuleExecutor):
     """文件重命名模块执行器"""
 
@@ -2972,7 +2972,7 @@ class NetworkCaptureExecutor(ModuleExecutor):
 
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class ListFilesExecutor(ModuleExecutor):
     """获取文件列表模块执行器"""
 
@@ -3051,7 +3051,7 @@ class ListFilesExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"获取文件列表失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class CopyFileExecutor(ModuleExecutor):
     """复制文件模块执行器"""
 
@@ -3117,7 +3117,7 @@ class CopyFileExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"复制文件失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class MoveFileExecutor(ModuleExecutor):
     """移动文件模块执行器"""
 
@@ -3185,7 +3185,7 @@ class MoveFileExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"移动文件失败: {str(e)}")
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class DeleteFileExecutor(ModuleExecutor):
     """删除文件模块执行器"""
 
@@ -4235,7 +4235,7 @@ class ClickTextExecutor(ModuleExecutor):
                 time.sleep(0.05)
 
 
-@register_executor
+# [dedup] @register_executor 已移除：该类型改由拆分/专用模块统一注册，消除重复注册（spec: executor-duplicate-registration）
 class HoverImageExecutor(ModuleExecutor):
     """鼠标悬停在图像上模块执行器 - 在屏幕上查找指定图像并将鼠标悬停在上面"""
 

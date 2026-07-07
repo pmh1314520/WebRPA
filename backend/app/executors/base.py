@@ -743,6 +743,26 @@ class ModuleExecutor(ABC):
         return str(resolved) if resolved is not None else ""
 
 
+# ============================================================================
+# 注册唯一性治理（缺陷 spec: executor-duplicate-registration）
+# 历史拆分重构遗留：同一 module_type 在旧巨型文件与拆分小文件中各注册一次，
+# 注册表 last-write-wins 静默覆盖，生效实现由加载顺序决定（见 issue #42）。
+# 下方白名单登记"治理期已知的重复类型"——命中白名单的重复冲突静默放行（交由
+# spec 逐对消除），白名单外的重复冲突会告警（默认）或报错（严格模式）以防复发。
+# 每消除一对重复，就从白名单移除对应类型；治理完成后白名单应为空。
+# ============================================================================
+# 治理已完成：42 个运行时重复注册（旧巨型文件 advanced.py/media.py/basic.py 里的休眠副本）
+# 已全部移除 @register_executor，生效实现均为拆分/专用模块。白名单清空后，严格模式
+# （WEBRPA_STRICT_REGISTRY=1）对任何新引入的重复注册立即报错，防止此类缺陷复发。
+_KNOWN_DUPLICATES: set[str] = set()
+
+
+def _strict_registry_enabled() -> bool:
+    """开发期严格模式：命中白名单外的重复注册直接报错（Fail-Fast）。由环境变量开启。"""
+    import os
+    return os.environ.get("WEBRPA_STRICT_REGISTRY", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 class ExecutorRegistry:
     """执行器注册表（支持懒加载：类型清单先到位，真正的执行器模块按需导入）"""
     
@@ -750,13 +770,32 @@ class ExecutorRegistry:
         self._executors: dict[str, ModuleExecutor] = {}
         self._lazy: dict[str, str] = {}        # module_type -> 子模块名（尚未导入）
         self._package: Optional[str] = None    # 懒加载子模块所在包名
+        self._registration_source: dict[str, str] = {}  # module_type -> 首次注册来源模块
+        self._registration_sources: dict[str, set] = {}  # module_type -> 所有实际调用 register 的来源模块集合（用于重复检测）
     
     def register(self, executor_class: Type[ModuleExecutor]):
-        """注册执行器类 - 每次都创建新实例"""
+        """注册执行器类 - 每次都创建新实例。
+
+        唯一性检查：若同一 module_type 已由**不同来源模块**注册过 → 判定为重复冲突。
+        - 白名单内（治理期已知）：静默放行（仍 last-write-wins，保持现有行为）。
+        - 白名单外：告警（默认）或报错（严格模式），防止拆分/新增执行器时再次引入重复。
+        同一来源模块的重复注册（重复 import / 热重载）不视为冲突。
+        """
         executor = executor_class()
-        self._executors[executor.module_type] = executor
+        module_type = executor.module_type
+        source = getattr(executor_class, "__module__", "") or ""
+        prev_source = self._registration_source.get(module_type)
+        if prev_source is not None and prev_source != source and module_type not in _KNOWN_DUPLICATES:
+            msg = (f"[registry] 重复注册 module_type={module_type!r}："
+                   f"已由 {prev_source} 注册，又被 {source} 注册（后者覆盖前者）")
+            if _strict_registry_enabled():
+                raise RuntimeError(msg)
+            print(f"[registry][WARNING] {msg}")
+        self._executors[module_type] = executor
+        self._registration_source[module_type] = source
+        self._registration_sources.setdefault(module_type, set()).add(source)
         # 真正注册后，从懒加载占位表里移除
-        self._lazy.pop(executor.module_type, None)
+        self._lazy.pop(module_type, None)
     
     def enable_lazy(self, type_to_submodule: dict[str, str], package: str):
         """启用懒加载：登记 类型→子模块 映射，使 get_all_types 立即可用，
@@ -800,6 +839,8 @@ class ExecutorRegistry:
         """清空注册表"""
         self._executors.clear()
         self._lazy.clear()
+        self._registration_source.clear()
+        self._registration_sources.clear()
         self._package = None
 
 
