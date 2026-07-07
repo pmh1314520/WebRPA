@@ -168,7 +168,7 @@ RECORDER_SCRIPT = r"""(function () {
   // 从点击目标向上查找最近的"语义可点击元素"（按钮/链接/角色控件），
   // 避免录到按钮内部的 <span>/<svg> 图标 —— 这类内部元素往往无稳定选择器。
   function clickableTarget(el) {
-    var CLICKABLE = { a: 1, button: 1, summary: 1, label: 1, select: 1 };
+    var CLICKABLE = { a: 1, button: 1, summary: 1, label: 1 };
     var ROLES = { button: 1, link: 1, menuitem: 1, menuitemcheckbox: 1, menuitemradio: 1, tab: 1, option: 1, checkbox: 1, radio: 1, 'switch': 1 };
     var cur = el, hops = 0;
     while (cur && cur.nodeType === 1 && cur !== document.body && hops < 5) {
@@ -220,6 +220,7 @@ RECORDER_SCRIPT = r"""(function () {
       var el = clickableTarget(raw);
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
+      if (tag === 'select') return;  // 原生下拉的选择由 change 事件（select）负责，点击不另录
       // 原生勾选控件的点击由 change 事件（check）负责，避免重复录
       var t0 = (el.type || '').toLowerCase();
       if (tag === 'input' && (t0 === 'checkbox' || t0 === 'radio')) return;
