@@ -10,6 +10,8 @@
 - sessionStorage 在当前已加载页面始终可用，最稳。
 """
 
+import re
+
 # 录制注入脚本：监听交互，computeSelector 生成稳定选择器，写入 sessionStorage
 # 关键设计：事件监听器**只挂一次**（listenersAttached 守卫，永不重复挂），
 # 录制开关由 __webrpaRecorderDisabled 在 pushEvent 内部判断，避免反复注入导致重复事件。
@@ -158,6 +160,8 @@ RECORDER_SCRIPT = r"""(function () {
 
   function ensureBadge() {
     try {
+      // 角标只在顶层窗口显示；iframe（含跨域）内不注入，避免污染子框架
+      try { if (window.top !== window.self) return; } catch (e) { return; }
       if (recording()) {
         if (!document.getElementById('__webrpa_rec_badge')) {
           var badge = document.createElement('div');
@@ -252,15 +256,21 @@ _init_context = None
 
 
 async def _inject_all_pages(ctx):
-    """对 context 内所有页面注入录制脚本。脚本内部自带"监听器只挂一次"守卫，
-    重复注入安全（仅会刷新角标 + 补一条 navigate），不会产生重复监听。"""
+    """对 context 内所有页面**及其全部 frame（含 iframe）**注入录制脚本。
+    脚本内部自带"监听器只挂一次"守卫，重复注入安全（仅刷新角标 + 补一条 navigate）。
+    对已加载的 iframe 直接 evaluate（add_init_script 只对之后加载的 frame 生效）。"""
     injected = 0
     for pg in ctx.pages:
         try:
-            await pg.evaluate(RECORDER_SCRIPT)
-            injected += 1
+            frames = list(pg.frames)
         except Exception:
-            pass
+            frames = [pg]
+        for f in frames:
+            try:
+                await f.evaluate(RECORDER_SCRIPT)
+                injected += 1
+            except Exception:
+                pass
     return injected
 
 
@@ -285,32 +295,101 @@ async def start_recorder() -> dict:
         except Exception as e:
             print(f"[recorder] 注册 init_script 失败：{e}")
 
-    # 解除禁用 + 清空各页缓冲（init_script 只影响新页面，现有页面需直接 evaluate 解除禁用）
+    # 解除禁用 + 清空各页缓冲（init_script 只影响新页面，现有页面/frame 需直接 evaluate 解除禁用）
     try:
         await ctx.add_init_script("window.__webrpaRecorderDisabled = false;")
     except Exception:
         pass
     for pg in ctx.pages:
         try:
-            await pg.evaluate("() => { window.__webrpaRecorderDisabled = false; try { sessionStorage.setItem('__webrpa_rec','[]'); } catch(e){} }")
+            frames = list(pg.frames)
         except Exception:
-            pass
+            frames = [pg]
+        for f in frames:
+            try:
+                await f.evaluate("() => { window.__webrpaRecorderDisabled = false; try { sessionStorage.setItem('__webrpa_rec','[]'); } catch(e){} }")
+            except Exception:
+                pass
 
     _recorder_active = True
     injected = await _inject_all_pages(ctx)
     return {"success": True, "data": {"message": f"录制已开始（覆盖 {injected} 个页面）"}}
 
 
+async def _frame_meta(pg, f, child_frames) -> dict:
+    """构造 frame 定位元数据，供 generateNodes 生成 switch_iframe 节点。
+    优先级：selector(iframe#id / iframe[name] / iframe[src]) > name/id > index。"""
+    try:
+        if f is pg.main_frame:
+            return {"main": True}
+    except Exception:
+        pass
+    meta = {"main": False, "index": -1, "name": "", "selector": ""}
+    try:
+        meta["index"] = child_frames.index(f)
+    except (ValueError, Exception):
+        meta["index"] = -1
+    try:
+        meta["name"] = f.name or ""
+    except Exception:
+        meta["name"] = ""
+    # 是否为主文档的直接子 iframe（selector 定位只在主页面查找，仅对直接子 frame 可靠；
+    # 更深层嵌套 frame 依赖 name/index —— switch_iframe 会做全 frame 扁平查找，任意深度均可命中）
+    is_direct = False
+    try:
+        is_direct = (f.parent_frame is pg.main_frame)
+    except Exception:
+        is_direct = False
+    # 取 <iframe> 元素属性构造定位
+    try:
+        fe = await f.frame_element()
+        fid = await fe.get_attribute("id")
+        fnm = await fe.get_attribute("name")
+        fsrc = await fe.get_attribute("src")
+        if is_direct:
+            if fid and re.match(r"^[A-Za-z][\w-]*$", fid):
+                meta["selector"] = "iframe#" + fid
+            elif fnm:
+                meta["selector"] = 'iframe[name="%s"]' % fnm.replace('"', '\\"')
+            elif fsrc and len(fsrc) <= 200:
+                meta["selector"] = 'iframe[src="%s"]' % fsrc.replace('"', '\\"')
+        # switch_iframe 的 name 定位同时支持 name 与 id，对嵌套 frame 也有效
+        if not meta["name"]:
+            meta["name"] = fnm or fid or ""
+    except Exception:
+        pass
+    return meta
+
+
 async def _drain_all(ctx) -> list:
-    """排空 context 内所有页面的 sessionStorage 缓冲，按时间排序合并。"""
+    """排空 context 内所有页面**及其全部 frame（含跨域 iframe）**的 sessionStorage 缓冲，
+    给每个事件打上 frame 定位标记 `_frame`，最后按时间排序合并。"""
     merged = []
     for pg in ctx.pages:
         try:
-            arr = await pg.evaluate(_DRAIN_JS)
-            if arr:
-                merged.extend(arr)
+            main_frame = pg.main_frame
         except Exception:
-            pass
+            main_frame = None
+        try:
+            frames = list(pg.frames)
+        except Exception:
+            frames = [pg]
+        child_frames = [f for f in frames if f is not main_frame]
+        for f in frames:
+            try:
+                arr = await f.evaluate(_DRAIN_JS)
+            except Exception:
+                arr = None
+            if not arr:
+                continue
+            try:
+                fmeta = await _frame_meta(pg, f, child_frames)
+            except Exception:
+                fmeta = {"main": True}
+            for ev in arr:
+                if isinstance(ev, dict):
+                    ev["_frame"] = fmeta
+                    merged.append(ev)
     merged.sort(key=lambda e: e.get("ts", 0) if isinstance(e, dict) else 0)
     return merged
 
@@ -326,14 +405,19 @@ async def stop_recorder() -> dict:
         remaining = await _drain_all(ctx)
         for pg in ctx.pages:
             try:
-                await pg.evaluate("""() => {
-                    window.__webrpaRecorderActive = false;
-                    window.__webrpaRecorderDisabled = true;
-                    var b = document.getElementById('__webrpa_rec_badge');
-                    if (b) b.remove();
-                }""")
+                frames = list(pg.frames)
             except Exception:
-                pass
+                frames = [pg]
+            for f in frames:
+                try:
+                    await f.evaluate("""() => {
+                        window.__webrpaRecorderActive = false;
+                        window.__webrpaRecorderDisabled = true;
+                        var b = document.getElementById('__webrpa_rec_badge');
+                        if (b) b.remove();
+                    }""")
+                except Exception:
+                    pass
         try:
             await ctx.add_init_script("window.__webrpaRecorderDisabled = true;")
         except Exception:

@@ -18,6 +18,7 @@ interface RecEvent {
   dy?: number
   y?: number
   ts?: number
+  _frame?: { main?: boolean; index?: number; name?: string; selector?: string }
 }
 
 interface RecorderPanelProps {
@@ -61,14 +62,15 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
     })
   }, [])
 
-  // 合并追加：连续的同选择器 input 只保留最后一次
+  // 合并追加：连续的同选择器 input 只保留最后一次（需同一 frame，避免跨 frame 误合并）
   const appendEvents = useCallback((incoming: RecEvent[]) => {
     if (!incoming || !incoming.length) return
+    const frameSig = (e?: RecEvent) => JSON.stringify(e?._frame || null)
     setEvents((prev) => {
       const next = [...prev]
       for (const ev of incoming) {
         const last = next[next.length - 1]
-        if (ev.type === 'input' && last && last.type === 'input' && last.selector === ev.selector) {
+        if (ev.type === 'input' && last && last.type === 'input' && last.selector === ev.selector && frameSig(last) === frameSig(ev)) {
           next[next.length - 1] = ev
         } else if (ev.type === 'navigate' && last && last.type === 'navigate' && last.url === ev.url) {
           // 跳过重复导航
@@ -139,6 +141,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
     const newEdges: any[] = []
     let prevId: string | null = null
     let lastNavUrl: string | null = null
+    let curFrameKey = '__main__'  // 当前所处 frame（回放上下文），'__main__' 表示主文档
 
     const mkNode = (moduleType: string, cfg: Record<string, any>, name?: string) => {
       const id = nanoid()
@@ -159,6 +162,30 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
       return node
     }
 
+    // frame 身份 key：selector 最稳，其次 name，其次 index
+    const frameKeyOf = (ev: RecEvent): string => {
+      const f = ev._frame
+      if (!f || f.main) return '__main__'
+      if (f.selector) return 'sel:' + f.selector
+      if (f.name) return 'name:' + f.name
+      if (typeof f.index === 'number' && f.index >= 0) return 'idx:' + f.index
+      return '__main__'
+    }
+    // 若事件所属 frame 与当前上下文不同，插入 switch_iframe / switch_to_main 节点
+    const ensureFrame = (ev: RecEvent) => {
+      const key = frameKeyOf(ev)
+      if (key === curFrameKey) return
+      if (key === '__main__') {
+        mkNode('switch_to_main', {})
+      } else {
+        const f = ev._frame!
+        if (f.selector) mkNode('switch_iframe', { locateBy: 'selector', iframeSelector: f.selector }, 'iframe')
+        else if (f.name) mkNode('switch_iframe', { locateBy: 'name', iframeName: f.name }, 'iframe')
+        else mkNode('switch_iframe', { locateBy: 'index', iframeIndex: f.index ?? 0 }, 'iframe')
+      }
+      curFrameKey = key
+    }
+
     for (let idx = 0; idx < evs.length; idx++) {
       const ev = evs[idx]
       // 自动插入等待：与上一步时间间隔较大时补一个延迟节点
@@ -170,27 +197,36 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         }
       }
       if (ev.type === 'navigate') {
+        // 仅主文档的顶层导航生成"打开网页"；iframe 内导航是页面内部行为，忽略
+        if (ev._frame && !ev._frame.main) continue
         const u = ev.url || ''
         if (!u || u.startsWith('about:') || u === lastNavUrl) continue
         lastNavUrl = u
+        curFrameKey = '__main__'  // 打开新页面后回放上下文回到主文档
         mkNode('open_page', { url: u })
       } else if (ev.type === 'click') {
         if (!ev.selector) continue
+        ensureFrame(ev)
         mkNode('click_element', { selector: ev.selector, ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'input') {
         if (!ev.selector) continue
+        ensureFrame(ev)
         mkNode('input_text', { selector: ev.selector, text: String(ev.value ?? ''), ...(ev.hints ? { selectorHints: ev.hints } : {}) })
       } else if (ev.type === 'select') {
         if (!ev.selector) continue
+        ensureFrame(ev)
         mkNode('select_dropdown', { selector: ev.selector, value: String(ev.value ?? ''), ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'check') {
         if (!ev.selector) continue
+        ensureFrame(ev)
         mkNode('set_checkbox', { selector: ev.selector, checked: !!ev.value, ...(ev.hints ? { selectorHints: ev.hints } : {}) })
       } else if (ev.type === 'scroll') {
+        ensureFrame(ev)
         const dir = (ev.dy ?? 0) >= 0 ? 'down' : 'up'
         mkNode('scroll_page', { direction: dir, distance: Math.abs(ev.dy ?? 300) || 300 })
       } else if (ev.type === 'keypress') {
         if (!ev.key) continue
+        ensureFrame(ev)
         mkNode('keyboard_action', { keySequence: ev.key }, ev.key)
       }
     }
