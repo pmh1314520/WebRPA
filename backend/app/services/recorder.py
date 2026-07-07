@@ -26,6 +26,15 @@ RECORDER_SCRIPT = r"""(function () {
       var last = arr.length ? arr[arr.length - 1] : null;
       if (ev.type === 'input' && last && last.type === 'input' && last.selector === ev.selector) {
         arr[arr.length - 1] = ev;
+      } else if (ev.type === 'dblclick') {
+        // 双击前浏览器会先派发两次单击，移除紧邻的同选择器单击，避免重复录入
+        var removed = 0;
+        while (arr.length && removed < 2) {
+          var l = arr[arr.length - 1];
+          if (l && l.type === 'click' && l.selector === ev.selector) { arr.pop(); removed++; }
+          else break;
+        }
+        arr.push(ev);
       } else if (ev.type === 'navigate' && last && last.type === 'navigate' && last.url === ev.url) {
         // 跳过重复导航
       } else {
@@ -156,6 +165,31 @@ RECORDER_SCRIPT = r"""(function () {
     };
   }
 
+  // 从点击目标向上查找最近的"语义可点击元素"（按钮/链接/角色控件），
+  // 避免录到按钮内部的 <span>/<svg> 图标 —— 这类内部元素往往无稳定选择器。
+  function clickableTarget(el) {
+    var CLICKABLE = { a: 1, button: 1, summary: 1, label: 1, select: 1 };
+    var ROLES = { button: 1, link: 1, menuitem: 1, menuitemcheckbox: 1, menuitemradio: 1, tab: 1, option: 1, checkbox: 1, radio: 1, 'switch': 1 };
+    var cur = el, hops = 0;
+    while (cur && cur.nodeType === 1 && cur !== document.body && hops < 5) {
+      var tag = cur.tagName.toLowerCase();
+      if (CLICKABLE[tag]) return cur;
+      if (tag === 'input') {
+        var t = (cur.type || '').toLowerCase();
+        if (t === 'button' || t === 'submit' || t === 'reset' || t === 'checkbox' || t === 'radio') return cur;
+      }
+      var role = cur.getAttribute && cur.getAttribute('role');
+      if (role && ROLES[role.toLowerCase()]) return cur;
+      if (cur.hasAttribute && (cur.hasAttribute('onclick') || cur.getAttribute('tabindex') === '0')) return cur;
+      cur = cur.parentElement; hops++;
+    }
+    return el;  // 找不到语义祖先则回退原元素
+  }
+  // 优先取无障碍/标题文本作为节点名称，兜底 innerText/value
+  function bestText(el) {
+    var t = (el.getAttribute && (el.getAttribute('aria-label') || el.getAttribute('title'))) || el.innerText || el.value || '';
+    return String(t).replace(/\s+/g, ' ').trim().slice(0, 60);
+  }
   function ensureBadge() {
     try {
       // 角标只在顶层窗口显示；iframe（含跨域）内不注入，避免污染子框架
@@ -182,22 +216,43 @@ RECORDER_SCRIPT = r"""(function () {
 
     document.addEventListener('click', function (e) {
       if (e.button && e.button !== 0) return;   // 只录左键，忽略右键/中键（右键菜单等原生行为不录）
-      var el = e.target; if (!el || el.id === '__webrpa_rec_badge') return;
+      var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
+      var el = clickableTarget(raw);
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
+      // 原生勾选控件的点击由 change 事件（check）负责，避免重复录
+      var t0 = (el.type || '').toLowerCase();
+      if (tag === 'input' && (t0 === 'checkbox' || t0 === 'radio')) return;
+      if (tag === 'label') {
+        try {
+          var ctrl = el.control || (el.htmlFor ? document.getElementById(el.htmlFor) : null);
+          if (ctrl) { var ct = (ctrl.type || '').toLowerCase(); if (ct === 'checkbox' || ct === 'radio') return; }
+        } catch (_) {}
+      }
       pushEvent({ type: 'click', selector: computeSelector(el), hints: collectHints(el), tag: tag,
-        text: (el.innerText || el.value || '').trim().slice(0, 60), url: location.href, ts: Date.now() });
+        text: bestText(el), url: location.href, ts: Date.now() });
+    }, true);
+
+    document.addEventListener('dblclick', function (e) {
+      if (e.button && e.button !== 0) return;
+      var raw = e.target; if (!raw || raw.id === '__webrpa_rec_badge') return;
+      var el = clickableTarget(raw);
+      var tag = (el.tagName || '').toLowerCase();
+      if (tag === 'option') return;
+      pushEvent({ type: 'dblclick', selector: computeSelector(el), hints: collectHints(el), tag: tag,
+        text: bestText(el), url: location.href, ts: Date.now() });
     }, true);
 
     document.addEventListener('change', function (e) {
       var el = e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
+      if (t === 'file') return;  // 文件选择框无法回放（浏览器禁止设置 value），跳过
       if (tag === 'select') {
         var opt = el.options[el.selectedIndex];
         pushEvent({ type: 'select', selector: computeSelector(el), hints: collectHints(el), value: el.value, text: opt ? opt.text : '', url: location.href, ts: Date.now() });
       } else if (tag === 'input' || tag === 'textarea') {
         if (t === 'checkbox' || t === 'radio') pushEvent({ type: 'check', selector: computeSelector(el), hints: collectHints(el), value: !!el.checked, url: location.href, ts: Date.now() });
-        else pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, url: location.href, ts: Date.now() });
+        else pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, sensitive: (t === 'password'), url: location.href, ts: Date.now() });
       } else if (el.isContentEditable) {
         pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.innerText, url: location.href, ts: Date.now() });
       }
@@ -206,8 +261,9 @@ RECORDER_SCRIPT = r"""(function () {
     document.addEventListener('input', function (e) {
       var el = e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
+      if (t === 'file') return;
       if ((tag === 'input' && t !== 'checkbox' && t !== 'radio') || tag === 'textarea')
-        pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, url: location.href, ts: Date.now() });
+        pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, sensitive: (t === 'password'), url: location.href, ts: Date.now() });
       else if (el.isContentEditable)
         pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.innerText, url: location.href, ts: Date.now() });
     }, true);
@@ -218,6 +274,11 @@ RECORDER_SCRIPT = r"""(function () {
       var combo = e.ctrlKey || e.altKey || e.metaKey;
       if (special.indexOf(k) === -1 && !combo) return;
       if (k === 'Control' || k === 'Alt' || k === 'Meta' || k === 'Shift') return;
+      // 编辑框内的方向/删除键属于打字过程本身，不单独录（Enter/Tab/Escape 与组合键仍录，含语义）
+      var ed = false;
+      try { var a = e.target, atag = (a && a.tagName || '').toLowerCase(); ed = (atag === 'input' || atag === 'textarea' || (a && a.isContentEditable)); } catch (_) {}
+      var editKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','Delete','Home','End','PageUp','PageDown'];
+      if (ed && !combo && editKeys.indexOf(k) !== -1) return;
       var seq = (e.ctrlKey ? 'Control+' : '') + (e.altKey ? 'Alt+' : '') + (e.metaKey ? 'Meta+' : '') + (e.shiftKey && combo ? 'Shift+' : '') + k;
       pushEvent({ type: 'keypress', key: seq, url: location.href, ts: Date.now() });
     }, true);

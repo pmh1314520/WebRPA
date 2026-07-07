@@ -9,7 +9,7 @@ import { applySerpentineLayout } from '@/lib/recorderLayout'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface RecEvent {
-  type: 'navigate' | 'click' | 'input' | 'select' | 'check' | 'keypress'
+  type: 'navigate' | 'click' | 'dblclick' | 'input' | 'select' | 'check' | 'keypress'
   selector?: string
   hints?: Record<string, any>
   value?: any
@@ -17,6 +17,7 @@ interface RecEvent {
   url?: string
   key?: string
   ts?: number
+  sensitive?: boolean
   _frame?: { main?: boolean; index?: number; name?: string; selector?: string }
 }
 
@@ -28,6 +29,7 @@ interface RecorderPanelProps {
 const EVENT_META: Record<string, { icon: any; label: string; color: string }> = {
   navigate: { icon: Globe, label: '打开网页', color: 'text-blue-500' },
   click: { icon: MousePointerClick, label: '点击', color: 'text-indigo-500' },
+  dblclick: { icon: MousePointerClick, label: '双击', color: 'text-indigo-500' },
   input: { icon: Type, label: '输入', color: 'text-emerald-500' },
   select: { icon: ChevronDown, label: '下拉选择', color: 'text-violet-500' },
   check: { icon: CheckSquare, label: '勾选', color: 'text-amber-500' },
@@ -70,6 +72,15 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         const last = next[next.length - 1]
         if (ev.type === 'input' && last && last.type === 'input' && last.selector === ev.selector && frameSig(last) === frameSig(ev)) {
           next[next.length - 1] = ev
+        } else if (ev.type === 'dblclick') {
+          // 双击：移除紧邻的同选择器单击（跨轮询批次时后端可能已 drain，这里再兜底一次）
+          let removed = 0
+          while (next.length && removed < 2) {
+            const l = next[next.length - 1]
+            if (l && l.type === 'click' && l.selector === ev.selector) { next.pop(); removed++ }
+            else break
+          }
+          next.push(ev)
         } else if (ev.type === 'navigate' && last && last.type === 'navigate' && last.url === ev.url) {
           // 跳过重复导航
         } else {
@@ -193,7 +204,9 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         const prevTs = evs[idx - 1].ts || 0
         const gap = (ev.ts || 0) - prevTs
         if (gap >= 1500) {
-          mkNode('wait', { duration: Math.min(gap, 10000) })
+          // 传秒（wait 执行器新字段单位为秒），并限幅到 3 秒——
+          // 元素级等待已由执行器 auto-wait 保证，不必把用户思考的停顿全等上
+          mkNode('wait', { duration: Math.min(Math.max(1, Math.round(gap / 1000)), 3) })
         }
       }
       if (ev.type === 'navigate') {
@@ -221,6 +234,11 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         ensureFrame(ev)
         lastActionTs = ev.ts || 0
         mkNode('click_element', { selector: ev.selector, ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
+      } else if (ev.type === 'dblclick') {
+        if (!ev.selector) continue
+        ensureFrame(ev)
+        lastActionTs = ev.ts || 0
+        mkNode('click_element', { selector: ev.selector, clickType: 'double', ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'input') {
         if (!ev.selector) continue
         ensureFrame(ev)
@@ -308,7 +326,7 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
               const meta = EVENT_META[ev.type] || EVENT_META.click
               const Icon = meta.icon
               const detail = ev.type === 'navigate' ? ev.url
-                : ev.type === 'input' ? `"${String(ev.value ?? '').slice(0, 24)}"`
+                : ev.type === 'input' ? (ev.sensitive ? '••••••（密码已隐藏）' : `"${String(ev.value ?? '').slice(0, 24)}"`)
                 : ev.type === 'select' ? (ev.text || String(ev.value ?? ''))
                 : ev.type === 'check' ? (ev.value ? '勾选' : '取消勾选')
                 : ev.type === 'keypress' ? ev.key
