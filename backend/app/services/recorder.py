@@ -35,35 +35,125 @@ RECORDER_SCRIPT = r"""(function () {
     } catch (e) {}
   }
 
-  function isStableClass(c) { return c && c.length < 30 && !/[0-9]{3,}|^[0-9]|--|__[a-z0-9]{4,}/.test(c); }
+  function cssEsc(s) {
+    if (window.CSS && CSS.escape) { try { return CSS.escape(s); } catch (e) {} }
+    return String(s).replace(/([^\w-])/g, '\\$1');
+  }
+  function attrEsc(s) { return String(s).replace(/(["\\])/g, '\\$1'); }
+  function uniqueOK(sel) { try { return document.querySelectorAll(sel).length === 1; } catch (e) { return false; } }
+
+  // id 是否为框架生成的不稳定值（React useId ":r1:"、hash、纯数字序号等）
+  function isBadId(id) {
+    if (!id) return true;
+    if (!/^[A-Za-z][\w-]*$/.test(id)) return true;   // 含非法字符（如 :r1:、含空格）
+    if (id.length > 40) return true;
+    if (/[0-9a-f]{8,}/i.test(id)) return true;        // 长十六进制 / hash
+    if (/\d{5,}/.test(id)) return true;               // 连续多位数字序号
+    if (/^(ember|ext-|mui-|radix-|headlessui-|react-aria-)/i.test(id)) return true;
+    return false;
+  }
+  // class 是否稳定（排除 CSS Module / CSS-in-JS / hash 生成的垃圾类名）
+  function isStableClass(c) {
+    if (!c || c.length > 30) return false;
+    if (/^[0-9]/.test(c)) return false;
+    if (/[0-9a-f]{6,}/i.test(c)) return false;        // 含 hash 片段
+    if (/\d{3,}/.test(c)) return false;
+    if (/--|__[a-z0-9]{4,}/.test(c)) return false;    // CSS Module / BEM 生成后缀
+    if (/^(css|sc|jsx|jss|makeStyles|emotion)[-_]?/i.test(c)) return false; // CSS-in-JS 前缀
+    return true;
+  }
+  function stableClasses(el) {
+    if (!el.className || typeof el.className !== 'string') return [];
+    return el.className.split(/\s+/).filter(isStableClass);
+  }
   function nthOfType(el) {
     var p = el.parentElement; if (!p) return 0;
     var same = Array.prototype.filter.call(p.children, function (c) { return c.tagName === el.tagName; });
     if (same.length <= 1) return 0;
     return same.indexOf(el) + 1;
   }
+  // 元素自身的稳定唯一属性选择器；按稳定性从高到低尝试，找不到返回 ''
+  function attrSelector(el) {
+    if (!el || el.nodeType !== 1) return '';
+    var tag = el.tagName.toLowerCase();
+    if (el.id && !isBadId(el.id)) {
+      var sid = '#' + cssEsc(el.id);
+      if (uniqueOK(sid)) return sid;
+    }
+    var testAttrs = ['data-testid', 'data-test', 'data-cy', 'data-qa', 'data-test-id', 'data-id'];
+    for (var i = 0; i < testAttrs.length; i++) {
+      var tv = el.getAttribute && el.getAttribute(testAttrs[i]);
+      if (tv) { var st = '[' + testAttrs[i] + '="' + attrEsc(tv) + '"]'; if (uniqueOK(st)) return st; }
+    }
+    var nm = el.getAttribute && el.getAttribute('name');
+    if (nm) { var sn = tag + '[name="' + attrEsc(nm) + '"]'; if (uniqueOK(sn)) return sn; }
+    var al = el.getAttribute && el.getAttribute('aria-label');
+    if (al && al.length <= 50) { var sa = tag + '[aria-label="' + attrEsc(al) + '"]'; if (uniqueOK(sa)) return sa; }
+    var ph = el.getAttribute && el.getAttribute('placeholder');
+    if (ph && ph.length <= 50) { var sp = '[placeholder="' + attrEsc(ph) + '"]'; if (uniqueOK(sp)) return sp; }
+    if (tag === 'a') {
+      var href = el.getAttribute('href');
+      if (href && href !== '#' && href.length <= 80) { var sh = 'a[href="' + attrEsc(href) + '"]'; if (uniqueOK(sh)) return sh; }
+    }
+    return '';
+  }
+  function segmentFor(el) {
+    var seg = el.tagName.toLowerCase();
+    var cls = stableClasses(el);
+    if (cls.length) { seg += '.' + cls.slice(0, 2).join('.'); }
+    else { var n = nthOfType(el); if (n > 0) seg += ':nth-of-type(' + n + ')'; }
+    return seg;
+  }
   function computeSelector(el) {
     if (!el || el.nodeType !== 1) return '';
-    if (el.id && /^[A-Za-z][\w-]*$/.test(el.id)) {
-      var byId = '#' + el.id;
-      try { if (document.querySelectorAll(byId).length === 1) return byId; } catch (e) {}
+    // 1) 元素自身的稳定唯一属性（#id / data-* / name / aria-label / placeholder / a[href]）
+    var direct = attrSelector(el);
+    if (direct) return direct;
+    // 2) 就近稳定祖先锚定 + 短相对路径（抗页面结构变化）
+    var anchorSel = '', anchor = null, p = el.parentElement, hops = 0;
+    while (p && p !== document.body && p !== document.documentElement && hops < 10) {
+      var as = attrSelector(p);
+      if (as) { anchorSel = as; anchor = p; break; }
+      p = p.parentElement; hops++;
     }
-    var tid = el.getAttribute && (el.getAttribute('data-testid') || el.getAttribute('data-test') || el.getAttribute('data-id'));
-    if (tid) { try { if (document.querySelectorAll('[data-testid="' + tid + '"]').length === 1) return '[data-testid="' + tid + '"]'; } catch (e) {} }
-    if (el.getAttribute && el.getAttribute('name')) {
-      var nm = el.getAttribute('name'); var byName = el.tagName.toLowerCase() + '[name="' + nm + '"]';
-      try { if (document.querySelectorAll(byName).length === 1) return byName; } catch (e) {}
+    var parts = [], cur = el, stop = anchor || document.body, depth = 0;
+    while (cur && cur.nodeType === 1 && cur !== stop && cur !== document.body && cur !== document.documentElement && depth < 6) {
+      parts.unshift(segmentFor(cur));
+      cur = cur.parentElement; depth++;
     }
-    var parts = [], cur = el, depth = 0;
-    while (cur && cur.nodeType === 1 && cur !== document.body && cur !== document.documentElement && depth < 6) {
-      var tag = cur.tagName.toLowerCase(), seg = tag;
-      if (cur.id && /^[A-Za-z][\w-]*$/.test(cur.id)) { parts.unshift('#' + cur.id); break; }
-      var cls = (cur.className && typeof cur.className === 'string') ? cur.className.split(/\s+/).filter(isStableClass) : [];
-      if (cls.length) seg += '.' + cls.slice(0, 2).join('.');
-      else { var n = nthOfType(cur); if (n > 0) seg += ':nth-of-type(' + n + ')'; }
-      parts.unshift(seg); cur = cur.parentElement; depth++;
+    var rel = parts.join(' > ');
+    if (anchorSel) {
+      var full = rel ? anchorSel + ' > ' + rel : anchorSel;
+      if (uniqueOK(full)) return full;
+      var loose = rel ? anchorSel + ' ' + rel : anchorSel;  // 放宽为后代组合，抗中间层增删
+      if (uniqueOK(loose)) return loose;
+      return full;
     }
-    return parts.join(' > ');
+    return rel || el.tagName.toLowerCase();
+  }
+  // 采集元素提示（供执行器"选择器自愈"锚点重定位；结构对应 base.build_fallback_selectors）
+  function collectHints(el) {
+    if (!el || el.nodeType !== 1) return null;
+    var tag = el.tagName.toLowerCase();
+    var attrs = {};
+    var wanted = ['data-testid', 'data-test', 'data-cy', 'data-qa', 'data-id', 'name', 'placeholder', 'aria-label', 'role', 'type', 'href', 'title', 'alt'];
+    for (var i = 0; i < wanted.length; i++) {
+      var v = el.getAttribute && el.getAttribute(wanted[i]);
+      if (v != null && v !== '') attrs[wanted[i]] = String(v).slice(0, 120);
+    }
+    var isField = (tag === 'input' || tag === 'textarea' || tag === 'select');
+    var text = isField ? '' : (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    return {
+      tag: tag,
+      attributes: attrs,
+      id: (el.id && !isBadId(el.id)) ? el.id : '',
+      name: (el.getAttribute && el.getAttribute('name')) || '',
+      className: stableClasses(el).slice(0, 3).join(' '),
+      placeholder: (el.getAttribute && el.getAttribute('placeholder')) || '',
+      ariaLabel: (el.getAttribute && el.getAttribute('aria-label')) || '',
+      testid: (el.getAttribute && (el.getAttribute('data-testid') || el.getAttribute('data-test') || el.getAttribute('data-cy') || el.getAttribute('data-qa') || el.getAttribute('data-id'))) || '',
+      text: text
+    };
   }
 
   function ensureBadge() {
@@ -92,7 +182,7 @@ RECORDER_SCRIPT = r"""(function () {
       var el = e.target; if (!el || el.id === '__webrpa_rec_badge') return;
       var tag = (el.tagName || '').toLowerCase();
       if (tag === 'option') return;
-      pushEvent({ type: 'click', selector: computeSelector(el), tag: tag,
+      pushEvent({ type: 'click', selector: computeSelector(el), hints: collectHints(el), tag: tag,
         text: (el.innerText || el.value || '').trim().slice(0, 60), url: location.href, ts: Date.now() });
     }, true);
 
@@ -101,12 +191,12 @@ RECORDER_SCRIPT = r"""(function () {
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
       if (tag === 'select') {
         var opt = el.options[el.selectedIndex];
-        pushEvent({ type: 'select', selector: computeSelector(el), value: el.value, text: opt ? opt.text : '', url: location.href, ts: Date.now() });
+        pushEvent({ type: 'select', selector: computeSelector(el), hints: collectHints(el), value: el.value, text: opt ? opt.text : '', url: location.href, ts: Date.now() });
       } else if (tag === 'input' || tag === 'textarea') {
-        if (t === 'checkbox' || t === 'radio') pushEvent({ type: 'check', selector: computeSelector(el), value: !!el.checked, url: location.href, ts: Date.now() });
-        else pushEvent({ type: 'input', selector: computeSelector(el), value: el.value, url: location.href, ts: Date.now() });
+        if (t === 'checkbox' || t === 'radio') pushEvent({ type: 'check', selector: computeSelector(el), hints: collectHints(el), value: !!el.checked, url: location.href, ts: Date.now() });
+        else pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, url: location.href, ts: Date.now() });
       } else if (el.isContentEditable) {
-        pushEvent({ type: 'input', selector: computeSelector(el), value: el.innerText, url: location.href, ts: Date.now() });
+        pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.innerText, url: location.href, ts: Date.now() });
       }
     }, true);
 
@@ -114,9 +204,9 @@ RECORDER_SCRIPT = r"""(function () {
       var el = e.target; if (!el) return;
       var tag = (el.tagName || '').toLowerCase(), t = (el.type || '').toLowerCase();
       if ((tag === 'input' && t !== 'checkbox' && t !== 'radio') || tag === 'textarea')
-        pushEvent({ type: 'input', selector: computeSelector(el), value: el.value, url: location.href, ts: Date.now() });
+        pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.value, url: location.href, ts: Date.now() });
       else if (el.isContentEditable)
-        pushEvent({ type: 'input', selector: computeSelector(el), value: el.innerText, url: location.href, ts: Date.now() });
+        pushEvent({ type: 'input', selector: computeSelector(el), hints: collectHints(el), value: el.innerText, url: location.href, ts: Date.now() });
     }, true);
 
     document.addEventListener('keydown', function (e) {

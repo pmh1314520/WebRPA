@@ -1,5 +1,5 @@
 """高级模块执行器 - advanced_browser"""
-from .base import ModuleExecutor, ExecutionContext, ModuleResult, register_executor, escape_css_selector, pw_wait_for_element
+from .base import ModuleExecutor, ExecutionContext, ModuleResult, register_executor, escape_css_selector, pw_wait_for_element, smart_wait_locator
 from .type_utils import to_int, to_float, parse_search_region
 from pathlib import Path
 import asyncio
@@ -43,8 +43,14 @@ class SelectDropdownExecutor(ModuleExecutor):
             except Exception:
                 pass
             
-            await pw_wait_for_element(context.page, escape_css_selector(selector), state='visible', timeout=wait_timeout)
-            element = context.page.locator(escape_css_selector(selector))
+            # 选择器自愈：录制/拾取时保存了元素提示则用锚点重定位，主选择器失效时兜底
+            _hints = config.get('selectorHints')
+            if _hints:
+                element = await smart_wait_locator(context.page, escape_css_selector(selector), hints=_hints,
+                                                   state='visible', timeout=wait_timeout, node_config=config, context=context)
+            else:
+                await pw_wait_for_element(context.page, escape_css_selector(selector), state='visible', timeout=wait_timeout)
+                element = context.page.locator(escape_css_selector(selector))
 
             # 1) 先按原生 <select> 处理
             try:
@@ -150,8 +156,14 @@ class SetCheckboxExecutor(ModuleExecutor):
         
         try:
             await context.switch_to_latest_page()
-            await context.page.wait_for_selector(escape_css_selector(selector), state='visible')
-            element = context.page.locator(escape_css_selector(selector))
+            # 选择器自愈：保存了元素提示则用锚点重定位兜底
+            _hints = config.get('selectorHints')
+            if _hints:
+                element = await smart_wait_locator(context.page, escape_css_selector(selector), hints=_hints,
+                                                   state='visible', node_config=config, context=context)
+            else:
+                await context.page.wait_for_selector(escape_css_selector(selector), state='visible')
+                element = context.page.locator(escape_css_selector(selector))
             
             if checked:
                 await element.check()

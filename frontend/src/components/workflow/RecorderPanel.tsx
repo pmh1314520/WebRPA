@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 interface RecEvent {
   type: 'navigate' | 'click' | 'input' | 'select' | 'check' | 'scroll' | 'keypress'
   selector?: string
+  hints?: Record<string, any>
   value?: any
   text?: string
   url?: string
@@ -175,16 +176,16 @@ export function RecorderPanel({ open, onClose }: RecorderPanelProps) {
         mkNode('open_page', { url: u })
       } else if (ev.type === 'click') {
         if (!ev.selector) continue
-        mkNode('click_element', { selector: ev.selector }, ev.text ? ev.text.slice(0, 20) : undefined)
+        mkNode('click_element', { selector: ev.selector, ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'input') {
         if (!ev.selector) continue
-        mkNode('input_text', { selector: ev.selector, text: String(ev.value ?? '') })
+        mkNode('input_text', { selector: ev.selector, text: String(ev.value ?? ''), ...(ev.hints ? { selectorHints: ev.hints } : {}) })
       } else if (ev.type === 'select') {
         if (!ev.selector) continue
-        mkNode('select_dropdown', { selector: ev.selector, value: String(ev.value ?? '') }, ev.text ? ev.text.slice(0, 20) : undefined)
+        mkNode('select_dropdown', { selector: ev.selector, value: String(ev.value ?? ''), ...(ev.hints ? { selectorHints: ev.hints } : {}) }, ev.text ? ev.text.slice(0, 20) : undefined)
       } else if (ev.type === 'check') {
         if (!ev.selector) continue
-        mkNode('set_checkbox', { selector: ev.selector, checked: !!ev.value })
+        mkNode('set_checkbox', { selector: ev.selector, checked: !!ev.value, ...(ev.hints ? { selectorHints: ev.hints } : {}) })
       } else if (ev.type === 'scroll') {
         const dir = (ev.dy ?? 0) >= 0 ? 'down' : 'up'
         mkNode('scroll_page', { direction: dir, distance: Math.abs(ev.dy ?? 300) || 300 })
