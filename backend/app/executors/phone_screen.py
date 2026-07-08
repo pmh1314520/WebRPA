@@ -17,7 +17,8 @@ class PhoneScreenshotExecutor(ModuleExecutor):
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         save_path = context.resolve_value(config.get('savePath', ''))
-        save_to_variable = config.get('saveToVariable', '')
+        # 字段与前端面板对齐: variableName，兼容旧字段名 saveToVariable
+        save_to_variable = config.get('variableName') or config.get('saveToVariable', '')
         
         # 自动连接设备（支持指定设备）
         success, device_id, error = ensure_phone_connected(context, config)

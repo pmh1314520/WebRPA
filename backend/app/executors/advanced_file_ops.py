@@ -60,7 +60,8 @@ class ListFilesExecutor(ModuleExecutor):
         recursive = recursive_raw in [True, 'true', 'True', '1', 1]
         
         filter_pattern = context.resolve_value(config.get("filterPattern", ""))
-        variable_name = config.get("resultVariable", "file_list")
+        # 字段与前端面板对齐: variableName，兼容旧字段名 resultVariable
+        variable_name = config.get("variableName") or config.get("resultVariable", "file_list")
 
         if not folder_path:
             return ModuleResult(success=False, error="文件夹路径不能为空")

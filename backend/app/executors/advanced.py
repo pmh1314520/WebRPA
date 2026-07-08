@@ -3012,7 +3012,8 @@ class ListFilesExecutor(ModuleExecutor):
             include_extension_raw = context.resolve_value(include_extension_raw)
         include_extension = include_extension_raw in [True, 'true', 'True', '1', 1]
         filter_pattern = context.resolve_value(config.get("filterPattern", ""))
-        variable_name = config.get("resultVariable", "file_list")
+        # 字段与前端面板对齐: variableName，兼容旧字段名 resultVariable
+        variable_name = config.get("variableName") or config.get("resultVariable", "file_list")
 
         if not folder_path:
             return ModuleResult(success=False, error="文件夹路径不能为空")
@@ -3315,7 +3316,8 @@ class FileExistsExecutor(ModuleExecutor):
 
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         file_path = context.resolve_value(config.get("filePath", ""))
-        variable_name = config.get("resultVariable", "exists")
+        # 字段与前端面板对齐: variableName，兼容旧字段名 resultVariable
+        variable_name = config.get("variableName") or config.get("resultVariable", "exists")
 
         if not file_path:
             return ModuleResult(success=False, error="文件路径不能为空")
@@ -3350,7 +3352,8 @@ class GetFileInfoExecutor(ModuleExecutor):
         from datetime import datetime
         
         file_path = context.resolve_value(config.get("filePath", ""))
-        variable_name = config.get("resultVariable", "file_info")
+        # 字段与前端面板对齐: variableName，兼容旧字段名 resultVariable
+        variable_name = config.get("variableName") or config.get("resultVariable", "file_info")
 
         if not file_path:
             return ModuleResult(success=False, error="文件路径不能为空")
@@ -3409,7 +3412,8 @@ class ReadTextFileExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         file_path = context.resolve_value(config.get("filePath", ""))
         encoding = context.resolve_value(config.get("encoding", "utf-8"))  # 支持变量引用
-        variable_name = config.get("resultVariable", "file_content")
+        # 字段与前端面板对齐: variableName，兼容旧字段名 resultVariable
+        variable_name = config.get("variableName") or config.get("resultVariable", "file_content")
 
         if not file_path:
             return ModuleResult(success=False, error="文件路径不能为空")

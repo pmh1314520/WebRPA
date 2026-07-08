@@ -59,6 +59,10 @@ class PhonePullFileExecutor(ModuleExecutor):
             success, error = adb.pull_file(remote_path, local_path, device_id)
             if not success:
                 return ModuleResult(success=False, error=error)
-            return ModuleResult(success=True, message=f"文件已保存到: {local_path}")
+            # 字段与前端面板对齐: 将本地文件路径保存到 variableName(兼容 saveToVariable)
+            result_variable = config.get('variableName') or config.get('saveToVariable', '')
+            if result_variable:
+                context.set_variable(result_variable, local_path)
+            return ModuleResult(success=True, message=f"文件已保存到: {local_path}", data={'path': local_path})
         except Exception as e:
             return ModuleResult(success=False, error=f"拉取文件失败: {str(e)}")
