@@ -1349,6 +1349,8 @@ class GestureTriggerExecutor(ModuleExecutor):
         debug_window = config.get('debugWindow', False)
         timeout = to_int(config.get('timeout', 60), 60, context)
         save_to_variable = config.get('saveToVariable', 'gesture_data')
+        # 面板选项：手势匹配的相似度阈值（0-1）
+        confidence_threshold = config.get('confidenceThreshold', None)
         
         if not gesture_name:
             return ModuleResult(success=False, error="手势名称不能为空")
@@ -1356,6 +1358,12 @@ class GestureTriggerExecutor(ModuleExecutor):
         try:
             from app.services.gesture_recognition_service import gesture_service
             from app.services.trigger_manager import trigger_manager
+            # 应用用户配置的相似度阈值（未配置则沿用服务默认 0.60）
+            if confidence_threshold not in (None, ''):
+                try:
+                    gesture_service.match_threshold = float(confidence_threshold)
+                except (ValueError, TypeError):
+                    pass
             
             context.add_log('info', f"👋 手势触发器已启动", None)
             context.add_log('info', f"🎯 目标手势: {gesture_name}", None)

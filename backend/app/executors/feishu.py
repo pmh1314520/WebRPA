@@ -181,6 +181,12 @@ class FeishuBitableReadExecutor(ModuleExecutor):
             app_token = context.resolve_value(config.get('appToken', ''))
             table_id = context.resolve_value(config.get('tableId', ''))
             variable_name = config.get('variableName', 'feishu_data')
+            # 面板选项：每页大小(飞书上限 500)，未配置则用 500
+            try:
+                page_size = int(context.resolve_value(config.get('pageSize', 500)) or 500)
+            except (ValueError, TypeError):
+                page_size = 500
+            page_size = max(1, min(page_size, 500))
             
             if not all([app_id, app_secret, app_token, table_id]):
                 return ModuleResult(
@@ -197,7 +203,7 @@ class FeishuBitableReadExecutor(ModuleExecutor):
             page_token = None
             
             while True:
-                params = {'page_size': 500}
+                params = {'page_size': page_size}
                 if page_token:
                     params['page_token'] = page_token
                 

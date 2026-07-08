@@ -129,7 +129,8 @@ class GestureRecognitionService:
         
         best_match = None
         best_similarity = 0.0
-        threshold = 0.60  # 相似度阈值（60%效果最佳）
+        # 相似度阈值（默认 0.60，可由手势触发器的 confidenceThreshold 覆盖）
+        threshold = getattr(self, 'match_threshold', 0.60)
         
         for gesture_name, saved_landmarks in self.custom_gestures.items():
             similarity = self.calculate_gesture_similarity(current_landmarks, saved_landmarks)

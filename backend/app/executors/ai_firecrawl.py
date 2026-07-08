@@ -196,6 +196,8 @@ class FirecrawlMapExecutor(ModuleExecutor):
             search = context.resolve_value(config.get('search', ''))
             include_subdomains = config.get('includeSubdomains', False)
             limit = config.get('limit', 5000)
+            # 面板选项：是否忽略站点地图。为 False 时会额外抓取 /sitemap.xml 以发现更多链接
+            ignore_sitemap = config.get('ignoreSitemap', True)
             
             # 参数验证
             if not url:
@@ -254,6 +256,33 @@ class FirecrawlMapExecutor(ModuleExecutor):
                     
                 finally:
                     await browser.close()
+            
+            # 若不忽略站点地图，抓取 /sitemap.xml 合并更多链接（同样受域名/搜索/上限过滤）
+            if not ignore_sitemap and len(links_found) < limit:
+                try:
+                    import re as _re
+                    import httpx as _httpx
+                    sitemap_url = f"{urlparse(url).scheme}://{base_domain}/sitemap.xml"
+                    await context.send_progress(f"🗺️ 正在读取站点地图: {sitemap_url}", "info")
+                    async with _httpx.AsyncClient(timeout=20, follow_redirects=True) as _client:
+                        _resp = await _client.get(sitemap_url)
+                    if _resp.status_code == 200:
+                        for loc in _re.findall(r"<loc>\s*(.*?)\s*</loc>", _resp.text, _re.IGNORECASE):
+                            parsed = urlparse(loc)
+                            if parsed.scheme not in ('http', 'https'):
+                                continue
+                            if not include_subdomains:
+                                if parsed.netloc != base_domain:
+                                    continue
+                            elif not parsed.netloc.endswith(base_domain):
+                                continue
+                            if search and search.lower() not in loc.lower():
+                                continue
+                            links_found.add(loc)
+                            if len(links_found) >= limit:
+                                break
+                except Exception as _e:
+                    await context.send_progress(f"⚠️ 站点地图读取失败(忽略): {str(_e)}", "warning")
             
             # 转换为列表
             links = sorted(list(links_found))
@@ -352,6 +381,8 @@ class FirecrawlCrawlExecutor(ModuleExecutor):
             include_paths = context.resolve_value(config.get('includePaths', ''))
             exclude_paths = context.resolve_value(config.get('excludePaths', ''))
             allow_external_links = config.get('allowExternalLinks', False)
+            # 面板选项：是否允许爬取初始路径之外(向上/同级)的链接，默认仅向前(子路径)
+            allow_backward_links = config.get('allowBackwardLinks', False)
             
             # 抓取格式
             formats = config.get('formats', ['markdown'])
@@ -368,6 +399,9 @@ class FirecrawlCrawlExecutor(ModuleExecutor):
             # 解析基础 URL
             base_domain = urlparse(url).netloc
             base_url = f"{urlparse(url).scheme}://{base_domain}"
+            # 计算初始路径前缀(到最后一个 '/')，用于 allowBackwardLinks=False 时只爬子路径
+            _start_path = urlparse(url).path or "/"
+            base_path_prefix = _start_path.rsplit('/', 1)[0] + '/' if '/' in _start_path else '/'
             
             # 准备过滤规则
             include_patterns = []
@@ -436,6 +470,11 @@ class FirecrawlCrawlExecutor(ModuleExecutor):
                                         # 检查域名
                                         if not allow_external_links:
                                             if parsed.netloc != base_domain:
+                                                continue
+                                        
+                                        # 是否允许向后/同级链接：默认仅爬初始路径前缀下的子页面
+                                        if not allow_backward_links:
+                                            if not (parsed.path or '/').startswith(base_path_prefix):
                                                 continue
                                         
                                         # 添加到待访问列表
