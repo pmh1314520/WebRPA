@@ -257,7 +257,9 @@ class LoopExecutor(ModuleExecutor):
         
         start_value = to_int(config.get('startValue', 1), 1, context)
         end_value = to_int(config.get('endValue', 10), 10, context)
-        step_value = to_int(config.get('stepValue', 1), 1, context)
+        # 字段与前端面板对齐: step，兼容旧字段名 stepValue
+        raw_step = config.get('stepValue') if config.get('stepValue') is not None else config.get('step', 1)
+        step_value = to_int(raw_step, 1, context)
 
         if loop_type == 'range':
             initial_index = start_value

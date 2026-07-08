@@ -59,6 +59,8 @@ class DictFilterExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
             dict_variable = context.resolve_value(config.get('dictVariable', ''))
+            # 字段与前端面板对齐: condition(表达式，值以 v、键以 k 引用，如 "v > 10")
+            condition = context.resolve_value(config.get('condition', ''))
             filter_keys = context.resolve_value(config.get('filterKeys', ''))
             filter_mode = context.resolve_value(config.get('filterMode', 'include'))
             result_variable = config.get('resultVariable', '')
@@ -73,6 +75,18 @@ class DictFilterExecutor(ModuleExecutor):
                 return ModuleResult(success=False, error=f"变量 '{dict_variable}' 不存在")
             if not isinstance(dict_data, dict):
                 return ModuleResult(success=False, error=f"变量 '{dict_variable}' 不是字典类型")
+            
+            # 优先使用面板的表达式过滤（值以 v、键以 k 引用）
+            if condition:
+                from ..utils.safe_expr import safe_eval, UnsafeExpressionError
+                try:
+                    result = {k: v for k, v in dict_data.items() if safe_eval(condition, {"v": v, "k": k})}
+                except UnsafeExpressionError as e:
+                    return ModuleResult(success=False, error=f"过滤条件不合法: {str(e)}")
+                except Exception as e:
+                    return ModuleResult(success=False, error=f"过滤条件求值失败: {str(e)}")
+                context.set_variable(result_variable, result)
+                return ModuleResult(success=True, message=f"过滤完成，保留 {len(result)} 个键", data=result)
             
             keys = [k.strip() for k in filter_keys.split(',') if k.strip()]
             
@@ -98,6 +112,8 @@ class DictMapValuesExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
             dict_variable = context.resolve_value(config.get('dictVariable', ''))
+            # 字段与前端面板对齐: expression(表达式，值以 v、键以 k 引用，如 "v * 2")
+            expression = context.resolve_value(config.get('expression', ''))
             operation = context.resolve_value(config.get('operation', 'multiply'))
             operand = context.resolve_value(config.get('operand', '1'))
             result_variable = config.get('resultVariable', '')
@@ -112,6 +128,18 @@ class DictMapValuesExecutor(ModuleExecutor):
                 return ModuleResult(success=False, error=f"变量 '{dict_variable}' 不存在")
             if not isinstance(dict_data, dict):
                 return ModuleResult(success=False, error=f"变量 '{dict_variable}' 不是字典类型")
+            
+            # 优先使用面板的表达式映射（值以 v、键以 k 引用）
+            if expression:
+                from ..utils.safe_expr import safe_eval, UnsafeExpressionError
+                try:
+                    result = {k: safe_eval(expression, {"v": v, "k": k}) for k, v in dict_data.items()}
+                except UnsafeExpressionError as e:
+                    return ModuleResult(success=False, error=f"映射表达式不合法: {str(e)}")
+                except Exception as e:
+                    return ModuleResult(success=False, error=f"映射表达式求值失败: {str(e)}")
+                context.set_variable(result_variable, result)
+                return ModuleResult(success=True, message=f"映射完成，处理 {len(result)} 个键值对", data=result)
             
             result = {}
             op_val = float(operand)

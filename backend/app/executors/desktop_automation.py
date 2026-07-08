@@ -1012,7 +1012,11 @@ class DesktopClickControlExecutor(ModuleExecutor):
             if not control_info:
                 return ModuleResult(success=False, error=f"控件信息不能为空，请确保变量 '{control_variable}' 已创建")
             
-            click_type = context.resolve_value(config.get("clickType", "single"))  # single, double, right
+            # 字段与前端面板对齐: button(left/right/double)，兼容旧字段名 clickType(single/double/right)
+            click_type = context.resolve_value(config.get("clickType", ""))
+            if not click_type:
+                button = context.resolve_value(config.get("button", "left"))
+                click_type = {"left": "single", "right": "right", "double": "double"}.get(button, "single")
             simulate = to_bool(config.get("simulate", True), True, context)
             
             if not control_info:
@@ -1296,10 +1300,11 @@ class DesktopCheckboxExecutor(ModuleExecutor):
             if not control_info:
                 return ModuleResult(success=False, error=f"控件信息不能为空，请确保变量 '{control_variable}' 已创建")
             
-            checked = to_bool(config.get("checked", True), True, context)
-            
-            if not control_info:
-                return ModuleResult(success=False, error="控件信息不能为空")
+            # 字段与前端面板对齐: action(check/uncheck/toggle/get_state)，兼容旧字段名 checked(布尔)
+            action = context.resolve_value(config.get("action", ""))
+            if not action:
+                action = "check" if to_bool(config.get("checked", True), True, context) else "uncheck"
+            save_to_variable = config.get("saveToVariable", "")
             
             if isinstance(control_info, dict):
                 handle = control_info.get("handle")
@@ -1311,21 +1316,32 @@ class DesktopCheckboxExecutor(ModuleExecutor):
             if not control or not control.Exists(0, 0):
                 return ModuleResult(success=False, error="控件不存在")
             
-            # 获取当前状态
             try:
                 toggle_pattern = control.GetTogglePattern()
-                current_state = toggle_pattern.ToggleState
+                current_state = toggle_pattern.ToggleState  # 0=未选中, 1=选中
                 
-                # 如果状态不匹配，则切换
-                if (checked and current_state == 0) or (not checked and current_state == 1):
+                if action == "get_state":
+                    state_bool = current_state == 1
+                    if save_to_variable:
+                        context.set_variable(save_to_variable, state_bool)
+                    return ModuleResult(success=True, message=f"复选框状态: {'已勾选' if state_bool else '未勾选'}", data=state_bool)
+                
+                if action == "toggle":
+                    toggle_pattern.Toggle()
+                elif action == "check" and current_state == 0:
+                    toggle_pattern.Toggle()
+                elif action == "uncheck" and current_state == 1:
                     toggle_pattern.Toggle()
             except Exception:
-                # 如果不支持 TogglePattern，使用点击
+                # 不支持 TogglePattern：get_state 无法获取，其余动作退回点击
+                if action == "get_state":
+                    return ModuleResult(success=False, error="该控件不支持获取勾选状态")
                 control.Click()
             
+            action_text = {"check": "勾选", "uncheck": "取消勾选", "toggle": "切换"}.get(action, action)
             return ModuleResult(
                 success=True,
-                message=f"已{'勾选' if checked else '取消勾选'}复选框"
+                message=f"已{action_text}复选框"
             )
             
         except ImportError:
@@ -2145,6 +2161,14 @@ class DesktopListOperateExecutor(ModuleExecutor):
             operation = context.resolve_value(config.get("operation", "select"))  # select, get_items, get_selected
             item_index = to_int(config.get("itemIndex", 0), 0, context)
             item_name = context.resolve_value(config.get("itemName", ""))
+            # 字段与前端面板对齐: value(单一字段，纯数字视为索引，否则视为文本)
+            value = context.resolve_value(config.get("value", ""))
+            if value not in ('', None) and not item_name:
+                sval = str(value).strip()
+                if sval.lstrip('-').isdigit():
+                    item_index = int(sval)
+                else:
+                    item_name = sval
             # 保存到变量，默认使用 list_result
             save_to_variable = config.get("saveToVariable", "list_result")
             

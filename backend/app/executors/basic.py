@@ -2776,6 +2776,9 @@ class UseOpenedPageExecutor(ModuleExecutor):
         action = context.resolve_value(config.get('action', 'use'))
         url = context.resolve_value(config.get('url', ''))
         wait_until = context.resolve_value(config.get('waitUntil', 'load'))
+        # 字段与前端面板对齐: pageIdentifier + matchMode(title/url)，用于在多个已打开页面中定位目标页
+        page_identifier = context.resolve_value(config.get('pageIdentifier', ''))
+        match_mode = context.resolve_value(config.get('matchMode', 'title'))
         
         try:
             # 优先从全局 browser_engine 获取共享 context 和当前页面
@@ -2801,7 +2804,28 @@ class UseOpenedPageExecutor(ModuleExecutor):
                 else:
                     return ModuleResult(success=False, error="浏览器未启动，请先点击'打开浏览器'按钮")
 
-            await context.switch_to_latest_page()
+            # 若指定了页面标识，则在所有已打开页面中按标题/URL 模糊匹配定位目标页
+            matched_page = None
+            if page_identifier and context.browser_context is not None:
+                needle = str(page_identifier).lower()
+                for p in context.browser_context.pages:
+                    try:
+                        if match_mode == 'url':
+                            hay = (p.url or '').lower()
+                        else:  # title
+                            hay = (await p.title() or '').lower()
+                    except Exception:
+                        continue
+                    if needle in hay:
+                        matched_page = p
+                        break
+                if matched_page is not None:
+                    context.page = matched_page
+                    print(f"[UseOpenedPage] 按{match_mode}匹配到页面: {context.page.url}")
+                else:
+                    return ModuleResult(success=False, error=f"未找到匹配 '{page_identifier}' 的已打开页面")
+            else:
+                await context.switch_to_latest_page()
             
             if action == 'use':
                 return ModuleResult(

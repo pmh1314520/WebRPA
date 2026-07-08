@@ -78,15 +78,27 @@ class FeishuBitableWriteExecutor(ModuleExecutor):
             data_source = config.get('dataSource', 'manual')  # manual, variable
             
             if data_source == 'manual':
-                # 手动输入的字段映射
-                fields = config.get('fields', {})
+                # 字段与前端面板对齐: 手动模式使用 recordData(JSON 字符串)；兼容旧字段 fields(映射)
                 record_data = {}
-                for field_name, field_value in fields.items():
-                    record_data[field_name] = context.resolve_value(field_value)
+                record_data_raw = config.get('recordData', '')
+                if record_data_raw:
+                    resolved = context.resolve_value(record_data_raw)
+                    if isinstance(resolved, dict):
+                        record_data = resolved
+                    elif isinstance(resolved, str) and resolved.strip():
+                        import json as _json
+                        try:
+                            record_data = _json.loads(resolved)
+                        except Exception:
+                            return ModuleResult(success=False, message="记录数据JSON格式错误", error="记录数据JSON格式错误")
+                else:
+                    fields = config.get('fields', {})
+                    for field_name, field_value in fields.items():
+                        record_data[field_name] = context.resolve_value(field_value)
                 records = [record_data]
             else:
-                # 从变量获取数据
-                variable_name = config.get('variableName', '')
+                # 从变量获取数据（面板字段 dataVariable，兼容旧字段 variableName）
+                variable_name = config.get('dataVariable', '') or config.get('variableName', '')
                 data = context.get_variable(variable_name)
                 if not data:
                     return ModuleResult(
@@ -247,7 +259,8 @@ class FeishuSheetWriteExecutor(ModuleExecutor):
             app_secret = context.resolve_value(config.get('appSecret', ''))
             spreadsheet_token = context.resolve_value(config.get('spreadsheetToken', ''))
             sheet_id = context.resolve_value(config.get('sheetId', ''))
-            range_notation = context.resolve_value(config.get('range', 'A1'))
+            # 字段与前端面板对齐: startCell，兼容旧字段名 range
+            range_notation = context.resolve_value(config.get('range', '') or config.get('startCell', '') or 'A1')
             
             if not all([app_id, app_secret, spreadsheet_token]):
                 return ModuleResult(
@@ -268,8 +281,8 @@ class FeishuSheetWriteExecutor(ModuleExecutor):
                     resolved_row = [context.resolve_value(cell) for cell in row]
                     resolved_values.append(resolved_row)
             else:
-                # 从变量获取数据
-                variable_name = config.get('variableName', '')
+                # 从变量获取数据（面板字段 dataVariable，兼容旧字段 variableName）
+                variable_name = config.get('dataVariable', '') or config.get('variableName', '')
                 data = context.get_variable(variable_name)
                 if not data:
                     return ModuleResult(

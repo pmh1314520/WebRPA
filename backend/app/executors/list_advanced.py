@@ -128,6 +128,8 @@ class ListFilterExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
             list_variable = context.resolve_value(config.get('listVariable', ''))
+            # 字段与前端面板对齐: condition(表达式，元素以 x 引用，如 "x > 10")
+            condition = context.resolve_value(config.get('condition', ''))
             filter_type = context.resolve_value(config.get('filterType', 'greater'))
             compare_value = context.resolve_value(config.get('compareValue', ''))
             result_variable = config.get('resultVariable', '')
@@ -142,6 +144,18 @@ class ListFilterExecutor(ModuleExecutor):
                 return ModuleResult(success=False, error=f"变量 '{list_variable}' 不存在")
             if not isinstance(list_data, list):
                 return ModuleResult(success=False, error=f"变量 '{list_variable}' 不是列表类型")
+            
+            # 优先使用面板的表达式过滤（元素以 x 引用）
+            if condition:
+                from ..utils.safe_expr import safe_eval, UnsafeExpressionError
+                try:
+                    result = [x for x in list_data if safe_eval(condition, {"x": x})]
+                except UnsafeExpressionError as e:
+                    return ModuleResult(success=False, error=f"过滤条件不合法: {str(e)}")
+                except Exception as e:
+                    return ModuleResult(success=False, error=f"过滤条件求值失败: {str(e)}")
+                context.set_variable(result_variable, result)
+                return ModuleResult(success=True, message=f"过滤完成，得到 {len(result)} 个元素", data=result)
             
             result = []
             if filter_type == 'greater':
@@ -175,6 +189,8 @@ class ListMapExecutor(ModuleExecutor):
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
         try:
             list_variable = context.resolve_value(config.get('listVariable', ''))
+            # 字段与前端面板对齐: expression(表达式，元素以 x 引用，如 "x * 2")
+            expression = context.resolve_value(config.get('expression', ''))
             operation = context.resolve_value(config.get('operation', 'multiply'))
             operand = context.resolve_value(config.get('operand', '1'))
             result_variable = config.get('resultVariable', '')
@@ -189,6 +205,18 @@ class ListMapExecutor(ModuleExecutor):
                 return ModuleResult(success=False, error=f"变量 '{list_variable}' 不存在")
             if not isinstance(list_data, list):
                 return ModuleResult(success=False, error=f"变量 '{list_variable}' 不是列表类型")
+            
+            # 优先使用面板的表达式映射（元素以 x 引用）
+            if expression:
+                from ..utils.safe_expr import safe_eval, UnsafeExpressionError
+                try:
+                    result = [safe_eval(expression, {"x": x}) for x in list_data]
+                except UnsafeExpressionError as e:
+                    return ModuleResult(success=False, error=f"映射表达式不合法: {str(e)}")
+                except Exception as e:
+                    return ModuleResult(success=False, error=f"映射表达式求值失败: {str(e)}")
+                context.set_variable(result_variable, result)
+                return ModuleResult(success=True, message=f"映射完成，处理 {len(result)} 个元素", data=result)
             
             result = []
             op_val = float(operand)

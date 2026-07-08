@@ -34,6 +34,7 @@ class ApiRequestExecutor(ModuleExecutor):
         request_method = context.resolve_value(config.get('requestMethod', 'GET')).upper()  # 支持变量引用
         request_headers_str = context.resolve_value(config.get('requestHeaders', ''))
         request_body_str = context.resolve_value(config.get('requestBody', ''))
+        request_cookies_str = context.resolve_value(config.get('requestCookies', ''))
         variable_name = config.get('variableName', '')
         request_timeout = to_int(config.get('requestTimeout', 30), 30, context)
         
@@ -55,11 +56,31 @@ class ApiRequestExecutor(ModuleExecutor):
                 except json.JSONDecodeError:
                     body = request_body_str
             
+            # 解析 Cookies：支持 JSON({"k":"v"}) 或 键值对(k=v; k2=v2) 两种格式
+            cookies = None
+            if request_cookies_str:
+                cs = request_cookies_str.strip()
+                try:
+                    parsed = json.loads(cs)
+                    if isinstance(parsed, dict):
+                        cookies = {str(k): str(v) for k, v in parsed.items()}
+                except json.JSONDecodeError:
+                    cookies = {}
+                    for pair in cs.split(';'):
+                        if '=' in pair:
+                            k, v = pair.split('=', 1)
+                            k = k.strip()
+                            if k:
+                                cookies[k] = v.strip()
+                    if not cookies:
+                        cookies = None
+            
             async with httpx.AsyncClient(timeout=request_timeout) as client:
                 response = await client.request(
                     method=request_method,
                     url=request_url,
                     headers=headers,
+                    cookies=cookies,
                     json=body if isinstance(body, dict) else None,
                     data=body if isinstance(body, str) else None,
                 )
