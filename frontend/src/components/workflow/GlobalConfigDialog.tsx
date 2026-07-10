@@ -1760,7 +1760,42 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
 
                 {/* 浏览器扩展目录配置 */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700">浏览器扩展目录</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-gray-700">浏览器扩展目录</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isSelectingFolder}
+                      className="border-gray-300 text-gray-700 h-7 px-2 text-xs"
+                      onClick={async () => {
+                        setIsSelectingFolder(true)
+                        try {
+                          const result = await systemApi.selectFolder('选择浏览器扩展目录（含 manifest.json）')
+                          if (result.data?.success && result.data.path) {
+                            const picked = result.data.path
+                            const cur = (config.browser?.extensionDirs || '').replace(/\s+$/, '')
+                            const lines = cur ? cur.split('\n').map((l) => l.trim()).filter(Boolean) : []
+                            if (!lines.includes(picked)) {
+                              lines.push(picked)
+                            }
+                            updateBrowserConfig({ extensionDirs: lines.join('\n') })
+                          }
+                        } catch (error) {
+                          console.error('选择文件夹失败:', error)
+                        } finally {
+                          setIsSelectingFolder(false)
+                        }
+                      }}
+                    >
+                      {isSelectingFolder ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Folder className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      选择文件夹添加
+                    </Button>
+                  </div>
                   <textarea
                     value={config.browser?.extensionDirs || ''}
                     onChange={(e) => updateBrowserConfig({ extensionDirs: e.target.value })}

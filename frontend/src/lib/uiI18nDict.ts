@@ -718,6 +718,8 @@ Object.assign(UI_DICT, {
   '每行一个参数，留空则使用默认参数。常用参数：': 'One argument per line; leave blank to use defaults. Common arguments:',
   '恢复默认启动参数': 'Restore default launch arguments',
   '浏览器扩展目录': 'Browser extension directories',
+  '选择文件夹添加': 'Add folder',
+  '选择浏览器扩展目录（含 manifest.json）': 'Select a browser extension directory (containing manifest.json)',
   '每行一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展': 'One unpacked extension directory per line (a folder containing manifest.json); leave blank to load none',
   '每行填写一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展。': 'Enter one unpacked extension directory per line (a folder containing manifest.json); leave blank to load no extensions.',
   '仅支持解压后的扩展，不支持从应用商店或 .crx 在线安装。': 'Only unpacked extensions are supported; online install from a store or .crx is not.',
