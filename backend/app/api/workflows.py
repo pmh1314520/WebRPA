@@ -225,6 +225,8 @@ class ExecuteOptions(BaseModel):
     # 可视化调试：断点节点 id 列表 + 是否单步模式
     breakpoints: Optional[list[str]] = None
     stepMode: bool = False
+    # 调试便利：从指定节点开始运行（而非从最开头的起始节点）。为空则按默认起始节点执行。
+    startNodeId: Optional[str] = None
 
 
 @router.post("", response_model=dict)
@@ -514,6 +516,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             'fullscreen': options.browserConfig.fullscreen if options.browserConfig else False,
             'launchArgs': options.browserConfig.launchArgs if options.browserConfig else None,
         } if options.browserConfig else None,
+        start_node_id=options.startNodeId,
     )
     
     # 从全局变量存储中恢复变量

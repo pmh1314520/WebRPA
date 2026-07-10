@@ -3,7 +3,7 @@ import { Handle, Position, type NodeProps, useReactFlow } from '@xyflow/react'
 import { cn } from '@/lib/utils'
 import type { NodeData } from '@/store/workflowStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
-import { Globe, ExternalLink } from 'lucide-react'
+import { Globe, ExternalLink, Play } from 'lucide-react'
 import { moduleIcons } from './ModuleSidebar'
 import { moduleColors } from './moduleColors'
 import { useNodeRunStore } from '@/store/nodeRunStore'
@@ -149,6 +149,21 @@ function ModuleNodeComponent({ id, data, selected }: NodeProps) {
         title={hasBreakpoint ? '移除断点' : '设置断点（运行到此暂停）'}
         onClick={(e) => { e.stopPropagation(); toggleBreakpoint(id) }}
       />
+
+      {/* 从此节点开始运行：悬停显现的绿色播放按钮（调试用，跳过其上游节点） */}
+      <button
+        className={cn(
+          'absolute -left-2 -top-2 w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500 text-white shadow ring-2 ring-white z-10 cursor-pointer',
+          'opacity-0 group-hover:opacity-100 hover:scale-110 hover:bg-emerald-600 transition-all duration-150'
+        )}
+        title="从此节点开始运行（跳过其上游节点）"
+        onClick={(e) => {
+          e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('run-from-node', { detail: { nodeId: id } }))
+        }}
+      >
+        <Play className="w-2.5 h-2.5" strokeWidth={3} fill="currentColor" />
+      </button>
 
       {isDisabled && (
         <div className="absolute -top-2 -right-2 bg-[hsl(var(--slate-700))] text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider">

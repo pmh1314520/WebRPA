@@ -255,6 +255,7 @@ class WorkflowExecutor:
         on_data_row: Optional[Callable[[dict], Awaitable[None]]] = None,
         headless: bool = False,
         browser_config: Optional[dict] = None,
+        start_node_id: Optional[str] = None,
     ):
         self.workflow = workflow
         self.on_log = on_log
@@ -264,6 +265,8 @@ class WorkflowExecutor:
         self.on_data_row = on_data_row
         self.headless = headless
         self.browser_config = browser_config
+        # 从指定节点开始运行（调试用）。为空则按图的默认起始节点执行。
+        self.start_node_id = start_node_id
         
         self.context = ExecutionContext(headless=headless, browser_config=browser_config)
         
@@ -2695,9 +2698,32 @@ class WorkflowExecutor:
             # 收集所有子流程分组内的节点ID（这些节点不应该被主流程直接执行）
             self._subflow_node_ids = self._get_subflow_node_ids()
             
-            start_nodes = self.graph.get_start_nodes()
-            # 过滤掉子流程内的起始节点
-            start_nodes = [nid for nid in start_nodes if nid not in self._subflow_node_ids]
+            # 若指定了起始节点（调试用：从中间某个节点开始运行），优先使用它作为唯一起点。
+            # 引擎的死路消除（_is_node_reachable 只从当前前向前沿判定可达性）会自动跳过
+            # 起点上游、永不会执行的前驱，因此下游汇合节点不会因缺失上游分支而卡住。
+            if self.start_node_id:
+                target = self.graph.get_node(self.start_node_id)
+                if target is None:
+                    await self._log(LogLevel.WARNING,
+                                    f"指定的起始节点不存在，将按默认起始节点执行", is_system_log=True)
+                    start_nodes = self.graph.get_start_nodes()
+                    start_nodes = [nid for nid in start_nodes if nid not in self._subflow_node_ids]
+                elif self.start_node_id in self._subflow_node_ids:
+                    await self._log(LogLevel.WARNING,
+                                    f"指定的起始节点位于子流程分组内，暂不支持从此处开始，将按默认起始节点执行",
+                                    is_system_log=True)
+                    start_nodes = self.graph.get_start_nodes()
+                    start_nodes = [nid for nid in start_nodes if nid not in self._subflow_node_ids]
+                else:
+                    _label = (target.data or {}).get('label', target.type)
+                    await self._log(LogLevel.INFO,
+                                    f"▶️ 从指定节点开始运行：「{_label}」（跳过其上游节点）",
+                                    is_system_log=True)
+                    start_nodes = [self.start_node_id]
+            else:
+                start_nodes = self.graph.get_start_nodes()
+                # 过滤掉子流程内的起始节点
+                start_nodes = [nid for nid in start_nodes if nid not in self._subflow_node_ids]
             
             # 调试：打印起始节点信息
             print(f"[DEBUG] 找到 {len(start_nodes)} 个起始节点:")

@@ -210,16 +210,26 @@ export function Toolbar() {
   }, [])
 
   // 通用执行函数
-  const executeWorkflow = useCallback(async (headless: boolean) => {
+  // startNodeId：可选，从指定节点开始运行（调试用），为空则从默认起始节点运行
+  const executeWorkflow = useCallback(async (headless: boolean, startNodeId?: string) => {
     if (nodes.length === 0) {
       addLog({ level: 'warning', message: '工作流没有任何节点' })
       return
     }
 
+    // 从指定节点开始时，给出对应节点名称提示
+    let startNodeLabel = ''
+    if (startNodeId) {
+      const sn = nodes.find(n => n.id === startNodeId)
+      startNodeLabel = (sn?.data?.label as string) || startNodeId
+    }
+
     clearLogs()
     clearCollectedData()
     setBottomPanelTab('logs')  // 切换到日志栏
-    addLog({ level: 'info', message: `正在准备执行工作流${headless ? '（无头模式）' : ''}...` })
+    addLog({ level: 'info', message: startNodeId
+      ? `从指定节点开始执行工作流：${startNodeLabel}`
+      : `正在准备执行工作流${headless ? '（无头模式）' : ''}...` })
 
     try {
       // 先创建或更新工作流
@@ -307,6 +317,7 @@ export function Toolbar() {
         browserConfig,
         breakpoints: Array.from(useDebugStore.getState().breakpoints),
         stepMode: useDebugStore.getState().stepMode,
+        startNodeId: startNodeId || undefined,
       })
       
       if (executeResult.error) {
@@ -315,7 +326,9 @@ export function Toolbar() {
       }
 
       setExecutionStatus('running')
-      addLog({ level: 'info', message: `工作流开始执行${headless ? '（无头模式）' : ''}` })
+      addLog({ level: 'info', message: startNodeId
+        ? `工作流已从指定节点开始执行：${startNodeLabel}`
+        : `工作流开始执行${headless ? '（无头模式）' : ''}` })
     } catch (error) {
       addLog({ level: 'error', message: `执行异常: ${error}` })
     }
@@ -329,6 +342,16 @@ export function Toolbar() {
   // 无头模式运行
   const handleRunHeadless = useCallback(async () => {
     await executeWorkflow(true)
+  }, [executeWorkflow])
+
+  // 监听节点上「从此节点开始运行」按钮触发的事件（有头模式运行，便于调试观察）
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const nodeId = (e as CustomEvent).detail?.nodeId
+      if (nodeId) executeWorkflow(false, nodeId)
+    }
+    window.addEventListener('run-from-node', handler as EventListener)
+    return () => window.removeEventListener('run-from-node', handler as EventListener)
   }, [executeWorkflow])
 
   const handleStop = useCallback(async () => {
