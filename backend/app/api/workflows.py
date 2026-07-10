@@ -217,6 +217,7 @@ class BrowserConfig(BaseModel):
     fullscreen: bool = False
     autoCloseBrowser: bool = False
     launchArgs: Optional[str] = None
+    extensionDirs: Optional[str] = None
 
 
 class ExecuteOptions(BaseModel):
@@ -515,6 +516,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             'userDataDir': options.browserConfig.userDataDir if options.browserConfig else None,
             'fullscreen': options.browserConfig.fullscreen if options.browserConfig else False,
             'launchArgs': options.browserConfig.launchArgs if options.browserConfig else None,
+            'extensionDirs': options.browserConfig.extensionDirs if options.browserConfig else None,
         } if options.browserConfig else None,
         start_node_id=options.startNodeId,
     )

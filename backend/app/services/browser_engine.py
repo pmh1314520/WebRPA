@@ -68,6 +68,33 @@ def _get_user_data_dir(browser_type: str, custom_dir: Optional[str] = None) -> s
     return str(p)
 
 
+def build_extension_args(extension_dirs: str = '') -> list:
+    """把"已解压扩展目录"（每行一个）转换为 Chromium 启动参数。
+
+    - 仅纳入真实存在的目录（校验避免坏路径导致浏览器直接启动失败）；
+    - 用逗号拼接多个目录，同时给出 --load-extension 与 --disable-extensions-except。
+    返回空列表表示无有效扩展目录。
+    """
+    if not extension_dirs:
+        return []
+    valid = []
+    for d in extension_dirs.split('\n'):
+        d = d.strip().strip('"')
+        if not d:
+            continue
+        try:
+            if Path(d).is_dir():
+                valid.append(d)
+            else:
+                print(f"[BrowserEngine] 扩展目录不存在，已跳过: {d}")
+        except Exception:
+            print(f"[BrowserEngine] 扩展目录无效，已跳过: {d}")
+    if not valid:
+        return []
+    joined = ','.join(valid)
+    return [f'--disable-extensions-except={joined}', f'--load-extension={joined}']
+
+
 def _build_launch_args(custom_args_str: str = '', extension_dirs: str = '') -> list:
     """构造 Playwright 启动参数列表
     
@@ -87,13 +114,8 @@ def _build_launch_args(custom_args_str: str = '', extension_dirs: str = '') -> l
         '--disable-notifications',
     ]
 
-    # 扩展加载参数：把每个解压目录用逗号拼接，交给 Chromium 的 --load-extension
-    ext_list = [d.strip() for d in (extension_dirs or '').split('\n') if d.strip()]
-    if ext_list:
-        joined = ','.join(ext_list)
-        # --disable-extensions-except 需与 --load-extension 一起用，确保仅加载指定扩展
-        default_args.append(f'--disable-extensions-except={joined}')
-        default_args.append(f'--load-extension={joined}')
+    # 扩展加载参数（含目录存在性校验，避免坏路径导致浏览器起不来）
+    default_args.extend(build_extension_args(extension_dirs))
 
     if not custom_args_str:
         return default_args

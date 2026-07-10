@@ -137,6 +137,17 @@ class OpenPageExecutor(ModuleExecutor):
                         '--disable-notifications',  # 禁用通知
                     ]
                     print(f"[OpenPage] 使用默认启动参数: {len(launch_args_list)} 个")
+
+                # 追加浏览器扩展加载参数（与"打开浏览器"路径一致；含目录存在性校验）
+                _ext_dirs = browser_config.get('extensionDirs', '') if browser_config else ''
+                if _ext_dirs:
+                    _ext_args = browser_engine.build_extension_args(_ext_dirs)
+                    if _ext_args:
+                        # 去掉用户/默认参数里可能已有的同名 flag，避免重复
+                        _ext_flags = {a.split('=', 1)[0] for a in _ext_args}
+                        launch_args_list = [a for a in launch_args_list if a.split('=', 1)[0] not in _ext_flags]
+                        launch_args_list.extend(_ext_args)
+                        print(f"[OpenPage] 已注入浏览器扩展参数: {len(_ext_args)} 个")
                 
                 # 根据浏览器类型选择 Playwright 浏览器引擎
                 if browser_type == 'firefox':

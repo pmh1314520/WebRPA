@@ -302,7 +302,8 @@ export function Toolbar() {
         userDataDir: config.browser.userDataDir || undefined,  // 不指定时!
         fullscreen: config.browser.fullscreen || false,
         autoCloseBrowser: config.browser.autoCloseBrowser,
-        launchArgs: config.browser.launchArgs || undefined  // 这个参数也没有!
+        launchArgs: config.browser.launchArgs || undefined,  // 这个参数也没有!
+        extensionDirs: config.browser.extensionDirs || undefined
       } : undefined
       
       console.log('[Toolbar] 执行工作流，无头模式:', headless, '浏览器配置:', browserConfig)
