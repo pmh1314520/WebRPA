@@ -1751,7 +1751,7 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     <div>每行填写一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展。</div>
                     <div>仅支持解压后的扩展，不支持从应用商店或 .crx 在线安装。</div>
                     <div>仅在有头模式下生效，重新点击打开浏览器后应用。</div>
-                    <div>部分较新版本的 Chrome/Edge 会限制自动化会话加载扩展，如无效可尝试改用内置 Chromium。</div>
+                    <div>配置扩展后会自动优先使用内置 Chromium 以可靠加载（使用独立数据目录，不影响你的 Edge/Chrome 登录态）；若未内置 Chromium 则回退系统浏览器。</div>
                   </div>
                 </div>
                 

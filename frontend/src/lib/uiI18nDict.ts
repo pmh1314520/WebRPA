@@ -722,7 +722,7 @@ Object.assign(UI_DICT, {
   '每行填写一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展。': 'Enter one unpacked extension directory per line (a folder containing manifest.json); leave blank to load no extensions.',
   '仅支持解压后的扩展，不支持从应用商店或 .crx 在线安装。': 'Only unpacked extensions are supported; online install from a store or .crx is not.',
   '仅在有头模式下生效，重新点击打开浏览器后应用。': 'Effective in headed mode only; re-click Open Browser to apply.',
-  '部分较新版本的 Chrome/Edge 会限制自动化会话加载扩展，如无效可尝试改用内置 Chromium。': 'Some newer Chrome/Edge versions restrict loading extensions in automation sessions; if it does not work, try the bundled Chromium.',
+  '配置扩展后会自动优先使用内置 Chromium 以可靠加载（使用独立数据目录，不影响你的 Edge/Chrome 登录态）；若未内置 Chromium 则回退系统浏览器。': 'When extensions are set, the bundled Chromium is preferred for reliable loading (it uses a separate data directory and does not affect your Edge/Chrome sign-in); if no bundled Chromium is present, it falls back to the system browser.',
   '窗口最大化启动': 'Launch maximized', '最大化启动': 'Launch maximized',
   '开启后浏览器将以最大化窗口启动（占满整个屏幕）': 'When enabled, the browser launches maximized (fills the whole screen)',
   '工作流结束后自动关闭浏览器': 'Close browser after workflow ends',
