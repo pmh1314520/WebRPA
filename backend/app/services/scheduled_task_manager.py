@@ -726,7 +726,12 @@ class ScheduledTaskManager:
                         pass
                     except Exception as e:
                         print(f"[ScheduledTaskManager] 重复任务调度失败: {e}")
-                asyncio.create_task(_repeat_after(interval, task_id, trigger_type))
+                # 必须持有 task 引用，否则长 interval 期间该后台任务可能被 GC 回收，
+                # 导致定时任务“悄悄不再重复”。用集合持引用 + 完成回调自动清理。
+                _bg = self.__dict__.setdefault('_repeat_tasks', set())
+                _rt = asyncio.create_task(_repeat_after(interval, task_id, trigger_type))
+                _bg.add(_rt)
+                _rt.add_done_callback(_bg.discard)
             else:
                 # 重复完成，重置计数
                 task.current_repeat_count = 0

@@ -18,6 +18,8 @@ from typing import Any
 
 _LOCK = threading.Lock()
 _loop_task: asyncio.Task | None = None
+# 持有正在运行的探针任务引用，避免 fire-and-forget 任务被 GC 提前回收导致探活丢失
+_probe_tasks: set = set()
 
 
 def _store_file() -> Path:
@@ -147,7 +149,9 @@ async def _loop():
                             cur[pid]["_next_due"] = data[pid]["_next_due"]
                     _save(cur)
             for pid, rec in due:
-                asyncio.create_task(_run_probe(pid, rec))
+                _pt = asyncio.create_task(_run_probe(pid, rec))
+                _probe_tasks.add(_pt)
+                _pt.add_done_callback(_probe_tasks.discard)
         except Exception as e:
             print(f"[health_probes] 循环异常: {e}")
         await asyncio.sleep(15)
