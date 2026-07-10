@@ -301,29 +301,11 @@ async def start(
                 engine = _playwright.chromium
 
             args_list = _build_launch_args(launch_args or '', extension_dirs or '')
-            # 是否配置了"有效存在"的扩展目录
-            has_ext = bool(build_extension_args(extension_dirs or ''))
 
-            # 扩展兜底：配了有效扩展 + 使用通道浏览器(Edge/Chrome) + 未指定自定义可执行路径时，
-            # 优先改用内置 Chromium。原因：较新版 Edge/Chrome 在"受自动化控制"的会话下会拒绝
-            # --load-extension，而 Playwright 内置 Chromium 对加载已解压扩展支持最可靠。
-            # 内置 Chromium 不可用时保留原通道并告警（优雅降级，绝不因此启动失败）。
-            prefer_bundled_chromium = False
-            if has_ext and browser_type in ('msedge', 'chrome') and not executable_path:
-                try:
-                    bundled = engine.executable_path
-                except Exception:
-                    bundled = None
-                if bundled and Path(bundled).exists():
-                    prefer_bundled_chromium = True
-                    print("[BrowserEngine] 检测到已配置浏览器扩展，为可靠加载扩展改用内置 Chromium")
-                else:
-                    print("[BrowserEngine] 已配置扩展但未找到内置 Chromium；继续使用系统浏览器，"
-                          "新版 Edge/Chrome 可能拒绝加载扩展")
-
-            # 用内置 Chromium 时使用独立 profile 目录，避免与 Edge/Chrome 的用户数据目录格式冲突
-            profile_type = 'chromium_ext' if prefer_bundled_chromium else browser_type
-            udd = _get_user_data_dir(profile_type, user_data_dir)
+            # 始终使用用户在配置里选择的浏览器：Edge/Chrome 自身即支持 --load-extension
+            # 加载已解压扩展（且能保留用户的登录态/Cookie）。内置 Chromium 仅作为用户手动
+            # 排障时的可选备用，不在此自动切换，避免丢失系统浏览器的登录态。
+            udd = _get_user_data_dir(browser_type, user_data_dir)
 
             launch_kwargs = {
                 'user_data_dir': udd,
@@ -335,8 +317,6 @@ async def start(
 
             if executable_path:
                 launch_kwargs['executable_path'] = executable_path
-            elif prefer_bundled_chromium:
-                pass  # 不设置 channel，即使用 Playwright 内置 Chromium
             elif browser_type in ('msedge', 'chrome'):
                 launch_kwargs['channel'] = browser_type
 

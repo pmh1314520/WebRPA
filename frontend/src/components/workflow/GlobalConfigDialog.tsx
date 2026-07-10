@@ -1807,18 +1807,18 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     <div>每行填写一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展。</div>
                     <div>仅支持解压后的扩展，不支持从应用商店或 .crx 在线安装。</div>
                     <div>仅在有头模式下生效，重新点击打开浏览器后应用。</div>
-                    <div>配置扩展后会自动优先使用内置 Chromium 以可靠加载（使用独立数据目录，不影响你的 Edge/Chrome 登录态）；若未内置 Chromium 则回退系统浏览器。</div>
+                    <div>扩展会直接加载到上方「浏览器」里选择的浏览器（Edge/Chrome），并保留你的登录态。</div>
                   </div>
                   {chromiumStatus.checked && (
                     chromiumStatus.available ? (
                       <div className="flex items-start gap-2 text-xs text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
                         <Check className="w-4 h-4 mt-0.5 shrink-0" />
-                        <span>已检测到内置 Chromium，扩展将可靠加载。</span>
+                        <span>已检测到内置 Chromium，可作为扩展加载异常时的备用浏览器。</span>
                       </div>
                     ) : (
-                      <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-300">
+                      <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
                         <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
-                        <span>未检测到内置 Chromium，新版 Edge/Chrome 下扩展可能无法加载。请在项目目录运行「Python313\python.exe -m playwright install chromium」以启用可靠的扩展加载。</span>
+                        <span>可选：如个别浏览器版本无法加载扩展，可在项目目录运行「Python313\python.exe -m playwright install chromium」启用内置 Chromium 作为备用。</span>
                       </div>
                     )
                   )}
