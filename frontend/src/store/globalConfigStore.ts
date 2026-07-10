@@ -156,6 +156,7 @@ export interface GlobalConfig {
     fullscreen: boolean  // 是否全屏启动
     autoCloseBrowser: boolean  // 工作流执行结束后是否自动关闭浏览器
     launchArgs: string  // 浏览器启动参数（每行一个参数）
+    extensionDirs?: string  // 需加载的已解压浏览器扩展目录（每行一个，仅有头模式生效）
   }
   // SSH远程操作默认配置
   ssh?: {
@@ -291,6 +292,7 @@ const defaultConfig: GlobalConfig = {
 --allow-running-insecure-content
 --disable-infobars
 --disable-notifications`,  // 默认启动参数
+    extensionDirs: '',  // 默认不加载任何浏览器扩展
   },
 }
 

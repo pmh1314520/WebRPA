@@ -1736,6 +1736,24 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     恢复默认启动参数
                   </Button>
                 )}
+
+                {/* 浏览器扩展目录配置 */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700">浏览器扩展目录</Label>
+                  <textarea
+                    value={config.browser?.extensionDirs || ''}
+                    onChange={(e) => updateBrowserConfig({ extensionDirs: e.target.value })}
+                    placeholder="每行一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展"
+                    rows={4}
+                    className="w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black resize-none"
+                  />
+                  <div className="text-xs text-gray-600 space-y-1 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                    <div>每行填写一个已解压的扩展目录（含 manifest.json 的文件夹），留空则不加载扩展。</div>
+                    <div>仅支持解压后的扩展，不支持从应用商店或 .crx 在线安装。</div>
+                    <div>仅在有头模式下生效，重新点击打开浏览器后应用。</div>
+                    <div>部分较新版本的 Chrome/Edge 会限制自动化会话加载扩展，如无效可尝试改用内置 Chromium。</div>
+                  </div>
+                </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div>

@@ -12,6 +12,8 @@ class BrowserConfig(BaseModel):
     userDataDir: Optional[str] = None
     fullscreen: bool = False
     launchArgs: Optional[str] = None
+    # 需加载的"已解压浏览器扩展目录"，每行一个（仅有头模式生效）
+    extensionDirs: Optional[str] = None
 
 
 class OpenBrowserRequest(BaseModel):
@@ -33,12 +35,14 @@ async def open_browser(request: OpenBrowserRequest = OpenBrowserRequest()):
     user_data_dir = None
     fullscreen = False
     launch_args = None
+    extension_dirs = None
     if request.browserConfig:
         browser_type = request.browserConfig.type
         executable_path = request.browserConfig.executablePath
         user_data_dir = request.browserConfig.userDataDir
         fullscreen = request.browserConfig.fullscreen
         launch_args = request.browserConfig.launchArgs
+        extension_dirs = request.browserConfig.extensionDirs
 
     if browser_engine.is_open():
         # 已打开，如需导航则导航
@@ -53,6 +57,7 @@ async def open_browser(request: OpenBrowserRequest = OpenBrowserRequest()):
         user_data_dir=user_data_dir,
         fullscreen=fullscreen,
         launch_args=launch_args,
+        extension_dirs=extension_dirs,
     )
     if success:
         if request.url != "about:blank":

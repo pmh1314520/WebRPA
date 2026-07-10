@@ -68,10 +68,13 @@ def _get_user_data_dir(browser_type: str, custom_dir: Optional[str] = None) -> s
     return str(p)
 
 
-def _build_launch_args(custom_args_str: str = '') -> list:
+def _build_launch_args(custom_args_str: str = '', extension_dirs: str = '') -> list:
     """构造 Playwright 启动参数列表
     
-    默认参数 + 用户自定义参数合并；用户参数若与默认重复以用户为准。
+    默认参数 + 扩展加载参数 + 用户自定义参数合并；用户参数若与默认重复以用户为准。
+
+    extension_dirs：需加载的"已解压扩展目录"，每行一个。非空时自动追加
+    --load-extension / --disable-extensions-except（仅在有头持久化上下文下有效）。
     """
     default_args = [
         '--disable-blink-features=AutomationControlled',
@@ -83,6 +86,15 @@ def _build_launch_args(custom_args_str: str = '') -> list:
         '--disable-infobars',
         '--disable-notifications',
     ]
+
+    # 扩展加载参数：把每个解压目录用逗号拼接，交给 Chromium 的 --load-extension
+    ext_list = [d.strip() for d in (extension_dirs or '').split('\n') if d.strip()]
+    if ext_list:
+        joined = ','.join(ext_list)
+        # --disable-extensions-except 需与 --load-extension 一起用，确保仅加载指定扩展
+        default_args.append(f'--disable-extensions-except={joined}')
+        default_args.append(f'--load-extension={joined}')
+
     if not custom_args_str:
         return default_args
 
@@ -218,6 +230,7 @@ async def start(
     user_data_dir: Optional[str] = None,
     fullscreen: bool = False,
     launch_args: Optional[str] = None,
+    extension_dirs: Optional[str] = None,
 ) -> tuple[bool, str]:
     """在主进程异步启动浏览器，返回 (成功, 错误消息)"""
     global _playwright, _context, _page, _is_open
@@ -237,7 +250,7 @@ async def start(
                 engine = _playwright.chromium
 
             udd = _get_user_data_dir(browser_type, user_data_dir)
-            args_list = _build_launch_args(launch_args or '')
+            args_list = _build_launch_args(launch_args or '', extension_dirs or '')
 
             launch_kwargs = {
                 'user_data_dir': udd,

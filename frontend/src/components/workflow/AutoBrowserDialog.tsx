@@ -113,7 +113,8 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
         executablePath: config.browser.executablePath || undefined,
         userDataDir: config.browser.userDataDir || undefined,
         fullscreen: config.browser.fullscreen || false,
-        launchArgs: config.browser.launchArgs || undefined
+        launchArgs: config.browser.launchArgs || undefined,
+        extensionDirs: config.browser.extensionDirs || undefined
       } : undefined
       
       const result = await browserApi.open(url || undefined, browserConfig)
