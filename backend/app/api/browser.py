@@ -67,6 +67,13 @@ async def open_browser(request: OpenBrowserRequest = OpenBrowserRequest()):
     raise HTTPException(status_code=500, detail=f"打开浏览器失败: {error}")
 
 
+@router.get("/chromium-status")
+async def chromium_status():
+    """检测 Playwright 内置 Chromium 是否可用（供前端提示浏览器扩展兜底能否生效）"""
+    from app.services import browser_engine
+    return await browser_engine.bundled_chromium_status()
+
+
 @router.post("/close")
 async def close_browser():
     """关闭自动化浏览器"""

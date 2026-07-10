@@ -723,6 +723,8 @@ Object.assign(UI_DICT, {
   '仅支持解压后的扩展，不支持从应用商店或 .crx 在线安装。': 'Only unpacked extensions are supported; online install from a store or .crx is not.',
   '仅在有头模式下生效，重新点击打开浏览器后应用。': 'Effective in headed mode only; re-click Open Browser to apply.',
   '配置扩展后会自动优先使用内置 Chromium 以可靠加载（使用独立数据目录，不影响你的 Edge/Chrome 登录态）；若未内置 Chromium 则回退系统浏览器。': 'When extensions are set, the bundled Chromium is preferred for reliable loading (it uses a separate data directory and does not affect your Edge/Chrome sign-in); if no bundled Chromium is present, it falls back to the system browser.',
+  '已检测到内置 Chromium，扩展将可靠加载。': 'Bundled Chromium detected; extensions will load reliably.',
+  '未检测到内置 Chromium，新版 Edge/Chrome 下扩展可能无法加载。请在项目目录运行「Python313\\python.exe -m playwright install chromium」以启用可靠的扩展加载。': 'No bundled Chromium detected; extensions may fail to load on recent Edge/Chrome. Run "Python313\\python.exe -m playwright install chromium" in the project directory to enable reliable extension loading.',
   '窗口最大化启动': 'Launch maximized', '最大化启动': 'Launch maximized',
   '开启后浏览器将以最大化窗口启动（占满整个屏幕）': 'When enabled, the browser launches maximized (fills the whole screen)',
   '工作流结束后自动关闭浏览器': 'Close browser after workflow ends',

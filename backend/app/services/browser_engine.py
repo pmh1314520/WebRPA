@@ -68,6 +68,35 @@ def _get_user_data_dir(browser_type: str, custom_dir: Optional[str] = None) -> s
     return str(p)
 
 
+async def bundled_chromium_status() -> dict:
+    """检测 Playwright 内置 Chromium 是否可用（用于前端提示扩展兜底能否生效）。
+
+    返回 {"available": bool, "path": str}。复用运行中的 playwright，否则临时启动一次再关闭。
+    """
+    global _playwright
+    pw = _playwright
+    started = False
+    try:
+        if pw is None:
+            pw = await async_playwright().start()
+            started = True
+        ep = ''
+        try:
+            ep = pw.chromium.executable_path or ''
+        except Exception:
+            ep = ''
+        available = bool(ep) and Path(ep).exists()
+        return {"available": available, "path": ep}
+    except Exception as e:
+        return {"available": False, "path": "", "error": str(e)}
+    finally:
+        if started and pw is not None:
+            try:
+                await pw.stop()
+            except Exception:
+                pass
+
+
 def build_extension_args(extension_dirs: str = '') -> list:
     """把"已解压扩展目录"（每行一个）转换为 Chromium 启动参数。
 

@@ -440,6 +440,8 @@ export const scheduledTaskApi = {
 // ==================== 自动化浏览器 API ====================
 export const browserApi = {
   getStatus: () => apiRequest('/browser/status'),
+  /** 检测 Playwright 内置 Chromium 是否可用（浏览器扩展兜底是否生效） */
+  chromiumStatus: () => apiRequest('/browser/chromium-status'),
   open: (url?: string, browserConfig?: any) =>
     apiRequest('/browser/open', { method: 'POST', body: JSON.stringify({ url, browserConfig }) }),
   launch: (url?: string) =>

@@ -11,7 +11,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import { useGlobalConfigStore, type BrowserType, type AIModelProfile, type AssistantScene } from '@/store/globalConfigStore'
 import { X, Settings, Brain, Mail, RotateCcw, Folder, Loader2, Database, Monitor, Globe, Zap, MessageCircle, MessageSquare, Plus, Trash2, Bot, Check, Plug, Cpu, ShieldCheck, KeyRound, HardDrive } from 'lucide-react'
-import { systemApi, securityApi, getAuthToken, setAuthToken, credentialApi, retentionApi, type CredentialItem, type RetentionConfig, type RetentionUsage } from '@/services/api'
+import { systemApi, securityApi, getAuthToken, setAuthToken, credentialApi, retentionApi, browserApi, type CredentialItem, type RetentionConfig, type RetentionUsage } from '@/services/api'
 import { aiAssistantApi } from '@/services/aiAssistantApi'
 import { getBackendBaseUrl } from '@/services/config'
 import { MCPConfigPanel } from './MCPConfigPanel'
@@ -411,6 +411,8 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
   const [showBrowserConfigTip, setShowBrowserConfigTip] = useState(false)
   // 小助手「测试连接」状态
   const [assistantTest, setAssistantTest] = useState<{ status: 'idle' | 'testing' | 'ok' | 'fail'; message: string; detail?: string; latency?: number }>({ status: 'idle', message: '' })
+  // 内置 Chromium 检测状态（用于提示浏览器扩展兜底是否生效）
+  const [chromiumStatus, setChromiumStatus] = useState<{ checked: boolean; available: boolean; path?: string }>({ checked: false, available: false })
   const { confirm, ConfirmDialog } = useConfirm()
   const browserConfigTipRef = useRef<HTMLDivElement>(null)
 
@@ -428,6 +430,25 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
         .catch(console.error)
     }
   }, [isOpen])
+
+  // 当配置了浏览器扩展目录时，检测内置 Chromium 是否可用（决定扩展兜底能否生效）
+  useEffect(() => {
+    const hasDirs = !!(config.browser?.extensionDirs || '').trim()
+    if (!isOpen || !hasDirs) {
+      setChromiumStatus({ checked: false, available: false })
+      return
+    }
+    let cancelled = false
+    browserApi.chromiumStatus()
+      .then((data: any) => {
+        if (cancelled) return
+        setChromiumStatus({ checked: true, available: !!data?.available, path: data?.path })
+      })
+      .catch(() => {
+        if (!cancelled) setChromiumStatus({ checked: true, available: false })
+      })
+    return () => { cancelled = true }
+  }, [isOpen, config.browser?.extensionDirs])
 
   // 当提示框显示时，自动滚动到提示框位置
   useEffect(() => {
@@ -1753,6 +1774,19 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     <div>仅在有头模式下生效，重新点击打开浏览器后应用。</div>
                     <div>配置扩展后会自动优先使用内置 Chromium 以可靠加载（使用独立数据目录，不影响你的 Edge/Chrome 登录态）；若未内置 Chromium 则回退系统浏览器。</div>
                   </div>
+                  {chromiumStatus.checked && (
+                    chromiumStatus.available ? (
+                      <div className="flex items-start gap-2 text-xs text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
+                        <Check className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span>已检测到内置 Chromium，扩展将可靠加载。</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-300">
+                        <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span>未检测到内置 Chromium，新版 Edge/Chrome 下扩展可能无法加载。请在项目目录运行「Python313\python.exe -m playwright install chromium」以启用可靠的扩展加载。</span>
+                      </div>
+                    )
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
