@@ -990,21 +990,43 @@ fn agent_lang_cell() -> &'static std::sync::Mutex<String> {
     CELL.get_or_init(|| std::sync::Mutex::new(String::new()))
 }
 
-// 构造 Agent 窗口 URL（含 view/lang/backend_port），返回 (url, 规范化后的lang)
-async fn build_agent_url(lang: Option<&str>) -> Result<(String, String), String> {
+// 记录 Agent 窗口当前主题（default/dark/gray）。用于打开时随 URL 下发、以及语言重载时保留主题。
+fn agent_theme_cell() -> &'static std::sync::Mutex<String> {
+    static CELL: std::sync::OnceLock<std::sync::Mutex<String>> = std::sync::OnceLock::new();
+    CELL.get_or_init(|| std::sync::Mutex::new("default".to_string()))
+}
+
+fn normalize_theme(theme: Option<&str>) -> &'static str {
+    match theme { Some("dark") => "dark", Some("gray") => "gray", _ => "default" }
+}
+
+// 生成把 <html data-webrpa-theme> 设成指定主题的 JS（default 则移除属性）
+fn theme_eval_js(theme: &str) -> String {
+    if theme == "dark" || theme == "gray" {
+        format!("try{{document.documentElement.setAttribute('data-webrpa-theme','{}');}}catch(e){{}}", theme)
+    } else {
+        "try{document.documentElement.removeAttribute('data-webrpa-theme');}catch(e){}".to_string()
+    }
+}
+
+// 构造 Agent 窗口 URL（含 view/lang/theme/backend_port），返回 (url, 规范化后的lang)
+async fn build_agent_url(lang: Option<&str>, theme: Option<&str>) -> Result<(String, String), String> {
     let config = read_config().await?;
     let lang_q = match lang { Some("en") => "en", _ => "zh" };
+    let theme_q = normalize_theme(theme);
     let url = format!(
-        "http://localhost:{}/?view=assistant&lang={}&backend_port={}",
-        config.frontend.port, lang_q, config.backend.port
+        "http://localhost:{}/?view=assistant&lang={}&theme={}&backend_port={}",
+        config.frontend.port, lang_q, theme_q, config.backend.port
     );
     Ok((url, lang_q.to_string()))
 }
 
 // 打开小助手「独立原生窗口（系统级 Agent）」：竖屏、无边框、置顶，可贴边自动隐藏
 #[tauri::command]
-async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>) -> Result<(), String> {
-    let (url_str, lang_q) = build_agent_url(lang.as_deref()).await?;
+async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>, theme: Option<String>) -> Result<(), String> {
+    let theme_q = normalize_theme(theme.as_deref()).to_string();
+    *agent_theme_cell().lock().unwrap() = theme_q.clone();
+    let (url_str, lang_q) = build_agent_url(lang.as_deref(), Some(theme_q.as_str())).await?;
     // 已存在：语言变了就 navigate 重载（跟随启动器），语言没变则保留当前会话只置前
     if let Some(w) = app.get_webview_window("assistant") {
         let changed = {
@@ -1015,6 +1037,9 @@ async fn open_assistant_agent_window(app: tauri::AppHandle, lang: Option<String>
             if let Ok(parsed) = url::Url::parse(&url_str) {
                 let _ = w.navigate(parsed);
             }
+        } else {
+            // 语言没变、不重载：主题可能变了，直接注入应用（不丢会话）
+            let _ = w.eval(&theme_eval_js(&theme_q));
         }
         let _ = w.show();
         let _ = w.unminimize();
@@ -1046,7 +1071,9 @@ async fn sync_assistant_agent_lang(app: tauri::AppHandle, lang: Option<String>) 
     if app.get_webview_window("assistant").is_none() {
         return Ok(());
     }
-    let (url_str, lang_q) = build_agent_url(lang.as_deref()).await?;
+    // 语言重载时把当前主题一并带上，避免 navigate 后主题被重置为 default
+    let cur_theme = { agent_theme_cell().lock().unwrap().clone() };
+    let (url_str, lang_q) = build_agent_url(lang.as_deref(), Some(cur_theme.as_str())).await?;
     let changed = {
         let mut g = agent_lang_cell().lock().unwrap();
         if *g != lang_q { *g = lang_q.clone(); true } else { false }
@@ -1057,6 +1084,18 @@ async fn sync_assistant_agent_lang(app: tauri::AppHandle, lang: Option<String>) 
                 let _ = w.navigate(parsed);
             }
         }
+    }
+    Ok(())
+}
+
+// 仅当 Agent 窗口已打开时，实时同步其主题（启动器切换主题时调用）。
+// 用 eval 直接改 <html data-webrpa-theme>，无需重载、不丢会话；窗口没开则不做任何事。
+#[tauri::command]
+async fn sync_assistant_agent_theme(app: tauri::AppHandle, theme: Option<String>) -> Result<(), String> {
+    let theme_q = normalize_theme(theme.as_deref()).to_string();
+    *agent_theme_cell().lock().unwrap() = theme_q.clone();
+    if let Some(w) = app.get_webview_window("assistant") {
+        let _ = w.eval(&theme_eval_js(&theme_q));
     }
     Ok(())
 }
@@ -1342,7 +1381,8 @@ fn main() {
             get_start_hidden,
             set_start_hidden,
             open_assistant_agent_window,
-            sync_assistant_agent_lang
+            sync_assistant_agent_lang,
+            sync_assistant_agent_theme
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {

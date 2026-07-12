@@ -16,6 +16,15 @@ import { setupAgentWindowBehaviors } from '@/lib/tauriAgentWindow'
 export function AssistantWindow() {
   useEffect(() => {
     document.title = 'WebRPA 小助手 · Agent'
+    // 跟随启动器主题：读取 URL 上的 theme 参数并应用到 <html data-webrpa-theme>
+    // （default 不加属性；dark/gray 走整页滤镜，与编辑器/启动器一致）。
+    // 启动器切换主题时会通过 Tauri 命令 eval 实时更新该属性，无需重载。
+    try {
+      const theme = new URLSearchParams(window.location.search).get('theme')
+      const el = document.documentElement
+      if (theme === 'dark' || theme === 'gray') el.setAttribute('data-webrpa-theme', theme)
+      else el.removeAttribute('data-webrpa-theme')
+    } catch { /* ignore */ }
     // 强制小助手为打开态，使其内部各 useEffect（会话加载/滚动等）正常工作
     try { useAIAssistantStore.getState().setPanelOpen(true) } catch { /* ignore */ }
     const init = async () => {

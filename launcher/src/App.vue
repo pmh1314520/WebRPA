@@ -843,6 +843,8 @@ const setUiTheme = (t) => {
   uiTheme.value = t
   try { localStorage.setItem(THEME_KEY, t) } catch (e) {}
   applyTheme(t)
+  // 若 Agent 窗口已打开，实时同步其主题（窗口没开则后端命令为空操作，不会弹窗）
+  try { invoke('sync_assistant_agent_theme', { theme: t }) } catch (e) {}
 }
 // 是否在启动器启动时自动弹出赞助提示（持久化在 localStorage，默认开启）
 // 注意：使用带版本号的新 key。旧版启动器很多用户已手动关闭（旧 key 存了 '0'），
@@ -1146,7 +1148,7 @@ const openAssistantAgent = async () => {
     // 用实时权威语言（i18n.js 的 curLang），避免 uiLang ref 偶发不同步导致 Agent 语言传错
     let lang = uiLang.value
     try { if (window.__getLauncherLang) lang = window.__getLauncherLang() } catch (e) {}
-    await invoke('open_assistant_agent_window', { lang })
+    await invoke('open_assistant_agent_window', { lang, theme: uiTheme.value })
   } catch (error) {
     showToast(`打开小助手失败: ${error}`, 'error')
   }

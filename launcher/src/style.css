@@ -103,3 +103,8 @@ html[data-webrpa-theme="dark"] .modal-mask {
 html[data-webrpa-theme="dark"] .qr-zoom-mask {
   background: rgba(236, 239, 244, 0.78) !important;
 }
+/* 关闭启动器时的遮罩：原为深蓝渐变，暗色整页反相后会发白。
+   改用浅色渐变 → 反相后恰好呈现深色遮罩（保留品牌蓝调）。 */
+html[data-webrpa-theme="dark"] .closing-mask {
+  background: linear-gradient(135deg, rgba(236, 239, 244, 0.9), rgba(198, 212, 255, 0.85)) !important;
+}
