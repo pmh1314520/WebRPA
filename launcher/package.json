@@ -1,6 +1,6 @@
 {
   "name": "webrpa-launcher",
-  "version": "2.4.0",
+  "version": "2.4.14",
   "description": "WebRPA 启动器",
   "type": "module",
   "scripts": {
