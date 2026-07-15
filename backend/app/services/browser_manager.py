@@ -285,14 +285,28 @@ async def _ensure_picker_on_all_pages() -> None:
     if ctx is None:
         return
     for pg in list(getattr(ctx, "pages", []) or []):
+        url = ""
         try:
-            # 先清除可能残留的“已禁用”标志（历史 stop 通过 init_script 累积注入过 =true），
-            # 再注入脚本；脚本自带幂等守卫，已激活页面会立即返回。
+            url = pg.url
+        except Exception:
+            pass
+        # 先判断该页面选择器是否已激活；已激活则跳过（避免每秒重复注入刷屏）
+        try:
+            was_active = await pg.evaluate("() => !!window.__elementPickerActive")
+        except Exception as e:
+            print(f"[picker] 检查页面状态失败 {url}: {e}")
+            continue
+        if was_active:
+            continue
+        # 未激活（新页面 / 刚跳转到的新文档）→ 清禁用标志并重新注入
+        try:
             await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
             await pg.evaluate(PICKER_SCRIPT)
-        except Exception:
-            # 页面正在跳转/关闭等瞬时状态会抛错，忽略即可，下个轮询周期会再补
-            pass
+            now_active = await pg.evaluate("() => !!window.__elementPickerActive")
+            print(f"[picker] 已向新页面重注入选择器: {url} → active={now_active}")
+        except Exception as e:
+            # 页面正在跳转/关闭等瞬时状态会抛错，下个轮询周期会再补
+            print(f"[picker] 重注入失败 {url}: {e}")
 
 
 async def _get_picker_result(key: str) -> dict:
