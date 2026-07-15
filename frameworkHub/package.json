@@ -1,6 +1,6 @@
 {
   "name": "framework-hub",
-  "version": "2.4.14",
+  "version": "2.4.23",
   "description": "WebRPA 工作流仓库服务",
   "main": "src/index.js",
   "type": "module",

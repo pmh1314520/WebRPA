@@ -5,7 +5,7 @@
 WebRPA - 网页机器人流程自动化工具
 </h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-2.4.14-blue.svg" alt="版本">
+  <img src="https://img.shields.io/badge/版本-2.4.23-blue.svg" alt="版本">
   <img src="https://img.shields.io/badge/模块数量-558个-brightgreen.svg" alt="模块数量">
   <img src="https://img.shields.io/badge/协议-AGPL--3.0%20%2B%20商业授权-green.svg" alt="协议">
   <img src="https://img.shields.io/badge/作者-青云制作__彭明航-orange.svg" alt="作者">
@@ -650,6 +650,9 @@ WebRPA/
 |  80  |          *人           | 2026-07-11 01:36:55 |   6.66   |
 |  81  |          J*a           | 2026-07-11 09:19:06 |  10.00   |
 |  82  |        ☆王小鉴☆        | 2026-07-11 09:53:09 |  50.00   |
+|  83  |          *月           | 2026-07-13 15:29:05 |   6.66   |
+|  84  |          段*C          | 2026-07-13 15:35:40 |  10.00   |
+|  85  |          *的           | 2026-07-15 11:58:46 |   1.00   |
 
 ---
 
