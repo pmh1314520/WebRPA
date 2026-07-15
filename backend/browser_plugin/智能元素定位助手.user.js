@@ -95,7 +95,8 @@
                 while (element?.nodeType === Node.ELEMENT_NODE) {
                     let selector = element.tagName.toLowerCase();
                     if (element.id) {
-                        path.unshift('#' + element.id);
+                        // 用 CSS.escape 转义 id 里的特殊字符（如 $ . : 等），否则 querySelector 语法报错
+                        path.unshift('#' + (window.CSS && CSS.escape ? CSS.escape(element.id) : element.id));
                         break;
                     }
                     let nth = 1;
@@ -392,7 +393,7 @@
                         border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px;">✕</button>
                 </div>
                 <p style="margin:4px 0;"><strong>标签:</strong> <code>&lt;${info.tag}&gt;</code></p>
-                <p style="margin:4px 0;"><strong>ID:</strong> <code>${info.id || '无'}</code> ${info.id ? copyBtn('#' + info.id) : ''}</p>
+                <p style="margin:4px 0;"><strong>ID:</strong> <code>${info.id || '无'}</code> ${info.id ? copyBtn('#' + (window.CSS && CSS.escape ? CSS.escape(info.id) : info.id)) : ''}</p>
                 <p style="margin:4px 0;"><strong>类名:</strong> <code style="font-size:10px;">${info.classes || '无'}</code></p>
                 <p style="margin:4px 0;"><strong>文本:</strong> <span style="font-size:10px;">${info.text ? info.text.substring(0, 50) + '...' : '无'}</span></p>
                 ${info.href ? `<p style="margin:4px 0;"><strong>链接:</strong> <code style="word-break:break-all;font-size:10px;">${info.href.substring(0, 40)}...</code></p>` : ''}

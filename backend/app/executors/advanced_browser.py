@@ -734,7 +734,7 @@ class GetChildElementsExecutor(ModuleExecutor):
                     return children.map((child) => {
                         // 尝试使用ID
                         if (child.id) {
-                            return '#' + child.id;
+                            return '#' + CSS.escape(child.id);
                         }
                         
                         // 尝试使用class（检查在父元素下是否唯一）
@@ -834,7 +834,7 @@ class GetSiblingElementsExecutor(ModuleExecutor):
                     return siblings.map((sibling) => {
                         // 尝试使用ID
                         if (sibling.id) {
-                            return '#' + sibling.id;
+                            return '#' + CSS.escape(sibling.id);
                         }
                         
                         // 尝试使用class（检查在整个文档中是否唯一）
@@ -853,7 +853,7 @@ class GetSiblingElementsExecutor(ModuleExecutor):
                                     // 生成父元素选择器
                                     let parentSelector = '';
                                     if (parent.id) {
-                                        parentSelector = '#' + parent.id;
+                                        parentSelector = '#' + CSS.escape(parent.id);
                                     } else if (parent.className && typeof parent.className === 'string') {
                                         const parentClasses = parent.className.trim().split(/\\s+/).filter(c => c);
                                         if (parentClasses.length > 0) {
@@ -874,7 +874,7 @@ class GetSiblingElementsExecutor(ModuleExecutor):
                         // 生成父元素的选择器
                         let parentSelector = '';
                         if (parent.id) {
-                            parentSelector = '#' + parent.id;
+                            parentSelector = '#' + CSS.escape(parent.id);
                         } else if (parent.className && typeof parent.className === 'string') {
                             const classes = parent.className.trim().split(/\\s+/).filter(c => c);
                             if (classes.length > 0) {

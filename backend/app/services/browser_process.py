@@ -172,7 +172,7 @@ PICKER_SCRIPT = """(function() {
         for (var i = startIndex; i < path1.length; i++) {
             var part = path1[i];
             if (part.id && i <= diffIndex) {
-                selectorParts.push('#' + part.id);
+                selectorParts.push('#' + CSS.escape(part.id));
             } else if (i === diffIndex) {
                 // 使用占位符，后续会被替换
                 selectorParts.push(part.tag + ':nth-child({index})');
@@ -207,7 +207,7 @@ PICKER_SCRIPT = """(function() {
     // 生成简单选择器
     function getSimpleSelector(el) {
         if (!el || el === document.body) return 'body';
-        if (el.id) return '#' + el.id;
+        if (el.id) return '#' + CSS.escape(el.id);
         
         var path = getPathSelector(el);
         
@@ -225,7 +225,7 @@ PICKER_SCRIPT = """(function() {
         for (var i = startIndex; i < path.length; i++) {
             var p = path[i];
             if (p.id) {
-                parts.push('#' + p.id);
+                parts.push('#' + CSS.escape(p.id));
             } else if (p.classes.length > 0) {
                 // 使用第一个有意义的 class
                 var selector = p.tag + '.' + p.classes[0];
