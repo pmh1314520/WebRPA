@@ -184,6 +184,15 @@ async def _reinject_on_load(pg: Page):
             await pg.evaluate(USERSCRIPT)
         except Exception:
             pass
+    # 元素选择器激活时，页面加载/跳转后重新注入选择器脚本，实现“覆盖层跨页面/跨标签持续跟随”。
+    # 复用本模块每次 load 都会触发的成熟重注入路径（智能定位助手脚本同理靠它跨页跟随）。
+    try:
+        from app.services import browser_manager as _bm
+        if _bm.is_picker_active() and getattr(_bm, "PICKER_SCRIPT", ""):
+            await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
+            await pg.evaluate(_bm.PICKER_SCRIPT)
+    except Exception:
+        pass
 
 
 def _on_browser_closed():

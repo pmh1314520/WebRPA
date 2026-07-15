@@ -227,6 +227,8 @@ async def _start_picker_engine() -> dict:
             print(f"[browser_manager] 注入到 {pg.url} 失败：{e}")
 
     _picker_active = True
+    print(f"[browser_manager] 选择器已启动[v2-跨页跟随]：立即覆盖 {injected} 个页面；"
+          f"后续跳转/新标签由 load 事件 + 轮询双重重注入持续跟随")
     return {"success": True, "data": {"message": f"选择器已启动（覆盖 {injected} 个页面，跨网站持续生效）"}}
 
 
