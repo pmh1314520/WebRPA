@@ -38,22 +38,31 @@ PICKER_SCRIPT = r"""(function() {
     selectedBox.className = '__picker_selected_box';
     selectedBox.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border-radius:4px;display:none;';
 
-    if (!document.getElementById('__picker_style')) {
-        var styleEl = document.createElement('style');
-        styleEl.id = '__picker_style';
-        styleEl.textContent = '@keyframes __picker_march{to{background-position:14px 0,-14px 100%,0 -14px,100% 14px;}}'
-            + '.__picker_selected_box{'
-            + 'background-image:linear-gradient(90deg,#10b981 50%,transparent 50%),linear-gradient(90deg,#10b981 50%,transparent 50%),linear-gradient(0deg,#10b981 50%,transparent 50%),linear-gradient(0deg,#10b981 50%,transparent 50%);'
-            + 'background-repeat:repeat-x,repeat-x,repeat-y,repeat-y;'
-            + 'background-size:14px 2px,14px 2px,2px 14px,2px 14px;'
-            + 'background-position:0 0,0 100%,0 0,100% 0;'
-            + 'animation:__picker_march 0.6s infinite linear;'
-            + 'box-shadow:0 0 0 1px rgba(16,185,129,0.25);}';
-        (document.head || document.documentElement).appendChild(styleEl);
+    // 样式注入独立成函数并加兜底：add_init_script 会在文档极早期运行，此时 head/documentElement
+    // 可能都还不存在，直接 append 会抛错并中断整个脚本（导致 __elementPickerActive 被置 true 却
+    // 没建成 UI，跳转后覆盖层永远不出现）。这里用 try 包裹并在 attachUI 时再尝试一次。
+    function ensureStyle() {
+        try {
+            if (document.getElementById('__picker_style')) return;
+            var styleEl = document.createElement('style');
+            styleEl.id = '__picker_style';
+            styleEl.textContent = '@keyframes __picker_march{to{background-position:14px 0,-14px 100%,0 -14px,100% 14px;}}'
+                + '.__picker_selected_box{'
+                + 'background-image:linear-gradient(90deg,#10b981 50%,transparent 50%),linear-gradient(90deg,#10b981 50%,transparent 50%),linear-gradient(0deg,#10b981 50%,transparent 50%),linear-gradient(0deg,#10b981 50%,transparent 50%);'
+                + 'background-repeat:repeat-x,repeat-x,repeat-y,repeat-y;'
+                + 'background-size:14px 2px,14px 2px,2px 14px,2px 14px;'
+                + 'background-position:0 0,0 100%,0 0,100% 0;'
+                + 'animation:__picker_march 0.6s infinite linear;'
+                + 'box-shadow:0 0 0 1px rgba(16,185,129,0.25);}';
+            var host = document.head || document.documentElement || document.body;
+            if (host) host.appendChild(styleEl);
+        } catch (e) {}
     }
+    ensureStyle();
 
     function attachUI() {
         if (!document.body) return;
+        ensureStyle();
         if (!box.isConnected) document.body.appendChild(box);
         if (!firstBox.isConnected) document.body.appendChild(firstBox);
         if (!selectedBox.isConnected) document.body.appendChild(selectedBox);

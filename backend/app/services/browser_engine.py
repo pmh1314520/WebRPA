@@ -189,7 +189,9 @@ async def _reinject_on_load(pg: Page):
     try:
         from app.services import browser_manager as _bm
         if _bm.is_picker_active() and getattr(_bm, "PICKER_SCRIPT", ""):
-            await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
+            # load 后 body 已就绪：先重置可能被 add_init_script 早期运行“毒化”的标志，
+            # 再注入脚本重建覆盖层（否则脚本的 __elementPickerActive 守卫会直接返回不重建）。
+            await pg.evaluate("() => { window.__elementPickerActive = false; window.__elementPickerDisabled = false; }")
             await pg.evaluate(_bm.PICKER_SCRIPT)
     except Exception:
         pass

@@ -290,23 +290,28 @@ async def _ensure_picker_on_all_pages() -> None:
             url = pg.url
         except Exception:
             pass
-        # 先判断该页面选择器是否已激活；已激活则跳过（避免每秒重复注入刷屏）
+        # 关键：以“覆盖层元素是否真实存在”为准，而不是信 window.__elementPickerActive 布尔标志。
+        # 因为 add_init_script 会在文档极早期（body/documentElement 可能尚未生成）运行脚本，
+        # 脚本先把 __elementPickerActive=true，随后建 UI 时因 DOM 未就绪抛错中断 —— 标志被“毒化”
+        # 成 true 但覆盖层根本没建成。若只看布尔标志会误判“已激活”而永不修复，导致跳转后覆盖层消失。
         try:
-            was_active = await pg.evaluate("() => !!window.__elementPickerActive")
-        except Exception as e:
-            print(f"[picker] 检查页面状态失败 {url}: {e}")
-            continue
-        if was_active:
-            continue
-        # 未激活（新页面 / 刚跳转到的新文档）→ 清禁用标志并重新注入
-        try:
-            await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
-            await pg.evaluate(PICKER_SCRIPT)
-            now_active = await pg.evaluate("() => !!window.__elementPickerActive")
-            print(f"[picker] 已向新页面重注入选择器: {url} → active={now_active}")
+            ui_ok = await pg.evaluate("() => !!document.getElementById('__picker_tip')")
         except Exception as e:
             # 页面正在跳转/关闭等瞬时状态会抛错，下个轮询周期会再补
-            print(f"[picker] 重注入失败 {url}: {e}")
+            print(f"[picker] 检查覆盖层失败 {url}: {e}")
+            continue
+        if ui_ok:
+            continue
+        # 覆盖层不存在（新页面 / 刚跳转 / 被毒化的标志）→ 重置标志并强制重建
+        try:
+            await pg.evaluate(
+                "() => { window.__elementPickerActive = false; window.__elementPickerDisabled = false; }"
+            )
+            await pg.evaluate(PICKER_SCRIPT)
+            ui_now = await pg.evaluate("() => !!document.getElementById('__picker_tip')")
+            print(f"[picker] 重建覆盖层: {url} → ui={ui_now}")
+        except Exception as e:
+            print(f"[picker] 重建覆盖层失败 {url}: {e}")
 
 
 async def _get_picker_result(key: str) -> dict:
