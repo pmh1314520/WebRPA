@@ -269,6 +269,30 @@ async def _stop_picker_engine() -> dict:
     return {"success": True, "data": {"message": "选择器已停止"}}
 
 
+async def _ensure_picker_on_all_pages() -> None:
+    """确保选择器脚本注入到当前所有页面（跨页面/跨标签跟随的关键保障）。
+
+    仅靠 BrowserContext.add_init_script 在部分持久化上下文/通道浏览器下对“跳转、
+    新开标签”不一定可靠触发，导致切换页面后覆盖层消失。这里在轮询期间对所有页面
+    主动重新 evaluate 一次脚本：脚本内有 `if (window.__elementPickerActive) return;`
+    幂等守卫，已激活的页面会立即返回（零副作用），新文档/新标签则会重新激活并补挂 UI，
+    从而保证“不管在哪个页面选择器都跟着走”。
+    """
+    from app.services import browser_engine
+    ctx = browser_engine.get_context()
+    if ctx is None:
+        return
+    for pg in list(getattr(ctx, "pages", []) or []):
+        try:
+            # 先清除可能残留的“已禁用”标志（历史 stop 通过 init_script 累积注入过 =true），
+            # 再注入脚本；脚本自带幂等守卫，已激活页面会立即返回。
+            await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
+            await pg.evaluate(PICKER_SCRIPT)
+        except Exception:
+            # 页面正在跳转/关闭等瞬时状态会抛错，忽略即可，下个轮询周期会再补
+            pass
+
+
 async def _get_picker_result(key: str) -> dict:
     """读取选择器结果。
 
@@ -282,6 +306,11 @@ async def _get_picker_result(key: str) -> dict:
     ctx = browser_engine.get_context()
     if ctx is None:
         return {"success": True, "data": None}
+
+    # 每个轮询周期确保所有页面（含刚跳转/新开的标签）都注入了选择器脚本，
+    # 保证覆盖层跨页面持续跟随。只在 getSelected 分支做一次即可（避免同周期重复）。
+    if _picker_active and key == '__elementPickerResult':
+        await _ensure_picker_on_all_pages()
 
     js = f"""
         () => {{
