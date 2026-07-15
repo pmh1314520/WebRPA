@@ -1857,6 +1857,18 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                     }}
                   />
                 </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div>
+                    <Label className="text-gray-700 font-medium">自动复制选择器到剪贴板</Label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      开启后，在自动化浏览器里选择元素（单选或相似元素）时，自动把提取到的选择器复制到剪贴板
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.browser?.autoCopySelector ?? true}
+                    onCheckedChange={(c) => updateBrowserConfig({ autoCopySelector: c })}
+                  />
+                </div>
                 
                 {/* 浏览器配置更改提示 */}
                 {showBrowserConfigTip && (

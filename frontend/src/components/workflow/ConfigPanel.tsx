@@ -566,6 +566,27 @@ interface ConfigPanelProps {
   selectedNodeId?: string | null  // 改为可选，优先使用 store 中的值
 }
 
+/** 把文本写入系统剪贴板（优先 Clipboard API，非安全上下文降级 execCommand）。返回是否成功。 */
+async function writeSelectorToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.left = '-999999px'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      ta.remove()
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelProps) {
   // 直接从 store 订阅 selectedNodeId，确保实时更新
   const storeSelectedNodeId = useWorkflowStore((state) => state.selectedNodeId)
@@ -785,6 +806,11 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
             })
           }
           addLog({ level: 'success', message: `已选择元素: ${selector}` })
+          // 自动复制选择器到剪贴板（全局配置，默认开启）
+          if (selector && browserConfig?.autoCopySelector !== false) {
+            const ok = await writeSelectorToClipboard(selector)
+            addLog({ level: ok ? 'success' : 'warning', message: ok ? '选择器已复制到剪贴板' : '选择器复制到剪贴板失败' })
+          }
           
           await elementPickerApi.stop()
           if (pollingRef.current) {
@@ -841,13 +867,18 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
       level: 'success', 
       message: `已设置相似元素选择器，变量 ${variableName} 范围: ${similarResult.minIndex}-${similarResult.maxIndex}` 
     })
+    // 自动复制选择器到剪贴板（全局配置，默认开启）
+    if (browserConfig?.autoCopySelector !== false) {
+      const ok = await writeSelectorToClipboard(finalSelector)
+      addLog({ level: ok ? 'success' : 'warning', message: ok ? '选择器已复制到剪贴板' : '选择器复制到剪贴板失败' })
+    }
     
     setShowSimilarDialog(false)
     setSimilarResult(null)
     await elementPickerApi.stop()
     setIsPicking(false)
     setPickingField(null)
-  }, [similarResult, pickingField, handleChange, addVariable, addLog])
+  }, [similarResult, pickingField, handleChange, addVariable, addLog, browserConfig])
 
   // 停止元素选择器
   const stopElementPicker = useCallback(async () => {

@@ -20,6 +20,8 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
   const [copied, setCopied] = useState(false)
   const [lastSelector, setLastSelector] = useState('')
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // 记录上一次已处理的选择器，避免轮询期间对同一结果重复复制/记日志
+  const lastHandledRef = useRef('')
   const { config } = useGlobalConfigStore()
 
   // 检查浏览器状态
@@ -45,14 +47,21 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
   // 轮询检查选择结果
   useEffect(() => {
     if (pickerActive) {
+      // 每次开始拾取重置去重标记，使再次选中同一元素也能重新复制
+      lastHandledRef.current = ''
       pollingRef.current = setInterval(async () => {
+        // 是否自动复制选择器到剪贴板（全局配置，默认开启）
+        const autoCopy = useGlobalConfigStore.getState().config.browser?.autoCopySelector !== false
+
         // 检查单元素选择
         const singleResult = await elementPickerApi.getSelected()
         if (singleResult.data?.selected && singleResult.data.element) {
           const selector = singleResult.data.element.selector
-          if (selector) {
+          if (selector && selector !== lastHandledRef.current) {
+            lastHandledRef.current = selector
             setLastSelector(selector)
             onLog('success', `已选择元素: ${selector}`)
+            if (autoCopy) copyToClipboard(selector)
           }
         }
 
@@ -61,9 +70,11 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
         if (similarResult.data?.selected && similarResult.data.similar) {
           const pattern = similarResult.data.similar.pattern
           const count = similarResult.data.similar.count
-          if (pattern) {
+          if (pattern && pattern !== lastHandledRef.current) {
+            lastHandledRef.current = pattern
             setLastSelector(pattern)
             onLog('success', `已选择 ${count} 个相似元素: ${pattern}`)
+            if (autoCopy) copyToClipboard(pattern)
           }
         }
       }, 500)
