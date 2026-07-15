@@ -115,7 +115,11 @@ export function ImagePathInput({ value, onChange, className, placeholder = '输�
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            // 已填写路径且资源库为空时，不再自动弹出空下拉（避免"一直提示暂无图像"的骚扰）；
+            // 资源库有图或尚未填写时才自动展开，方便快速选取。
+            if (!value || assets.length > 0) setIsOpen(true)
+          }}
           placeholder={placeholder}
           className={cn(
             'flex-1 px-3 py-2 text-sm',
@@ -173,8 +177,8 @@ export function ImagePathInput({ value, onChange, className, placeholder = '输�
                 {assets.length === 0 ? (
                   <>
                     <Image className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                    <p>暂无图像文件</p>
-                    <p className="text-xs mt-1">请先上传图像</p>
+                    <p>图像资源库为空（可选）</p>
+                    <p className="text-xs mt-1 px-3 leading-relaxed">可直接在上方输入框填写图片路径，或点右侧按钮从电脑选择；也可到「图像」面板上传常用图片，方便下次快速选取。</p>
                   </>
                 ) : (
                   <>

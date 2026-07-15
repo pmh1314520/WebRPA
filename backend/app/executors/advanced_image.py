@@ -221,7 +221,10 @@ class ClickImageExecutor(ModuleExecutor):
                 except Exception:
                     pass
             
-            user32 = ctypes.windll.user32
+            # 使用【独立】的 user32 实例，避免与真实鼠标/键盘模块共享
+            # ctypes.windll.user32.SendInput 时，各自用不同 INPUT 结构体设置 argtypes
+            # 造成交叉污染、类型不匹配报错
+            user32 = ctypes.WinDLL('user32', use_last_error=True)
             
             # 定义SendInput函数的参数类型（确保类型正确）
             user32.SendInput.argtypes = [

@@ -27,8 +27,12 @@ try:
             ("mi",   _MOUSEINPUT),
         ]
 
-    # 设置 SendInput argtypes（全局只设置一次）
-    _user32 = ctypes.windll.user32
+    # 使用【独立】的 user32 实例，而非全局共享的 ctypes.windll.user32。
+    # 原因：ctypes.windll.user32 是进程级单例，SendInput 也是唯一共享的函数对象；
+    # 若键盘/图像点击等模块用各自本地定义的 INPUT 结构体去改这个共享函数的 argtypes，
+    # 之后本模块再传入鼠标版结构体就会 ctypes 类型不匹配报错，导致真实鼠标点击永久失败。
+    # 独立实例的 SendInput.argtypes 与其它模块完全隔离，从根源杜绝交叉污染。
+    _user32 = ctypes.WinDLL('user32', use_last_error=True)
     _user32.SendInput.argtypes = [
         _wintypes.UINT,
         ctypes.POINTER(_INPUT),

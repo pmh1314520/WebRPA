@@ -278,8 +278,11 @@ class RealKeyboardExecutor(ModuleExecutor):
                     ("union", INPUT_UNION)
                 ]
             
-            # 获取 SendInput 函数
-            SendInput = ctypes.windll.user32.SendInput
+            # 获取 SendInput 函数（使用【独立】的 user32 实例，避免与鼠标/图像点击等模块
+            # 共享 ctypes.windll.user32.SendInput 时，各自用不同 INPUT 结构体设置 argtypes
+            # 造成交叉污染、类型不匹配报错）
+            _u32 = ctypes.WinDLL('user32', use_last_error=True)
+            SendInput = _u32.SendInput
             SendInput.argtypes = [wintypes.UINT, POINTER(INPUT), ctypes.c_int]
             SendInput.restype = wintypes.UINT
             
