@@ -15,6 +15,9 @@ USER_DATA_DIR.mkdir(exist_ok=True)
 _picker_active = False
 # 是否已经给 BrowserContext 注册 init_script，避免每次启动 picker 时重复注册
 _picker_init_script_registered = False
+# 已注册 init_script 的 BrowserContext 身份（id）。浏览器关闭重开会换新 context，
+# 届时需在新 context 上重新注册，否则重开后新页面收不到选择器脚本。
+_picker_init_ctx_id = None
 
 
 def get_user_data_dir() -> str:
@@ -183,18 +186,21 @@ async def _start_picker_engine() -> dict:
     - 同时对当前所有已打开页面立即 evaluate 注入。
     用户切到新网址或新开 tab 后也能继续用 Ctrl+点击 / Alt+两点采样。
     """
-    global _picker_active, _picker_init_script_registered
+    global _picker_active, _picker_init_script_registered, _picker_init_ctx_id
     from app.services import browser_engine
 
     ctx = browser_engine.get_context()
     if ctx is None:
         return {"success": False, "error": "没有活跃浏览器上下文"}
 
-    # 给 context 注册一次 init script（每个新文档/跳转都会自动跑）
-    if not _picker_init_script_registered:
+    # 给 context 注册一次 init script（每个新文档/跳转都会自动跑）。
+    # 按 context 身份跟踪：浏览器关闭重开会得到全新的 context，之前的 init_script 已失效，
+    # 必须在新 context 上重新注册，否则重开后新标签/跳转的页面收不到选择器脚本。
+    if not _picker_init_script_registered or _picker_init_ctx_id != id(ctx):
         try:
             await ctx.add_init_script(PICKER_SCRIPT)
             _picker_init_script_registered = True
+            _picker_init_ctx_id = id(ctx)
         except Exception as e:
             print(f"[browser_manager] 注册 picker init_script 失败：{e}")
 
@@ -264,21 +270,57 @@ async def _stop_picker_engine() -> dict:
 
 
 async def _get_picker_result(key: str) -> dict:
+    """读取选择器结果。
+
+    跨页面/跨标签跟随：选择器脚本已通过 add_init_script 注入到所有页面/标签/frame，
+    用户可能在任意一个页面（新开的标签、跳转后的新网址、iframe）里完成选择，结果就写在
+    “那个”页面/frame 的 window 上。因此这里必须遍历 context 内所有页面（及其全部 frame）
+    去查找结果，而不能只读 browser_engine 记录的单个“当前页”，否则用户切到新页面选取时后端
+    永远读不到 → 表现为“选择器不跟随新页面”。
+    """
     from app.services import browser_engine
-    pg = browser_engine.get_page()
-    if pg is None:
+    ctx = browser_engine.get_context()
+    if ctx is None:
         return {"success": True, "data": None}
+
+    js = f"""
+        () => {{
+            var r = window.{key};
+            window.{key} = null;
+            return r;
+        }}
+    """
+
+    pages = list(getattr(ctx, "pages", []) or [])
+    # 把 browser_engine 记录的当前页排到最前，命中概率更高、少扫几个 frame
     try:
-        data = await pg.evaluate(f"""
-            () => {{
-                var r = window.{key};
-                window.{key} = null;
-                return r;
-            }}
-        """)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+        cur = browser_engine.get_page()
+        if cur is not None and cur in pages:
+            pages.remove(cur)
+            pages.insert(0, cur)
+    except Exception:
+        pass
+
+    last_error = None
+    for pg in pages:
+        # 优先主 frame；再兜底其余 frame（覆盖 iframe 内选取）
+        frames = [pg.main_frame] if getattr(pg, "main_frame", None) else []
+        for fr in getattr(pg, "frames", []) or []:
+            if fr not in frames:
+                frames.append(fr)
+        for fr in frames:
+            try:
+                data = await fr.evaluate(js)
+                if data:
+                    return {"success": True, "data": data}
+            except Exception as e:
+                # 跨域 frame / 页面正在跳转等会抛错，跳过继续扫描其它页面
+                last_error = str(e)
+                continue
+
+    if last_error is not None:
+        return {"success": True, "data": None}
+    return {"success": True, "data": None}
 
 
 # =================== 便捷函数 ===================
