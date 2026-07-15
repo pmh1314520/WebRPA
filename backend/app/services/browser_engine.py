@@ -189,9 +189,9 @@ async def _reinject_on_load(pg: Page):
     try:
         from app.services import browser_manager as _bm
         if _bm.is_picker_active() and getattr(_bm, "PICKER_SCRIPT", ""):
-            # load 后 body 已就绪：先重置可能被 add_init_script 早期运行“毒化”的标志，
-            # 再注入脚本重建覆盖层（否则脚本的 __elementPickerActive 守卫会直接返回不重建）。
-            await pg.evaluate("() => { window.__elementPickerActive = false; window.__elementPickerDisabled = false; }")
+            # 脚本已按“DOM 是否存在覆盖层”自身幂等判重：有则直接返回不重复注入，无则重建。
+            # 因此这里只需清掉禁用标志后注入即可，无需外部重置 __elementPickerActive（重置会导致重复注入）。
+            await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
             await pg.evaluate(_bm.PICKER_SCRIPT)
     except Exception:
         pass

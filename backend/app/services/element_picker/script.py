@@ -14,7 +14,13 @@ PICKER_SCRIPT = r"""(function() {
         // 用户已主动停止 picker，即便 init_script 在新页面重新跑也立刻退出
         return;
     }
-    if (window.__elementPickerActive) return;
+    // 幂等判重以“DOM 里是否已存在覆盖层”为准（而非只看 __elementPickerActive 布尔或闭包内元素）：
+    // 覆盖层已存在 → 直接返回，避免多次注入产生重叠的提示条/高亮框；
+    // 覆盖层不存在（新页面 / 标志被早期运行毒化成 true 却没建成 UI）→ 无论标志如何都继续重建。
+    if (document.getElementById('__picker_tip')) {
+        window.__elementPickerActive = true;
+        return;
+    }
     window.__elementPickerActive = true;
 
     // ===== UI 元素 =====
@@ -63,10 +69,12 @@ PICKER_SCRIPT = r"""(function() {
     function attachUI() {
         if (!document.body) return;
         ensureStyle();
-        if (!box.isConnected) document.body.appendChild(box);
-        if (!firstBox.isConnected) document.body.appendChild(firstBox);
-        if (!selectedBox.isConnected) document.body.appendChild(selectedBox);
-        if (!tip.isConnected) document.body.appendChild(tip);
+        // 按 DOM id 判重：若页面上已存在同 id 元素（可能来自另一次注入），就不再追加本闭包的副本，
+        // 避免出现两条重叠的提示条 / 多个高亮框。
+        if (!document.getElementById('__picker_box')) document.body.appendChild(box);
+        if (!document.getElementById('__picker_first_box')) document.body.appendChild(firstBox);
+        if (!document.getElementById('__picker_selected_box')) document.body.appendChild(selectedBox);
+        if (!document.getElementById('__picker_tip')) document.body.appendChild(tip);
     }
     if (document.body) attachUI();
     else document.addEventListener('DOMContentLoaded', attachUI);

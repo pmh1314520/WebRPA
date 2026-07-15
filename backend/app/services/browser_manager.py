@@ -302,11 +302,10 @@ async def _ensure_picker_on_all_pages() -> None:
             continue
         if ui_ok:
             continue
-        # 覆盖层不存在（新页面 / 刚跳转 / 被毒化的标志）→ 重置标志并强制重建
+        # 覆盖层不存在（新页面 / 刚跳转 / 被毒化的标志）→ 清禁用标志并注入。
+        # 脚本按 DOM 是否已有覆盖层自身幂等判重，无需外部重置 __elementPickerActive（重置会致重复注入）。
         try:
-            await pg.evaluate(
-                "() => { window.__elementPickerActive = false; window.__elementPickerDisabled = false; }"
-            )
+            await pg.evaluate("() => { window.__elementPickerDisabled = false; }")
             await pg.evaluate(PICKER_SCRIPT)
             ui_now = await pg.evaluate("() => !!document.getElementById('__picker_tip')")
             print(f"[picker] 重建覆盖层: {url} → ui={ui_now}")
