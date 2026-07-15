@@ -31,6 +31,51 @@ async def set_custom_hotkeys(req: CustomHotkeysRequest):
         raise HTTPException(status_code=500, detail=f"注册自定义全局热键失败: {e}")
 
 
+class SetClipboardRequest(BaseModel):
+    """写入系统剪贴板的文本"""
+    text: str = ""
+
+
+def _set_system_clipboard_text(text: str) -> tuple[bool, str]:
+    """把文本写入系统剪贴板（与窗口焦点无关）。
+
+    元素选择器拾取元素时，焦点在自动化浏览器窗口，WebRPA 编辑器处于失焦状态，
+    浏览器的 navigator.clipboard 会以 "document is not focused" 拒绝复制。改由后端
+    写系统剪贴板即可绕开该限制。依次尝试 pyperclip → win32clipboard，任一成功即可。
+    """
+    # 方案一：pyperclip（跨平台）
+    try:
+        import pyperclip  # type: ignore
+        pyperclip.copy(text)
+        return True, ""
+    except Exception as e:
+        last_err = f"pyperclip: {e}"
+    # 方案二：win32clipboard（Windows 原生，处理 pyperclip 偶发失败）
+    try:
+        import win32clipboard  # type: ignore
+        import win32con  # type: ignore
+        win32clipboard.OpenClipboard()
+        try:
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, text)
+        finally:
+            win32clipboard.CloseClipboard()
+        return True, ""
+    except Exception as e:
+        last_err = f"{last_err}; win32clipboard: {e}"
+    return False, last_err
+
+
+@router.post("/set-clipboard")
+async def set_clipboard(req: SetClipboardRequest):
+    """把文本写入系统剪贴板（焦点无关，供元素选择器自动复制选择器等场景使用）。"""
+    loop = asyncio.get_running_loop()
+    ok, err = await loop.run_in_executor(None, lambda: _set_system_clipboard_text(req.text or ""))
+    if not ok:
+        raise HTTPException(status_code=500, detail=f"写入剪贴板失败: {err}")
+    return {"success": True, "charCount": len(req.text or "")}
+
+
 # 注：/open-url 已移至 system_dialog.py，避免路由冲突
 # 注：/mouse-position 已移至 system_mouse.py，避免路由冲突
 

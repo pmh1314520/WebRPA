@@ -12,7 +12,7 @@ import { VariableInput } from '@/components/ui/variable-input'
 import { Trash2, Crosshair, Loader2, Ban, ChevronLeft, ChevronRight, Settings, Sparkles, ScanSearch } from 'lucide-react'
 import { moduleIcons } from './ModuleSidebar'
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { elementPickerApi, desktopPickerApi } from '@/services/api'
+import { elementPickerApi, desktopPickerApi, systemApi } from '@/services/api'
 
 // 导入拆分的配置组件
 import { ReadExcelConfig } from './config-panels/ReadExcelConfig'
@@ -566,21 +566,28 @@ interface ConfigPanelProps {
   selectedNodeId?: string | null  // 改为可选，优先使用 store 中的值
 }
 
-/** 把文本写入系统剪贴板（优先 Clipboard API，非安全上下文降级 execCommand）。返回是否成功。 */
+/** 把选择器写入系统剪贴板。
+ * 拾取元素时焦点在自动化浏览器窗口、编辑器失焦，navigator.clipboard 会以
+ * "document is not focused" 拒绝复制，故改由后端写系统剪贴板（焦点无关）。
+ * 后端不可用时兜底尝试浏览器 Clipboard API。返回是否成功。 */
 async function writeSelectorToClipboard(text: string): Promise<boolean> {
+  try {
+    const res = await systemApi.setClipboard(text)
+    if (!res.error) return true
+  } catch { /* 落到下方浏览器兜底 */ }
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text)
-    } else {
-      const ta = document.createElement('textarea')
-      ta.value = text
-      ta.style.position = 'fixed'
-      ta.style.left = '-999999px'
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      ta.remove()
+      return true
     }
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.left = '-999999px'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    ta.remove()
     return true
   } catch {
     return false

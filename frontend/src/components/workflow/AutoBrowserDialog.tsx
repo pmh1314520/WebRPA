@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Globe, MousePointer, Copy, Check, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UrlInput } from '@/components/ui/url-input'
-import { browserApi, elementPickerApi } from '@/services/api'
+import { browserApi, elementPickerApi, systemApi } from '@/services/api'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 
@@ -61,7 +61,7 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
             lastHandledRef.current = selector
             setLastSelector(selector)
             onLog('success', `已选择元素: ${selector}`)
-            if (autoCopy) copyToClipboard(selector)
+            if (autoCopy) autoCopySelector(selector)
           }
         }
 
@@ -74,7 +74,7 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
             lastHandledRef.current = pattern
             setLastSelector(pattern)
             onLog('success', `已选择 ${count} 个相似元素: ${pattern}`)
-            if (autoCopy) copyToClipboard(pattern)
+            if (autoCopy) autoCopySelector(pattern)
           }
         }
       }, 500)
@@ -92,6 +92,24 @@ export function AutoBrowserDialog({ isOpen, onClose, onLog }: AutoBrowserDialogP
       }
     }
   }, [pickerActive, onLog])
+
+  // 自动复制选择器：改由后端写系统剪贴板（焦点无关）。
+  // 拾取元素时焦点在自动化浏览器窗口，编辑器失焦，navigator.clipboard 会以
+  // "document is not focused" 拒绝复制，故这里走后端 pyperclip/win32 写入。
+  const autoCopySelector = async (text: string) => {
+    try {
+      const res = await systemApi.setClipboard(text)
+      if (res.error) {
+        onLog('warning', `选择器复制到剪贴板失败: ${res.error}`)
+        return
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      onLog('success', '选择器已复制到剪贴板')
+    } catch (e) {
+      onLog('warning', `选择器复制到剪贴板失败: ${e instanceof Error ? e.message : e}`)
+    }
+  }
 
   const copyToClipboard = async (text: string) => {
     try {
