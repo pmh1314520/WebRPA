@@ -1,6 +1,6 @@
 {
   "name": "webrpa-launcher",
-  "version": "2.4.23",
+  "version": "2.5.0",
   "description": "WebRPA 启动器",
   "type": "module",
   "main": "electron/main.cjs",

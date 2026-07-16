@@ -20,6 +20,10 @@ cd /d "%LAUNCHER_DIR%"
 call "%NODEJS_DIR%\npm.cmd" install
 
 echo.
+echo [信息] 正在准备打包环境（winCodeSign 缓存）...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%LAUNCHER_DIR%prepare-build-env.ps1"
+
+echo.
 echo [信息] 正在构建应用（vite build + electron-builder）...
 call "%NODEJS_DIR%\npm.cmd" run build
 
