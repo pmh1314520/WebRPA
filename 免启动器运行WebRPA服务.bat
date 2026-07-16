@@ -117,8 +117,20 @@ if !_tries! geq 60 goto :giveup
 goto :waitfront
 
 :frontready
-start "" "http://localhost:!FPORT!"
-echo [完成] WebRPA 已启动！访问地址: http://localhost:!FPORT!
+set "OPENURL=http://localhost:!FPORT!/?backend_port=!BPORT!"
+REM 优先探测常见浏览器 exe 直接启动，规避"未设默认浏览器 / http 关联损坏 → 找不到应用程序"
+set "BROWSER="
+if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" set "BROWSER=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+if not defined BROWSER if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" set "BROWSER=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+if not defined BROWSER if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" set "BROWSER=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+if not defined BROWSER if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" set "BROWSER=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+if not defined BROWSER if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "BROWSER=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
+if defined BROWSER (
+    start "" "!BROWSER!" "!OPENURL!"
+) else (
+    start "" "!OPENURL!"
+)
+echo [完成] WebRPA 已启动！访问地址: !OPENURL!
 echo.
 echo   - 关闭「WebRPA 后端服务 / 前端服务」两个窗口即可停止服务，
 echo     或运行同目录下的 WebRPA停止服务.bat 一键停止。

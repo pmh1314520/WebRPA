@@ -822,25 +822,65 @@ fn resolve_default_browser_exe() -> Option<String> {
     }
 }
 
+// 在常见安装路径里探测一个可用的浏览器 exe（Edge / Chrome）。
+// 用于用户未设默认浏览器、或 http/https 协议关联损坏时兜底 —— 此时注册表解析和 `start` 都会失败，
+// 但只要机器上装了浏览器（Win10/11 自带 Edge），直接按已知路径启动 exe 即可。
+#[cfg(target_os = "windows")]
+fn find_any_browser_exe() -> Option<String> {
+    let mut candidates: Vec<String> = Vec::new();
+    let pf = std::env::var("ProgramFiles").unwrap_or_default();
+    let pf86 = std::env::var("ProgramFiles(x86)").unwrap_or_default();
+    let local = std::env::var("LOCALAPPDATA").unwrap_or_default();
+    for base in [&pf, &pf86] {
+        if !base.is_empty() {
+            candidates.push(format!("{}\\Microsoft\\Edge\\Application\\msedge.exe", base));
+            candidates.push(format!("{}\\Google\\Chrome\\Application\\chrome.exe", base));
+        }
+    }
+    if !local.is_empty() {
+        candidates.push(format!("{}\\Google\\Chrome\\Application\\chrome.exe", local));
+        candidates.push(format!("{}\\Microsoft\\Edge\\Application\\msedge.exe", local));
+    }
+    candidates.into_iter().find(|p| std::path::Path::new(p).exists())
+}
+
+// 健壮地用浏览器打开 URL：默认浏览器(注册表) → 常见浏览器 exe 路径 → 系统 shell。
+// 任何一级成功即返回，彻底规避“用户未设默认浏览器 / http 关联损坏”导致的“找不到应用程序”。
+#[cfg(target_os = "windows")]
+fn open_url_robust(url: &str) -> Result<(), String> {
+    if let Some(browser) = resolve_default_browser_exe() {
+        if std::process::Command::new(&browser)
+            .arg(url)
+            .creation_flags(0x08000000)
+            .spawn()
+            .is_ok()
+        {
+            return Ok(());
+        }
+    }
+    if let Some(browser) = find_any_browser_exe() {
+        if std::process::Command::new(&browser)
+            .arg(url)
+            .creation_flags(0x08000000)
+            .spawn()
+            .is_ok()
+        {
+            return Ok(());
+        }
+    }
+    std::process::Command::new("cmd")
+        .args(&["/c", "start", "", url])
+        .creation_flags(0x08000000)
+        .spawn()
+        .map_err(|e| format!("打开浏览器失败: {}", e))?;
+    Ok(())
+}
+
 // 用系统默认浏览器打开指定的 file:// URL（日志文件可能很大，用浏览器而非记事本）。
 // .log/.txt 的文件关联默认是记事本，所以不能用 `start`，必须显式调用默认浏览器 exe。
 #[cfg(target_os = "windows")]
 fn open_url_in_default_browser(file_url: &str) -> Result<(), String> {
-    if let Some(browser) = resolve_default_browser_exe() {
-        std::process::Command::new(&browser)
-            .arg(file_url)
-            .creation_flags(0x08000000)
-            .spawn()
-            .map_err(|e| format!("用默认浏览器打开失败: {}", e))?;
-        return Ok(());
-    }
-    // 回退：交给系统 shell 处理（极少数无法解析默认浏览器的环境）
-    std::process::Command::new("cmd")
-        .args(&["/c", "start", "", file_url])
-        .creation_flags(0x08000000)
-        .spawn()
-        .map_err(|e| format!("打开日志文件失败: {}", e))?;
-    Ok(())
+    open_url_robust(file_url)
 }
 
 #[tauri::command]
@@ -919,11 +959,9 @@ async fn open_frontend_log() -> Result<(), String> {
 async fn open_browser(url: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
-            .args(&["/c", "start", &url])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .spawn()
-            .map_err(|e| format!("打开浏览器失败: {}", e))?;
+        // 三级兜底直接启动浏览器 exe（默认浏览器→常见路径→shell），
+        // 规避“用户未设默认浏览器 / http 关联损坏 → 找不到应用程序”
+        open_url_robust(&url)?;
     }
     
     #[cfg(not(target_os = "windows"))]
