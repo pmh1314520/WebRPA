@@ -3,21 +3,23 @@
   "version": "2.4.23",
   "description": "WebRPA 启动器",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:1420 && electron .",
+    "dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:electron\"",
+    "build:vite": "vite build",
+    "build": "vite build && electron-builder --win --config electron-builder.json"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.0.0",
     "vue": "^3.4.21"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0",
     "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.1.6"
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.1.6",
+    "wait-on": "^8.0.1"
   }
 }

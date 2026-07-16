@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Tauri
-src-tauri/target
+# Electron 构建产物
+release

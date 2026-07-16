@@ -45,7 +45,7 @@ import { MessageBubble, getToolDisplayLabel } from './MessageBubble'
 import { PanelResizer } from '@/components/workflow/PanelResizer'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { useLayoutStore, LAYOUT_LIMITS } from '@/store/layoutStore'
-import { isTauriRuntime, agentSetAlwaysOnTop, agentMinimize, agentClose } from '@/lib/tauriAgentWindow'
+import { isAgentWindow, agentSetAlwaysOnTop, agentMinimize, agentClose } from '@/lib/agentWindow'
 
 const QUICK_PROMPTS = [
   { text: '帮我新建一个打开网页的工作流', icon: Zap, color: 'icon-chip-success' },
@@ -92,7 +92,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   const updateAIAssistantConfig = useGlobalConfigStore((s) => s.updateAIAssistantConfig)
   const [showModelMenu, setShowModelMenu] = useState(false)
 
-  // 独立 Agent 窗口（Tauri）置顶状态
+  // 独立 Agent 窗口（Electron）置顶状态
   const [agentPinned, setAgentPinned] = useState(true)
   // 贴边自动隐藏提示（仅独立窗口首次显示，可手动关闭并记忆）
   const [showEdgeHint, setShowEdgeHint] = useState(() => {
@@ -460,7 +460,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
   }, [setOpen])
 
   // 编辑器：把小助手配置推送到后端，供独立 Agent 窗口跨上下文读取
-  // （编辑器在系统浏览器、Agent 在 Tauri WebView2，localStorage 互相隔离，必须经后端共享）
+  // （编辑器在系统浏览器、Agent 在 Electron 独立窗口，localStorage 互相隔离，必须经后端共享）
   useEffect(() => {
     if (standalone) return
     const t = setTimeout(() => {
@@ -1005,23 +1005,23 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       <div
         className="flex items-center justify-between px-4 h-14 border-b border-[hsl(var(--border))] flex-shrink-0"
         style={{ background: 'linear-gradient(180deg, hsl(var(--brand-50) / 0.6), hsl(var(--card)))' }}
-        {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}
+        {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}
       >
-        <div className="flex items-center gap-2.5 min-w-0 flex-1" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1" {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}>
           {/* 渐变 LOGO 圆环 */}
-          <div className="relative flex-shrink-0" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
-            <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[hsl(var(--brand-500))] to-[hsl(var(--brand-700))] flex items-center justify-center shadow-brand-glow ring-1 ring-[hsl(var(--brand-500)/0.3)]" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
+          <div className="relative flex-shrink-0" {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}>
+            <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[hsl(var(--brand-500))] to-[hsl(var(--brand-700))] flex items-center justify-center shadow-brand-glow ring-1 ring-[hsl(var(--brand-500)/0.3)]" {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}>
               <Sparkles className="w-4 h-4 text-white" strokeWidth={2.4} />
             </div>
             {configReady && (
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[hsl(var(--success-500))] border-2 border-[hsl(var(--card))] shadow-success-glow animate-pulse-ring" />
             )}
           </div>
-          <div className="min-w-0" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
-            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-1.5 whitespace-nowrap" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
+          <div className="min-w-0" {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}>
+            <div className="text-[14px] font-bold leading-tight tracking-tight text-gradient flex items-center gap-1.5 whitespace-nowrap" {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}>
               <span className="truncate">{standalone ? 'WebRPA Agent' : 'WebRPA 小助手'}</span>
             </div>
-            <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1" {...(standalone && isTauriRuntime() ? { 'data-tauri-drag-region': '' } : {})}>
+            <div className="text-[11px] text-[hsl(var(--muted-foreground))] leading-tight truncate mt-0.5 flex items-center gap-1" {...(standalone && isAgentWindow() ? { 'data-agent-drag-region': '' } : {})}>
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${configReady ? 'bg-[hsl(var(--success-500))]' : 'bg-[hsl(var(--warning-500))]'}`} />
               <span className="truncate">{configReady ? resolvedConfig.model : '尚未配置模型'}</span>
             </div>
@@ -1049,7 +1049,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
               <Clock className="w-3.5 h-3.5" />
             </Button>
           )}
-          {standalone && isTauriRuntime() && (
+          {standalone && isAgentWindow() && (
             <>
               <span className="w-px h-5 bg-[hsl(var(--border))] mx-0.5" />
               <Button
@@ -1077,7 +1077,7 @@ export function AIAssistantPanel({ standalone = false }: { standalone?: boolean 
       </div>
 
       {/* 贴边自动隐藏提示：仅独立 Agent 原生窗口显示，告诉用户把窗口拖到屏幕边缘可自动收起 */}
-      {standalone && isTauriRuntime() && showEdgeHint && (
+      {standalone && isAgentWindow() && showEdgeHint && (
         <div className="flex items-start gap-2 px-3 py-2 bg-[hsl(var(--brand-50))] border-b border-[hsl(var(--brand-500)/0.2)] flex-shrink-0 animate-fade-in-down">
           <PanelRightClose className="w-3.5 h-3.5 text-[hsl(var(--brand-600))] flex-shrink-0 mt-0.5" />
           <span className="text-[11px] leading-snug text-[hsl(var(--brand-700))] flex-1">

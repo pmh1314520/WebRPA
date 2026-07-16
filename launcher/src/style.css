@@ -108,3 +108,19 @@ html[data-webrpa-theme="dark"] .qr-zoom-mask {
 html[data-webrpa-theme="dark"] .closing-mask {
   background: linear-gradient(135deg, rgba(236, 239, 244, 0.9), rgba(198, 212, 255, 0.85)) !important;
 }
+
+/* ============ Electron 无边框窗口拖拽区 ============ */
+/* Electron 无边框窗口用 -webkit-app-region 实现拖拽：
+   顶部品牌横幅整体可拖动，横幅内的按钮/输入等交互元素设为 no-drag，避免无法点击。 */
+[data-drag-region] {
+  -webkit-app-region: drag;
+}
+[data-drag-region] button,
+[data-drag-region] a,
+[data-drag-region] input,
+[data-drag-region] select,
+[data-drag-region] textarea,
+.window-controls,
+.window-controls .win-btn {
+  -webkit-app-region: no-drag;
+}

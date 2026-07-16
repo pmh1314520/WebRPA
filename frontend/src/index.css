@@ -1971,3 +1971,20 @@ html[data-webrpa-theme="dark"] .fixed.inset-0[class*="bg-black/"],
 html[data-webrpa-theme="dark"] .fixed.inset-0[class*="hsl(217_45%_15%"] {
   background-color: rgba(236, 239, 244, 0.45) !important;
 }
+
+/* ============================================================
+   独立 Agent 原生窗口（Electron 无边框）标题栏拖拽区
+   前端标题栏在 Agent 窗口模式下带 data-agent-drag-region 属性，
+   用 -webkit-app-region 让整条标题栏可拖动窗口；其中的按钮等交互元素设为 no-drag。
+   仅在 Electron Agent 窗口内生效，普通浏览器无副作用。
+   ============================================================ */
+[data-agent-drag-region] {
+  -webkit-app-region: drag;
+}
+[data-agent-drag-region] button,
+[data-agent-drag-region] a,
+[data-agent-drag-region] input,
+[data-agent-drag-region] select,
+[data-agent-drag-region] textarea {
+  -webkit-app-region: no-drag;
+}

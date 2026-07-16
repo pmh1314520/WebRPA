@@ -1,7 +1,7 @@
 <template>
   <div class="app-root">
     <!-- 顶部品牌横幅 -->
-    <header class="brand-bar" data-tauri-drag-region>
+    <header class="brand-bar" data-drag-region>
       <div class="brand-bar-bg"></div>
       <div class="brand-content">
         <div class="brand-left">
@@ -799,8 +799,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { invoke, getCurrentWindow } from './bridge'
 import wechatQr from './assets/wechat-qr.png'
 import alipayQr from './assets/alipay-qr.jpg'
 

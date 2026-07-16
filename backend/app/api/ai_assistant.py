@@ -217,7 +217,7 @@ async def api_transcribe(req: TranscribeRequest):
             pass
 
 
-# ---------- 共享配置（跨上下文：编辑器在系统浏览器、Agent 在 Tauri WebView2，
+# ---------- 共享配置（跨上下文：编辑器在系统浏览器、Agent 在 Electron 独立窗口，
 #            两者 localStorage 隔离，故小助手配置经后端共享，让独立 Agent 窗口也能读到） ----------
 
 def _shared_config_path():

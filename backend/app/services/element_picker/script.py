@@ -14,10 +14,19 @@ PICKER_SCRIPT = r"""(function() {
         // 用户已主动停止 picker，即便 init_script 在新页面重新跑也立刻退出
         return;
     }
+    // 是否顶层窗口：add_init_script 会把本脚本注入主文档「以及每个 iframe」，
+    // 若每个 frame 都渲染顶部提示条，就会出现多条并排的提示条（用户反馈的“重复出现”）。
+    // 因此提示条只在顶层窗口渲染；iframe 内仍保留悬停高亮框 / 选中框 / 点击采集逻辑，
+    // 以便用户能选取 iframe 内的元素（结果由后端遍历所有 frame 读取）。
+    // 跨域 iframe 读取 window.top 会抛错，视为非顶层（不渲染提示条）。
+    var __pickerIsTop = true;
+    try { __pickerIsTop = (window.top === window.self); } catch (e) { __pickerIsTop = false; }
+
     // 幂等判重以“DOM 里是否已存在覆盖层”为准（而非只看 __elementPickerActive 布尔或闭包内元素）：
-    // 覆盖层已存在 → 直接返回，避免多次注入产生重叠的提示条/高亮框；
+    // 用 __picker_box 作为判重锚点（所有 frame 都会创建它，提示条则仅顶层有），
+    // 覆盖层已存在 → 直接返回，避免多次注入产生重叠的高亮框 / 重复注册监听器；
     // 覆盖层不存在（新页面 / 标志被早期运行毒化成 true 却没建成 UI）→ 无论标志如何都继续重建。
-    if (document.getElementById('__picker_tip')) {
+    if (document.getElementById('__picker_box')) {
         window.__elementPickerActive = true;
         return;
     }
@@ -74,7 +83,8 @@ PICKER_SCRIPT = r"""(function() {
         if (!document.getElementById('__picker_box')) document.body.appendChild(box);
         if (!document.getElementById('__picker_first_box')) document.body.appendChild(firstBox);
         if (!document.getElementById('__picker_selected_box')) document.body.appendChild(selectedBox);
-        if (!document.getElementById('__picker_tip')) document.body.appendChild(tip);
+        // 提示条只在顶层窗口渲染，避免每个 iframe 各挂一条造成并排重复
+        if (__pickerIsTop && !document.getElementById('__picker_tip')) document.body.appendChild(tip);
     }
     if (document.body) attachUI();
     else document.addEventListener('DOMContentLoaded', attachUI);

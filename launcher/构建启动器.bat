@@ -3,7 +3,7 @@ chcp 65001 >nul
 title 构建 WebRPA 启动器
 
 echo ========================================
-echo      构建 WebRPA 启动器
+echo      构建 WebRPA 启动器 (Electron)
 echo ========================================
 echo.
 
@@ -20,14 +20,14 @@ cd /d "%LAUNCHER_DIR%"
 call "%NODEJS_DIR%\npm.cmd" install
 
 echo.
-echo [信息] 正在构建应用...
-call "%NODEJS_DIR%\npm.cmd" run tauri:build
+echo [信息] 正在构建应用（vite build + electron-builder）...
+call "%NODEJS_DIR%\npm.cmd" run build
 
 echo.
 echo ========================================
 echo      构建完成！
 echo ========================================
 echo.
-echo 可执行文件位于: src-tauri\target\release\
+echo 可执行文件位于: release\WebRPA启动器.exe
 echo.
 pause

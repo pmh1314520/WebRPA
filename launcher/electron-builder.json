@@ -1,0 +1,26 @@
+{
+  "appId": "com.webrpa.launcher",
+  "productName": "WebRPA启动器",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "electron/**/*",
+    "dist/**/*",
+    "logo.ico"
+  ],
+  "win": {
+    "icon": "logo.ico",
+    "target": [
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "portable": {
+    "artifactName": "WebRPA启动器.exe"
+  },
+  "compression": "maximum",
+  "asar": true
+}

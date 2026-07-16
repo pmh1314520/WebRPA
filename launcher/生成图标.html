@@ -99,14 +99,14 @@
             <h3>使用说明</h3>
             <ol>
                 <li>点击上方的"下载"按钮下载各个尺寸的图标</li>
-                <li>将下载的图标文件放入 <code>launcher/src-tauri/icons/</code> 目录</li>
-                <li>对于 .ico 和 .icns 文件，可以使用在线转换工具:
+                <li>下载 512x512 的 PNG 图标</li>
+                <li>使用在线工具将 PNG 转换为 ICO：
                     <ul>
                         <li><a href="https://convertio.co/zh/png-ico/" target="_blank">PNG 转 ICO</a></li>
-                        <li><a href="https://convertio.co/zh/png-icns/" target="_blank">PNG 转 ICNS</a></li>
                     </ul>
                 </li>
-                <li>或者使用 Tauri CLI: <code>npm run tauri icon 128x128.png</code></li>
+                <li>将生成的 ICO 覆盖 <code>launcher/logo.ico</code></li>
+                <li>或直接双击 <code>launcher/重新生成图标.bat</code> 一键生成 logo.ico</li>
             </ol>
         </div>
     </div>

@@ -6,7 +6,7 @@ import { socketService } from '@/services/socket'
 import { updateApiBase } from '@/services/api'
 import { preloadConfig } from '@/services/config'
 import { useAIAssistantStore } from '@/store/aiAssistantStore'
-import { setupAgentWindowBehaviors } from '@/lib/tauriAgentWindow'
+import { setupAgentWindowBehaviors } from '@/lib/agentWindow'
 
 /**
  * 小助手独立进程窗口（系统级 Agent 模式）
@@ -18,7 +18,7 @@ export function AssistantWindow() {
     document.title = 'WebRPA 小助手 · Agent'
     // 跟随启动器主题：读取 URL 上的 theme 参数并应用到 <html data-webrpa-theme>
     // （default 不加属性；dark/gray 走整页滤镜，与编辑器/启动器一致）。
-    // 启动器切换主题时会通过 Tauri 命令 eval 实时更新该属性，无需重载。
+    // 启动器切换主题时会通过 Electron executeJavaScript 实时更新该属性，无需重载。
     try {
       const theme = new URLSearchParams(window.location.search).get('theme')
       const el = document.documentElement
@@ -37,7 +37,7 @@ export function AssistantWindow() {
       }
     }
     init()
-    // 原生窗口（Tauri）：启用置顶/拖动/贴边自动隐藏等系统级行为（非 Tauri 环境自动跳过）
+    // 原生窗口（Electron）：置顶/拖动/贴边自动隐藏等系统级行为（非原生窗口环境自动跳过）
     setupAgentWindowBehaviors()
     return () => {
       try { socketService.disconnect() } catch { /* ignore */ }
