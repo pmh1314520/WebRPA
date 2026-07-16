@@ -137,15 +137,6 @@ Default URLs:
 - Backend: http://localhost:5241 (default port, configurable in the launcher)
 - Frontend: http://localhost:5921 (default port, configurable in the launcher)
 
-### Fallback startup (command line)
-
-The GUI launcher is built on Electron and ships its own Chromium, so it no longer requires the system WebView2 runtime and works out of the box. If you prefer not to use the GUI launcher, or it fails to run, use the bundled **bat fallback scripts**, which start all frontend/backend services just the same:
-
-- Double-click `WebRPA备用启动.bat`: it validates the runtime, reads the port config, installs frontend dependencies on first run, starts the backend and frontend in two separate windows, and opens your browser once ready.
-- To stop the services, run `WebRPA停止服务.bat` to terminate the frontend/backend processes by port.
-
-> The bat scripts start WebRPA exactly like the GUI launcher — use whichever you prefer.
-
 ### Configuration file
 
 The `WebRPAConfig.json` file in the project root lets you customize service ports and host addresses:
