@@ -141,7 +141,7 @@ class OpenPageExecutor(ModuleExecutor):
                 # 追加浏览器扩展加载参数（与"打开浏览器"路径一致；含目录存在性校验）
                 _ext_dirs = browser_config.get('extensionDirs', '') if browser_config else ''
                 if _ext_dirs:
-                    _ext_args = browser_engine.build_extension_args(_ext_dirs)
+                    _ext_args = _be.build_extension_args(_ext_dirs)
                     if _ext_args:
                         # 去掉用户/默认参数里可能已有的同名 flag，避免重复
                         _ext_flags = {a.split('=', 1)[0] for a in _ext_args}
