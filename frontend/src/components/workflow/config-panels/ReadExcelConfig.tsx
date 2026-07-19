@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Eye } from 'lucide-react'
+import { Eye, FolderOpen } from 'lucide-react'
 import { useWorkflowStore, type NodeData } from '@/store/workflowStore'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/ui/number-input'
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { VariableInput } from '@/components/ui/variable-input'
 import { VariableNameInput } from '@/components/ui/variable-name-input'
 import { HierarchicalExcelSelector } from '@/components/ui/hierarchical-excel-selector'
-import { dataAssetApi } from '@/services/api'
+import { dataAssetApi, systemApi } from '@/services/api'
 import { ExcelPreviewDialog, type SelectionResult } from './ExcelPreviewDialog'
 import type { DataAsset } from '@/types'
 
@@ -51,7 +51,27 @@ export function ReadExcelConfig({ data, onChange }: ReadExcelConfigProps) {
 
   const readMode = (data.readMode as string) || 'cell'
   const fileName = (data.fileName as string) || ''
-  const selectedAsset = assets.find(a => a.originalName === fileName)
+  // 文件来源：asset=底栏 Excel 资源（默认，兼容旧配置）；local=电脑本地任意路径
+  const sourceType = (data.sourceType as string) || 'asset'
+  // 仅资源来源时才有 selectedAsset（本地路径不匹配资源名，故为空 → 预览等资源专属功能自动隐藏）
+  const selectedAsset = sourceType === 'asset' ? assets.find(a => a.originalName === fileName) : undefined
+
+  // 选择本地 Excel 文件（走系统文件选择器，路径写入 fileName；后端会识别本地路径直接读取）
+  const pickLocalFile = async () => {
+    try {
+      const result = await systemApi.selectFile('选择 Excel 文件', undefined, [
+        ['Excel 文件', '*.xlsx;*.xls'],
+        ['所有文件', '*.*'],
+      ])
+      const inner = result.data as { success?: boolean; path?: string } | undefined
+      if (inner?.success && inner.path) {
+        onChange('fileName', inner.path)
+        onChange('sheetName', '')
+      }
+    } catch (e) {
+      console.error('选择本地 Excel 文件失败:', e)
+    }
+  }
 
   // 处理可视化选择结果
   const handleSelection = (result: SelectionResult) => {
@@ -70,20 +90,69 @@ export function ReadExcelConfig({ data, onChange }: ReadExcelConfigProps) {
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="fileName">选择Excel文件</Label>
-        <HierarchicalExcelSelector
-          value={fileName}
-          onChange={(newFileName) => {
-            onChange('fileName', newFileName)
+        <Label htmlFor="sourceType">文件来源</Label>
+        <Select
+          id="sourceType"
+          value={sourceType}
+          onChange={(e) => {
+            onChange('sourceType', e.target.value)
+            // 切换来源时清空已选文件与工作表，避免残留另一来源的值
+            onChange('fileName', '')
             onChange('sheetName', '')
           }}
-        />
-        {assets.length === 0 && (
-          <p className="text-xs text-orange-500">
-            请先在底部"Excel资源"分页中上传Excel文件
-          </p>
-        )}
+        >
+          <option value="asset">Excel 资源（底栏上传）</option>
+          <option value="local">本地文件（电脑任意路径）</option>
+        </Select>
       </div>
+
+      {sourceType === 'asset' ? (
+        <div className="space-y-2">
+          <Label htmlFor="fileName">选择Excel文件</Label>
+          <HierarchicalExcelSelector
+            value={fileName}
+            onChange={(newFileName) => {
+              onChange('fileName', newFileName)
+              onChange('sheetName', '')
+            }}
+          />
+          {assets.length === 0 && (
+            <p className="text-xs text-orange-500">
+              请先在底部"Excel资源"分页中上传Excel文件
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="fileName">本地 Excel 文件路径</Label>
+          <div className="flex gap-2">
+            <VariableInput
+              value={fileName}
+              onChange={(v) => onChange('fileName', v)}
+              placeholder="如 D:\\数据\\报表.xlsx，支持 {变量名}"
+              className="flex-1"
+            />
+            <Button type="button" variant="tonal-warning" size="icon" onClick={pickLocalFile}>
+              <FolderOpen className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            直接读取电脑本地任意文件夹的 Excel，无需先上传到 Excel 资源
+          </p>
+        </div>
+      )}
+
+      {/* 本地文件来源：手动填写工作表名（可留空读默认工作表） */}
+      {sourceType === 'local' && (
+        <div className="space-y-2">
+          <Label htmlFor="sheetName">工作表 (可选)</Label>
+          <VariableInput
+            value={(data.sheetName as string) || ''}
+            onChange={(v) => onChange('sheetName', v)}
+            placeholder="留空读取默认工作表；支持 {变量名}"
+          />
+        </div>
+      )}
 
       {sheetNames.length > 0 && (
         <div className="space-y-2">

@@ -711,6 +711,7 @@ class ReadExcelExecutor(ModuleExecutor):
         return "read_excel"
     
     async def execute(self, config: dict, context: ExecutionContext) -> ModuleResult:
+        import os
         import openpyxl
         from app.api.data_assets import get_asset_by_name
         
@@ -732,11 +733,21 @@ class ReadExcelExecutor(ModuleExecutor):
         if not variable_name:
             return ModuleResult(success=False, error="请指定存储变量名")
         
-        asset = get_asset_by_name(file_name)
-        if not asset:
-            return ModuleResult(success=False, error=f"文件 '{file_name}' 不存在")
+        # 文件解析：优先「本地磁盘路径」（用户可直接读电脑上任意文件夹的 Excel，支持变量引用路径），
+        # 否则回退到「Excel 资源」（底栏上传的文件，按名称查找）。
+        file_path = None
+        if os.path.isfile(file_name):
+            file_path = file_name
+        else:
+            asset = get_asset_by_name(file_name)
+            if asset:
+                file_path = asset['path']
+        if not file_path:
+            return ModuleResult(
+                success=False,
+                error=f"文件 '{file_name}' 不存在（既不是有效的本地文件路径，也不是已上传的 Excel 资源）"
+            )
         
-        file_path = asset['path']
         is_xls = file_path.lower().endswith('.xls')
         
         try:
