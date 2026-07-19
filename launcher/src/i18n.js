@@ -59,7 +59,7 @@ Object.assign(DICT, {
   '服务已停止，正在退出启动器…': 'Services stopped, exiting launcher…',
   '正在退出启动器…': 'Exiting launcher…',
   '外包开发': 'Hire dev', '外包开发 · 找作者接需求': 'Hire the author for development',
-  '发现新版本': 'New version available', '立即更新': 'Update now', '加速下载': 'Mirror download',
+  '发现新版本': 'New version available', '立即更新': 'Update now', '加速下载': 'Mirror download', '夸克网盘下载': 'Quark Drive',
   'GitHub 仓库': 'GitHub repo', 'B站主页': 'Bilibili', '支持作者': 'Support author',
   '当前已是最新版本': 'You are on the latest version'
 })
@@ -147,6 +147,7 @@ Object.assign(DICT, {
   '前端端口必须在 1024-65535': 'Frontend port must be 1024-65535',
   '后端和前端端口不能相同': 'Backend and frontend ports must differ',
   '已打开加速下载，下载后解压覆盖原目录': 'Mirror download opened; unzip and overwrite the original folder',
+  '已打开夸克网盘国内高速下载，下载后解压覆盖原目录': 'Opened Quark Drive high-speed download; unzip and overwrite the original folder',
 })
 
 // 追加：关闭赞助提示的二次确认（祈求挽留）弹窗

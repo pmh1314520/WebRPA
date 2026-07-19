@@ -111,7 +111,7 @@
             <div class="update-banner-sub">{{ updateInfo.release_date }} · 点击下载查看更新内容</div>
           </div>
           <div class="update-banner-actions">
-            <button class="link-btn" @click="downloadWithMirror">加速下载</button>
+            <button class="link-btn" @click="downloadWithMirror">夸克网盘下载</button>
             <button class="cta-btn" @click="downloadUpdate">
               <span>立即更新</span>
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none">
@@ -1053,13 +1053,11 @@ const checkUpdate = async () => {
 const downloadUpdate = () => {
   if (updateInfo.value?.update_url) invoke('open_browser', { url: updateInfo.value.update_url })
 }
+// 国内高速下载：与官网统一，跳转夸克网盘（分享链接与版本无关，始终指向最新版下载包）
+const QUARK_DOWNLOAD_URL = 'https://pan.quark.cn/s/d6331c1d0361'
 const downloadWithMirror = () => {
-  if (updateInfo.value?.latest_version) {
-    const v = updateInfo.value.latest_version
-    const mirrorUrl = `https://ghfile.geekertao.top/github.com/pmh1314520/WebRPA/releases/download/v${v}/WebRPA-${v}-FullVersion.7z`
-    invoke('open_browser', { url: mirrorUrl })
-    showToast('已打开加速下载，下载后解压覆盖原目录', 'info', 3500)
-  }
+  invoke('open_browser', { url: QUARK_DOWNLOAD_URL })
+  showToast('已打开夸克网盘国内高速下载，下载后解压覆盖原目录', 'info', 3500)
 }
 
 async function waitFor(predicate, maxIter, intervalMs, beforeCheck) {
