@@ -158,6 +158,13 @@ export async function apiRequest<T = any>(
 // ==================== 系统 API ====================
 export const systemApi = {
   getConfig: () => apiRequest('/system/config'),
+  // 浏览器配置同步（供计划任务/触发器等后端自治执行读取用户选择的浏览器）
+  getBrowserConfig: () => apiRequest<{ success: boolean; config: Record<string, unknown> }>('/system/browser-config'),
+  setBrowserConfig: (cfg: Record<string, unknown>) =>
+    apiRequest<{ success: boolean; config: Record<string, unknown> }>('/system/browser-config', {
+      method: 'POST',
+      body: JSON.stringify(cfg),
+    }),
   selectFolder: (title?: string, initialDir?: string) =>
     apiRequest('/system/select-folder', { 
       method: 'POST', 

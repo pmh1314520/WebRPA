@@ -10,7 +10,7 @@ import { Radio } from '@/components/ui/radio-group'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import { useGlobalConfigStore, type BrowserType, type AIModelProfile, type AssistantScene } from '@/store/globalConfigStore'
-import { X, Settings, Brain, Mail, RotateCcw, Folder, Loader2, Database, Monitor, Globe, Zap, MessageCircle, MessageSquare, Plus, Trash2, Bot, Check, Plug, Cpu, ShieldCheck, KeyRound, HardDrive } from 'lucide-react'
+import { X, Settings, Brain, Mail, RotateCcw, Folder, Loader2, Database, Monitor, Globe, Zap, MessageCircle, MessageSquare, Plus, Trash2, Bot, Check, Plug, Cpu, ShieldCheck, KeyRound, HardDrive, Download, Upload, AlertTriangle } from 'lucide-react'
 import { systemApi, securityApi, getAuthToken, setAuthToken, credentialApi, retentionApi, browserApi, localWorkflowApi, type CredentialItem, type RetentionConfig, type RetentionUsage } from '@/services/api'
 import { aiAssistantApi } from '@/services/aiAssistantApi'
 import { getBackendBaseUrl } from '@/services/config'
@@ -401,8 +401,14 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
     updateFeishuConfig,
     updateDisplayConfig, 
     updateBrowserConfig, 
-    resetConfig 
+    resetConfig,
+    importConfig,
+    exportConfig,
   } = useGlobalConfigStore()
+  const importFileRef = useRef<HTMLInputElement>(null)
+  // 导出配置对话框：是否包含敏感数据（密码/密钥/Token 等）
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [exportIncludeSensitive, setExportIncludeSensitive] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('system')
   const [uiLang, setUiLang] = useState<'zh' | 'en'>(() => getLang())
   const [defaultFolder, setDefaultFolder] = useState<string>('')
@@ -413,7 +419,7 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
   const [assistantTest, setAssistantTest] = useState<{ status: 'idle' | 'testing' | 'ok' | 'fail'; message: string; detail?: string; latency?: number }>({ status: 'idle', message: '' })
   // 内置 Chromium 检测状态（用于提示浏览器扩展兜底是否生效）
   const [chromiumStatus, setChromiumStatus] = useState<{ checked: boolean; available: boolean; path?: string }>({ checked: false, available: false })
-  const { confirm, ConfirmDialog } = useConfirm()
+  const { confirm, alert, ConfirmDialog } = useConfirm()
   const browserConfigTipRef = useRef<HTMLDivElement>(null)
 
   // 获取默认文件夹路径
@@ -433,13 +439,41 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
 
   // 把「工作流保存文件夹」同步到后端持久化，使计划任务/启动/热键/Webhook 触发等
   // 后端自治操作也能读到用户自定义路径。防抖 500ms，避免手输时频繁写入。
+  const latestFolderRef = useRef(config.workflow?.localFolder || '')
   useEffect(() => {
+    latestFolderRef.current = config.workflow?.localFolder || ''
     const folder = config.workflow?.localFolder || ''
     const t = setTimeout(() => {
       localWorkflowApi.setActiveFolder(folder).catch(() => {})
     }, 500)
     return () => clearTimeout(t)
   }, [config.workflow?.localFolder])
+  // 卸载/关闭设置时兜底刷新一次，避免防抖未触发就关闭导致后端活动文件夹与配置不一致
+  useEffect(() => {
+    return () => {
+      localWorkflowApi.setActiveFolder(latestFolderRef.current).catch(() => {})
+    }
+  }, [])
+
+  // 把「浏览器配置」同步到后端持久化，使计划任务/启动/热键/Webhook 触发等后端自治执行
+  // 也用用户选择的浏览器（Chrome/Chromium 等），而不是写死的 msedge。防抖 + 卸载兜底刷新。
+  const latestBrowserRef = useRef(config.browser)
+  useEffect(() => {
+    latestBrowserRef.current = config.browser
+    const b = config.browser
+    if (!b) return
+    const t = setTimeout(() => {
+      systemApi.setBrowserConfig(b as unknown as Record<string, unknown>).catch(() => {})
+    }, 500)
+    return () => clearTimeout(t)
+  }, [config.browser])
+  useEffect(() => {
+    return () => {
+      if (latestBrowserRef.current) {
+        systemApi.setBrowserConfig(latestBrowserRef.current as unknown as Record<string, unknown>).catch(() => {})
+      }
+    }
+  }, [])
 
   // 当配置了浏览器扩展目录时，检测内置 Chromium 是否可用（决定扩展兜底能否生效）
   useEffect(() => {
@@ -479,6 +513,82 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
     const confirmed = await confirm('确定要重置所有全局配置吗？', { type: 'warning', title: '重置配置' })
     if (confirmed) {
       resetConfig()
+    }
+  }
+
+  // 深度脱敏：递归把"敏感字段"（密码/密钥/Token 等）的字符串值清空，用于不含敏感数据的导出
+  const SENSITIVE_KEY_RE = /(password|passwd|pwd|secret|appsecret|app_secret|token|apikey|api_key|authcode|auth_code|accesskey|access_key|privatekey|private_key|credential|cookie)/i
+  const redactSensitive = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map((v) => redactSensitive(v))
+    if (value && typeof value === 'object') {
+      const out: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        if (SENSITIVE_KEY_RE.test(k) && typeof v === 'string') {
+          out[k] = ''  // 清空敏感字符串值，保留字段结构
+        } else {
+          out[k] = redactSensitive(v)
+        }
+      }
+      return out
+    }
+    return value
+  }
+
+  // 导出全部全局配置为 JSON 文件（方便换机器/换浏览器时迁移）
+  const doExportConfig = (includeSensitive: boolean) => {
+    try {
+      const rawConfig = exportConfig()
+      const config = includeSensitive ? rawConfig : redactSensitive(rawConfig)
+      const payload = {
+        __webrpa: 'global-config',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        includesSensitive: includeSensitive,
+        config,
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+      const suffix = includeSensitive ? '含敏感数据' : '已脱敏'
+      a.href = url
+      a.download = `WebRPA全局配置-${suffix}-${ts}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setShowExportDialog(false)
+    } catch (e) {
+      alert('导出配置失败：' + ((e as Error)?.message || String(e)), { title: '导出失败' })
+    }
+  }
+
+  // 从 JSON 文件导入全部全局配置
+  const handleImportConfig = async () => {
+    const input = importFileRef.current
+    const file = input?.files?.[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      const ok = await confirm('导入后将用该文件覆盖当前所有全局配置，确定继续吗？', { type: 'warning', title: '导入配置' })
+      if (!ok) return
+      const success = importConfig(data)
+      if (success) {
+        // 显式兜底同步到后端（浏览器配置 / 工作流文件夹），确保计划任务等后端自治执行立即用上新配置
+        try {
+          const cfg = useGlobalConfigStore.getState().config
+          if (cfg.browser) systemApi.setBrowserConfig(cfg.browser as unknown as Record<string, unknown>).catch(() => {})
+          localWorkflowApi.setActiveFolder(cfg.workflow?.localFolder || '').catch(() => {})
+        } catch { /* ignore */ }
+        await alert('配置导入成功，已应用。若部分设置未即时生效，可刷新页面。', { title: '导入完成' })
+      } else {
+        await alert('导入失败：文件不是有效的 WebRPA 配置 JSON。', { title: '导入失败' })
+      }
+    } catch (err) {
+      await alert('导入失败：无法解析 JSON 文件。\n' + ((err as Error)?.message || String(err)), { title: '导入失败' })
+    } finally {
+      if (input) input.value = ''  // 允许再次选择同一文件
     }
   }
 
@@ -2295,14 +2405,44 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
 
         {/* 底部按钮 */}
         <div className="dialog-footer-bar !justify-between">
-          <Button
-            variant="tonal-warning"
-            size="sm"
-            onClick={handleReset}
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            重置全部
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="tonal-warning"
+              size="sm"
+              onClick={handleReset}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              重置全部
+            </Button>
+            {/* 隐藏的文件选择器：用于导入配置 JSON */}
+            <input
+              ref={importFileRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              onChange={handleImportConfig}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-300 text-gray-700"
+              onClick={() => importFileRef.current?.click()}
+              title="从 JSON 文件导入全部全局配置（换机器/换浏览器迁移用）"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              导入配置
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-300 text-gray-700"
+              onClick={() => { setExportIncludeSensitive(false); setShowExportDialog(true) }}
+              title="导出全部全局配置为 JSON 文件"
+            >
+              <Download className="w-3.5 h-3.5" />
+              导出配置
+            </Button>
+          </div>
           <Button
             variant="success"
             size="sm"
@@ -2313,6 +2453,55 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
           </Button>
         </div>
       </div>
+
+      {/* 导出配置对话框：警告 + 是否包含敏感数据复选框 */}
+      {showExportDialog && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          style={{ zIndex: 2147483646 }}
+          onClick={() => setShowExportDialog(false)}
+        >
+          <div
+            className="bg-[hsl(var(--card))] rounded-[14px] border border-[hsl(var(--border))] shadow-pop-2xl w-full max-w-md overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-[hsl(var(--border))] flex items-center gap-2">
+              <Download className="w-4 h-4 text-[hsl(var(--brand-600))]" />
+              <span className="font-semibold text-[15px] text-gray-800">导出全局配置</span>
+            </div>
+            <div className="px-5 py-4 space-y-3 text-sm text-gray-700">
+              <p>即将把全部全局配置导出为 JSON 文件，方便在其它机器 / 浏览器上导入迁移。</p>
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-[hsl(var(--warning-50))] border border-[hsl(var(--warning-500)/0.3)]">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[hsl(var(--warning-600))]" />
+                <span className="text-[12.5px] leading-snug text-[hsl(var(--warning-700))]">
+                  配置中可能含<strong>敏感信息</strong>（邮箱密码、AI 接口密钥、WebDAV / QQ / 飞书凭据等）。若选择包含敏感数据，请务必妥善保管导出文件，切勿外发或上传到公开仓库。
+                </span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={exportIncludeSensitive}
+                  onChange={(e) => setExportIncludeSensitive(e.target.checked)}
+                  className="w-4 h-4 accent-[hsl(var(--brand-500))]"
+                />
+                <span className="text-gray-800">包含敏感数据（密码 / 密钥 / Token 等）</span>
+              </label>
+              <p className="text-[12px] text-gray-500">
+                {exportIncludeSensitive
+                  ? '将导出完整配置（含明文敏感信息）。'
+                  : '敏感字段将被置空，仅导出非敏感配置（更安全，推荐）。'}
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 bg-[hsl(var(--slate-50))] border-t border-[hsl(var(--border))]">
+              <Button variant="secondary" size="sm" onClick={() => setShowExportDialog(false)}>取消</Button>
+              <Button variant="success" size="sm" onClick={() => doExportConfig(exportIncludeSensitive)}>
+                <Download className="w-3.5 h-3.5" />
+                确认导出
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 确认对话框 */}
       <ConfirmDialog />

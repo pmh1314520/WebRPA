@@ -1145,6 +1145,9 @@ class WorkflowExecutor:
                 # 否则 executed_nodes/failed_nodes 统计漏掉本节点，工作流会误报"成功"。
                 # （后续若经错误回流/循环重跑成功，第 1166 行会以最后一次结果覆盖为 True。）
                 self._node_outcomes[node.id] = False
+                # 记录首个失败节点的详细错误，供工作流整体结果上浮（否则计划任务日志只会显示笼统的"执行失败"）
+                if not getattr(self, '_first_error_message', None):
+                    self._first_error_message = f"「{label}」{error_msg}"
                 return ModuleResult(success=False, error=error_msg, duration=duration, is_timeout=is_timeout)
         
         print(f"[DEBUG] 执行器返回: success={result.success}, message={result.message}, error={result.error}")
@@ -2631,6 +2634,7 @@ class WorkflowExecutor:
         self.executed_nodes = 0
         self.failed_nodes = 0
         self._node_outcomes = {}
+        self._first_error_message = None  # 首个失败节点的详细错误，供整体结果上浮
         self._executed_node_ids.clear()
         self._executing_node_ids.clear()
         self._pending_nodes.clear()
@@ -2778,6 +2782,8 @@ class WorkflowExecutor:
                 total_nodes=len(self.workflow.nodes),
                 executed_nodes=self.executed_nodes,
                 failed_nodes=self.failed_nodes,
+                # 失败时上浮首个失败节点的详细错误，避免计划任务日志只显示笼统的"执行失败"
+                error_message=(self._first_error_message if status == ExecutionStatus.FAILED else None),
             )
             
         except Exception as e:

@@ -43,6 +43,9 @@ data/mcp_config.json
 # 工作流保存文件夹（活动文件夹，含用户机器本地绝对路径）—— 运行时状态，不入库
 data/workflow_folder.json
 
+# 浏览器自动化配置（含用户机器本地浏览器路径等）—— 运行时状态，不入库
+data/browser_config.json
+
 # WebDAV 配置（含远程账号/密码）—— 不入库
 data/webdav.json
 

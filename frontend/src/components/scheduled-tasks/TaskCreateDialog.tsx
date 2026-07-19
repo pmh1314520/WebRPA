@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { DatePicker, TimePicker } from '@/components/ui/date-time-picker'
 import { useScheduledTaskStore, type ScheduledTaskTrigger, type NotifyChannel } from '@/store/scheduledTaskStore'
+import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { localWorkflowApi } from '@/services/api'
 import { Clock, Zap, Power, Repeat, X, Webhook } from 'lucide-react'
 import { DialogPortal } from '@/components/ui/dialog-portal'
@@ -81,12 +82,18 @@ export function TaskCreateDialog({ open, onClose }: TaskCreateDialogProps) {
   const loadWorkflows = async () => {
     setLoadingWorkflows(true)
     try {
-      const folderResponse = await localWorkflowApi.getDefaultFolder()
-      if (folderResponse.data?.folder) {
-        const listResponse = await localWorkflowApi.list(folderResponse.data.folder)
-        if (listResponse.data?.workflows) {
-          setWorkflows(listResponse.data.workflows)
-        }
+      // 优先用户在「存储」中配置的自定义工作流文件夹；未配置（留空/恢复默认）时，
+      // 显式取真实默认路径来列举，而不是传 undefined 依赖后端「活动文件夹」兜底
+      // （后者可能还停留在旧的自定义路径，导致改回默认后列不出工作流）。
+      // WebDAV 启用时 getDefaultFolder 返回 "WebDAV"，后端 list 会优先走远程目录，同样兼容。
+      let folder = useGlobalConfigStore.getState().config.workflow?.localFolder || ''
+      if (!folder) {
+        const folderResponse = await localWorkflowApi.getDefaultFolder()
+        folder = folderResponse.data?.folder || ''
+      }
+      const listResponse = await localWorkflowApi.list(folder || undefined)
+      if (listResponse.data?.workflows) {
+        setWorkflows(listResponse.data.workflows)
       }
     } catch (error) {
       console.error('加载工作流失败:', error)

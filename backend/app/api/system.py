@@ -11,6 +11,26 @@ import json
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 
+
+# ==================== 浏览器配置（服务端持久化，供计划任务/触发器等后端自治执行读取） ====================
+from typing import Any, Dict
+from app.services import browser_config_store
+
+
+@router.get("/browser-config")
+async def get_browser_config_api():
+    """读取服务端持久化的浏览器自动化配置。"""
+    return {"success": True, "config": browser_config_store.get_browser_config()}
+
+
+@router.post("/browser-config")
+async def set_browser_config_api(cfg: Dict[str, Any]):
+    """持久化浏览器自动化配置。前端在设置变更/启动时同步进来，
+    使计划任务/启动/热键/Webhook 触发等后端自治执行也能用用户选择的浏览器（Chrome/Chromium 等）。"""
+    saved = browser_config_store.set_browser_config(cfg)
+    return {"success": True, "config": saved}
+
+
 # 鼠标拾取器进程
 mouse_picker_process = None
 

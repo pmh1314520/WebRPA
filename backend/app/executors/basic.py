@@ -325,6 +325,43 @@ class OpenPageExecutor(ModuleExecutor):
                             solution = f"\n\n💡 解决方案:\n1. 关闭所有 {browser_type} 浏览器窗口（包括后台进程）\n2. 打开任务管理器，结束所有 {browser_type}.exe 进程\n3. 如果问题仍然存在，重启电脑\n4. 或者在浏览器配置中使用自定义数据目录"
                             return ModuleResult(success=False, error=detailed_error + solution)
                         
+                        # 系统渠道浏览器（msedge/chrome）未安装 → 自动回退到内置 Chromium（去掉 channel 重试）。
+                        # 典型报错：Chromium distribution 'msedge' is not found ... Run "playwright install msedge"。
+                        # 这样在没装 Edge/Chrome 的机器（如服务器/纯净系统）上，计划任务也能正常跑起来。
+                        elif channel and (
+                            "is not found" in error_msg
+                            or "distribution" in error_msg.lower()
+                            or "playwright install" in error_msg.lower()
+                            or "executable doesn't exist" in error_msg.lower()
+                            or "browser is not installed" in error_msg.lower()
+                        ):
+                            print(f"[OpenPage] 系统未安装 {channel}，回退到内置 Chromium 重试...")
+                            fb_args = dict(launch_args)
+                            fb_args.pop('channel', None)
+                            try:
+                                context.browser_context = await browser_engine.launch_persistent_context(**fb_args)
+                                print(f"[OpenPage] ✅ 已用内置 Chromium 启动（系统未安装 {channel}）")
+                            except Exception as e_fb:
+                                # 内置 Chromium + 共享数据目录失败 → 换临时目录再试一次
+                                print(f"[OpenPage] 内置 Chromium 共享目录启动失败，改用临时目录: {e_fb}")
+                                try:
+                                    import tempfile
+                                    temp_dir = tempfile.mkdtemp(prefix="browser_data_chromium_")
+                                    fb_args['user_data_dir'] = temp_dir
+                                    context.browser_context = await browser_engine.launch_persistent_context(**fb_args)
+                                    print(f"[OpenPage] ✅ 已用内置 Chromium + 临时目录启动")
+                                except Exception as e_fb2:
+                                    msg = str(e_fb2)
+                                    if "executable doesn't exist" in msg.lower() or "browser is not installed" in msg.lower():
+                                        detailed_error = f"❌ 系统未安装 {browser_type}，且内置 Chromium 驱动也未安装\n原始错误: {msg}"
+                                        solution = ("\n\n💡 解决方案:\n1. 安装内置 Chromium 驱动：playwright install chromium\n"
+                                                    f"2. 或安装 {browser_type} 浏览器后重试\n3. 或在浏览器配置中指定已安装浏览器的可执行文件路径")
+                                    else:
+                                        detailed_error = f"❌ 回退内置 Chromium 启动仍失败\n原始错误: {msg}"
+                                        solution = "\n\n💡 解决方案:\n1. 检查系统资源（内存/磁盘）\n2. 安装内置 Chromium：playwright install chromium\n3. 在浏览器配置中指定浏览器可执行文件路径"
+                                    return ModuleResult(success=False, error=detailed_error + solution)
+                            # 回退成功：不再进入临时目录重试，直接继续后续页面初始化
+
                         # 检查是否是浏览器驱动未安装
                         elif "executable doesn't exist" in error_msg.lower() or "browser is not installed" in error_msg.lower():
                             detailed_error = f"❌ {browser_type} 浏览器驱动未安装\n原始错误: {error_msg}"

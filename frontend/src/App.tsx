@@ -61,11 +61,16 @@ function App() {
         //     确保计划任务/启动/热键/Webhook 触发等后端自治操作读到用户自定义路径
         //     （即便用户从不打开设置页也能生效）
         try {
-          const { localWorkflowApi } = await import('@/services/api')
-          const folder = useGlobalConfigStore.getState().config.workflow?.localFolder || ''
+          const { localWorkflowApi, systemApi } = await import('@/services/api')
+          const wfState = useGlobalConfigStore.getState().config
+          const folder = wfState.workflow?.localFolder || ''
           await localWorkflowApi.setActiveFolder(folder)
+          // 同步浏览器配置到后端，确保计划任务/触发器等后端自治执行使用用户选择的浏览器（Chrome/Chromium 等）
+          if (wfState.browser) {
+            await systemApi.setBrowserConfig(wfState.browser as unknown as Record<string, unknown>)
+          }
         } catch (e) {
-          console.warn('[Config] 同步工作流文件夹到后端失败:', e)
+          console.warn('[Config] 同步工作流文件夹/浏览器配置到后端失败:', e)
         }
         
         // 3. 配置更新完成后，连接 WebSocket（Socket会在连接时动态获取最新的后端地址）

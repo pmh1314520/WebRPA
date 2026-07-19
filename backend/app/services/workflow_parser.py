@@ -56,15 +56,45 @@ class ExecutionGraph:
         """获取前置节点ID列表"""
         return self.reverse_adjacency.get(node_id, [])
 
+    def _forward_reachable(self, node_id: str) -> set:
+        """从 node_id 出发、沿正常控制流（普通边 + 条件分支 + 循环分支）能正向到达的节点集合。
+        用于识别"回边前驱"：若某前驱 p 在此集合内，则 p→node_id 是环上的回边。"""
+        seen: set = set()
+        stack = [node_id]
+        while stack:
+            cur = stack.pop()
+            succ = list(self.adjacency.get(cur, []))
+            for tgts in self.condition_branches.get(cur, {}).values():
+                succ.extend(tgts)
+            for tgts in self.loop_branches.get(cur, {}).values():
+                succ.extend(tgts)
+            for n in succ:
+                if n not in seen:
+                    seen.add(n)
+                    stack.append(n)
+        return seen
+
     def get_join_prev_nodes(self, node_id: str) -> list[str]:
-        """获取用于"多前驱汇合等待"的前置节点：排除错误边来源。
-        错误边（出错回流到上层）是异常路径，不应让节点等待其下游错误处理节点先完成，
-        否则"出错→回到上层重试"形成的环会导致上层节点永久等待而死锁。"""
-        prev = self.reverse_adjacency.get(node_id, [])
+        """获取用于"多前驱汇合等待"的前置节点：排除错误边来源 + 排除"回边"前驱。
+
+        - 错误边（出错回流到上层）是异常路径，不应让节点等待其下游错误处理节点先完成，
+          否则"出错→回到上层重试"形成的环会导致上层节点永久等待而死锁。
+        - 回边前驱：若某前驱 p 能从本节点正向到达（本节点→…→p→本节点 构成环），
+          则 p→本节点 属于循环回边（如：循环体末端回连到循环节点）。这类回边只有在
+          本节点先运行、进入循环体后才可能完成，绝不能纳入"进入前的多前驱汇合等待"，
+          否则会形成"循环等回边、回边等循环"的死锁——典型表现为：在循环前串接一个模块
+          后从该模块开始运行，就再也进不了循环。
+        """
+        prev = list(self.reverse_adjacency.get(node_id, []))
         errs = self.error_pred.get(node_id)
-        if not errs:
-            return list(prev)
-        return [p for p in prev if p not in errs]
+        if errs:
+            prev = [p for p in prev if p not in errs]
+        if len(prev) <= 1:
+            return prev
+        # 排除回边前驱（能从本节点正向到达的前驱）
+        reachable = self._forward_reachable(node_id)
+        filtered = [p for p in prev if p not in reachable]
+        return filtered
     
     def get_start_nodes(self) -> list[str]:
         """获取起始节点ID列表"""

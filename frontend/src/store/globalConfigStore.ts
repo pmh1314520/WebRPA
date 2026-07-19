@@ -187,6 +187,10 @@ interface GlobalConfigState {
   updateDisplayConfig: (config: Partial<GlobalConfig['display']>) => void
   updateBrowserConfig: (config: Partial<GlobalConfig['browser']>) => void
   resetConfig: () => void
+  /** 导入整份配置（安全合并：缺失字段用默认值补齐）。返回是否成功。 */
+  importConfig: (imported: unknown) => boolean
+  /** 导出当前完整配置（用于下载 JSON）。 */
+  exportConfig: () => GlobalConfig
 }
 
 const defaultConfig: GlobalConfig = {
@@ -443,6 +447,46 @@ export const useGlobalConfigStore = create<GlobalConfigState>()(
 
       resetConfig: () => {
         set({ config: defaultConfig })
+      },
+
+      exportConfig: () => get().config,
+
+      importConfig: (imported) => {
+        try {
+          // 兼容两种格式：直接是 config 对象，或 {config: {...}} 包裹
+          const raw = imported as Record<string, unknown> | null
+          if (!raw || typeof raw !== 'object') return false
+          const inc = (('config' in raw && raw.config && typeof raw.config === 'object')
+            ? (raw.config as Record<string, unknown>)
+            : (raw as Record<string, unknown>))
+
+          // 以默认配置为基底，对每个已知顶层分节做安全合并（缺失字段用默认值补齐，
+          // 未知字段忽略），避免导入残缺/旧版本 JSON 破坏结构。
+          const base = defaultConfig as unknown as Record<string, any>
+          const merged: Record<string, any> = { ...base }
+          for (const key of Object.keys(base)) {
+            const dv = base[key]
+            const iv = (inc as Record<string, any>)[key]
+            if (iv === undefined) continue
+            if (dv && typeof dv === 'object' && !Array.isArray(dv) &&
+                iv && typeof iv === 'object' && !Array.isArray(iv)) {
+              merged[key] = { ...dv, ...iv }
+            } else {
+              merged[key] = iv
+            }
+          }
+          // system.canvasWidgets 二级对象单独合并，保证控件开关齐全
+          if (merged.system && base.system?.canvasWidgets) {
+            merged.system = {
+              ...merged.system,
+              canvasWidgets: { ...base.system.canvasWidgets, ...(merged.system.canvasWidgets || {}) },
+            }
+          }
+          set({ config: merged as unknown as GlobalConfig })
+          return true
+        } catch {
+          return false
+        }
       },
     }),
     {

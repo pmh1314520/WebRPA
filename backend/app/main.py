@@ -425,30 +425,48 @@ async def startup_event():
             # 先尝试从内存中获取工作流
             workflow = workflows_store.get(workflow_filename)
             
-            # 如果内存中没有，从文件系统加载
+            # 如果内存中没有，从存储加载（WebDAV 远程 → 用户自定义活动文件夹 → 默认目录）
             if not workflow:
                 try:
-                    # 优先使用用户配置的「活动工作流文件夹」，回退默认目录（兼容历史保存位置）
-                    from app.services import workflow_folder as _wf_folder
-                    workflow_path = Path(_wf_folder.get_active_folder()) / workflow_filename
-                    if not workflow_path.exists():
-                        fallback_path = Path(DEFAULT_WORKFLOW_FOLDER) / workflow_filename
-                        if fallback_path.exists():
-                            workflow_path = fallback_path
-                    
-                    if not workflow_path.exists():
-                        return {
-                            'success': False,
-                            'error': f'工作流文件不存在: {workflow_filename}',
-                            'executed_nodes': 0,
-                            'failed_nodes': 0,
-                            'collected_data': [],
-                            'executor': None
-                        }
-                    
-                    # 加载工作流文件
-                    with open(workflow_path, 'r', encoding='utf-8') as f:
-                        workflow_data = json.load(f)
+                    workflow_data = None
+                    # 1) WebDAV：用户把工作流存到 NAS/网盘时，从远程读取
+                    from app.services import webdav_manager
+                    if webdav_manager.is_enabled():
+                        try:
+                            workflow_data = webdav_manager.read_workflow(workflow_filename)
+                        except Exception as _e:
+                            workflow_data = None
+                        if not workflow_data:
+                            return {
+                                'success': False,
+                                'error': f'WebDAV 远程工作流文件不存在: {workflow_filename}',
+                                'executed_nodes': 0,
+                                'failed_nodes': 0,
+                                'collected_data': [],
+                                'executor': None
+                            }
+                    else:
+                        # 2) 本地：优先用户配置的「活动工作流文件夹」，回退默认目录（兼容历史保存位置）
+                        from app.services import workflow_folder as _wf_folder
+                        workflow_path = Path(_wf_folder.get_active_folder()) / workflow_filename
+                        if not workflow_path.exists():
+                            fallback_path = Path(DEFAULT_WORKFLOW_FOLDER) / workflow_filename
+                            if fallback_path.exists():
+                                workflow_path = fallback_path
+                        
+                        if not workflow_path.exists():
+                            return {
+                                'success': False,
+                                'error': f'工作流文件不存在: {workflow_filename}',
+                                'executed_nodes': 0,
+                                'failed_nodes': 0,
+                                'collected_data': [],
+                                'executor': None
+                            }
+                        
+                        # 加载工作流文件
+                        with open(workflow_path, 'r', encoding='utf-8') as f:
+                            workflow_data = json.load(f)
                     
                     # 创建工作流对象
                     workflow = Workflow(**workflow_data)
@@ -527,15 +545,29 @@ async def startup_event():
                 except Exception as e:
                     print(f"[ScheduledTask] 打开前端监控页面失败: {e}")
 
+            # 读取用户在「全局配置 → 浏览器」中配置并同步到后端的浏览器设置
+            # （之前写死 msedge，导致用户选了 Chrome 计划任务却仍用 Edge）
+            try:
+                from app.services import browser_config_store
+                _bc = browser_config_store.get_browser_config()
+                scheduled_browser_config = {
+                    'type': _bc.get('type') or 'msedge',
+                    'executablePath': _bc.get('executablePath') or None,
+                    'fullscreen': bool(_bc.get('fullscreen', False)),
+                    'launchArgs': _bc.get('launchArgs') or None,
+                    'extensionDirs': _bc.get('extensionDirs') or '',
+                    'autoCloseBrowser': bool(_bc.get('autoCloseBrowser', True)),
+                }
+            except Exception as _bce:
+                print(f"[ScheduledTask] 读取浏览器配置失败，回退默认 msedge: {_bce}")
+                scheduled_browser_config = {
+                    'type': 'msedge', 'executablePath': None, 'fullscreen': False, 'launchArgs': None,
+                }
+
             executor = WorkflowExecutor(
                 workflow=workflow,
                 headless=is_headless,  # 根据任务配置决定是否无头模式
-                browser_config={
-                    'type': 'msedge',
-                    'executablePath': None,
-                    'fullscreen': False,
-                    'launchArgs': None,
-                }
+                browser_config=scheduled_browser_config,
             )
             
             # 设置user_data_dir以使用持久化数据
