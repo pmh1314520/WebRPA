@@ -67,7 +67,14 @@ def _workflow_key(workflow: str) -> str:
 
 def _versions_dir(folder: Optional[str], workflow: str) -> Optional[str]:
     """返回某工作流的版本目录，确保目录存在"""
-    base = folder if folder else DEFAULT_WORKFLOW_FOLDER
+    if folder:
+        base = folder
+    else:
+        try:
+            from app.services import workflow_folder as _wf_folder
+            base = _wf_folder.get_active_folder()
+        except Exception:
+            base = DEFAULT_WORKFLOW_FOLDER
     key = _workflow_key(workflow)
     if not key:
         return None

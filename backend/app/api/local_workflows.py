@@ -11,11 +11,21 @@ from typing import Optional, List
 from datetime import datetime
 
 from app.services import webdav_manager
+from app.services import workflow_folder as workflow_folder_service
 
 router = APIRouter(prefix="/api/local-workflows", tags=["local-workflows"])
 
 # 默认工作流文件夹（项目根目录下的 workflows 文件夹）
 DEFAULT_WORKFLOW_FOLDER = str(Path(__file__).parent.parent.parent.parent / "workflows")
+
+
+def _fallback_folder() -> str:
+    """空 folder 时的兜底：优先用服务端持久化的「活动工作流文件夹」（尊重用户自定义），
+    否则回退默认目录。这样即便调用方没显式传 folder，也不会丢掉用户自定义路径。"""
+    try:
+        return workflow_folder_service.get_active_folder()
+    except Exception:
+        return DEFAULT_WORKFLOW_FOLDER
 
 
 class WorkflowFolderConfig(BaseModel):
@@ -91,6 +101,27 @@ async def get_default_folder():
     return {"folder": DEFAULT_WORKFLOW_FOLDER}
 
 
+class ActiveFolderConfig(BaseModel):
+    folder: Optional[str] = None  # 空/None 表示恢复默认
+
+
+@router.get("/active-folder")
+async def get_active_folder():
+    """获取服务端持久化的「活动工作流文件夹」（后端计划任务/触发器/自愈/打包等据此解析）。"""
+    return {
+        "folder": workflow_folder_service.get_active_folder(),
+        "default": DEFAULT_WORKFLOW_FOLDER,
+    }
+
+
+@router.post("/active-folder")
+async def set_active_folder(config: ActiveFolderConfig):
+    """持久化「活动工作流文件夹」。前端在设置变更/启动时同步进来，
+    使后端自治操作（计划任务、启动/热键/Webhook 触发等）能读到用户自定义路径。"""
+    active = workflow_folder_service.set_active_folder(config.folder)
+    return {"success": True, "folder": active}
+
+
 # ==================== WebDAV（连 NAS/网盘）配置 ====================
 
 class WebDAVConfig(BaseModel):
@@ -125,7 +156,7 @@ async def open_folder(config: WorkflowFolderConfig):
     """在系统文件管理器中打开工作流 JSON 文件的保存位置"""
     if webdav_manager.is_enabled():
         return {"success": False, "error": "当前工作流存储在 WebDAV 远程目录，无法在本地打开。请在 NAS/网盘客户端中查看。"}
-    folder = config.folder if config.folder else DEFAULT_WORKFLOW_FOLDER
+    folder = config.folder if config.folder else _fallback_folder()
     if not ensure_folder_exists(folder):
         return {"success": False, "error": "无法创建或访问该文件夹"}
     try:
@@ -156,8 +187,8 @@ async def check_workflow_exists(request: SaveWorkflowRequest):
 
     # 从 content 中提取 folder 信息，如果为空则使用默认值
     folder = request.content.get('_folder')
-    if not folder:  # 如果为 None 或空字符串，使用默认文件夹
-        folder = DEFAULT_WORKFLOW_FOLDER
+    if not folder:  # 如果为 None 或空字符串，使用活动文件夹兜底
+        folder = _fallback_folder()
 
     filepath = os.path.join(folder, filename)
     exists = os.path.exists(filepath)
@@ -173,8 +204,17 @@ async def list_workflows(config: WorkflowFolderConfig):
         except Exception as e:
             return {"error": f"WebDAV 列举失败: {e}", "workflows": []}
 
-    # 如果 folder 为空字符串或 None，使用默认文件夹
-    folder = config.folder if config.folder else DEFAULT_WORKFLOW_FOLDER
+    # 如果 folder 为空字符串或 None，使用活动文件夹（尊重用户自定义）兜底
+    if config.folder:
+        folder = config.folder
+        # 隐式同步：前端带着自定义文件夹来列举时，顺带持久化为「活动文件夹」，
+        # 使后端计划任务/触发器即便前端未显式同步也能读到用户自定义路径。
+        try:
+            workflow_folder_service.set_active_folder(folder)
+        except Exception:
+            pass
+    else:
+        folder = _fallback_folder()
     
     if not os.path.exists(folder):
         ensure_folder_exists(folder)
@@ -250,7 +290,7 @@ class SelfHealToggleRequest(BaseModel):
 async def set_self_heal(request: SelfHealToggleRequest):
     """开启/关闭某工作流的"自愈固化（健康基线）"。开启后，定时/发布/打包运行时
     若发生元素选择器自愈，将把修复结果持久化回该工作流文件（保留旧版本+发通知）。"""
-    folder = request.folder if request.folder else DEFAULT_WORKFLOW_FOLDER
+    folder = request.folder if request.folder else _fallback_folder()
     filename = _sanitize_filename(request.filename)
     if not filename:
         return {"success": False, "error": "文件名无效"}
@@ -280,7 +320,7 @@ async def set_self_heal(request: SelfHealToggleRequest):
 @router.get("/self-heal/{filename:path}")
 async def get_self_heal(filename: str, folder: str = None):
     """读取某工作流的自愈固化状态。"""
-    fld = folder if folder else DEFAULT_WORKFLOW_FOLDER
+    fld = folder if folder else _fallback_folder()
     safe = _sanitize_filename(filename)
     if not safe:
         return {"success": False, "error": "文件名无效"}
@@ -302,7 +342,7 @@ async def get_self_heal(filename: str, folder: str = None):
 @router.post("/save")
 async def save_workflow(request: SaveWorkflowRequest):
     """保存工作流到指定文件夹（folder 字段可选）"""
-    folder = request.folder if request.folder else DEFAULT_WORKFLOW_FOLDER
+    folder = request.folder if request.folder else _fallback_folder()
     
     if not ensure_folder_exists(folder):
         return {"success": False, "error": "无法创建文件夹"}
@@ -355,7 +395,7 @@ async def save_workflow_to_folder(request: SaveWorkflowRequest):
     if not folder:
         folder = request.content.get('_folder') if isinstance(request.content, dict) else None
     if not folder:
-        folder = DEFAULT_WORKFLOW_FOLDER
+        folder = _fallback_folder()
 
     if not ensure_folder_exists(folder):
         return {"success": False, "error": "[ERROR] 未配置工作流保存路径"}
@@ -391,8 +431,8 @@ async def load_workflow(filename: str, folder: str = None):
         except Exception as e:
             return {"success": False, "error": f"WebDAV 读取失败: {e}"}
 
-    # 如果 folder 为空字符串或 None，使用默认文件夹
-    folder = folder if folder else DEFAULT_WORKFLOW_FOLDER
+    # 如果 folder 为空字符串或 None，使用活动文件夹兜底
+    folder = folder if folder else _fallback_folder()
     filepath = _safe_resolve_in_folder(folder, safe_filename)
     if not filepath:
         return {"success": False, "error": "文件路径不安全"}
@@ -424,8 +464,8 @@ async def delete_workflow(filename: str, folder: str = None):
         except Exception as e:
             return {"success": False, "error": f"WebDAV 删除失败: {e}"}
 
-    # 如果 folder 为空字符串或 None，使用默认文件夹
-    folder = folder if folder else DEFAULT_WORKFLOW_FOLDER
+    # 如果 folder 为空字符串或 None，使用活动文件夹兜底
+    folder = folder if folder else _fallback_folder()
     filepath = _safe_resolve_in_folder(folder, safe_filename)
     if not filepath:
         return {"success": False, "error": "文件路径不安全"}

@@ -428,8 +428,13 @@ async def startup_event():
             # 如果内存中没有，从文件系统加载
             if not workflow:
                 try:
-                    # 使用默认工作流文件夹
-                    workflow_path = Path(DEFAULT_WORKFLOW_FOLDER) / workflow_filename
+                    # 优先使用用户配置的「活动工作流文件夹」，回退默认目录（兼容历史保存位置）
+                    from app.services import workflow_folder as _wf_folder
+                    workflow_path = Path(_wf_folder.get_active_folder()) / workflow_filename
+                    if not workflow_path.exists():
+                        fallback_path = Path(DEFAULT_WORKFLOW_FOLDER) / workflow_filename
+                        if fallback_path.exists():
+                            workflow_path = fallback_path
                     
                     if not workflow_path.exists():
                         return {

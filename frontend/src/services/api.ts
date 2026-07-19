@@ -240,6 +240,14 @@ export const localWorkflowApi = {
     apiRequest('/local-workflows/import', { method: 'POST', body: JSON.stringify(data) }),
   export: (id: string) => apiRequest(`/local-workflows/${id}/export`),
   getDefaultFolder: () => apiRequest('/local-workflows/default-folder'),
+
+  // 活动工作流文件夹（服务端持久化，供计划任务/触发器等后端自治操作解析用户自定义路径）
+  getActiveFolder: () => apiRequest<{ folder: string; default: string }>('/local-workflows/active-folder'),
+  setActiveFolder: (folder: string) =>
+    apiRequest<{ success: boolean; folder: string }>('/local-workflows/active-folder', {
+      method: 'POST',
+      body: JSON.stringify({ folder }),
+    }),
   // 自愈固化（健康基线）开关
   getSelfHeal: (filename: string, folder?: string) =>
     apiRequest<{ success: boolean; enabled: boolean; selfHeal?: any; error?: string }>(

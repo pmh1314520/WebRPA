@@ -187,7 +187,12 @@ def _runtime_python_dir() -> Path:
 
 
 def _workflows_dir() -> Path:
-    return _project_root() / "workflows"
+    # 优先用户配置的「活动工作流文件夹」，回退默认目录
+    try:
+        from app.services import workflow_folder as _wf_folder
+        return Path(_wf_folder.get_active_folder())
+    except Exception:
+        return _project_root() / "workflows"
 
 
 def _output_root() -> Path:

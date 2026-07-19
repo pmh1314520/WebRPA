@@ -204,15 +204,30 @@ def execute_approved(rid: str, grant_token: str, actor: str) -> dict[str, Any]:
             fn = payload.get("filename", "")
             if not fn:
                 return {"success": False, "error": "缺少 filename"}
-            folder = Path(__file__).parent.parent.parent.parent / "workflows"
-            fp = folder / (fn if fn.endswith(".json") else fn + ".json")
+            # 候选目录：用户配置的「活动文件夹」优先，再回退默认目录
+            candidates = []
             try:
-                fp.resolve().relative_to(folder.resolve())
-            except ValueError:
-                return {"success": False, "error": "非法文件名"}
-            if not fp.exists():
+                from app.services import workflow_folder as _wf_folder
+                candidates.append(Path(_wf_folder.get_active_folder()))
+            except Exception:
+                pass
+            default_folder = Path(__file__).parent.parent.parent.parent / "workflows"
+            if default_folder not in candidates:
+                candidates.append(default_folder)
+            name = fn if fn.endswith(".json") else fn + ".json"
+            target_fp = None
+            for folder in candidates:
+                fp = folder / name
+                try:
+                    fp.resolve().relative_to(folder.resolve())
+                except ValueError:
+                    continue  # 非法文件名（路径穿越），跳过该目录
+                if fp.exists():
+                    target_fp = fp
+                    break
+            if target_fp is None:
                 return {"success": False, "error": "文件不存在"}
-            fp.unlink()
+            target_fp.unlink()
             _audit_exec(actor, action, fn)
             return {"success": True, "executed": action, "target": fn}
         if action == "node.remove":

@@ -26,9 +26,18 @@ from typing import Any, Optional
 _persist_lock = threading.Lock()
 
 
-def _workflow_folder() -> Path:
+def _default_workflow_folder() -> Path:
     # 与 api/local_workflows.py 的 DEFAULT_WORKFLOW_FOLDER 一致
     return Path(__file__).parent.parent.parent.parent / "workflows"
+
+
+def _workflow_folder() -> Path:
+    # 优先用户配置的「活动工作流文件夹」，回退默认目录
+    try:
+        from app.services import workflow_folder as _wf_folder
+        return Path(_wf_folder.get_active_folder())
+    except Exception:
+        return _default_workflow_folder()
 
 
 def _versions_folder() -> Path:
@@ -49,9 +58,11 @@ def _resolve_file(source: Any) -> Optional[Path]:
     if p.is_file():
         return p
     name = source if source.endswith(".json") else source + ".json"
-    p2 = _workflow_folder() / name
-    if p2.is_file():
-        return p2
+    # 先在活动文件夹找，再回退默认目录（兼容历史保存位置）
+    for folder in (_workflow_folder(), _default_workflow_folder()):
+        cand = folder / name
+        if cand.is_file():
+            return cand
     return None
 
 

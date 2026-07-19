@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { DatePicker, TimePicker } from '@/components/ui/date-time-picker'
 import { useScheduledTaskStore, type ScheduledTask, type ScheduledTaskTrigger, type NotifyChannel } from '@/store/scheduledTaskStore'
+import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { localWorkflowApi } from '@/services/api'
 import { Clock, Zap, Power, Repeat, X, Play, Square, Webhook } from 'lucide-react'
 import { useConfirm } from '@/components/ui/confirm-dialog'
@@ -142,14 +143,16 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
   const loadWorkflows = async () => {
     setLoadingWorkflows(true)
     try {
-      // 先获取默认文件夹
-      const folderResponse = await localWorkflowApi.getDefaultFolder()
-      if (folderResponse.data?.folder) {
-        // 然后列出该文件夹中的工作流
-        const listResponse = await localWorkflowApi.list(folderResponse.data.folder)
-        if (listResponse.data?.workflows) {
-          setWorkflows(listResponse.data.workflows)
-        }
+      // 优先使用用户配置的自定义工作流文件夹；未配置时回退默认文件夹
+      let folder = useGlobalConfigStore.getState().config.workflow?.localFolder || ''
+      if (!folder) {
+        const folderResponse = await localWorkflowApi.getDefaultFolder()
+        folder = folderResponse.data?.folder || ''
+      }
+      // 列出该文件夹中的工作流（folder 为空时后端会用活动/默认文件夹兜底）
+      const listResponse = await localWorkflowApi.list(folder || undefined)
+      if (listResponse.data?.workflows) {
+        setWorkflows(listResponse.data.workflows)
       }
     } catch (error) {
       console.error('加载工作流失败:', error)

@@ -19,6 +19,21 @@ def _default_workflow_folder() -> Path:
     return Path(__file__).parent.parent.parent.parent / "workflows"
 
 
+def _candidate_folders() -> list[Path]:
+    """按优先级返回工作流查找目录：用户配置的「活动文件夹」优先，再回退默认目录。"""
+    folders: list[Path] = []
+    try:
+        from app.services import workflow_folder as _wf_folder
+        active = Path(_wf_folder.get_active_folder())
+        folders.append(active)
+    except Exception:
+        pass
+    default = _default_workflow_folder()
+    if default not in folders:
+        folders.append(default)
+    return folders
+
+
 def load_workflow_dict(source: str | dict) -> dict[str, Any]:
     """把来源解析为工作流 dict。source 可以是：
     - dict：直接用
@@ -31,11 +46,12 @@ def load_workflow_dict(source: str | dict) -> dict[str, Any]:
     p = Path(s)
     if p.exists() and p.is_file():
         return json.loads(p.read_text(encoding="utf-8"))
-    # 当作本地工作流文件名
+    # 当作本地工作流文件名：先在用户配置的活动文件夹找，再回退默认目录
     name = s if s.endswith(".json") else s + ".json"
-    cand = _default_workflow_folder() / name
-    if cand.exists():
-        return json.loads(cand.read_text(encoding="utf-8"))
+    for folder in _candidate_folders():
+        cand = folder / name
+        if cand.exists():
+            return json.loads(cand.read_text(encoding="utf-8"))
     raise FileNotFoundError(f"找不到工作流：{source}")
 
 

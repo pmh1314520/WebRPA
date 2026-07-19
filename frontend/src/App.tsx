@@ -57,6 +57,17 @@ function App() {
         // 2. 更新 API 基础地址
         updateApiBase()
         
+        // 2.1 启动时把「工作流保存文件夹」同步到后端持久化，
+        //     确保计划任务/启动/热键/Webhook 触发等后端自治操作读到用户自定义路径
+        //     （即便用户从不打开设置页也能生效）
+        try {
+          const { localWorkflowApi } = await import('@/services/api')
+          const folder = useGlobalConfigStore.getState().config.workflow?.localFolder || ''
+          await localWorkflowApi.setActiveFolder(folder)
+        } catch (e) {
+          console.warn('[Config] 同步工作流文件夹到后端失败:', e)
+        }
+        
         // 3. 配置更新完成后，连接 WebSocket（Socket会在连接时动态获取最新的后端地址）
         socketService.connect()
         

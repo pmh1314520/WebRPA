@@ -11,7 +11,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import { useGlobalConfigStore, type BrowserType, type AIModelProfile, type AssistantScene } from '@/store/globalConfigStore'
 import { X, Settings, Brain, Mail, RotateCcw, Folder, Loader2, Database, Monitor, Globe, Zap, MessageCircle, MessageSquare, Plus, Trash2, Bot, Check, Plug, Cpu, ShieldCheck, KeyRound, HardDrive } from 'lucide-react'
-import { systemApi, securityApi, getAuthToken, setAuthToken, credentialApi, retentionApi, browserApi, type CredentialItem, type RetentionConfig, type RetentionUsage } from '@/services/api'
+import { systemApi, securityApi, getAuthToken, setAuthToken, credentialApi, retentionApi, browserApi, localWorkflowApi, type CredentialItem, type RetentionConfig, type RetentionUsage } from '@/services/api'
 import { aiAssistantApi } from '@/services/aiAssistantApi'
 import { getBackendBaseUrl } from '@/services/config'
 import { MCPConfigPanel } from './MCPConfigPanel'
@@ -430,6 +430,16 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
         .catch(console.error)
     }
   }, [isOpen])
+
+  // 把「工作流保存文件夹」同步到后端持久化，使计划任务/启动/热键/Webhook 触发等
+  // 后端自治操作也能读到用户自定义路径。防抖 500ms，避免手输时频繁写入。
+  useEffect(() => {
+    const folder = config.workflow?.localFolder || ''
+    const t = setTimeout(() => {
+      localWorkflowApi.setActiveFolder(folder).catch(() => {})
+    }, 500)
+    return () => clearTimeout(t)
+  }, [config.workflow?.localFolder])
 
   // 当配置了浏览器扩展目录时，检测内置 Chromium 是否可用（决定扩展兜底能否生效）
   useEffect(() => {

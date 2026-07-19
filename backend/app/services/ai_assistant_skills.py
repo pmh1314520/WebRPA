@@ -91,10 +91,17 @@ registry = SkillRegistry()
 # ---------- 后端数据访问层（Skill 内部用） ----------
 
 def _get_workflow_folder() -> Path:
-    """工作流默认存储目录（与 local_workflows.py 的逻辑保持一致）"""
-    project_root = Path(__file__).parent.parent.parent.parent
-    folder = project_root / "workflows"
-    folder.mkdir(parents=True, exist_ok=True)
+    """工作流存储目录：优先用户配置的「活动工作流文件夹」，回退默认目录，
+    保证 AI 小助手看到/读写的是用户实际使用的自定义目录。"""
+    try:
+        from app.services import workflow_folder as _wf_folder
+        folder = Path(_wf_folder.get_active_folder())
+    except Exception:
+        folder = Path(__file__).parent.parent.parent.parent / "workflows"
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     return folder
 
 
