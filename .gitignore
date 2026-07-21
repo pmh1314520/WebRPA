@@ -275,6 +275,7 @@ _e2e_*.py
 backend/backend/
 # 工作流打包产物（体积大，不入库）
 packaged/
+发布产物/
 
 # 浏览器扩展手动测试用的临时测试扩展（本地自测，不入库）
 _manual_test_extension/

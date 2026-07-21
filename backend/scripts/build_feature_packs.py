@@ -12,8 +12,8 @@
     Python313\\python.exe backend\\scripts\\build_feature_packs.py --list     # 仅列出各包的载荷与实际体积
 
 输出：
-    packaged/feature_packs/<id>-v<版本>.zip      功能包本体
-    packaged/feature_packs/packs_index.json      索引清单（官网/网盘发布用）
+    发布产物/feature_packs/<id>-v<版本>.zip      功能包本体
+    发布产物/feature_packs/packs_index.json      索引清单（官网/网盘发布用）
 
 发布流程建议：
     1. 在完整版目录跑本脚本（不带 --strip），得到全部功能包 zip；
@@ -41,7 +41,7 @@ from app.services.feature_packs import (  # noqa: E402
     PACK_MANIFEST_NAME,
 )
 
-OUTPUT_DIR = PROJECT_ROOT / "packaged" / "feature_packs"
+OUTPUT_DIR = PROJECT_ROOT / "发布产物" / "feature_packs"
 
 
 def read_webrpa_version() -> str:

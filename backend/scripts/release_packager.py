@@ -3,14 +3,14 @@
 
 一条命令产出模块化分发的全部发布物：
 
-    1. 全部功能模块包 zip        -> packaged/feature_packs/<id>-v<版本>.zip + packs_index.json
+    1. 全部功能模块包 zip        -> 发布产物/feature_packs/<id>-v<版本>.zip + packs_index.json
     2. 瘦身核心目录（文件夹，可直接试跑，自行手动打包 7z）
-                                 -> packaged/WebRPA-<版本>-核心包/
-    3. SHA256 校验和清单（仅功能包） -> packaged/checksums-v<版本>.txt
+                                 -> 发布产物/WebRPA-<版本>-核心包/
+    3. SHA256 校验和清单（仅功能包） -> 发布产物/checksums-v<版本>.txt
 
 核心目录构建时自动排除：开发产物（.git / node_modules(launcher) / release 等）、
 本机隐私与运行时数据（密钥/账号/任务/会话/工作流/采集数据），以及全部功能包载荷。
-核心包不再自动压缩为 zip，而是在 packaged/ 内保留文件夹，由发布者自行手动打包为 7z。
+核心包不再自动压缩为 zip，而是在 发布产物/ 内保留文件夹，由发布者自行手动打包为 7z。
 
 用法（项目根目录，或直接双击根目录的 一键打包发布.bat）：
     Python313\\python.exe backend\\scripts\\release_packager.py              # 全流程
@@ -36,14 +36,14 @@ sys.path.insert(0, str(BACKEND))
 
 from app.services.feature_packs import FEATURE_PACKS  # noqa: E402
 
-OUTPUT_DIR = PROJECT_ROOT / "packaged"
+OUTPUT_DIR = PROJECT_ROOT / "发布产物"
 PACKS_DIR = OUTPUT_DIR / "feature_packs"
 
 # ---------------- 核心目录复制排除清单 ----------------
 
 # 目录（项目根相对路径，robocopy 用绝对路径排除）
 EXCLUDE_DIRS = [
-    ".git", ".kiro", ".vscode", "website", "packaged", "logs", "data", "workflows",
+    ".git", ".kiro", ".vscode", "website", "发布产物", "packaged", "logs", "data", "workflows",
     r"launcher\node_modules", r"launcher\release", r"launcher\dist",
     r"frontend\dist", r"frontend\.vite",
     r"backend\browser_data", r"backend\uploads", r"backend\logs",
@@ -198,7 +198,7 @@ def main() -> int:
     parser.add_argument("--packs-only", action="store_true", help="只构建功能模块包")
     parser.add_argument("--core-only", action="store_true", help="只构建核心包（复用已有功能包产物）")
     parser.add_argument("--workdir", type=str, default="",
-                        help="核心构建目录（默认：packaged/WebRPA-<版本>-核心包）")
+                        help="核心构建目录（默认：发布产物/WebRPA-<版本>-核心包）")
     parser.add_argument("--clean-workdir", action="store_true", help="打包完成后删除核心构建目录")
     args = parser.parse_args()
 
@@ -212,9 +212,9 @@ def main() -> int:
             return 1
 
     if not args.packs_only:
-        # 核心包目录默认放在 packaged/ 内、以文件夹形式保留（发布者自行手动打包 7z）。
-        # 复制阶段 EXCLUDE_DIRS 已排除 packaged，且 robocopy /XD 排除 workdir 自身，
-        # 双重保证不会把 packaged / 核心目录自身递归复制进去。
+        # 核心包目录默认放在 发布产物/ 内、以文件夹形式保留（发布者自行手动打包 7z）。
+        # 复制阶段 EXCLUDE_DIRS 已排除 发布产物，且 robocopy /XD 排除 workdir 自身，
+        # 双重保证不会把 发布产物 / 核心目录自身递归复制进去。
         workdir = Path(args.workdir) if args.workdir else OUTPUT_DIR / f"WebRPA-{version}-核心包"
         wd = workdir.resolve()
         root = PROJECT_ROOT.resolve()
