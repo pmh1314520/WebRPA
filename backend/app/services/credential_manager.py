@@ -22,8 +22,9 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _KEY_FILE = _DATA_DIR / ".cred_key"
 _STORE_FILE = _DATA_DIR / "credentials.enc"
 

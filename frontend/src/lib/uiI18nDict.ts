@@ -3660,3 +3660,75 @@ Object.assign(UI_DICT, {
   // 回滚确认（单行，运行时与审计均可整句命中）
   '回滚会把画布（节点、连线、全局变量）恢复到这条消息发送之前的状态，并删除这条消息之后的对话记录，同时把该消息重新填回输入框，方便你修改后重发。确定回滚吗？': 'Rolling back restores the canvas (nodes, edges, global variables) to the state before this message was sent, deletes the conversation after this message, and puts the message back into the input box so you can edit and resend it. Are you sure you want to roll back?',
 })
+
+// ============================================================
+// 补充：全局配置导入/导出 + 读取Excel本地文件 新增文案（修复英文模式残留）
+// ============================================================
+Object.assign(UI_DICT, {
+  // —— 读取 Excel（本地文件来源）——
+  '如 D:\\数据\\报表.xlsx，支持 {变量名}': 'e.g. D:\\data\\report.xlsx, supports {variable}',
+  '留空读取默认工作表；支持 {变量名}': 'Leave blank for the default sheet; supports {variable}',
+  // —— 全局配置导入 / 导出 ——
+  '含敏感数据': 'with-sensitive-data',
+  '已脱敏': 'redacted',
+  '导入后将用该文件覆盖当前所有全局配置，确定继续吗？': 'Importing will overwrite all current global settings with this file. Continue?',
+  '配置导入成功，已应用。若部分设置未即时生效，可刷新页面。': 'Configuration imported and applied. Refresh the page if some settings do not take effect immediately.',
+  '导入失败：文件不是有效的 WebRPA 配置 JSON。': 'Import failed: the file is not a valid WebRPA configuration JSON.',
+  // 多行 alert 文案（换行在审计/运行时归一为字面 n）
+  '导入失败：无法解析 JSON 文件。n': 'Import failed: unable to parse the JSON file.\n',
+  '从 JSON 文件导入全部全局配置（换机器/换浏览器迁移用）': 'Import all global settings from a JSON file (for migrating machines/browsers)',
+  '将导出完整配置（含明文敏感信息）。': 'The full configuration will be exported (including plaintext sensitive data).',
+  '敏感字段将被置空，仅导出非敏感配置（更安全，推荐）。': 'Sensitive fields will be cleared; only non-sensitive settings are exported (safer, recommended).',
+})
+
+Object.assign(PHRASES, {
+  '导入失败：无法解析 JSON 文件。': 'Import failed: unable to parse the JSON file.',
+})
+
+// ============================================================
+// 时间选择器（TimePicker 滚动列）新增文案
+// （'小时'→'Hours'、'秒'→'Seconds' 已有整句词条，这里只补缺的）
+// ============================================================
+Object.assign(UI_DICT, {
+  '分': 'Minutes',
+  '此刻': 'Now',
+})
+
+// ============================================================
+// 功能模块包（模块化分发体系）文案
+// （安装/卸载/未安装/推荐/刷新/加载中... 等通用词已在前文定义，勿重复）
+// ============================================================
+Object.assign(UI_DICT, {
+  '功能模块包': 'Feature packs',
+  '按需安装功能，核心包保持小体积': 'Install features on demand and keep the core package small',
+  '上传 zip 安装': 'Install from zip upload',
+  '从本地路径安装（大包推荐）': 'Install from local path (recommended for large packs)',
+  '功能包 zip 从官网 / 网盘 / Releases 下载': 'Download pack zips from the website / cloud drive / Releases',
+  '粘贴功能包 zip 的完整路径，如 D:\\Downloads\\ocr-paddle-v2.5.0.zip': 'Paste the full path of the pack zip, e.g. D:\\Downloads\\ocr-paddle-v2.5.0.zip',
+  '卸载功能包': 'Uninstall feature pack',
+  '工作原理': 'How it works',
+  '· 功能包是覆盖到 WebRPA 安装目录的增量 zip：安装即解压、卸载即删除，随装随用，无需重启即可生效（个别包首次使用时初始化）。': '· A feature pack is an incremental zip overlaid onto the WebRPA install directory: installing extracts it and uninstalling deletes it. Packs work immediately without a restart (a few packs initialize on first use).',
+  '· 未安装某个包时，其对应的模块运行会给出「请安装 XX 功能模块包」的明确提示，不影响其它功能。': '· When a pack is missing, running its modules shows a clear "install the XX feature pack" message without affecting other features.',
+  '· 从完整版升级的用户所有能力默认可用（探测的是真实文件，不依赖安装记录）。': '· Users upgrading from the full edition have every capability available by default (detection checks real files, not install records).',
+  '获取功能包列表失败': 'Failed to fetch the feature pack list',
+  '安装失败': 'Install failed',
+  '卸载失败': 'Uninstall failed',
+})
+
+Object.assign(PHRASES, {
+  '已安装「': 'Installed "',
+  '已卸载「': 'Uninstalled "',
+  '」（': '" (',
+  ' 个文件）': ' files)',
+  '确定卸载「': 'Uninstall "',
+  '」吗？': '"?',
+  '卸载后相关模块将无法运行，可随时重新安装恢复。': 'After uninstalling, the related modules cannot run; reinstall anytime to restore.',
+  '安装于 ': 'Installed at ',
+  '已装 ': 'Installed ',
+  '核心增强': 'Core enhancements',
+  'AI 识别': 'AI recognition',
+  '媒体与文档': 'Media & documents',
+  '设备扩展': 'Device extensions',
+  'AI 能力': 'AI capabilities',
+  '网络扩展': 'Network extensions',
+})

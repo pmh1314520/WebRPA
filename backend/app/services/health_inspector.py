@@ -13,8 +13,9 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_CONFIG_FILE = Path("backend/data") / "health_inspect.json"
+_CONFIG_FILE = BACKEND_DATA_DIR / "health_inspect.json"
 _DEFAULT = {"enabled": False, "interval_minutes": 60, "notify_on": "error"}
 _loop_task = None
 

@@ -31,8 +31,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _PLUGINS_DIR = _DATA_DIR / "plugins"
 _INDEX_FILE = _PLUGINS_DIR / "plugins.json"
 _CUSTOM_MODULES_DIR = _DATA_DIR / "custom_modules"

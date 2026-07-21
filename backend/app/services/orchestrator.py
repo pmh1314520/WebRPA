@@ -21,8 +21,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _NODES_FILE = _DATA_DIR / "robots.json"
 _TASKS_FILE = _DATA_DIR / "cluster_tasks.json"
 _lock = threading.RLock()

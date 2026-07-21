@@ -28,6 +28,7 @@ from app.models.ai_assistant import (
 )
 from app.services.ai_assistant_knowledge import build_system_prompt
 from app.services.ai_assistant_skills import execute_skill, registry as skill_registry, load_all_skills
+from app.utils.paths import BACKEND_DATA_DIR
 # 统一加载全部扩展技能（v2/v3/v4/mcp），替代分散的 side-effect 导入，并带重名检测
 load_all_skills()
 
@@ -35,7 +36,7 @@ load_all_skills()
 # ---------- 持久化 ----------
 
 def _get_sessions_dir() -> Path:
-    folder = Path("backend/data/ai_assistant/sessions")
+    folder = BACKEND_DATA_DIR / "ai_assistant" / "sessions"
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 

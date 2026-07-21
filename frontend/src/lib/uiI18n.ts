@@ -11,6 +11,10 @@ import { UI_DICT, PHRASES } from './uiI18nDict'
 const LS_KEY = 'webrpa.editor.lang'
 const origText = new WeakMap<Text, string>()
 const origAttr = new WeakMap<Element, Record<string, string>>()
+// 记录"翻译层最后写入该文本节点的值"：用于区分 React 的原地更新与我们自己的写入，
+// 否则英文模式下 React 更新文本（如计数器/时间值）会被翻译层用旧缓存回滚（动态文本冻结 bug）。
+const lastWritten = new WeakMap<Text, string>()
+const lastWrittenAttr = new WeakMap<Element, Record<string, string>>()
 let curLang: 'zh' | 'en' = 'zh'
 let observer: MutationObserver | null = null
 let pending = false
@@ -78,11 +82,20 @@ function translateTextNode(node: Text) {
   const tag = p?.tagName
   if (tag === 'SCRIPT' || tag === 'STYLE') return
   if (!node.nodeValue || !node.nodeValue.trim()) return
-  if (!origText.has(node)) origText.set(node, node.nodeValue)
+  const cur = node.nodeValue
+  if (!origText.has(node)) {
+    origText.set(node, cur)
+  } else if (cur !== lastWritten.get(node) && cur !== origText.get(node)) {
+    // 当前值既不是我们上次写入的译文、也不是缓存原文 → 是 React 原地更新了文本
+    // （如时间值 08:00:00 → 10:00:00、计数器等动态内容），必须刷新缓存原文，
+    // 否则会把 React 的新值回滚成旧缓存，造成"英文模式下动态文本冻结"。
+    origText.set(node, cur)
+  }
   const zh = origText.get(node) as string
   const next = curLang === 'en' ? translateString(zh) : zh
   // 仅在变化时写入，避免赋值触发新变更导致 observer 每帧重复翻译（高 CPU/卡顿）
   if (node.nodeValue !== next) node.nodeValue = next
+  lastWritten.set(node, next)
 }
 
 function translateAttrs(el: Element) {
@@ -93,11 +106,22 @@ function translateAttrs(el: Element) {
     if (!cur) continue
     let bak = origAttr.get(el)
     if (!bak) { bak = {}; origAttr.set(el, bak) }
-    if (bak[attr] === undefined) bak[attr] = cur
+    let lw = lastWrittenAttr.get(el)
+    if (!lw) { lw = {}; lastWrittenAttr.set(el, lw) }
+    if (bak[attr] === undefined) {
+      bak[attr] = cur
+    } else if (cur !== lw[attr] && cur !== bak[attr]) {
+      // React 原地更新了属性值（如动态 title/placeholder）→ 刷新缓存原文
+      bak[attr] = cur
+    }
     const zh = bak[attr]
-    if (!hasCJK(zh)) continue
+    if (!hasCJK(zh)) {
+      lw[attr] = cur
+      continue
+    }
     const next = curLang === 'en' ? translateString(zh) : zh
     if (el.getAttribute(attr) !== next) el.setAttribute(attr, next)
+    lw[attr] = next
   }
 }
 

@@ -33,13 +33,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import socketio
 
 # 创建Socket.IO服务器
+# 调试日志默认关闭（每个 ping/pong、每条消息都会打日志，生产环境刷屏且拖慢 I/O）；
+# 排查连接问题时设环境变量 WEBRPA_SIO_DEBUG=1 临时打开。
+import os as _os
+_SIO_DEBUG = _os.environ.get("WEBRPA_SIO_DEBUG", "").strip() in ("1", "true", "yes")
 sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins='*',
     ping_timeout=120,  # ping 超时 120秒
     ping_interval=25,  # ping 间隔 25秒
-    logger=True,  # 启用Socket.IO的日志用于调试
-    engineio_logger=True,  # 启用Engine.IO的日志用于调试
+    logger=_SIO_DEBUG,
+    engineio_logger=_SIO_DEBUG,
 )
 
 # 创建FastAPI应用
@@ -71,80 +75,112 @@ _AUTH_PUBLIC_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/api/security/",
                          "/api/rbac/login", "/api/rbac/sso/login", "/console")
 
 
+def _auth_decision(request) -> bool:
+    """纯决策：该请求是否放行。不调用下游，抛异常由调用方兜底。"""
+    # 预检请求直接放行
+    if request.method == "OPTIONS":
+        return True
+    path = request.url.path or ""
+    # 公共路径放行
+    if any(path.startswith(p) for p in _AUTH_PUBLIC_PREFIXES):
+        return True
+    # 鉴权关闭 → 放行（应急逃生开关）
+    if not _sec.is_enabled():
+        return True
+    # 本机来源 → 放行
+    client_host = request.client.host if request.client else None
+    if _sec.is_loopback(client_host):
+        return True
+    # 远程来源 → 校验 Token（头 / 查询参数 / Bearer）
+    token = request.headers.get("x-webrpa-token") or request.query_params.get("token")
+    if not token:
+        auth = request.headers.get("authorization", "")
+        if auth.lower().startswith("bearer "):
+            token = auth[7:].strip()
+    if _sec.verify(token):
+        return True
+    # 持有有效 RBAC 会话令牌的远程用户也放行（企业控制中心登录后即可访问）
+    try:
+        from app.services import rbac as _rbac
+        if _rbac.resolve_session(request.headers.get("x-webrpa-session")):
+            return True
+    except Exception:
+        pass
+    return False
+
+
 @app.middleware("http")
 async def _auth_middleware(request, call_next):
+    # 决策与执行分离：
+    # 1) 决策阶段异常 → 本机请求放行（避免误伤本地编辑器），远程请求拒绝（fail-closed，
+    #    否则鉴权代码一旦出错，远程就能直接访问 PowerShell 执行等高危接口）；
+    # 2) call_next 不包在 try 里 → 业务异常正常向上传播，绝不会把请求重放第二遍
+    #    （旧实现 except 后再次 call_next，会导致非幂等接口被执行两次）。
     try:
-        # 预检请求直接放行
-        if request.method == "OPTIONS":
-            return await call_next(request)
-        path = request.url.path or ""
-        # 公共路径放行
-        if any(path.startswith(p) for p in _AUTH_PUBLIC_PREFIXES):
-            return await call_next(request)
-        # 鉴权关闭 → 放行（应急逃生开关）
-        if not _sec.is_enabled():
-            return await call_next(request)
-        # 本机来源 → 放行
-        client_host = request.client.host if request.client else None
-        if _sec.is_loopback(client_host):
-            return await call_next(request)
-        # 远程来源 → 校验 Token（头 / 查询参数 / Bearer）
-        token = request.headers.get("x-webrpa-token") or request.query_params.get("token")
-        if not token:
-            auth = request.headers.get("authorization", "")
-            if auth.lower().startswith("bearer "):
-                token = auth[7:].strip()
-        if _sec.verify(token):
-            return await call_next(request)
-        # 持有有效 RBAC 会话令牌的远程用户也放行（企业控制中心登录后即可访问）
+        allowed = _auth_decision(request)
+    except Exception as e:
+        print(f"[Auth] 鉴权决策异常: {e}")
         try:
-            from app.services import rbac as _rbac
-            if _rbac.resolve_session(request.headers.get("x-webrpa-session")):
-                return await call_next(request)
+            client_host = request.client.host if request.client else None
+            allowed = _sec.is_loopback(client_host)
         except Exception:
-            pass
+            allowed = False
+    if not allowed:
         return _JSONResponse(
             status_code=401,
             content={"detail": "需要访问令牌：请在 WebRPA 安全设置中获取 Token 并在远程访问时携带"},
         )
-    except Exception:
-        # 鉴权中间件自身异常时不阻断业务（避免误伤）
-        return await call_next(request)
+    return await call_next(request)
+
+
+def _rbac_decision(request):
+    """纯决策：返回 None 表示放行，否则返回错误响应。"""
+    from app.services import rbac as _rbac
+    if request.method == "OPTIONS":
+        return None
+    if not _rbac.is_enforced():
+        return None
+    path = request.url.path or ""
+    if _rbac.is_enforce_exempt(path):
+        return None
+    # 本机来源豁免（与访问令牌中间件一致的信任模型）
+    client_host = request.client.host if request.client else None
+    if _sec.is_loopback(client_host):
+        return None
+    # 仅对 API 路径强制
+    if not path.startswith("/api/"):
+        return None
+    token = request.headers.get("x-webrpa-session")
+    session = _rbac.resolve_session(token)
+    if not session:
+        return _JSONResponse(status_code=401,
+                             content={"detail": "需要登录：请在 x-webrpa-session 头携带有效会话令牌"})
+    perm = _rbac.required_permission_for(request.method, path)
+    if perm and not _rbac.has_permission(session, perm):
+        return _JSONResponse(status_code=403,
+                             content={"detail": f"缺少权限：{perm}"})
+    return None
 
 
 @app.middleware("http")
 async def _rbac_enforce_middleware(request, call_next):
     """全局 RBAC 强制（opt-in）：开启后，远程请求需携带有效会话令牌且具备相应权限。
     本机（loopback）请求豁免，保证本地编辑器开箱即用；执行机节点接口与登录接口豁免。
+    决策异常时：本机放行、远程拒绝（fail-closed）；call_next 不包 try，业务异常不会导致请求重放。
     """
     try:
-        from app.services import rbac as _rbac
-        if request.method == "OPTIONS":
-            return await call_next(request)
-        if not _rbac.is_enforced():
-            return await call_next(request)
-        path = request.url.path or ""
-        if _rbac.is_enforce_exempt(path):
-            return await call_next(request)
-        # 本机来源豁免（与访问令牌中间件一致的信任模型）
-        client_host = request.client.host if request.client else None
-        if _sec.is_loopback(client_host):
-            return await call_next(request)
-        # 仅对 API 路径强制
-        if not path.startswith("/api/"):
-            return await call_next(request)
-        token = request.headers.get("x-webrpa-session")
-        session = _rbac.resolve_session(token)
-        if not session:
-            return _JSONResponse(status_code=401,
-                                 content={"detail": "需要登录：请在 x-webrpa-session 头携带有效会话令牌"})
-        perm = _rbac.required_permission_for(request.method, path)
-        if perm and not _rbac.has_permission(session, perm):
-            return _JSONResponse(status_code=403,
-                                 content={"detail": f"缺少权限：{perm}"})
-        return await call_next(request)
-    except Exception:
-        return await call_next(request)
+        deny = _rbac_decision(request)
+    except Exception as e:
+        print(f"[RBAC] 权限决策异常: {e}")
+        try:
+            client_host = request.client.host if request.client else None
+            deny = None if _sec.is_loopback(client_host) else _JSONResponse(
+                status_code=401, content={"detail": "权限系统暂不可用，远程访问已拒绝"})
+        except Exception:
+            deny = _JSONResponse(status_code=401, content={"detail": "权限系统暂不可用，远程访问已拒绝"})
+    if deny is not None:
+        return deny
+    return await call_next(request)
 
 # 导入并注册路由
 from app.api.workflows import (
@@ -197,6 +233,7 @@ from app.api.enterprise_overview import router as enterprise_overview_router
 from app.api.metrics import router as metrics_router
 from app.api.workflow_package import router as workflow_package_router
 from app.api.sponsors import router as sponsors_router
+from app.api.feature_packs import router as feature_packs_router
 app.include_router(workflows_router)
 app.include_router(element_picker_router)
 app.include_router(data_assets_router)
@@ -243,6 +280,7 @@ app.include_router(enterprise_overview_router)
 app.include_router(metrics_router)
 app.include_router(workflow_package_router)
 app.include_router(sponsors_router)
+app.include_router(feature_packs_router)
 
 # 设置 Socket.IO 实例（避免循环导入）
 set_workflows_sio(sio)
@@ -671,10 +709,25 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """应用关闭时清理资源"""
-    from app.services.global_hotkey import get_hotkey_service
-    hotkey_service = get_hotkey_service()
-    hotkey_service.stop()
+    """应用关闭时清理资源（与 startup 对称：热键 / 剪贴板监听 / 计划任务调度器）"""
+    try:
+        from app.services.global_hotkey import get_hotkey_service
+        get_hotkey_service().stop()
+    except Exception as e:
+        print(f"[Shutdown] 停止热键服务失败: {e}")
+    try:
+        from app.services.clipboard_monitor import ClipboardMonitorService
+        ClipboardMonitorService().stop()
+    except Exception as e:
+        print(f"[Shutdown] 停止剪贴板监听失败: {e}")
+    try:
+        from app.services.scheduled_task_manager import scheduled_task_manager
+        if scheduled_task_manager.scheduler_started:
+            scheduled_task_manager.scheduler.shutdown(wait=False)
+        if scheduled_task_manager.queue_processor_task:
+            scheduled_task_manager.queue_processor_task.cancel()
+    except Exception as e:
+        print(f"[Shutdown] 停止计划任务调度器失败: {e}")
 
 
 # 当前活动的工作流ID（用于热键控制）

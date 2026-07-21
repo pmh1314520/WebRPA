@@ -15,6 +15,7 @@ from app.models.workflow import (
 )
 from app.executors import ExecutionContext, ModuleResult, registry
 from app.services.workflow_parser import WorkflowParser, ExecutionGraph
+from app.utils.paths import BACKEND_DATA_DIR
 
 
 # 模块默认超时时间配置（毫秒）
@@ -240,6 +241,19 @@ MODULE_DEFAULT_TIMEOUTS = {
 def get_module_default_timeout(module_type: str) -> int:
     """获取模块默认超时时间（毫秒）"""
     return MODULE_DEFAULT_TIMEOUTS.get(module_type, 60000)  # 默认60秒，避免30秒超时过短
+
+
+
+# ---------- 调试输出开关 ----------
+# 每个节点执行都会产生多条 [DEBUG] 控制台输出，大型工作流下 I/O 开销明显且刷屏。
+# 默认关闭；排查问题时设置环境变量 WEBRPA_DEBUG=1 打开。
+import os as _os
+_WEBRPA_DEBUG = _os.environ.get("WEBRPA_DEBUG", "").strip() in ("1", "true", "yes")
+
+
+def _dbg(msg: str) -> None:
+    if _WEBRPA_DEBUG:
+        print(msg)
 
 
 class WorkflowExecutor:
@@ -546,7 +560,7 @@ class WorkflowExecutor:
             filtered_node_ids = [nid for nid in node_ids if nid not in self._subflow_node_ids]
             if len(filtered_node_ids) < len(node_ids):
                 skipped = len(node_ids) - len(filtered_node_ids)
-                print(f"[DEBUG] 过滤掉 {skipped} 个子流程节点")
+                _dbg(f"[DEBUG] 过滤掉 {skipped} 个子流程节点")
             node_ids = filtered_node_ids
         
         if not node_ids:
@@ -567,8 +581,7 @@ class WorkflowExecutor:
             node = self.graph.get_node(nid)
             if node:
                 label = node.data.get('label', node.type)
-                print(f"[DEBUG] 准备执行节点: {nid} ({node.type}: {label})")
-        
+                _dbg(f"[DEBUG] 准备执行节点: {nid} ({node.type}: {label})")
         if len(nodes_to_execute) == 1:
             if self.should_stop:
                 return
@@ -708,7 +721,7 @@ class WorkflowExecutor:
                     # 有异常处理分支，执行异常处理流程（报错和超时都走这里）
                     timeout_flag = getattr(result, 'is_timeout', False)
                     reason = "超时" if timeout_flag else "报错"
-                    print(f"[DEBUG] 节点 {node.type} {reason}，触发异常处理分支")
+                    _dbg(f"[DEBUG] 节点 {node.type} {reason}，触发异常处理分支")
                     # 若错误连线指向"已执行过的上层节点"，说明用户是想用错误边做
                     # "失败→回到上层模块重新跑"的重试循环（如：点击元素失败→回到打开网页）。
                     # 此时必须重置「目标→失败点」这段路径的已执行标记，否则上层节点会因
@@ -741,7 +754,7 @@ class WorkflowExecutor:
                 else:
                     # 没有异常处理分支，对于关键节点停止执行
                     if node.type in ('open_page', 'click_element', 'input_text', 'wait_element', 'select_dropdown'):
-                        print(f"[DEBUG] 关键节点 {node.type} 失败，停止后续执行")
+                        _dbg(f"[DEBUG] 关键节点 {node.type} 失败，停止后续执行")
                         return
         
         if node.type in ('loop', 'foreach', 'infinite_loop', 'foreach_dict'):
@@ -911,8 +924,7 @@ class WorkflowExecutor:
             return ModuleResult(success=True, message=f"已跳过（禁用）")
         
         label = node.data.get('label', node.type)
-        print(f"[DEBUG] 开始执行节点: {node.id} ({node.type}: {label})")
-        
+        _dbg(f"[DEBUG] 开始执行节点: {node.id} ({node.type}: {label})")
         # 设置当前执行的节点信息(用于变量追踪)
         self.context.set_current_node(node.id, label)
         
@@ -928,7 +940,7 @@ class WorkflowExecutor:
         # 处理完成后把 result 交给后续通用流程（统计/日志/_notify_node_complete/数据行同步）。
         custom_module_result: Optional[ModuleResult] = None
         if node.type == 'custom_module':
-            print(f"[DEBUG] 检测到自定义模块节点")
+            _dbg(f"[DEBUG] 检测到自定义模块节点")
             cm_start_time = time.time()
             custom_module_result = await self._handle_custom_module_node(node)
             duration = (time.time() - cm_start_time) * 1000
@@ -963,7 +975,7 @@ class WorkflowExecutor:
 
         executor = registry.get(node.type)
         if not executor:
-            print(f"[DEBUG] 未找到执行器: {node.type}")
+            _dbg(f"[DEBUG] 未找到执行器: {node.type}")
             await self._log(LogLevel.WARNING, f"未知的模块类型: {node.type}", node_id=node.id)
             return ModuleResult(success=True, message=f"跳过未知模块: {node.type}")
 
@@ -971,8 +983,7 @@ class WorkflowExecutor:
         if config is None:
             # 配置直接在 node.data 中，而不是在 config 子字段
             config = node.data
-        print(f"[DEBUG] 节点配置: {config}")
-        
+        _dbg(f"[DEBUG] 节点配置: {config}")
         # 获取超时配置（秒）
         # 对于某些模块（如 qq_wait_message），强制使用模块默认超时，忽略节点配置中的 timeout 字段
         # 因为这些模块有自己内部的超时逻辑（如 waitTimeout）
@@ -1037,8 +1048,7 @@ class WorkflowExecutor:
                     print(f"[RETRY] 节点 {node.id} ({label}) 第 {attempt} 次重试，超时: {timeout_display}")
                 else:
                     timeout_display = f"{timeout_seconds}秒" if timeout_seconds else "无限制"
-                    print(f"[DEBUG] 调用执行器: {node.type}, 超时: {timeout_display}")
-                
+                    _dbg(f"[DEBUG] 调用执行器: {node.type}, 超时: {timeout_display}")
                 # 使用 asyncio.wait_for 来控制超时（如果有超时限制）
                 try:
                     if timeout_seconds is not None:
@@ -1102,6 +1112,15 @@ class WorkflowExecutor:
             except Exception as e:
                 import traceback
                 last_error = f"{str(e)}\n{traceback.format_exc()}"
+                # 缺依赖 → 翻译为「请安装 XX 功能模块包」的可操作提示（模块化分发支持）
+                if isinstance(e, ImportError):
+                    try:
+                        from app.services.feature_packs import hint_for_import_error
+                        hint = hint_for_import_error(e)
+                        if hint:
+                            last_error = f"{hint}\n原始错误: {e}"
+                    except Exception:
+                        pass
                 is_timeout = False
                 print(f"[ERROR] 节点 {node.id} ({label}) 执行异常: {last_error}")
                 if attempt < retry_count:
@@ -1150,8 +1169,7 @@ class WorkflowExecutor:
                     self._first_error_message = f"「{label}」{error_msg}"
                 return ModuleResult(success=False, error=error_msg, duration=duration, is_timeout=is_timeout)
         
-        print(f"[DEBUG] 执行器返回: success={result.success}, message={result.message}, error={result.error}")
-        
+        _dbg(f"[DEBUG] 执行器返回: success={result.success}, message={result.message}, error={result.error}")
         # 检查是否需要停止工作流（stop_workflow 模块设置）
         if self.context.stop_workflow:
             print(f"[STOP_WORKFLOW] 工作流已被标记为停止，原因: {self.context.stop_reason}")
@@ -1342,8 +1360,7 @@ class WorkflowExecutor:
             # 子流程头节点本身也要排除
             subflow_node_ids.add(header.id)
             header_label = header.data.get('label', header.data.get('subflowName', '未命名'))
-            print(f"[DEBUG] 处理子流程头: {header.id}, 名称: {header_label}")
-            
+            _dbg(f"[DEBUG] 处理子流程头: {header.id}, 名称: {header_label}")
             # 从子流程头开始，沿着连接找到所有节点（使用BFS遍历整个子流程图）
             visited = set()
             queue = [header.id]
@@ -1360,31 +1377,28 @@ class WorkflowExecutor:
                 
                 # 找到从当前节点出发的所有边
                 outgoing_edges = [e for e in self.workflow.edges if e.source == current_id]
-                print(f"[DEBUG]   节点 {current_id} ({current_label}) 有 {len(outgoing_edges)} 条出边")
-                
+                _dbg(f"[DEBUG]   节点 {current_id} ({current_label}) 有 {len(outgoing_edges)} 条出边")
                 for edge in outgoing_edges:
                     if edge.target not in visited:
                         target_node = next((n for n in self.workflow.nodes if n.id == edge.target), None)
                         if target_node:
                             target_label = target_node.data.get('label', target_node.type)
-                            print(f"[DEBUG]     -> 边: {edge.source} -> {edge.target} (类型: {target_node.type}, 标签: {target_label})")
+                            _dbg(f"[DEBUG]     -> 边: {edge.source} -> {edge.target} (类型: {target_node.type}, 标签: {target_label})")
                             if target_node.type not in ('group', 'note', 'subflow_header'):
                                 queue.append(edge.target)
                                 subflow_node_ids.add(edge.target)
-                                print(f"[DEBUG]       ✓ 添加到子流程节点列表")
+                                _dbg(f"[DEBUG]       ✓ 添加到子流程节点列表")
                             else:
-                                print(f"[DEBUG]       ✗ 跳过 (类型: {target_node.type})")
-            
-            print(f"[DEBUG] 子流程头 {header.id} ({header_label}) 收集到 {len(visited)-1} 个节点")
-        
-        print(f"[DEBUG] ========================================")
-        print(f"[DEBUG] 总共收集到 {len(subflow_node_ids)} 个子流程节点")
+                                _dbg(f"[DEBUG]       ✗ 跳过 (类型: {target_node.type})")
+            _dbg(f"[DEBUG] 子流程头 {header.id} ({header_label}) 收集到 {len(visited)-1} 个节点")
+        _dbg(f"[DEBUG] ========================================")
+        _dbg(f"[DEBUG] 总共收集到 {len(subflow_node_ids)} 个子流程节点")
         for node_id in subflow_node_ids:
             node = next((n for n in self.workflow.nodes if n.id == node_id), None)
             if node:
                 label = node.data.get('label', node.type)
-                print(f"[DEBUG]   - {node_id}: {node.type} ({label})")
-        print(f"[DEBUG] ========================================")
+                _dbg(f"[DEBUG]   - {node_id}: {node.type} ({label})")
+        _dbg(f"[DEBUG] ========================================")
         return subflow_node_ids
 
     async def _handle_custom_module_node(self, node: WorkflowNode) -> ModuleResult:
@@ -1405,7 +1419,7 @@ class WorkflowExecutor:
             await self._log(LogLevel.ERROR, f"自定义模块ID不合法: {custom_module_id}", node_id=node.id)
             return ModuleResult(success=False, message="自定义模块ID不合法")
 
-        base_dir = Path("backend/data/custom_modules").resolve()
+        base_dir = (BACKEND_DATA_DIR / "custom_modules").resolve()
         module_file = (base_dir / f"{custom_module_id}.json").resolve()
         try:
             module_file.relative_to(base_dir)
@@ -1489,8 +1503,7 @@ class WorkflowExecutor:
                 # 解析参数值（支持变量引用，如 {{变量名}}）
                 resolved_value = self.context.resolve_value(param_value)
                 self.context.set_variable(param_name, resolved_value)
-                print(f"[DEBUG] 自定义模块参数: {param_name} = {resolved_value}")
-            
+                _dbg(f"[DEBUG] 自定义模块参数: {param_name} = {resolved_value}")
             # 2. 构建子工作流的节点和边
             from app.models.workflow import Workflow, WorkflowNode as WFNode, WorkflowEdge, Position
             
@@ -1564,8 +1577,7 @@ class WorkflowExecutor:
                 # 从上下文中获取输出变量的值
                 output_value = self.context.get_variable(output_name)
                 output_values[output_name] = output_value
-                print(f"[DEBUG] 自定义模块输出: {output_name} = {output_value}")
-            
+                _dbg(f"[DEBUG] 自定义模块输出: {output_name} = {output_value}")
             # 7. 恢复原始变量上下文，并设置输出变量
             self.context.variables = original_variables
             for output_name, output_value in output_values.items():
@@ -1701,9 +1713,8 @@ class WorkflowExecutor:
             group_height = self._parse_dimension(group_height, 200)
             
             # 调试：打印分组范围
-            print(f"[DEBUG] 子流程分组范围: x={group_x}, y={group_y}, width={group_width}, height={group_height}")
-            print(f"[DEBUG] 分组 data.width={group_node.data.get('width')}, data.height={group_node.data.get('height')}")
-            
+            _dbg(f"[DEBUG] 子流程分组范围: x={group_x}, y={group_y}, width={group_width}, height={group_height}")
+            _dbg(f"[DEBUG] 分组 data.width={group_node.data.get('width')}, data.height={group_node.data.get('height')}")
             # 找出在分组范围内的所有节点
             nodes_in_group = []
             for node in self.workflow.nodes:
@@ -1718,10 +1729,9 @@ class WorkflowExecutor:
                 if (group_x <= node_x <= group_x + group_width and
                     group_y <= node_y <= group_y + group_height):
                     nodes_in_group.append(node)
-                    print(f"[DEBUG] 节点在分组内: {node.id} ({node.type}) at ({node_x}, {node_y})")
+                    _dbg(f"[DEBUG] 节点在分组内: {node.id} ({node.type}) at ({node_x}, {node_y})")
                 else:
-                    print(f"[DEBUG] 节点不在分组内: {node.id} ({node.type}) at ({node_x}, {node_y})")
-        
+                    _dbg(f"[DEBUG] 节点不在分组内: {node.id} ({node.type}) at ({node_x}, {node_y})")
         if not nodes_in_group:
             await self._log(LogLevel.WARNING, f"📦 子流程 [{subflow_name}] 为空", is_system_log=True)
             return ModuleResult(success=True, message=f"子流程 [{subflow_name}] 为空")
@@ -1820,13 +1830,12 @@ class WorkflowExecutor:
         if not nodes_to_execute:
             return
         
-        print(f"[DEBUG] _execute_parallel_subflow: 准备执行 {len(nodes_to_execute)} 个节点")
+        _dbg(f"[DEBUG] _execute_parallel_subflow: 准备执行 {len(nodes_to_execute)} 个节点")
         for nid in nodes_to_execute:
             node = self.graph.get_node(nid)
             if node:
                 label = node.data.get('label', node.type)
-                print(f"[DEBUG]   - {nid}: {node.type} ({label})")
-        
+                _dbg(f"[DEBUG]   - {nid}: {node.type} ({label})")
         # 并行执行所有可执行的节点
         tasks = [self._execute_node_in_subflow(node_id, allowed_nodes, executed_ids) for node_id in nodes_to_execute]
         if tasks:
@@ -1884,17 +1893,15 @@ class WorkflowExecutor:
             body_nodes = self.graph.get_loop_body_nodes(node_id)
             done_nodes = self.graph.get_loop_done_nodes(node_id)
             
-            print(f"[DEBUG] 子流程中的循环节点 {node_id} ({node.type})")
-            print(f"[DEBUG]   body_nodes: {body_nodes}")
-            print(f"[DEBUG]   done_nodes: {done_nodes}")
-            
+            _dbg(f"[DEBUG] 子流程中的循环节点 {node_id} ({node.type})")
+            _dbg(f"[DEBUG]   body_nodes: {body_nodes}")
+            _dbg(f"[DEBUG]   done_nodes: {done_nodes}")
             # 只处理子流程范围内的循环体和完成分支
             body_nodes_in_subflow = [nid for nid in body_nodes if nid in allowed_nodes]
             done_nodes_in_subflow = [nid for nid in done_nodes if nid in allowed_nodes]
             
-            print(f"[DEBUG]   body_nodes_in_subflow: {body_nodes_in_subflow}")
-            print(f"[DEBUG]   done_nodes_in_subflow: {done_nodes_in_subflow}")
-            
+            _dbg(f"[DEBUG]   body_nodes_in_subflow: {body_nodes_in_subflow}")
+            _dbg(f"[DEBUG]   done_nodes_in_subflow: {done_nodes_in_subflow}")
             # 调用循环处理逻辑（内部会先标记循环节点为已执行）
             await self._handle_loop_in_subflow(node, body_nodes_in_subflow, done_nodes_in_subflow, allowed_nodes, executed_ids)
             return
@@ -1950,25 +1957,22 @@ class WorkflowExecutor:
         # 先执行循环节点本身，获取循环状态（LoopExecutor 会压栈并初始化变量）
         result = await self._execute_node(loop_node)
         if not result or not result.success:
-            print(f"[DEBUG] 循环节点执行失败")
+            _dbg(f"[DEBUG] 循环节点执行失败")
             # 精确弹出因执行失败而残留的 loop_stack 条目
             while len(self.context.loop_stack) > loop_stack_depth_before:
                 self.context.loop_stack.pop()
             return
         
-        print(f"[DEBUG] 循环节点执行成功，result.data: {result.data}")
-        
+        _dbg(f"[DEBUG] 循环节点执行成功，result.data: {result.data}")
         # 从执行结果中获取循环状态
         loop_state = result.data if result.data else {}
         loop_type = loop_state.get('type', loop_config.get('loopType', 'count'))
         
-        print(f"[DEBUG] 循环类型: {loop_type}")
-        print(f"[DEBUG] 循环体节点: {body_nodes}")
-        
+        _dbg(f"[DEBUG] 循环类型: {loop_type}")
+        _dbg(f"[DEBUG] 循环体节点: {body_nodes}")
         # 收集循环体内的所有节点（包括嵌套的节点）
         all_body_nodes = await self._collect_loop_body_nodes_in_subflow(body_nodes, allowed_nodes)
-        print(f"[DEBUG] 循环体内所有节点（包括嵌套）: {all_body_nodes}")
-        
+        _dbg(f"[DEBUG] 循环体内所有节点（包括嵌套）: {all_body_nodes}")
         if loop_type == 'count':
             # 计数循环：从执行器已解析好的 loop_state 里取 count，支持变量引用
             # loop_state 是 LoopExecutor.execute() 返回的 result.data，count 已经通过 to_int 解析过变量
@@ -1981,8 +1985,7 @@ class WorkflowExecutor:
                 count = _to_int(raw_count, 10, self.context)
             index_var = loop_state.get('index_variable', loop_config.get('indexVariable', 'loop_index'))
 
-            print(f"[DEBUG] 开始计数循环，次数: {count}")
-
+            _dbg(f"[DEBUG] 开始计数循环，次数: {count}")
             for i in range(count):
                 if self.should_stop:
                     break
@@ -1992,15 +1995,14 @@ class WorkflowExecutor:
 
                 self.context.variables[index_var] = i
                 self.context.should_continue = False
-                print(f"[DEBUG] 循环第 {i} 次，执行循环体")
-
+                _dbg(f"[DEBUG] 循环第 {i} 次，执行循环体")
                 # 执行循环体（仅子流程范围内）
                 if body_nodes:
                     # 每次循环重置循环体内所有节点的执行状态
                     # 注意：需要将循环节点本身标记为已执行，这样循环体节点才能执行
                     body_executed = {loop_node.id}
                     await self._execute_parallel_subflow(body_nodes, allowed_nodes, body_executed)
-                    print(f"[DEBUG] 循环第 {i} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
+                    _dbg(f"[DEBUG] 循环第 {i} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
                     # 将循环体执行的节点添加到总执行列表（不包括循环节点本身，因为它已经在外层执行过了）
                     executed_ids.update(body_executed - {loop_node.id})
                 
@@ -2020,8 +2022,7 @@ class WorkflowExecutor:
             if step_value == 0:
                 step_value = 1
 
-            print(f"[DEBUG] 开始范围循环，start={start_value}, end={end_value}, step={step_value}")
-
+            _dbg(f"[DEBUG] 开始范围循环，start={start_value}, end={end_value}, step={step_value}")
             current = start_value
             while True:
                 if self.should_stop:
@@ -2038,8 +2039,7 @@ class WorkflowExecutor:
 
                 self.context.variables[index_var] = current
                 self.context.should_continue = False
-                print(f"[DEBUG] 范围循环 current={current}")
-
+                _dbg(f"[DEBUG] 范围循环 current={current}")
                 if body_nodes:
                     body_executed = {loop_node.id}
                     await self._execute_parallel_subflow(body_nodes, allowed_nodes, body_executed)
@@ -2059,8 +2059,7 @@ class WorkflowExecutor:
             max_iterations = loop_state.get('max_iterations', 1000)
             iteration = 0
 
-            print(f"[DEBUG] 开始条件循环，条件: {condition}")
-
+            _dbg(f"[DEBUG] 开始条件循环，条件: {condition}")
             while iteration < max_iterations:
                 if self.should_stop:
                     break
@@ -2093,18 +2092,17 @@ class WorkflowExecutor:
                     break
 
                 if not while_should_continue:
-                    print(f"[DEBUG] 条件不满足，退出循环")
+                    _dbg(f"[DEBUG] 条件不满足，退出循环")
                     break
 
                 self.context.variables[index_var] = iteration
                 self.context.should_continue = False
-                print(f"[DEBUG] 循环第 {iteration} 次，执行循环体")
-
+                _dbg(f"[DEBUG] 循环第 {iteration} 次，执行循环体")
                 # 执行循环体（仅子流程范围内）
                 if body_nodes:
                     body_executed = {loop_node.id}
                     await self._execute_parallel_subflow(body_nodes, allowed_nodes, body_executed)
-                    print(f"[DEBUG] 循环第 {iteration} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
+                    _dbg(f"[DEBUG] 循环第 {iteration} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
                     executed_ids.update(body_executed - {loop_node.id})
 
                 # 先递增，再检查continue
@@ -2131,8 +2129,7 @@ class WorkflowExecutor:
             item_var = loop_state.get('item_variable', loop_config.get('itemVariable', 'item'))
             index_var = loop_state.get('index_variable', loop_config.get('indexVariable', 'index'))
 
-            print(f"[DEBUG] 开始遍历循环，数据长度: {len(data)}")
-
+            _dbg(f"[DEBUG] 开始遍历循环，数据长度: {len(data)}")
             for i, item in enumerate(data):
                 if self.should_stop:
                     break
@@ -2144,13 +2141,12 @@ class WorkflowExecutor:
                 self.context.variables[item_var] = item
                 self.context.variables[index_var] = i
                 self.context.should_continue = False
-                print(f"[DEBUG] 循环第 {i} 次，item={item}")
-
+                _dbg(f"[DEBUG] 循环第 {i} 次，item={item}")
                 # 执行循环体（仅子流程范围内）
                 if body_nodes:
                     body_executed = {loop_node.id}
                     await self._execute_parallel_subflow(body_nodes, allowed_nodes, body_executed)
-                    print(f"[DEBUG] 循环第 {i} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
+                    _dbg(f"[DEBUG] 循环第 {i} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
                     executed_ids.update(body_executed - {loop_node.id})
 
                 # 处理 continue_loop
@@ -2175,8 +2171,7 @@ class WorkflowExecutor:
             value_var = loop_state.get('value_variable', loop_config.get('valueVariable', 'value'))
             index_var = loop_state.get('index_variable', loop_config.get('indexVariable', 'index'))
 
-            print(f"[DEBUG] 开始遍历字典，数据长度: {len(data)}")
-
+            _dbg(f"[DEBUG] 开始遍历字典，数据长度: {len(data)}")
             for i, (k, v) in enumerate(data):
                 if self.should_stop:
                     break
@@ -2188,12 +2183,11 @@ class WorkflowExecutor:
                 self.context.variables[value_var] = v
                 self.context.variables[index_var] = i
                 self.context.should_continue = False
-                print(f"[DEBUG] 循环第 {i} 次，key={k}, value={v}")
-
+                _dbg(f"[DEBUG] 循环第 {i} 次，key={k}, value={v}")
                 if body_nodes:
                     body_executed = {loop_node.id}
                     await self._execute_parallel_subflow(body_nodes, allowed_nodes, body_executed)
-                    print(f"[DEBUG] 循环第 {i} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
+                    _dbg(f"[DEBUG] 循环第 {i} 次完成，执行了 {len(body_executed) - 1} 个节点: {body_executed - {loop_node.id}}")
                     executed_ids.update(body_executed - {loop_node.id})
 
                 # 处理 continue_loop
@@ -2207,16 +2201,14 @@ class WorkflowExecutor:
             max_iterations = loop_state.get('max_iterations', 999999999)
             iteration = 0
 
-            print(f"[DEBUG] 开始无限循环")
-
+            _dbg(f"[DEBUG] 开始无限循环")
             while iteration < max_iterations:
                 if self.should_stop:
                     break
 
                 self.context.variables[index_var] = iteration
                 self.context.should_continue = False
-                print(f"[DEBUG] 无限循环第 {iteration} 次，执行循环体")
-
+                _dbg(f"[DEBUG] 无限循环第 {iteration} 次，执行循环体")
                 if body_nodes:
                     body_executed = {loop_node.id}
                     await self._execute_parallel_subflow(body_nodes, allowed_nodes, body_executed)
@@ -2239,8 +2231,7 @@ class WorkflowExecutor:
         while len(self.context.loop_stack) > loop_stack_depth_before:
             self.context.loop_stack.pop()
         
-        print(f"[DEBUG] 循环结束，执行完成分支: {done_nodes}")
-        
+        _dbg(f"[DEBUG] 循环结束，执行完成分支: {done_nodes}")
         # 循环结束后执行完成分支（仅子流程范围内）
         if done_nodes:
             await self._execute_parallel_subflow(done_nodes, allowed_nodes, executed_ids)
@@ -2625,9 +2616,15 @@ class WorkflowExecutor:
 
     async def execute(self) -> ExecutionResult:
         """执行工作流"""
-        from playwright.async_api import async_playwright
         import os
-        
+
+        # playwright 属于可选的「网页自动化」功能包：未安装时不能在这里硬导入，
+        # 否则纯本地流程（变量/文本/文件等）在核心版上也会整体崩溃。
+        try:
+            from playwright.async_api import async_playwright
+        except ImportError:
+            async_playwright = None
+
         self.is_running = True
         self.should_stop = False
         self.start_time = datetime.now()
@@ -2660,7 +2657,47 @@ class WorkflowExecutor:
         try:
             parser = WorkflowParser(self.workflow)
             self.graph = parser.parse()
-            
+
+            # ===== 运行前预检：功能模块包完整性 =====
+            # 扫描整条工作流用到的模块类型，缺功能包时在开跑前一次性列出
+            # 「缺哪些包、影响哪些模块、去哪安装」，而不是跑到一半用晦涩的
+            # ImportError/找不到 ffmpeg 报错砸给用户。
+            # 应急逃生：设 WEBRPA_SKIP_PACK_CHECK=1 可跳过预检强行运行。
+            preflight_msg = None
+            try:
+                if os.environ.get("WEBRPA_SKIP_PACK_CHECK", "").strip() not in ("1", "true", "yes"):
+                    from app.services import feature_packs as _fp
+                    _types = [n.type for n in self.workflow.nodes]
+                    _pf = _fp.preflight_check(_types)
+                    if not _pf.get("ok"):
+                        _labels: dict[str, str] = {}
+                        for n in self.workflow.nodes:
+                            try:
+                                d = n.data if isinstance(n.data, dict) else {}
+                                lb = d.get('label') or ''
+                                if lb:
+                                    _labels.setdefault(n.type, str(lb))
+                            except Exception:
+                                pass
+                        preflight_msg = _fp.format_preflight_error(_pf, _labels)
+            except Exception as _pf_err:
+                # 预检器自身异常绝不阻断正常执行
+                print(f"[WorkflowExecutor] 功能包预检异常（已忽略）: {_pf_err}")
+
+            if preflight_msg:
+                await self._log(LogLevel.ERROR, f"🧩 {preflight_msg}", is_system_log=True)
+                self._result = ExecutionResult(
+                    workflow_id=self.workflow.id,
+                    status=ExecutionStatus.FAILED,
+                    started_at=self.start_time,
+                    completed_at=datetime.now(),
+                    total_nodes=len(self.workflow.nodes),
+                    executed_nodes=0,
+                    failed_nodes=0,
+                    error_message=preflight_msg,
+                )
+                return self._result
+
             # 优先复用 browser_engine 已有的共享 Playwright context（浏览器已手动打开）
             from app.services import browser_engine as _be
             if _be.is_open():
@@ -2678,9 +2715,13 @@ class WorkflowExecutor:
                     self.context.page = shared_ctx.pages[-1]
                     print(f"[WorkflowExecutor] 复用浏览器页面: {self.context.page.url}")
                 print(f"[WorkflowExecutor] 已复用全局浏览器 context（共 {len(shared_ctx.pages)} 个页面）")
-            else:
+            elif async_playwright is not None:
                 playwright = await async_playwright().start()
                 self.context._playwright = playwright
+            else:
+                # 「网页自动化」功能包未安装：不初始化 Playwright。
+                # 含浏览器模块的工作流已被上方预检拦截；纯本地流程照常执行。
+                self.context._playwright = None
             
             # 获取浏览器数据目录：优先使用全局配置，否则使用默认目录
             if self.browser_config and self.browser_config.get('userDataDir'):
@@ -2730,7 +2771,7 @@ class WorkflowExecutor:
                 start_nodes = [nid for nid in start_nodes if nid not in self._subflow_node_ids]
             
             # 调试：打印起始节点信息
-            print(f"[DEBUG] 找到 {len(start_nodes)} 个起始节点:")
+            _dbg(f"[DEBUG] 找到 {len(start_nodes)} 个起始节点:")
             for nid in start_nodes:
                 node = self.graph.get_node(nid)
                 if node:
@@ -2738,7 +2779,7 @@ class WorkflowExecutor:
                     print(f"  - {nid}: {node.type} ({label})")
             
             # 调试：打印所有节点和边的信息
-            print(f"[DEBUG] 工作流共有 {len(self.graph.nodes)} 个节点:")
+            _dbg(f"[DEBUG] 工作流共有 {len(self.graph.nodes)} 个节点:")
             for nid, node in self.graph.nodes.items():
                 label = node.data.get('label', node.type)
                 prev_nodes = self.graph.get_prev_nodes(nid)

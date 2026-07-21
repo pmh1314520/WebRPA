@@ -792,3 +792,52 @@ export const sponsorApi = {
   /** 收款码图片直链（带时间戳避免缓存旧图） */
   qrUrl: (kind: 'wechat' | 'alipay') => `${getBackendUrl()}/api/sponsors/qr/${kind}?t=${Date.now()}`,
 }
+
+// ==================== 功能模块包（模块化分发体系） ====================
+
+export interface FeaturePackInfo {
+  id: string
+  name: string
+  description: string
+  category: string
+  size_mb: number
+  recommended: boolean
+  note: string
+  module_categories: string[]
+  module_types: string[]
+  installed: boolean
+  install_record: { installed_at?: string; version?: string; file_count?: number } | null
+}
+
+export const featurePackApi = {
+  /** 全部功能包清单 + 安装状态 */
+  list: () => apiRequest<{ success: boolean; packs: FeaturePackInfo[] }>('/feature-packs'),
+  /** 从本地文件路径安装（后端直接读文件，适合大包） */
+  installFromPath: (path: string) =>
+    apiRequest<{ success: boolean; id?: string; name?: string; installed_files?: number; warning?: string }>(
+      '/feature-packs/install-path', { method: 'POST', body: JSON.stringify({ path }) }
+    ),
+  /** 上传 zip 安装（适合小包） */
+  installUpload: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiRequest<{ success: boolean; id?: string; name?: string; installed_files?: number; warning?: string }>(
+      '/feature-packs/install', { method: 'POST', body: formData }
+    )
+  },
+  /** 工作流运行前预检：返回缺失功能包清单与格式化提示 */
+  preflight: (moduleTypes: string[]) =>
+    apiRequest<{ success: boolean; ok: boolean; missing: Array<{ alternatives: Array<{ id: string; name: string; size_mb: number }>; module_types: string[] }>; message: string }>(
+      '/feature-packs/preflight', { method: 'POST', body: JSON.stringify({ module_types: moduleTypes }) }
+    ),
+  /** 卸载功能包 */
+  uninstall: (id: string) =>
+    apiRequest<{ success: boolean; removed?: number }>(
+      '/feature-packs/uninstall', { method: 'POST', body: JSON.stringify({ id }) }
+    ),
+  /** 查询某模块类型依赖的功能包 */
+  moduleHint: (moduleType: string) =>
+    apiRequest<{ success: boolean; pack: { id: string; name: string; installed: boolean } | null }>(
+      `/feature-packs/module-hint/${encodeURIComponent(moduleType)}`
+    ),
+}

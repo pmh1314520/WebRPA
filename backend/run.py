@@ -7,6 +7,21 @@ import signal
 import json
 import os
 
+# 全局约定：后端所有相对路径（backend/data、./data 等）都以「项目根目录」为基准。
+# 启动器和备用 bat 都以项目根为工作目录启动本脚本；但用户手动 `cd backend && python run.py`
+# 时 cwd 会变成 backend/，导致数据被写到 backend/backend/data 等幽灵目录。
+# 这里在进程入口统一把工作目录固定到项目根，彻底消除对启动方式的依赖。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# reload 模式下 uvicorn 会用 sys.argv 重启进程；先把脚本路径归一为绝对路径再切目录
+if sys.argv and sys.argv[0] and os.path.exists(sys.argv[0]):
+    sys.argv[0] = os.path.abspath(sys.argv[0])
+os.chdir(_PROJECT_ROOT)
+
+# 确保 `import app.xxx` 可用（cwd 已固定为项目根，backend/ 需手动加入搜索路径）
+_BACKEND_DIR = os.path.join(_PROJECT_ROOT, 'backend')
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+
 
 def load_config():
     """加载配置文件"""

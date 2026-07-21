@@ -18,13 +18,14 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any
+from app.utils.paths import BACKEND_DATA_DIR
 
 _LOCK = threading.Lock()
 _REF = re.compile(r"\{\{\s*([a-zA-Z0-9_\-]+)\.([a-zA-Z0-9_\-\[\]]+)\s*\}\}")
 
 
 def _store_file() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "pipelines.json"
 

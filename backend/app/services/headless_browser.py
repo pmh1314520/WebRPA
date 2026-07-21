@@ -27,6 +27,12 @@ async def _try_launch(pw, channel: Optional[str], extra_args: Optional[list[str]
     args = list(DEFAULT_LAUNCH_ARGS)
     if extra_args:
         args.extend(extra_args)
+    # 并入反自动化检测启动参数（降低浏览器层面的自动化指纹）
+    try:
+        from app.services import stealth as _stealth
+        args = _stealth.merge_stealth_args(args)
+    except Exception:
+        pass
     kwargs = {"headless": True, "args": args}
     if channel:
         kwargs["channel"] = channel

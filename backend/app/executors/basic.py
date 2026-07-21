@@ -148,7 +148,14 @@ class OpenPageExecutor(ModuleExecutor):
                         launch_args_list = [a for a in launch_args_list if a.split('=', 1)[0] not in _ext_flags]
                         launch_args_list.extend(_ext_args)
                         print(f"[OpenPage] 已注入浏览器扩展参数: {len(_ext_args)} 个")
-                
+
+                # 合并反自动化检测启动参数
+                try:
+                    from app.services import stealth as _stealth
+                    launch_args_list = _stealth.merge_stealth_args(launch_args_list)
+                except Exception:
+                    pass
+
                 # 根据浏览器类型选择 Playwright 浏览器引擎
                 if browser_type == 'firefox':
                     browser_engine = p.firefox
@@ -183,6 +190,13 @@ class OpenPageExecutor(ModuleExecutor):
                     
                     context.browser_context = await browser_engine.launch_persistent_context(**launch_args)
                     context.browser = None  # 持久化模式下没有单独的browser对象
+
+                    # 注入反自动化检测脚本
+                    try:
+                        from app.services import stealth as _stealth
+                        await _stealth.apply_stealth(context.browser_context)
+                    except Exception:
+                        pass
                     
                     # 授予所有权限
                     try:
@@ -408,6 +422,13 @@ class OpenPageExecutor(ModuleExecutor):
                                 
                                 return ModuleResult(success=False, error=detailed_error + solution)
                     
+                    # 注入反自动化检测脚本
+                    try:
+                        from app.services import stealth as _stealth
+                        await _stealth.apply_stealth(context.browser_context)
+                    except Exception:
+                        pass
+
                     # 授予所有权限，避免弹窗阻塞工作流
                     try:
                         await context.browser_context.grant_permissions(
@@ -469,6 +490,12 @@ class OpenPageExecutor(ModuleExecutor):
                     
                     context.browser = await browser_engine.launch(**launch_args)
                     context.browser_context = await context.browser.new_context()
+                    # 注入反自动化检测脚本
+                    try:
+                        from app.services import stealth as _stealth
+                        await _stealth.apply_stealth(context.browser_context)
+                    except Exception:
+                        pass
                     context.page = await context.browser_context.new_page()
                     
                     # 注入篡改猴脚本

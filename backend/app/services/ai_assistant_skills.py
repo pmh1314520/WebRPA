@@ -27,6 +27,7 @@ from app.services.ai_assistant_templates import (
     find_template,
     get_template_by_name,
 )
+from app.utils.paths import BACKEND_DATA_DIR
 
 
 # ---------- Skill 定义 ----------
@@ -107,7 +108,7 @@ def _get_workflow_folder() -> Path:
 
 def _get_data_folder() -> Path:
     """后端数据目录"""
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 

@@ -14,11 +14,12 @@ from app.models.custom_module import (
     CustomModuleUpdate,
     CustomModuleListResponse
 )
+from app.utils.paths import BACKEND_DATA_DIR
 
 router = APIRouter(prefix="/api/custom-modules", tags=["custom-modules"])
 
 # 自定义模块存储目录
-CUSTOM_MODULES_DIR = Path("backend/data/custom_modules")
+CUSTOM_MODULES_DIR = BACKEND_DATA_DIR / "custom_modules"
 CUSTOM_MODULES_DIR.mkdir(parents=True, exist_ok=True)
 
 

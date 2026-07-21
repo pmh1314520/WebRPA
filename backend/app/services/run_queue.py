@@ -17,6 +17,7 @@ import json
 import time
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
 _seq = itertools.count(1)
 _jobs: dict[str, dict[str, Any]] = {}      # job_id -> job
@@ -28,7 +29,7 @@ _MAX_KEEP = 500                             # 内存中最多保留的历史 job
 
 
 def _config_file() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "run_queue_config.json"
 

@@ -28,6 +28,16 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
+# 后端所有相对数据路径（backend/data、./data）都以项目根为基准。
+# 先把命令行里存在的相对文件路径归一为绝对路径（保持用户 cwd 语义），
+# 再把工作目录固定到项目根，避免从 backend/ 下运行时写出 backend/backend/data。
+_PROJECT_ROOT = os.path.dirname(_HERE)
+sys.argv = [
+    (os.path.abspath(a) if (not a.startswith("-") and os.path.exists(a)) else a)
+    for a in sys.argv
+]
+os.chdir(_PROJECT_ROOT)
+
 # Windows 控制台默认 GBK，输出中文/特殊字符可能崩；统一切到 UTF-8
 try:
     sys.stdout.reconfigure(encoding="utf-8")

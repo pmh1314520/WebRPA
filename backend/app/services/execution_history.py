@@ -15,13 +15,14 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
 _LOCK = threading.Lock()
 _MAX_RECORDS = 5000  # 最多保留最近 5000 条，超出自动裁剪
 
 
 def _data_dir() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 

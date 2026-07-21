@@ -68,7 +68,8 @@ DATA_ROW_BATCH_SIZE = 100
 # 为保证“下载完整数据”任何时候都能拿到全部行（即使内存已清/已重启），
 # 每次执行完成时把全量数据落盘为 JSON，full 接口在内存缺失时回退读磁盘。
 import json as _json_full
-_FULL_DATA_DIR = Path("./data/_full_data")
+from app.utils.paths import ROOT_DATA_DIR
+_FULL_DATA_DIR = ROOT_DATA_DIR / "_full_data"
 
 
 def _persist_full_data(workflow_id: str, rows: list[dict]) -> None:

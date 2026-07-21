@@ -16,8 +16,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 from app.services import credential_manager
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _ACL_FILE = _DATA_DIR / "vault_acl.json"
 _lock = threading.RLock()
 _cache: Optional[dict[str, Any]] = None

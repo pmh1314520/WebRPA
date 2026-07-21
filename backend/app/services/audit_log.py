@@ -15,8 +15,9 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _LOG_FILE = _DATA_DIR / "audit_log.jsonl"
 _ARCHIVE_DIR = _DATA_DIR / "audit_archive"
 _CHECKPOINT_FILE = _DATA_DIR / "audit_checkpoint.json"

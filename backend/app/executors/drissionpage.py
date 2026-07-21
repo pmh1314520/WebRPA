@@ -122,6 +122,22 @@ def _build_options(headless: bool, browser_path: str, viewport: str = "",
             co.headless(True)
         except Exception:
             pass
+    # 忽略不安全证书：与 WebRPA 的 Playwright 引擎行为保持一致
+    # （--ignore-certificate-errors / --ignore-ssl-errors / --allow-running-insecure-content）。
+    # 否则访问证书过期/自签名/内网 HTTPS 站点时，页面停在"您的连接不是私密连接"
+    # 拦截页，page.get() 返回 False、html 为空，后续 dp_ 模块全部无法工作。
+    try:
+        co.ignore_certificate_errors(True)
+    except Exception:
+        try:
+            co.set_argument("--ignore-certificate-errors")
+        except Exception:
+            pass
+    for _arg in ("--ignore-ssl-errors", "--allow-running-insecure-content"):
+        try:
+            co.set_argument(_arg)
+        except Exception:
+            pass
     # 每个会话用自动空闲端口，避免“第二次运行端口被上次残留进程占用”导致接管异常
     try:
         if hasattr(co, "auto_port"):

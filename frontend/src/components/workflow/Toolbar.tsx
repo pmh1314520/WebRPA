@@ -29,6 +29,7 @@ import { PhoneMirrorDialog } from './PhoneMirrorDialog'
 import { VariableTrackingPanel } from './VariableTrackingPanel'
 import { ScreensaverDialog } from './ScreensaverDialog'
 import { SponsorDialog } from './SponsorDialog'
+import { FeaturePackDialog } from './FeaturePackDialog'
 import { ScreenshotNameDialog, ScreenshotErrorDialog } from './ScreenshotNameDialog'
 import { useClipboardImageMonitor } from '@/hooks/useClipboardImageMonitor'
 import { customModulesApi, workflowBundleApi } from '@/services/api'
@@ -65,6 +66,7 @@ import {
   MousePointerClick,
   Heart,
   X,
+  Blocks,
 } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
@@ -90,6 +92,7 @@ export function Toolbar() {
   const [showPhoneMirror, setShowPhoneMirror] = useState(false)
   const [showVariableTracking, setShowVariableTracking] = useState(false)
   const [showScreensaver, setShowScreensaver] = useState(false)
+  const [showFeaturePacks, setShowFeaturePacks] = useState(false)
   const [showSponsor, setShowSponsor] = useState(false)
   const [defaultFolder, setDefaultFolder] = useState('')
   const [showScreenshotNameDialog, setShowScreenshotNameDialog] = useState(false)
@@ -1768,6 +1771,10 @@ export function Toolbar() {
               <Package className="w-4 h-4 mr-2 text-[hsl(var(--brand-600))]" />
               打包为EXE
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowFeaturePacks(true)}>
+              <Blocks className="w-4 h-4 mr-2 text-[hsl(var(--success-600))]" />
+              功能模块包
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setShowSponsor(true)}>
               <Heart className="w-4 h-4 mr-2 text-[hsl(var(--danger-500))]" />
@@ -1855,6 +1862,9 @@ export function Toolbar() {
         isOpen={showVariableTracking}
         onClose={() => setShowVariableTracking(false)}
       />
+
+      {/* 功能模块包管理 */}
+      <FeaturePackDialog open={showFeaturePacks} onClose={() => setShowFeaturePacks(false)} />
 
       {/* 屏保弹幕对话框 */}
       <ScreensaverDialog

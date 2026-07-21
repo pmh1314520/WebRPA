@@ -1,10 +1,26 @@
 """数据收集器 - 使用Polars管理和导出数据"""
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime
 
-import polars as pl
+# polars 属于可拆分的重量级依赖（数据处理功能包）。
+# 本模块被 api/workflows.py 启动时顶层导入，硬导入会让缺包时后端起不来；
+# 改为可选导入，真正用到 DataFrame 的导出功能时再校验。
+try:
+    import polars as pl
+except ImportError:  # 数据处理功能包未安装
+    pl = None  # type: ignore[assignment]
+
+
+def _require_polars():
+    if pl is None:
+        raise ImportError(
+            "表格数据导出功能不可用：未安装 Polars。"
+            "请安装「数据处理」功能模块包后重试。"
+        )
 
 
 class DataCollector:
@@ -48,6 +64,7 @@ class DataCollector:
         """
         import json
         from datetime import datetime, date, time
+        _require_polars()
         if not self.data:
             return pl.DataFrame()
         
@@ -295,12 +312,18 @@ def _write_styled_excel(df: pl.DataFrame, filepath: str, sheet_name: str = '数�
 class DataExporter:
     """数据导出器"""
     
-    def __init__(self, output_dir: str = "./data"):
-        self.output_dir = Path(output_dir)
+    def __init__(self, output_dir: str | None = None):
+        if output_dir:
+            self.output_dir = Path(output_dir)
+        else:
+            # 锚定到项目根 data/，不依赖进程启动目录
+            from app.utils.paths import ROOT_DATA_DIR
+            self.output_dir = ROOT_DATA_DIR
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def export_to_excel(self, data: list[dict], filename: Optional[str] = None) -> str:
         """导出数据到Excel（带样式）"""
+        _require_polars()
         if not filename:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"data_{timestamp}.xlsx"
@@ -318,6 +341,7 @@ class DataExporter:
     
     def export_to_csv(self, data: list[dict], filename: Optional[str] = None) -> str:
         """导出数据到CSV"""
+        _require_polars()
         if not filename:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"data_{timestamp}.csv"

@@ -15,8 +15,9 @@ import json
 import re
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _TPL_FILE = _DATA_DIR / "idp_templates.json"
 
 # ---------- 内置字段模板 ----------

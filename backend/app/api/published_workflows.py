@@ -20,6 +20,7 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from app.utils.paths import BACKEND_DATA_DIR
 
 router = APIRouter(tags=["published-workflows"])
 
@@ -27,7 +28,7 @@ _LOCK = threading.Lock()
 
 
 def _store_file() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "published_workflows.json"
 

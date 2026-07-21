@@ -21,15 +21,12 @@ def get_backend_root() -> Path:
     # 从当前文件向上找到 backend 目录
     # backend/app/executors/base.py -> backend/app/executors -> backend/app -> backend
     current_file = Path(__file__).resolve()
-    backend_root = current_file.parent.parent.parent
-    print(f"[DEBUG] Backend 目录: {backend_root}")
-    return backend_root
+    return current_file.parent.parent.parent
 
 
 def get_ffmpeg_path() -> str:
     """获取 ffmpeg.exe 的路径"""
     ffmpeg_path = get_backend_root() / 'ffmpeg.exe'
-    print(f"[DEBUG] FFmpeg 路径: {ffmpeg_path}, 存在: {ffmpeg_path.exists()}")
     if ffmpeg_path.exists():
         return str(ffmpeg_path)
     print(f"[WARNING] FFmpeg 不存在于 {ffmpeg_path}，使用系统 PATH 中的 ffmpeg")
@@ -39,7 +36,6 @@ def get_ffmpeg_path() -> str:
 def get_ffprobe_path() -> str:
     """获取 ffprobe.exe 的路径"""
     ffprobe_path = get_backend_root() / 'ffprobe.exe'
-    print(f"[DEBUG] FFprobe 路径: {ffprobe_path}, 存在: {ffprobe_path.exists()}")
     if ffprobe_path.exists():
         return str(ffprobe_path)
     print(f"[WARNING] FFprobe 不存在于 {ffprobe_path}，使用系统 PATH 中的 ffprobe")

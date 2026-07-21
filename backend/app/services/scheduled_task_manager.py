@@ -15,13 +15,14 @@ from app.models.scheduled_task import (
     ScheduledTaskExecutionLogCreate
 )
 from app.services.trigger_manager import trigger_manager
+from app.utils.paths import BACKEND_DATA_DIR
 
 
 class ScheduledTaskManager:
     """计划任务管理器（支持任务队列和Webhook触发）"""
     
-    def __init__(self, data_dir: str = "backend/data"):
-        self.data_dir = Path(data_dir)
+    def __init__(self, data_dir: str | None = None):
+        self.data_dir = Path(data_dir) if data_dir else BACKEND_DATA_DIR
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
         # 数据文件路径

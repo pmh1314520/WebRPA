@@ -15,8 +15,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _FILE = _DATA_DIR / "approvals.json"
 _lock = threading.RLock()
 _cache: Optional[dict[str, Any]] = None

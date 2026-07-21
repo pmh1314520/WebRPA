@@ -17,12 +17,13 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
 _LOCK = threading.Lock()
 
 
 def _kb_dir() -> Path:
-    folder = Path("backend/data/knowledge_base")
+    folder = BACKEND_DATA_DIR / "knowledge_base"
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 

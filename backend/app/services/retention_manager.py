@@ -17,8 +17,10 @@ import shutil
 import threading
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
+from app.utils.paths import BACKEND_DATA_DIR
+from app.utils.paths import ROOT_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _CONF_FILE = _DATA_DIR / "retention.json"
 _lock = threading.Lock()
 _cache: Dict[str, Any] | None = None
@@ -39,7 +41,7 @@ def _recordings_dir() -> Path:
 
 
 def _data_dirs() -> List[Path]:
-    return [Path("./data"), Path("./data/_full_data")]
+    return [ROOT_DATA_DIR, ROOT_DATA_DIR / "_full_data"]
 
 
 def load_config() -> Dict[str, Any]:
@@ -153,8 +155,8 @@ def _cleanup_data(conf: Dict[str, Any]) -> Dict[str, Any]:
         "scheduled_tasks.json", "scheduled_task_logs.json", "_latest.json",
         "global_config.json", "mcp.json",
     }
-    top = Path("./data")
-    full = Path("./data/_full_data")
+    top = ROOT_DATA_DIR
+    full = ROOT_DATA_DIR / "_full_data"
     # 顶层 ./data：只清理导出文件（xlsx/csv），不动任何 json，避免误删配置
     if top.exists():
         for f in top.iterdir():

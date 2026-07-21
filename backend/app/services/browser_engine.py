@@ -1,10 +1,28 @@
 """浏览器引擎 - 在主进程中运行 Playwright，让工作流执行器可以直接共享 context"""
+from __future__ import annotations
+
 import asyncio
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from playwright.async_api import async_playwright, BrowserContext, Page, Playwright
+# playwright 属于可选的重量级依赖（网页自动化功能包）。
+# 本模块被 api/recorder.py 在启动时顶层导入，若在这里硬导入 playwright，
+# 功能包未安装时整个后端都无法启动。改为类型注解仅供检查、运行时按需导入。
+if TYPE_CHECKING:
+    from playwright.async_api import BrowserContext, Page, Playwright
+
+
+def _async_playwright():
+    """按需导入 playwright（未安装时抛出带安装指引的错误）"""
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError as e:
+        raise ImportError(
+            "网页自动化功能不可用：未安装 Playwright。"
+            "请安装「网页自动化」功能模块包后重试。"
+        ) from e
+    return async_playwright()
 
 # ===================== 共享状态 =====================
 _playwright: Optional[Playwright] = None
@@ -78,7 +96,7 @@ async def bundled_chromium_status() -> dict:
     started = False
     try:
         if pw is None:
-            pw = await async_playwright().start()
+            pw = await _async_playwright().start()
             started = True
         ep = ''
         try:
@@ -146,12 +164,14 @@ def _build_launch_args(custom_args_str: str = '', extension_dirs: str = '') -> l
     # 扩展加载参数（含目录存在性校验，避免坏路径导致浏览器起不来）
     default_args.extend(build_extension_args(extension_dirs))
 
+    from app.services import stealth as _stealth
+
     if not custom_args_str:
-        return default_args
+        return _stealth.merge_stealth_args(default_args)
 
     user_args = [a.strip() for a in custom_args_str.split('\n') if a.strip()]
     if not user_args:
-        return default_args
+        return _stealth.merge_stealth_args(default_args)
 
     # 用户参数中提取 flag 名（取 = 之前的部分）
     def _flag_name(arg: str) -> str:
@@ -161,7 +181,7 @@ def _build_launch_args(custom_args_str: str = '', extension_dirs: str = '') -> l
     # 默认参数若被用户覆写则跳过
     merged = [a for a in default_args if _flag_name(a) not in user_flag_names]
     merged.extend(user_args)
-    return merged
+    return _stealth.merge_stealth_args(merged)
 
 
 async def _inject_userscript(pg: Page):
@@ -304,7 +324,7 @@ async def start(
             return True, ""
 
         try:
-            _playwright = await async_playwright().start()
+            _playwright = await _async_playwright().start()
 
             if browser_type == 'firefox':
                 engine = _playwright.firefox
@@ -334,6 +354,13 @@ async def start(
             ctx = await engine.launch_persistent_context(**launch_kwargs)
             ctx.set_default_timeout(0)
             ctx.set_default_navigation_timeout(0)
+
+            # 注入反自动化检测脚本（对所有页面/iframe 文档最早期生效）
+            try:
+                from app.services import stealth as _stealth
+                await _stealth.apply_stealth(ctx)
+            except Exception as _se:
+                print(f"[BrowserEngine] 注入 stealth 失败: {_se}")
 
             # 监听浏览器关闭事件
             ctx.on("close", lambda: _on_browser_closed())

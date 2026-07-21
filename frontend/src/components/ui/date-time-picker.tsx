@@ -136,32 +136,108 @@ export function DatePicker({ value, onChange, placeholder = '选择日期', clas
   )
 }
 
-// ---------------- 时间面板 ----------------
-function TimePanel({ value, withSeconds, onChange }: { value: string; withSeconds?: boolean; onChange: (v: string) => void }) {
+// ---------------- 时间面板（滚动列直选，无嵌套下拉） ----------------
+/**
+ * 之前的实现是三个嵌套 SelectNative（Radix Select 会 Portal 到 body），
+ * 与自绘 Popover 的「点击外部即关闭」冲突：鼠标点击下拉选项时整个面板被
+ * mousedown 抢先卸载，导致「点击选不上、只能按回车」。
+ * 现改为 antd 风格滚动列：每列直接点击数字即可选中，同时视觉尺寸更大。
+ */
+const clampTimePart = (raw: string | undefined, max: number) => {
+  const n = Number(raw)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(max, Math.max(0, Math.trunc(n)))
+}
+
+function TimeColumn({ label, count, value, onSelect, compact }: {
+  label: string
+  count: number
+  value: number
+  onSelect: (v: number) => void
+  compact?: boolean
+}) {
+  const listRef = React.useRef<HTMLDivElement>(null)
+  const didInit = React.useRef(false)
+
+  // 首次打开：选中项直接定位到列表可视区中间；之后点击选择时平滑跟随
+  React.useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    const item = el.children[value] as HTMLElement | undefined
+    if (!item) return
+    const top = item.offsetTop - el.clientHeight / 2 + item.clientHeight / 2
+    if (didInit.current) {
+      if (typeof el.scrollTo === 'function') el.scrollTo({ top, behavior: 'smooth' })
+      else el.scrollTop = top
+    } else {
+      el.scrollTop = top
+      didInit.current = true
+    }
+  }, [value])
+
+  return (
+    <div className="flex flex-col items-stretch">
+      <div className="text-center text-[11px] font-medium text-[hsl(var(--muted-foreground))] pb-1">{label}</div>
+      <div
+        ref={listRef}
+        className={cn(
+          'w-[60px] overflow-y-auto overscroll-contain scrollbar-thin rounded-[8px] border border-[hsl(var(--border))] bg-[hsl(var(--slate-50))] p-1 space-y-0.5',
+          compact ? 'h-[128px]' : 'h-[192px]'
+        )}
+      >
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onSelect(i)}
+            className={cn(
+              'w-full h-8 flex items-center justify-center rounded-[6px] text-[13.5px] tabular-nums transition-colors',
+              i === value
+                ? 'bg-[hsl(var(--brand-600))] text-white font-semibold shadow-sm'
+                : 'text-[hsl(var(--slate-700))] hover:bg-[hsl(var(--brand-50))] hover:text-[hsl(var(--brand-700))]'
+            )}
+          >
+            {pad(i)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TimePanel({ value, withSeconds, onChange, compact }: { value: string; withSeconds?: boolean; onChange: (v: string) => void; compact?: boolean }) {
   const parts = (value || '').split(':')
-  const hh = parts[0] !== undefined && parts[0] !== '' ? Number(parts[0]) : 0
-  const mm = parts[1] !== undefined && parts[1] !== '' ? Number(parts[1]) : 0
-  const ss = parts[2] !== undefined && parts[2] !== '' ? Number(parts[2]) : 0
+  const hh = clampTimePart(parts[0], 23)
+  const mm = clampTimePart(parts[1], 59)
+  const ss = clampTimePart(parts[2], 59)
   const emit = (h: number, m: number, s: number) => {
     onChange(withSeconds ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}`)
   }
+  const setNow = () => {
+    const now = new Date()
+    emit(now.getHours(), now.getMinutes(), now.getSeconds())
+  }
   return (
-    <div className="flex items-center gap-1.5">
-      <SelectNative className="!w-[64px]" value={String(hh)} onChange={(e) => emit(Number(e.target.value), mm, ss)}>
-        {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{pad(i)} 时</option>)}
-      </SelectNative>
-      <span className="text-[hsl(var(--muted-foreground))]">:</span>
-      <SelectNative className="!w-[64px]" value={String(mm)} onChange={(e) => emit(hh, Number(e.target.value), ss)}>
-        {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{pad(i)} 分</option>)}
-      </SelectNative>
-      {withSeconds && (
-        <>
-          <span className="text-[hsl(var(--muted-foreground))]">:</span>
-          <SelectNative className="!w-[64px]" value={String(ss)} onChange={(e) => emit(hh, mm, Number(e.target.value))}>
-            {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{pad(i)} 秒</option>)}
-          </SelectNative>
-        </>
-      )}
+    <div className="select-none">
+      <div className="flex items-start justify-center gap-2">
+        <TimeColumn label="小时" count={24} value={hh} onSelect={(v) => emit(v, mm, ss)} compact={compact} />
+        <TimeColumn label="分" count={60} value={mm} onSelect={(v) => emit(hh, v, ss)} compact={compact} />
+        {withSeconds && (
+          <TimeColumn label="秒" count={60} value={ss} onSelect={(v) => emit(hh, mm, v)} compact={compact} />
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-2 pt-2 mt-2 border-t border-[hsl(var(--border))]">
+        <button
+          type="button"
+          onClick={setNow}
+          className="px-2 py-1 rounded-[6px] text-[12px] text-[hsl(var(--brand-600))] hover:bg-[hsl(var(--brand-50))] transition-colors"
+        >
+          此刻
+        </button>
+        <span className="text-[13px] font-semibold tabular-nums text-[hsl(var(--foreground))] pr-1">
+          {withSeconds ? `${pad(hh)}:${pad(mm)}:${pad(ss)}` : `${pad(hh)}:${pad(mm)}`}
+        </span>
+      </div>
     </div>
   )
 }
@@ -218,7 +294,7 @@ export function DateTimePicker({ value, onChange, placeholder = '选择日期与
       <PopoverContent className="w-auto p-2.5 space-y-2.5" align="start">
         <CalendarPanel value={datePart || ''} onPick={(v) => setDate(v)} />
         <div className="border-t border-[hsl(var(--border))] pt-2.5">
-          <TimePanel value={timePart || '00:00'} onChange={(t) => setTime(t)} />
+          <TimePanel value={timePart || '00:00'} onChange={(t) => setTime(t)} compact />
         </div>
       </PopoverContent>
     </Popover>

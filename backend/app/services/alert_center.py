@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from app.services.notifier import notify_all
+from app.utils.paths import BACKEND_DATA_DIR
 
 _LOCK = threading.Lock()
 
@@ -33,7 +34,7 @@ _DEFAULT_CONFIG: dict[str, Any] = {
 
 
 def _config_file() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "alert_config.json"
 

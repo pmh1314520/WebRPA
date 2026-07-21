@@ -19,6 +19,7 @@ import secrets
 import time
 from datetime import datetime
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
 _SYSTEM_PROMPT = """你是一个能看屏幕并操作 Windows 电脑的智能体。每一步我会给你当前屏幕截图和总目标。
 你必须只回复一个 JSON 对象（不要任何多余文字、不要代码围栏），描述下一步要执行的【单个】动作。
@@ -47,7 +48,7 @@ _SYSTEM_PROMPT = """你是一个能看屏幕并操作 Windows 电脑的智能体
 
 def _data_file():
     from pathlib import Path
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "computer_use_sessions.json"
 

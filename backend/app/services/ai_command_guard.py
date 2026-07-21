@@ -14,8 +14,9 @@ import json
 import threading
 from pathlib import Path
 from datetime import datetime
+from app.utils.paths import BACKEND_DATA_DIR
 
-_AUDIT_FILE = Path("backend/data/command_audit.log")
+_AUDIT_FILE = BACKEND_DATA_DIR / "command_audit.log"
 _audit_lock = threading.Lock()
 
 # 危险模式（大小写不敏感）。命中即拦截。

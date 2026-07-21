@@ -15,6 +15,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any
+from app.utils.paths import BACKEND_DATA_DIR
 
 _LOCK = threading.Lock()
 _loop_task: asyncio.Task | None = None
@@ -23,7 +24,7 @@ _probe_tasks: set = set()
 
 
 def _store_file() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "health_probes.json"
 

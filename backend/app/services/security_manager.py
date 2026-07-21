@@ -18,8 +18,9 @@ import secrets
 import threading
 from pathlib import Path
 from typing import Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _CONF_FILE = _DATA_DIR / "security.json"
 _lock = threading.Lock()
 _cache: Optional[dict] = None

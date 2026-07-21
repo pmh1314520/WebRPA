@@ -23,12 +23,13 @@ import json
 import threading
 from pathlib import Path
 from typing import Any
+from app.utils.paths import BACKEND_DATA_DIR
 
 _LOCK = threading.Lock()
 
 
 def _store_file() -> Path:
-    folder = Path("backend/data")
+    folder = BACKEND_DATA_DIR
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "workflow_tests.json"
 

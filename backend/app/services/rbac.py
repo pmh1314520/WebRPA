@@ -23,8 +23,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _RBAC_FILE = _DATA_DIR / "rbac.json"
 _SESS_FILE = _DATA_DIR / "sessions.json"
 _SECRET_FILE = _DATA_DIR / ".rbac_secret"

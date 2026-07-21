@@ -1,0 +1,23 @@
+{
+  "id": "phone-adb",
+  "version": "2.5.0",
+  "installed_at": "2026-07-20 18:56:06",
+  "source_zip": "E:\\GitHubProjects\\WebRPA\\WebRPA新版\\packaged\\feature_packs\\phone-adb-v2.5.0.zip",
+  "files": [
+    "backend/scrcpy/adb.exe",
+    "backend/scrcpy/AdbWinApi.dll",
+    "backend/scrcpy/AdbWinUsbApi.dll",
+    "backend/scrcpy/avcodec-61.dll",
+    "backend/scrcpy/avformat-61.dll",
+    "backend/scrcpy/avutil-59.dll",
+    "backend/scrcpy/icon.png",
+    "backend/scrcpy/libusb-1.0.dll",
+    "backend/scrcpy/open_a_terminal_here.bat",
+    "backend/scrcpy/scrcpy-console.bat",
+    "backend/scrcpy/scrcpy-noconsole.vbs",
+    "backend/scrcpy/scrcpy-server",
+    "backend/scrcpy/scrcpy.exe",
+    "backend/scrcpy/SDL2.dll",
+    "backend/scrcpy/swresample-5.dll"
+  ]
+}

@@ -14,8 +14,9 @@ from urllib.parse import quote, urljoin
 import xml.etree.ElementTree as ET
 
 import requests
+from app.utils.paths import BACKEND_DATA_DIR
 
-_DATA_DIR = Path("backend/data")
+_DATA_DIR = BACKEND_DATA_DIR
 _CONF_FILE = _DATA_DIR / "webdav.json"
 _lock = threading.RLock()
 
