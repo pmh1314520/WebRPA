@@ -30,9 +30,10 @@ import { VariableTrackingPanel } from './VariableTrackingPanel'
 import { ScreensaverDialog } from './ScreensaverDialog'
 import { SponsorDialog } from './SponsorDialog'
 import { FeaturePackDialog } from './FeaturePackDialog'
+import { MissingPacksDialog, type MissingPackGroup } from './MissingPacksDialog'
 import { ScreenshotNameDialog, ScreenshotErrorDialog } from './ScreenshotNameDialog'
 import { useClipboardImageMonitor } from '@/hooks/useClipboardImageMonitor'
-import { customModulesApi, workflowBundleApi } from '@/services/api'
+import { customModulesApi, workflowBundleApi, featurePackApi } from '@/services/api'
 import { onAssistantUiEvent, emitAssistantUiEvent } from '@/services/aiAssistantSkills'
 import {
   Play,
@@ -93,6 +94,7 @@ export function Toolbar() {
   const [showVariableTracking, setShowVariableTracking] = useState(false)
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [showFeaturePacks, setShowFeaturePacks] = useState(false)
+  const [missingPacks, setMissingPacks] = useState<MissingPackGroup[] | null>(null)
   const [showSponsor, setShowSponsor] = useState(false)
   const [defaultFolder, setDefaultFolder] = useState('')
   const [showScreenshotNameDialog, setShowScreenshotNameDialog] = useState(false)
@@ -218,6 +220,24 @@ export function Toolbar() {
     if (nodes.length === 0) {
       addLog({ level: 'warning', message: '工作流没有任何节点' })
       return
+    }
+
+    // 运行前功能包预检：若缺少所需功能模块包，则弹窗提示（含下载入口 + 安装教学），中止运行
+    try {
+      const moduleTypes = Array.from(new Set(
+        nodes.map(n => (n.data?.moduleType as string) || '').filter(Boolean)
+      ))
+      if (moduleTypes.length > 0) {
+        const pf = await featurePackApi.preflight(moduleTypes)
+        if (pf.success && pf.data && pf.data.ok === false && (pf.data.missing?.length ?? 0) > 0) {
+          setMissingPacks(pf.data.missing as MissingPackGroup[])
+          addLog({ level: 'warning', message: '工作流缺少功能模块包，已弹窗提示下载与安装方式，运行已中止' })
+          return
+        }
+      }
+    } catch (e) {
+      // 预检失败不应阻断运行（例如后端旧版本无该接口），仅记录调试信息后继续
+      console.warn('[Toolbar] 功能包预检失败，跳过预检直接运行:', e)
     }
 
     // 从指定节点开始时，给出对应节点名称提示
@@ -1865,6 +1885,14 @@ export function Toolbar() {
 
       {/* 功能模块包管理 */}
       <FeaturePackDialog open={showFeaturePacks} onClose={() => setShowFeaturePacks(false)} />
+
+      {/* 运行前缺少功能模块包提示（含下载入口 + 安装教学） */}
+      <MissingPacksDialog
+        open={missingPacks !== null}
+        missing={missingPacks || []}
+        onClose={() => setMissingPacks(null)}
+        onOpenManager={() => { setMissingPacks(null); setShowFeaturePacks(true) }}
+      />
 
       {/* 屏保弹幕对话框 */}
       <ScreensaverDialog

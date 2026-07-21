@@ -10,13 +10,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { featurePackApi, type FeaturePackInfo } from '@/services/api'
+import { featurePackApi, systemApi, type FeaturePackInfo } from '@/services/api'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
 import {
   X, Package, PackageCheck, PackageOpen, RefreshCw, Upload,
-  FolderOpen, Trash2, HardDrive, Sparkles, CheckCircle2, Loader2,
+  FolderOpen, Trash2, HardDrive, Sparkles, CheckCircle2, Loader2, Download, AlertTriangle,
 } from 'lucide-react'
+
+// 功能包国内高速下载入口（夸克网盘下载总目录，与官网口径统一，单个包无专属链接时回退用）
+const PACK_DOWNLOAD_HUB = 'https://pan.quark.cn/s/d6331c1d0361'
+// GitHub Releases 页面（海外/开发者下载渠道）
+const GITHUB_RELEASES_URL = 'https://github.com/pmh1314520/WebRPA/releases'
 
 interface FeaturePackDialogProps {
   open: boolean
@@ -31,6 +36,8 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
   const [notice, setNotice] = useState('')
   const [installPath, setInstallPath] = useState('')
   const [showPathInstall, setShowPathInstall] = useState(false)
+  // 安装成功后展示"如未生效请重启服务"的兜底提示（大型编译库个别环境需重启才完全生效）
+  const [showRestartHint, setShowRestartHint] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { confirm, ConfirmDialog } = useConfirm()
 
@@ -56,8 +63,27 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
       loadPacks()
       setNotice('')
       setError('')
+      setShowRestartHint(false)
     }
   }, [open, loadPacks])
+
+  // 打开系统原生文件选择框，选中功能包 zip 后回填路径（浏览器 file input 拿不到真实磁盘路径，故走后端本机对话框）
+  const handleBrowseFile = async () => {
+    setError('')
+    try {
+      const res = await systemApi.selectFile(
+        '选择功能包 zip 文件',
+        undefined,
+        [['功能包 zip', '*.zip'], ['所有文件', '*.*']]
+      )
+      const data = res.data as { success?: boolean; path?: string } | undefined
+      if (data?.success && data.path) {
+        setInstallPath(data.path)
+      }
+    } catch (e) {
+      setError((e as Error)?.message || '打开文件选择框失败')
+    }
+  }
 
   const handleInstallFromPath = async () => {
     const path = installPath.trim()
@@ -69,6 +95,7 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
       const res = await featurePackApi.installFromPath(path)
       if (res.success && res.data?.success) {
         setNotice(`已安装「${res.data.name || res.data.id}」（${res.data.installed_files} 个文件）${res.data.warning ? `\n${res.data.warning}` : ''}`)
+        setShowRestartHint(true)
         setInstallPath('')
         setShowPathInstall(false)
         await loadPacks()
@@ -90,6 +117,7 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
       const res = await featurePackApi.installUpload(file)
       if (res.success && res.data?.success) {
         setNotice(`已安装「${res.data.name || res.data.id}」（${res.data.installed_files} 个文件）${res.data.warning ? `\n${res.data.warning}` : ''}`)
+        setShowRestartHint(true)
         await loadPacks()
       } else {
         setError(res.error || '安装失败')
@@ -190,8 +218,17 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
                 <FolderOpen className="w-3.5 h-3.5" />
                 从本地路径安装（大包推荐）
               </Button>
+              <Button
+                variant="tonal"
+                size="sm"
+                onClick={() => window.open(GITHUB_RELEASES_URL, '_blank', 'noopener')}
+                title="打开 WebRPA 的 GitHub Releases 页面下载功能模块包"
+              >
+                <Download className="w-3.5 h-3.5" />
+                从 GitHub 下载
+              </Button>
               <span className="text-[11.5px] text-[hsl(var(--muted-foreground))]">
-                功能包 zip 从官网 / 网盘 / Releases 下载
+                各功能包右侧「下载」可直达夸克网盘高速下载
               </span>
               <input
                 ref={fileInputRef}
@@ -206,10 +243,20 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
                 <Input
                   value={installPath}
                   onChange={(e) => setInstallPath(e.target.value)}
-                  placeholder={'粘贴功能包 zip 的完整路径，如 D:\\Downloads\\ocr-paddle-v2.5.0.zip'}
+                  placeholder={'点击「浏览」选择，或粘贴功能包 zip 的完整路径'}
                   className="flex-1"
                   onKeyDown={(e) => { if (e.key === 'Enter') handleInstallFromPath() }}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBrowseFile}
+                  disabled={busyId !== ''}
+                  title="打开系统文件选择框，选择功能包 zip"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  浏览
+                </Button>
                 <Button
                   variant="success"
                   size="sm"
@@ -229,6 +276,14 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
             {error && (
               <div className="p-2 bg-red-50 border border-red-200 rounded text-[12.5px] text-red-600 whitespace-pre-wrap">
                 {error}
+              </div>
+            )}
+            {showRestartHint && (
+              <div className="flex items-start gap-1.5 p-2.5 rounded-md bg-[hsl(var(--warning-50))] border border-[hsl(var(--warning-500)/0.35)] text-[12px] text-[hsl(var(--warning-700))] leading-relaxed">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>
+                  安装完成。大多数功能包可直接使用，无需重启；但含大型库的功能包（如 OCR / 图像 / 语音 / 数据表格）若运行时仍提示缺包，请到 WebRPA 启动器中先点「停止服务」、再点「启动服务」重启一次后再试。
+                </span>
               </div>
             )}
           </div>
@@ -289,7 +344,7 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
                           </p>
                         )}
                       </div>
-                      <div className="shrink-0">
+                      <div className="shrink-0 flex flex-col items-end gap-1.5">
                         {pack.installed ? (
                           <Button
                             variant="tonal-danger"
@@ -301,9 +356,15 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
                             卸载
                           </Button>
                         ) : (
-                          <span className="text-[11.5px] px-2 py-1 rounded bg-[hsl(var(--slate-100))] text-[hsl(var(--slate-500))]">
-                            未安装
-                          </span>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => window.open(pack.download_url || PACK_DOWNLOAD_HUB, '_blank', 'noopener')}
+                            title={pack.download_url ? '打开夸克网盘高速下载此功能包' : '打开夸克网盘下载功能包'}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            下载
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -314,7 +375,7 @@ export function FeaturePackDialog({ open, onClose }: FeaturePackDialogProps) {
             {/* 说明 */}
             <div className="p-3 rounded-lg bg-[hsl(var(--brand-50)/0.5)] border border-[hsl(var(--brand-500)/0.2)] text-[12px] text-[hsl(var(--slate-600))] leading-relaxed">
               <p className="font-semibold text-[hsl(var(--brand-700))] mb-1">工作原理</p>
-              <p>· 功能包是覆盖到 WebRPA 安装目录的增量 zip：安装即解压、卸载即删除，随装随用，无需重启即可生效（个别包首次使用时初始化）。</p>
+              <p>· 功能包是覆盖到 WebRPA 安装目录的增量 zip：安装即解压、卸载即删除。大多数功能包安装后即可直接使用；少数含大型库的包（OCR / 图像 / 语音 / 数据表格）若未立即生效，到 WebRPA 启动器先点「停止服务」再点「启动服务」重启一次即可。</p>
               <p>· 未安装某个包时，其对应的模块运行会给出「请安装 XX 功能模块包」的明确提示，不影响其它功能。</p>
               <p>· 从完整版升级的用户所有能力默认可用（探测的是真实文件，不依赖安装记录）。</p>
             </div>

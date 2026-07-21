@@ -227,6 +227,11 @@ def main() -> int:
         if not copy_core(wd):
             return 1
         strip_core(wd)
+        # 清除历史遗留的核心包 zip（旧版脚本会压 zip，现在只留文件夹，防止残留误导）
+        stale_zip = OUTPUT_DIR / f"WebRPA-{version}-核心包.zip"
+        if stale_zip.exists():
+            stale_zip.unlink()
+            print(f"  已删除历史遗留的核心包 zip: {stale_zip.name}")
         if args.clean_workdir:
             print("  删除核心构建目录 ...")
             shutil.rmtree(wd, ignore_errors=True)

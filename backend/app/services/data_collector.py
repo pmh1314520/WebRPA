@@ -16,11 +16,24 @@ except ImportError:  # 数据处理功能包未安装
 
 
 def _require_polars():
+    """确保 polars 可用。
+
+    关键：本模块在后端启动时被顶层导入，若那时功能包尚未安装，`pl` 会被缓存为 None。
+    用户随后安装「数据表格」功能包（文件已写入 site-packages）后，若仍沿用启动时缓存的
+    None，就会误报"未安装"。因此这里在 pl 为 None 时做一次惰性重导入（并刷新导入缓存），
+    使运行期新装的功能包无需重启后端即可生效。
+    """
+    global pl
     if pl is None:
-        raise ImportError(
-            "表格数据导出功能不可用：未安装 Polars。"
-            "请安装「数据处理」功能模块包后重试。"
-        )
+        import importlib
+        importlib.invalidate_caches()
+        try:
+            pl = importlib.import_module("polars")
+        except ImportError:
+            raise ImportError(
+                "表格数据导出功能不可用：未安装 Polars。"
+                "请安装「数据表格」功能模块包后重试。"
+            )
 
 
 class DataCollector:

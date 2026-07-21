@@ -85,6 +85,8 @@ class FeaturePack:
     recommended: bool = False
     # 备注（安装注意事项）
     note: str = ""
+    # 国内高速下载地址（夸克网盘固定分享链接，前端/官网一键跳转下载用）
+    download_url: str = ""
 
 
 # ============================================================
@@ -108,6 +110,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         import_names=["playwright"],
         module_categories=["网页导航", "网页元素交互", "网页元素查询", "网页数据采集"],
         recommended=True,
+        download_url="https://pan.quark.cn/s/afe960782e50",
     ),
     FeaturePack(
         id="data-tables",
@@ -125,6 +128,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         import_names=["polars", "pyarrow", "pandas"],
         module_categories=["表格与CSV"],
         recommended=True,
+        download_url="https://pan.quark.cn/s/0988daa0e067",
     ),
     FeaturePack(
         id="ocr-paddle",
@@ -143,6 +147,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         import_names=["paddle", "paddleocr", "paddlex"],
         module_types=["click_text", "hover_text", "wait_text", "ocr_extract"],
         module_categories=["图像识别与点击"],
+        download_url="https://pan.quark.cn/s/3af35edf8f6b",
     ),
     FeaturePack(
         id="ocr-easyocr",
@@ -164,6 +169,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         import_names=["torch", "torchvision", "easyocr", "skimage"],
         module_categories=["图像识别与点击"],
         note="包含 PyTorch（约 400MB），与 PaddleOCR 二选一即可满足大部分场景。",
+        download_url="https://pan.quark.cn/s/92da35c0c46d",
     ),
     FeaturePack(
         id="vision-opencv",
@@ -179,6 +185,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         module_categories=["图像识别与点击"],
         module_types=["click_image", "wait_image", "hover_image"],
         recommended=True,
+        download_url="https://pan.quark.cn/s/830f77af4ad3",
     ),
     FeaturePack(
         id="speech",
@@ -198,6 +205,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=["faster_whisper", "ctranslate2", "av", "speech_recognition"],
         module_types=["audio_to_text"],
+        download_url="https://pan.quark.cn/s/6fc51e00c840",
     ),
     FeaturePack(
         id="face-gesture",
@@ -215,6 +223,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=["face_recognition", "face_recognition_models", "dlib", "mediapipe"],
         module_types=["face_trigger", "gesture_trigger"],
+        download_url="https://pan.quark.cn/s/98bca0e51bac",
     ),
     FeaturePack(
         id="media-ffmpeg",
@@ -232,6 +241,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         import_names=[],
         module_categories=["视频处理", "音频处理", "媒体格式转换", "屏幕与录制", "媒体播放"],
         recommended=True,
+        download_url="https://pan.quark.cn/s/7d1888ef2a16",
     ),
     FeaturePack(
         id="doc-convert",
@@ -253,6 +263,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=["fitz", "pymupdf", "pdf2docx", "pdfplumber", "pdfminer", "pypandoc"],
         module_categories=["PDF处理", "文档转换"],
+        download_url="https://pan.quark.cn/s/94045c14f502",
     ),
     FeaturePack(
         id="phone-adb",
@@ -266,6 +277,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=[],
         module_categories=["手机自动化"],
+        download_url="https://pan.quark.cn/s/149db2b684a6",
     ),
     FeaturePack(
         id="qq-bot",
@@ -279,6 +291,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=[],
         module_categories=["QQ机器人"],
+        download_url="https://pan.quark.cn/s/e7060736bfab",
     ),
     FeaturePack(
         id="ai-crawler",
@@ -296,6 +309,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=["scrapegraphai", "langchain", "langchain_core", "langchain_community"],
         module_categories=["AI爬虫"],
+        download_url="https://pan.quark.cn/s/c5b56f137f35",
     ),
     FeaturePack(
         id="proxy-capture",
@@ -311,6 +325,7 @@ FEATURE_PACKS: list[FeaturePack] = [
         ],
         import_names=["mitmproxy"],
         module_categories=["网络抓包"],
+        download_url="https://pan.quark.cn/s/25b694a27045",
     ),
 ]
 
@@ -464,6 +479,10 @@ def install_pack_from_zip(zip_path: str | Path) -> dict:
             with zf.open(info) as src, open(target, "wb") as dst:
                 shutil.copyfileobj(src, dst, length=1024 * 1024)
             extracted.append(norm)
+
+    # 刷新 Python 导入缓存：功能包把依赖写入 site-packages 后，让运行中的后端
+    # 无需重启即可 import 到新装的包（否则 FileFinder 目录缓存可能仍是旧的）。
+    importlib.invalidate_caches()
 
     # 写安装记录
     _RECORDS_DIR.mkdir(parents=True, exist_ok=True)
@@ -722,7 +741,8 @@ def preflight_check(module_types: list[str]) -> dict:
         for pid in group:
             p = _PACKS_BY_ID.get(pid)
             if p:
-                alts.append({"id": p.id, "name": p.name, "size_mb": p.size_mb})
+                alts.append({"id": p.id, "name": p.name, "size_mb": p.size_mb,
+                             "download_url": p.download_url})
         missing.append({"alternatives": alts, "module_types": sorted(types)})
     return {"ok": not missing, "missing": missing}
 
@@ -738,6 +758,9 @@ def format_preflight_error(result: dict, type_labels: Optional[dict[str, str]] =
         alt_txt = " 或 ".join(f"「{a['name']}」[{a['id']}]（约{a['size_mb']}MB）" for a in alts)
         mods = "、".join(labels.get(t, t) for t in item.get("module_types", []))
         lines.append(f"  ● 需要 {alt_txt} —— 影响模块：{mods}")
+        for a in alts:
+            if a.get("download_url"):
+                lines.append(f"      国内高速下载「{a['name']}」：{a['download_url']}")
     lines.append("请到 编辑器 → 右上角「更多」→「功能模块包」安装后重试；功能包 zip 可从官网/网盘下载。")
     return "\n".join(lines)
 
@@ -777,7 +800,10 @@ def hint_for_import_error(exc: BaseException) -> str:
     pack = pack_for_import(missing)
     if not pack:
         return ""
-    return (
+    hint = (
         f"缺少功能模块包「{pack.name}」（依赖 {missing}）。"
         f"请在 编辑器 → 更多 → 功能模块包 中安装 [{pack.id}] 后重试。"
     )
+    if pack.download_url:
+        hint += f"\n国内高速下载：{pack.download_url}"
+    return hint

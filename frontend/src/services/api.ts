@@ -803,6 +803,7 @@ export interface FeaturePackInfo {
   size_mb: number
   recommended: boolean
   note: string
+  download_url: string
   module_categories: string[]
   module_types: string[]
   installed: boolean
@@ -827,7 +828,7 @@ export const featurePackApi = {
   },
   /** 工作流运行前预检：返回缺失功能包清单与格式化提示 */
   preflight: (moduleTypes: string[]) =>
-    apiRequest<{ success: boolean; ok: boolean; missing: Array<{ alternatives: Array<{ id: string; name: string; size_mb: number }>; module_types: string[] }>; message: string }>(
+    apiRequest<{ success: boolean; ok: boolean; missing: Array<{ alternatives: Array<{ id: string; name: string; size_mb: number; download_url?: string }>; module_types: string[] }>; message: string }>(
       '/feature-packs/preflight', { method: 'POST', body: JSON.stringify({ module_types: moduleTypes }) }
     ),
   /** 卸载功能包 */
