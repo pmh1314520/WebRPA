@@ -262,6 +262,11 @@ _update_version.ps1
 .*/
 **/.*/
 
+# 除「免启动器运行WebRPA.bat」外的所有 .bat 脚本一律不入库
+# （打包/构建/维护/开发用脚本仅本机使用，不随开源仓库分发）
+*.bat
+!免启动器运行WebRPA.bat
+
 # Exclude WebRPA official website source
 website/
 
