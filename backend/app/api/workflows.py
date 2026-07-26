@@ -194,6 +194,165 @@ async def flush_data_rows(workflow_id: str):
         'workflowId': workflow_id,
         'rows': rows,
     })
+
+
+# ===== 执行事件共享推送层（手动运行路径与计划任务路径共用）=====
+
+# execution:completed 附带的数据预览上限。前端在执行期间已通过 data_row_batch
+# 流式收齐全部数据，这里只作兜底同步，封顶避免单条 socket 消息过大。
+COMPLETED_DATA_PREVIEW_LIMIT = 5000
+
+
+async def safe_emit(event: str, payload: dict) -> None:
+    """异常隔离的事件推送：未注入 Socket 实例时静默跳过，推送失败只记录不抛。
+
+    推送是旁路能力，绝不能因为通道故障影响工作流执行本身与结果记录。
+    """
+    if sio is None:
+        return
+    try:
+        await sio.emit(event, payload)
+    except Exception as e:
+        print(f"[ExecutionEvents] 推送 {event} 失败（已忽略）: {e}")
+
+
+def _status_value(status) -> str:
+    """把执行状态归一为字符串（兼容 ExecutionStatus 枚举与裸字符串）。"""
+    return status.value if hasattr(status, 'value') else str(status)
+
+
+async def emit_execution_started(workflow_id: str) -> None:
+    """推送执行开始事件（execution:started）。
+
+    workflow_id 一律传工作流文件名：前端会把它写进 currentExecutionWorkflowId，
+    「下载数据」等功能依赖其正确，且需与监控页 URL 的 ?workflow=<文件名> 一致。
+    """
+    await safe_emit('execution:started', {'workflowId': workflow_id})
+
+
+async def emit_execution_completed(
+    workflow_id: str,
+    result,
+    collected_data=None,
+    healed_selectors=None,
+) -> None:
+    """推送执行完成事件（execution:completed）。
+
+    result 允许为 None（异常出口尚未产出结果），此时状态归一为 failed、模块数归一为 0，
+    因此三条出口共用同一个函数，无需为异常出口另写分支。
+
+    healed_selectors 为 None 时不写入 healedSelectors 键：前端拿到该键会弹出
+    「是否把自愈后的选择器写回工作流」的询问，计划任务由调度器无人值守触发，
+    没有人能回答该询问，所以计划任务不传；手动路径显式传入。
+    """
+    rows = collected_data or []
+    total = len(rows)
+    # 前端在执行期间已通过 data_row_batch 流式收齐全部数据，这里只作兜底同步，
+    # 封顶避免单条 socket 消息过大；collectedDataTotal 始终报真实总数，
+    # 供前端判断是否需要走「下载完整数据」。
+    preview = rows[:COMPLETED_DATA_PREVIEW_LIMIT] if total > COMPLETED_DATA_PREVIEW_LIMIT else rows
+
+    payload = {
+        'workflowId': workflow_id,
+        'result': {
+            'status': _status_value(getattr(result, 'status', 'failed')),
+            'executedNodes': getattr(result, 'executed_nodes', 0) or 0,
+            'failedNodes': getattr(result, 'failed_nodes', 0) or 0,
+            'dataFile': getattr(result, 'data_file', None),
+        },
+        'collectedData': preview,
+        'collectedDataTotal': total,
+    }
+    if healed_selectors is not None:
+        payload['healedSelectors'] = healed_selectors
+
+    await safe_emit('execution:completed', payload)
+
+
+def make_execution_callbacks(workflow_id: str) -> dict:
+    """产出可直接 ** 展开传给 WorkflowExecutor 的执行事件回调。
+
+    workflow_id 一律传工作流文件名，与 emit_execution_started 保持一致。
+
+    刻意不含 on_variable_update：前端不消费 execution:variable_update
+    （仅在执行结束后统一保存全局变量），密集循环下全量 emit 会挤占通道。
+    """
+
+    async def on_log(log: LogEntry) -> None:
+        # 第一道过滤：没有任何客户端在接收日志时，连载荷都不构造
+        if not is_log_enabled():
+            return
+
+        # 是否是用户日志（打印日志模块）或系统日志（流程开始/结束）
+        is_user_log = log.details.get('is_user_log', False) if log.details else False
+        is_system_log = log.details.get('is_system_log', False) if log.details else False
+
+        # ⚠️ 第二道过滤（性能关键）：简洁模式（未开启详细日志）下，前端只显示
+        # 用户日志/系统日志/错误/警告，其余普通 INFO 节点日志会被前端直接丢弃。
+        # 若后端仍全量 emit，密集循环工作流会产生成千上万条无用日志灌满 WebSocket
+        # 发送队列，把真正要显示的日志挤到执行结束才一次性送达。这里在源头按与
+        # 前端一致的规则过滤。
+        if not is_verbose_enabled():
+            lvl = log.level.value if hasattr(log.level, 'value') else str(log.level)
+            if not is_user_log and not is_system_log and lvl not in ('error', 'warning'):
+                return
+
+        # 八个键缺一不可：前端简洁模式的过滤依赖 isUserLog / isSystemLog
+        log_data = {
+            'id': log.id,
+            'timestamp': log.timestamp.isoformat(),
+            'level': log.level.value,
+            'nodeId': log.node_id,
+            'message': log.message,
+            'duration': log.duration,
+            'isUserLog': is_user_log,
+            'isSystemLog': is_system_log,
+        }
+
+        # batch_emit_log 内部直接 await sio.emit 且不做异常隔离，调用侧必须包一层
+        try:
+            await batch_emit_log(workflow_id, log_data)
+        except Exception as e:
+            print(f"[ExecutionEvents] 推送 execution:log_batch 失败（已忽略）: {e}")
+
+    async def on_node_start(node_id: str) -> None:
+        await safe_emit('execution:node_start', {
+            'workflowId': workflow_id,
+            'nodeId': node_id,
+        })
+
+    async def on_node_complete(node_id: str, result) -> None:
+        await safe_emit('execution:node_complete', {
+            'workflowId': workflow_id,
+            'nodeId': node_id,
+            'success': result.success,
+            'duration': result.duration,
+            'error': result.error,
+            # 注意：不发送 input 和 output，因为数据量可能很大
+        })
+
+    async def on_data_row(row: dict) -> None:
+        # 批量推送：累积到 DATA_ROW_BATCH_SIZE 条就发一批，避免逐条 emit 灌满 WebSocket。
+        # 不足一批的尾部行由调用侧在执行出口显式 flush_data_rows 冲刷。
+        async with data_row_batch_lock:
+            q = data_row_batch_queue.setdefault(workflow_id, [])
+            q.append(row)
+            should_flush = len(q) >= DATA_ROW_BATCH_SIZE
+        if should_flush:
+            # flush_data_rows 内部直接 await sio.emit 且不做异常隔离，调用侧必须包一层
+            try:
+                await flush_data_rows(workflow_id)
+            except Exception as e:
+                print(f"[ExecutionEvents] 推送 execution:data_row_batch 失败（已忽略）: {e}")
+
+    return {
+        'on_log': on_log,
+        'on_node_start': on_node_start,
+        'on_node_complete': on_node_complete,
+        'on_data_row': on_data_row,
+    }
+
+
 global_variables: dict[str, Any] = {}
 
 
