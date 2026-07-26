@@ -49,19 +49,47 @@ async function hydrateMonitorPage(taskId: string): Promise<'running' | 'done'> {
         start_time?: string
         executed_nodes?: number
         failed_nodes?: number
-        workflow_logs?: Array<{ level?: string; message?: string; nodeId?: string; duration?: number }>
+        workflow_logs?: Array<{ timestamp?: string; level?: string; message?: string; nodeId?: string; duration?: number }>
       }>
     }
     const latest = (res?.data || [])[0]
     if (latest) {
       const logs = latest.workflow_logs || []
       if (logs.length > 0) {
-        store.addLogBatch(logs.map((l) => ({
-          level: (l.level as 'info' | 'warning' | 'error' | 'success' | 'debug') || 'info',
-          message: l.message || '',
-          nodeId: l.nodeId || undefined,
-          duration: l.duration ?? undefined,
-        })))
+        // 去重：监控页开着时这批日志的一部分已经由 socket 实时推送过了
+        // （execution:log_batch），直接整批追加会让同一次执行的日志显示两遍。
+        // 实时通道丢弃了后端的日志 id，无法按 id 比对，因此按
+        // (level, message, nodeId, duration) 做**多重集计数**匹配：
+        // 每条补拉日志消耗一个同键的已有条目，消耗完才算新增。
+        // 用计数而非集合，密集循环里重复 N 次的同一条消息才能一一对应，
+        // 不会被误判成"已存在"而整批丢掉。
+        const logKey = (l: { level?: string; message?: string; nodeId?: string | null; duration?: number | null }) =>
+          `${l.level || 'info'}|${l.message || ''}|${l.nodeId || ''}|${l.duration ?? ''}`
+        const remaining = new Map<string, number>()
+        for (const existing of useWorkflowStore.getState().logs) {
+          const key = logKey(existing)
+          remaining.set(key, (remaining.get(key) || 0) + 1)
+        }
+        const freshLogs = logs.filter((l) => {
+          const key = logKey(l)
+          const count = remaining.get(key) || 0
+          if (count > 0) {
+            remaining.set(key, count - 1)
+            return false
+          }
+          return true
+        })
+        if (freshLogs.length > 0) {
+          store.addLogBatch(freshLogs.map((l) => ({
+            level: (l.level as 'info' | 'warning' | 'error' | 'success' | 'debug') || 'info',
+            message: l.message || '',
+            nodeId: l.nodeId || undefined,
+            duration: l.duration ?? undefined,
+            // 保留后端记录的原始时间（'YYYY-MM-DD HH:mm:ss.SSS' → ISO），
+            // 否则整批会被打上补拉时刻的时间戳，等待类模块的耗时在时间线上消失
+            timestamp: l.timestamp ? l.timestamp.replace(' ', 'T') : undefined,
+          })))
+        }
       }
       // 汇总一行，便于一眼看到本次执行结果（即使逐条日志为空也有反馈）。
       // 必须区分三态：监控页是在任务「刚开始执行」时被打开的，这时取到的记录

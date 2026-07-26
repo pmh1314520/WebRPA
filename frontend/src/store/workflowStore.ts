@@ -192,7 +192,10 @@ interface WorkflowState {
   
   // 日志操作
   addLog: (log: Omit<LogEntry, 'id' | 'timestamp'>) => void
-  addLogBatch: (logs: Array<Omit<LogEntry, 'id' | 'timestamp'>>) => void
+  // timestamp 可选：事后补拉的历史日志要保留后端记录的原始时间，
+  // 否则整批会被打上"补拉时刻"的时间戳，时间线被压平（长等待看不出来）。
+  // 不传则按当前时间生成，实时日志沿用此行为。
+  addLogBatch: (logs: Array<Omit<LogEntry, 'id' | 'timestamp'> & { timestamp?: string }>) => void
   addLogs: (logs: Array<Omit<LogEntry, 'id' | 'timestamp'>>) => void
   clearLogs: () => void
   setVerboseLog: (enabled: boolean) => void
@@ -2679,7 +2682,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     const newLogs: LogEntry[] = logs.map(log => ({
       ...log,
       id: nanoid(),
-      timestamp: new Date().toISOString(),
+      // 调用方显式给了时间戳（事后补拉的历史日志）就用它，否则按当前时间生成
+      timestamp: log.timestamp || new Date().toISOString(),
     }))
     const currentLogs = get().logs
     const combinedLogs = [...currentLogs, ...newLogs]
