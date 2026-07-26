@@ -226,10 +226,17 @@ def _sessions(context: ExecutionContext) -> dict:
 
 
 def _put_session(context: ExecutionContext, key: str, app, doc, path: str,
-                 worker=None, engine: str = "") -> None:
-    """登记文档会话。engine 记录实际引擎名，供后续模块（如导出 PDF）回显。"""
+                 worker=None, engine: str = "", read_only: bool = False) -> None:
+    """登记文档会话。
+
+    engine    记录实际引擎名，供后续模块（如导出 PDF）回显。
+    read_only 记录本文档是否以只读方式打开，供工作流收尾的兜底清理决定
+              「保存后关闭」还是「不保存关闭」——对只读文档执行保存会弹
+              「另存为」对话框把收尾卡住，且用户本就没有写回原文件的意图。
+    """
     _sessions(context)[key] = {
-        "app": app, "doc": doc, "path": path, "worker": worker, "engine": engine,
+        "app": app, "doc": doc, "path": path, "worker": worker,
+        "engine": engine, "readOnly": bool(read_only),
     }
 
 
@@ -510,7 +517,7 @@ class WordOpenExecutor(ModuleExecutor):
                 actual_path = await worker.run(lambda: doc.FullName)
             except Exception:
                 actual_path = file_path
-            _put_session(context, doc_key, app, doc, actual_path, worker, engine)
+            _put_session(context, doc_key, app, doc, actual_path, worker, engine, read_only)
 
             action = "已打开" if mode == "opened" else "已新建"
             ro_note = "，只读（文档被占用已自动降级）" if forced_readonly else ""
@@ -1305,6 +1312,14 @@ class WordSaveExecutor(ModuleExecutor):
                         os.makedirs(folder, exist_ok=True)
                     _save_doc_as(doc, save_as_path)
                     return os.path.abspath(save_as_path)
+                # 只读打开的文档无法原地保存（Word 会弹「另存为」把流程卡住），
+                # 直接给出可操作提示，引导用户改用另存为。
+                if bool(session.get("readOnly")):
+                    raise WordError(
+                        "当前文档是以只读方式打开的，无法原地保存"
+                        "（若是因文档被占用而自动降级为只读，请先关闭正在占用它的 Word/WPS）。"
+                        "如需保存结果，请填写「另存为路径」存为新文件。"
+                    )
                 # 原地保存：从未保存过的新文档没有路径，必须要求另存为
                 try:
                     full = str(doc.FullName or "")
@@ -1365,9 +1380,11 @@ class WordCloseExecutor(ModuleExecutor):
                     s = store.get(k) or {}
 
                     def _close_one(_s=s):
+                        # 只读文档强制不保存：对只读文档保存会弹「另存为」把流程卡死
+                        _save = save_changes and not bool(_s.get("readOnly"))
                         try:
                             if _s.get("doc") is not None:
-                                _s["doc"].Close(WD_SAVE_CHANGES if save_changes else WD_DO_NOT_SAVE_CHANGES)
+                                _s["doc"].Close(WD_SAVE_CHANGES if _save else WD_DO_NOT_SAVE_CHANGES)
                         except Exception:
                             pass
                         try:
@@ -1390,7 +1407,7 @@ class WordCloseExecutor(ModuleExecutor):
                 return ModuleResult(
                     success=True,
                     message=f"已关闭全部 {len(keys)} 个 Word 文档"
-                            f"（{'已保存改动' if save_changes else '未保存改动'}）",
+                            f"（{'已保存改动' if save_changes else '未保存改动'}；只读文档一律不保存）",
                     data={"closed": keys},
                 )
 
@@ -1398,11 +1415,14 @@ class WordCloseExecutor(ModuleExecutor):
             doc = session.get("doc")
             app = session.get("app")
             worker = session.get("worker")
+            # 只读文档强制不保存：对只读文档保存会弹「另存为」对话框把流程卡死
+            doc_read_only = bool(session.get("readOnly"))
+            effective_save = save_changes and not doc_read_only
 
             def _close():
                 try:
                     if doc is not None:
-                        doc.Close(WD_SAVE_CHANGES if save_changes else WD_DO_NOT_SAVE_CHANGES)
+                        doc.Close(WD_SAVE_CHANGES if effective_save else WD_DO_NOT_SAVE_CHANGES)
                 except Exception:
                     pass
                 try:
@@ -1421,10 +1441,13 @@ class WordCloseExecutor(ModuleExecutor):
                 # 关闭完成后回收该文档独占的 COM 线程，避免线程泄漏
                 if worker is not None:
                     worker.close()
+            saved_note = "已保存改动" if effective_save else "未保存改动"
+            if save_changes and doc_read_only:
+                saved_note += "（文档为只读打开，已忽略保存）"
             return ModuleResult(
                 success=True,
-                message=f"已关闭 Word 文档（标识: {key}，{'已保存改动' if save_changes else '未保存改动'}）",
-                data={"docKey": key, "saved": save_changes},
+                message=f"已关闭 Word 文档（标识: {key}，{saved_note}）",
+                data={"docKey": key, "saved": effective_save, "readOnly": doc_read_only},
             )
         except WordError as e:
             return ModuleResult(success=False, error=str(e))
@@ -1444,8 +1467,11 @@ async def cleanup_word_sessions(context: ExecutionContext) -> int:
     残留的 Word/WPS 进程会一直占着文档文件，使下一次运行「打开/新建Word」
     因文件被占用而弹出模态框、把调用挂死到超时。这里做兜底收尾。
 
-    注意：这里默认**保存改动**（与「关闭Word」的默认行为一致），避免用户
-    辛苦写入的内容因为流程异常而丢失。
+    保存策略按文档打开方式区分，不能一律保存：
+      - 可写打开 → 保存后关闭，避免用户已写入的内容因流程异常而白做；
+      - 只读打开 → **不保存**关闭。只读文档本就没有写回原文件的意图，
+        且对只读文档执行"保存并关闭"会弹出「另存为」对话框，把收尾卡到超时
+        （「文档被占用时自动降级只读」上线后，只读打开已是常见路径）。
     """
     store = getattr(context, "_word_docs", None)
     if not store:
@@ -1458,11 +1484,14 @@ async def cleanup_word_sessions(context: ExecutionContext) -> int:
         doc = session.get("doc")
         app = session.get("app")
         worker = session.get("worker")
+        # 只读文档不保存（否则会弹「另存为」把收尾卡死，且违背只读意图）
+        read_only = bool(session.get("readOnly"))
+        save_opt = WD_DO_NOT_SAVE_CHANGES if read_only else WD_SAVE_CHANGES
 
         def _close_one():
             try:
                 if doc is not None:
-                    doc.Close(WD_SAVE_CHANGES)
+                    doc.Close(save_opt)
             except Exception:
                 pass
             try:
@@ -1479,7 +1508,8 @@ async def cleanup_word_sessions(context: ExecutionContext) -> int:
             else:
                 await asyncio.wait_for(_run_com(_close_one), timeout=20)
             cleaned += 1
-            print(f"[Word] 工作流结束，已自动关闭遗留文档: {key}")
+            print(f"[Word] 工作流结束，已自动关闭遗留文档: {key}"
+                  f"（{'未保存改动·只读打开' if read_only else '已保存改动'}）")
         except Exception as e:
             print(f"[Word] 自动关闭遗留文档 {key} 失败（可能需手动结束 WINWORD.EXE/wps.exe）: {e}")
         finally:

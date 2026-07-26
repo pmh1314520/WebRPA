@@ -28,6 +28,106 @@ preloadConfig().then(() => {
   console.log('[Config] 配置预加载完成')
 })
 
+/**
+ * 计划任务监控页数据补齐
+ *
+ * 实时日志走 socket 广播且不补发历史，监控页从"浏览器打开→页面加载→socket 连上"
+ * 有数秒延迟，短工作流往往在这之前就跑完了，底栏于是一片空白；事后手动打开更是
+ * 什么都看不到。这里按 task_id 拉取后端已持久化的本次执行日志，并拉取后端执行期间
+ * 产生的变量，把它们灌进底栏，使监控页无论何时打开都能看到本次执行的结果。
+ */
+async function hydrateMonitorPage(taskId: string): Promise<'running' | 'done'> {
+  const store = useWorkflowStore.getState()
+
+  // 1) 补齐执行日志（取该任务最近一次执行记录里的完整工作流日志）
+  try {
+    const { scheduledTaskApi } = await import('@/services/api')
+    const res = await scheduledTaskApi.getTaskLogs(taskId, 1) as {
+      data?: Array<{
+        status?: string
+        error?: string
+        start_time?: string
+        executed_nodes?: number
+        failed_nodes?: number
+        workflow_logs?: Array<{ level?: string; message?: string; nodeId?: string; duration?: number }>
+      }>
+    }
+    const latest = (res?.data || [])[0]
+    if (latest) {
+      const logs = latest.workflow_logs || []
+      if (logs.length > 0) {
+        store.addLogBatch(logs.map((l) => ({
+          level: (l.level as 'info' | 'warning' | 'error' | 'success' | 'debug') || 'info',
+          message: l.message || '',
+          nodeId: l.nodeId || undefined,
+          duration: l.duration ?? undefined,
+        })))
+      }
+      // 汇总一行，便于一眼看到本次执行结果（即使逐条日志为空也有反馈）。
+      // 必须区分三态：监控页是在任务「刚开始执行」时被打开的，这时取到的记录
+      // status 还是 running（模块数为 0、日志尚未写入），绝不能把它报成"失败"。
+      const status = latest.status || ''
+      if (status === 'running') {
+        store.addLog({
+          level: 'info',
+          message: '计划任务正在执行中，执行完成后会自动补齐完整日志…',
+        })
+        return 'running'
+      }
+      const ok = status === 'success'
+      store.addLog({
+        level: ok ? 'success' : 'error',
+        message: `计划任务本次执行：${ok ? '成功' : '失败'}`
+          + `（模块 ${latest.executed_nodes ?? 0} 个，失败 ${latest.failed_nodes ?? 0} 个`
+          + `${latest.start_time ? `，开始于 ${latest.start_time}` : ''}）`
+          + (latest.error ? `\n错误：${latest.error}` : ''),
+      })
+    }
+  } catch (e) {
+    console.warn('[MonitorPage] 拉取计划任务执行日志失败:', e)
+  }
+
+  // 2) 补齐后端执行期间产生的变量（后端 global_variables 与前端底栏变量本是两套，
+  //    不会自动同步；这里显式同步过来，便于核对运行结果）
+  try {
+    const { workflowApi } = await import('@/services/api')
+    const res = await workflowApi.getGlobalVariables() as {
+      data?: { variables?: Record<string, unknown> }
+    }
+    const vars = res?.data?.variables || {}
+    const existing = new Set(useWorkflowStore.getState().variables.map((v) => v.name))
+    let synced = 0
+    for (const [name, value] of Object.entries(vars)) {
+      if (!name) continue
+      if (existing.has(name)) {
+        useWorkflowStore.getState().updateVariable(name, value)
+      } else {
+        useWorkflowStore.getState().addVariable({
+          name,
+          value,
+          // VariableType 只有 string/number/boolean/array/object 五种
+          type: Array.isArray(value) ? 'array'
+            : typeof value === 'number' ? 'number'
+            : typeof value === 'boolean' ? 'boolean'
+            : typeof value === 'object' && value !== null ? 'object'
+            : 'string',
+          scope: 'global',
+        })
+      }
+      synced += 1
+    }
+    if (synced > 0) {
+      useWorkflowStore.getState().addLog({
+        level: 'info',
+        message: `已同步后端执行产生的 ${synced} 个变量到「全局变量」面板`,
+      })
+    }
+  } catch (e) {
+    console.warn('[MonitorPage] 同步后端执行变量失败:', e)
+  }
+  return 'done'
+}
+
 function App() {
   const setDataAssets = useWorkflowStore((state) => state.setDataAssets)
   const setImageAssets = useWorkflowStore((state) => state.setImageAssets)
@@ -177,7 +277,9 @@ function App() {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('auto_close') === 'true') {
         console.log('[AutoClose] 执行完成，正在自动关闭监控页面...');
-        // 延迟一小会儿，让用户能看到最终状态
+        // 延迟一段时间再收尾：既要让用户看清最终状态，也要留足时间给
+        // 「执行完成后补拉完整日志」（见 hydrateMonitorPage）完成并渲染，
+        // 否则页面内容会在日志补齐前就被替换掉。
         setTimeout(() => {
           // 现代浏览器对于非 JS 打开的窗口（或者即便是 JS 打开但有些安全策略）可能拦截 window.close()
           // 我们可以尝试替换页面内容作为备选方案
@@ -189,7 +291,7 @@ function App() {
           setTimeout(() => {
             window.close();
           }, 1000);
-        }, 3000);
+        }, 8000);
       }
     };
 
@@ -264,15 +366,41 @@ function App() {
               })
               return
             }
+            // 必须走 importWorkflow：它会把文件里的节点还原成画布格式
+            // （type→moduleNode + data.moduleType，并补齐分组/便签/子流程头等）。
+            // 直接 loadWorkflow(content.nodes) 会让 React Flow 认不出节点类型，
+            // 画布只渲染成无图标无配色的默认方框（样式全丢）。
             const store = useWorkflowStore.getState()
-            store.loadWorkflow({
-              nodes: content.nodes || [],
-              edges: content.edges || [],
-              name: content.name || '未命名工作流',
-            })
+            const ok = store.importWorkflow(JSON.stringify(content))
+            if (!ok) {
+              store.addLog?.({
+                level: 'error',
+                message: `监控页加载工作流失败：「${workflowId}」内容格式无法解析。`,
+              })
+              return
+            }
             console.log(`[AutoLoad] 成功从 URL 加载工作流: ${workflowId}`)
             // 通知后端我们当前所在的工作流，这样日志和事件才能正确推送过来
             socketService.setCurrentWorkflow(workflowId!)
+
+            // 计划任务监控页：主动补齐本次执行的日志与变量。
+            // 实时日志是 socket 广播且不补发历史，页面打开/连上前推送的内容会永久错过
+            // （短工作流几乎必然错过）。这里按 task_id 拉取后端已保存的完整执行日志，
+            // 并拉取后端执行期间产生的变量，保证监控页"事后打开也能看到结果"。
+            const taskId = urlParams.get('task_id')
+            if (taskId) {
+              const state = await hydrateMonitorPage(taskId)
+              // 监控页通常在任务「刚开始执行」时就被打开，此刻后端还没写完执行记录。
+              // 因此若首次拉取到的是 running，就等执行完成事件再补拉一次真正的结果。
+              if (state === 'running') {
+                const onDone = () => {
+                  socketService.off('execution:completed', onDone)
+                  // 后端在 completed 事件之后才落盘执行记录，稍等一下再取
+                  setTimeout(() => { void hydrateMonitorPage(taskId) }, 1200)
+                }
+                socketService.on('execution:completed', onDone)
+              }
+            }
           } catch (err) {
             console.error('[AutoLoad] 从 URL 加载工作流失败:', err)
           }

@@ -229,6 +229,11 @@ export const workflowApi = {
     apiRequest<{ code: string; filename: string; target: string }>(
       `/workflows/${id}/export-script?target=${encodeURIComponent(target)}`
     ),
+  /** 取后端执行期间产生/更新的变量（计划任务等后端自治执行的结果，进程内有效） */
+  getGlobalVariables: () =>
+    apiRequest<{ variables: Record<string, unknown>; count: number }>(
+      '/workflows/global-variables'
+    ),
 }
 
 // ==================== 本地工作流 API ====================
@@ -238,7 +243,13 @@ export const localWorkflowApi = {
       method: 'POST', 
       body: JSON.stringify({ folder }) 
     }),
-  get: (id: string) => apiRequest(`/local-workflows/${id}`),
+  /** 读取单个本地工作流内容。
+   *  注意后端真实路由是 /local-workflows/load/{filename:path}（历史上这里误写成
+   *  /local-workflows/{id}，该路径没有对应路由、请求恒 404，导致监控页加载工作流、
+   *  AI 技能读取本地工作流等功能全部静默失效）。
+   *  该端点在未传 folder 时会用「活动工作流文件夹」兜底，并自动兼容 WebDAV。 */
+  get: (filename: string) =>
+    apiRequest(`/local-workflows/load/${encodeURIComponent(filename)}`),
   save: (data: any) =>
     apiRequest('/local-workflows/save-to-folder', { method: 'POST', body: JSON.stringify(data) }),
   delete: (id: string) =>

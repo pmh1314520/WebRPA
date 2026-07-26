@@ -579,9 +579,12 @@ async def startup_event():
                     # （/editor/<id> 路径形式只支持字母数字，中文名会匹配不到）。
                     from urllib.parse import quote as _url_quote
                     _wf_param = _url_quote(str(workflow_filename), safe="")
+                    # 附带 task_id：监控页据此在加载完成后主动拉取本次执行的
+                    # 完整日志与执行产生的变量，避免"错过实时推送就什么都看不到"
+                    _task_param = f"&task_id={_url_quote(str(task_id), safe='')}" if task_id else ""
                     monitor_url = (
                         f"http://{frontend_host}:{frontend_port}/"
-                        f"?workflow={_wf_param}&auto_close=true"
+                        f"?workflow={_wf_param}&auto_close=true{_task_param}"
                     )
                     print(f"[ScheduledTask] 正在打开前端监控页面: {monitor_url}")
                     webbrowser.open(monitor_url)
@@ -612,14 +615,75 @@ async def startup_event():
                     'type': 'msedge', 'executablePath': None, 'fullscreen': False, 'launchArgs': None,
                 }
 
+            # ===== 向前端推送执行事件（监控页依赖这些事件显示实时日志/节点高亮）=====
+            # 历史缺陷：计划任务的执行器不带任何回调，导致「自动打开监控页」打开后
+            # 画布不高亮、底栏无日志、也收不到 execution:completed，
+            # 「任务触发时自动打开编辑页方便查看日志」这句承诺完全落空。
+            # 这里按手动运行（api/workflows.py 的 run_execution）的同一套事件补齐。
+            _evt_wf_id = workflow_filename  # 与监控页 URL 传入的标识保持一致
+
+            async def _sched_on_log(entry) -> None:
+                try:
+                    level = getattr(getattr(entry, 'level', None), 'value', None) or 'info'
+                    details = getattr(entry, 'details', None) or {}
+                    await sio.emit('execution:log', {
+                        'workflowId': _evt_wf_id,
+                        'log': {
+                            'id': str(getattr(entry, 'id', '') or ''),
+                            'level': str(level),
+                            'message': getattr(entry, 'message', '') or '',
+                            'nodeId': getattr(entry, 'node_id', None),
+                            'duration': getattr(entry, 'duration', None),
+                            'isUserLog': bool(details.get('is_user_log')),
+                            'isSystemLog': bool(details.get('is_system_log')),
+                        },
+                    })
+                except Exception:
+                    pass
+
+            async def _sched_on_node_start(node_id: str) -> None:
+                try:
+                    await sio.emit('execution:node_start', {
+                        'workflowId': _evt_wf_id, 'nodeId': node_id,
+                    })
+                except Exception:
+                    pass
+
+            async def _sched_on_node_complete(node_id: str, node_result) -> None:
+                try:
+                    await sio.emit('execution:node_complete', {
+                        'workflowId': _evt_wf_id, 'nodeId': node_id,
+                        'success': bool(getattr(node_result, 'success', False)),
+                    })
+                except Exception:
+                    pass
+
+            async def _sched_on_data_row(row: dict) -> None:
+                try:
+                    await sio.emit('execution:data_row', {
+                        'workflowId': _evt_wf_id, 'row': row,
+                    })
+                except Exception:
+                    pass
+
             executor = WorkflowExecutor(
                 workflow=workflow,
                 headless=is_headless,  # 根据任务配置决定是否无头模式
                 browser_config=scheduled_browser_config,
+                on_log=_sched_on_log,
+                on_node_start=_sched_on_node_start,
+                on_node_complete=_sched_on_node_complete,
+                on_data_row=_sched_on_data_row,
             )
             
             # 设置user_data_dir以使用持久化数据
             executor.context._user_data_dir = str(browser_data_dir)
+
+            # 通知前端执行已开始（监控页据此清空旧日志、进入运行态）
+            try:
+                await sio.emit('execution:started', {'workflowId': _evt_wf_id})
+            except Exception:
+                pass
             
             executions_store[workflow_filename] = executor
             
@@ -634,10 +698,15 @@ async def startup_event():
             # 收集数据
             collected_data = executor.get_collected_data()
             
-            # 从 executor.logger 获取完整的执行日志 (针对计划任务)
+            # 取本次执行的完整逐条日志（用于计划任务的「日志」查看）
+            # 历史缺陷：这里取的是 executor.logger.logs，但 WorkflowExecutor 从来没有
+            # logger 属性，条件恒不成立 → full_logs 恒为空 → 计划任务日志里看不到任何
+            # 工作流执行日志。实际日志在 executor.context 里（context.add_log 写入）。
             full_logs = []
-            if hasattr(executor, 'logger') and hasattr(executor.logger, 'logs'):
-                full_logs = executor.logger.logs
+            try:
+                full_logs = executor.context.get_logs()
+            except Exception as _le:
+                print(f"[ScheduledTask] 读取执行日志失败: {_le}")
             
             # 保存结果
             execution_results[workflow_filename] = result
@@ -658,6 +727,23 @@ async def startup_event():
             # 判断执行状态
             is_success = result.status.value == 'completed'
             is_stopped = result.status.value == 'stopped'
+
+            # 通知前端执行结束：监控页据此结束运行态、补拉完整日志，
+            # 带 auto_close 时也依赖该事件收尾关闭页面。
+            try:
+                await sio.emit('execution:completed', {
+                    'workflowId': _evt_wf_id,
+                    'result': {
+                        'status': result.status.value,
+                        'executedNodes': result.executed_nodes,
+                        'failedNodes': result.failed_nodes,
+                        'dataFile': getattr(result, 'data_file', None),
+                    },
+                    'collectedData': collected_data[:200] if isinstance(collected_data, list) else [],
+                    'collectedDataTotal': len(collected_data) if isinstance(collected_data, list) else 0,
+                })
+            except Exception as _ee:
+                print(f"[ScheduledTask] 发送 execution:completed 失败: {_ee}")
 
             # 记录执行历史 + 失败告警（异常隔离）
             try:

@@ -292,6 +292,89 @@ def test_write_lock_probe_on_free_file(tmp_path):
     assert _is_file_write_locked(str(f)) is False
 
 
+class _RecordingDoc:
+    """记录 Close 传入的保存选项"""
+
+    def __init__(self, log):
+        self.log = log
+
+    def Close(self, opt):
+        self.log.append(("Close", opt))
+
+
+class _RecordingApp:
+    def __init__(self, log):
+        self.log = log
+
+    def Quit(self):
+        self.log.append(("Quit",))
+
+
+def _make_session(log, read_only: bool):
+    from app.executors.word_automation import _WordWorker
+    return {
+        "app": _RecordingApp(log), "doc": _RecordingDoc(log), "path": "",
+        "worker": _WordWorker(), "engine": "", "readOnly": read_only,
+    }
+
+
+def test_cleanup_saves_writable_document():
+    """兜底清理：可写打开的文档要保存后关闭，避免流程异常让用户白写"""
+    from app.executors.base import ExecutionContext
+    from app.executors.word_automation import WD_SAVE_CHANGES, cleanup_word_sessions
+
+    ctx = ExecutionContext()
+    log = []
+    setattr(ctx, "_word_docs", {"a": _make_session(log, read_only=False)})
+    assert asyncio.run(cleanup_word_sessions(ctx)) == 1
+    assert ("Close", WD_SAVE_CHANGES) in log
+    assert ("Quit",) in log
+
+
+def test_cleanup_does_not_save_readonly_document():
+    """兜底清理：只读打开的文档一律不保存（否则会弹「另存为」把收尾卡死）"""
+    from app.executors.base import ExecutionContext
+    from app.executors.word_automation import (
+        WD_DO_NOT_SAVE_CHANGES, WD_SAVE_CHANGES, cleanup_word_sessions,
+    )
+
+    ctx = ExecutionContext()
+    log = []
+    setattr(ctx, "_word_docs", {"a": _make_session(log, read_only=True)})
+    assert asyncio.run(cleanup_word_sessions(ctx)) == 1
+    assert ("Close", WD_DO_NOT_SAVE_CHANGES) in log
+    assert ("Close", WD_SAVE_CHANGES) not in log
+
+
+def test_cleanup_mixed_sessions_use_respective_policy():
+    """多文档混合时，各自按自己的打开方式决定是否保存"""
+    from app.executors.base import ExecutionContext
+    from app.executors.word_automation import (
+        WD_DO_NOT_SAVE_CHANGES, WD_SAVE_CHANGES, cleanup_word_sessions,
+    )
+
+    ctx = ExecutionContext()
+    rw_log, ro_log = [], []
+    setattr(ctx, "_word_docs", {
+        "rw": _make_session(rw_log, read_only=False),
+        "ro": _make_session(ro_log, read_only=True),
+    })
+    assert asyncio.run(cleanup_word_sessions(ctx)) == 2
+    assert ("Close", WD_SAVE_CHANGES) in rw_log
+    assert ("Close", WD_DO_NOT_SAVE_CHANGES) in ro_log
+
+
+def test_session_records_read_only_flag():
+    """会话必须记录 readOnly，兜底清理与关闭模块都依赖它决定保存策略"""
+    from app.executors.base import ExecutionContext
+    from app.executors.word_automation import _get_session, _put_session
+
+    ctx = ExecutionContext()
+    _put_session(ctx, "k", object(), object(), "D:/a.docx",
+                 worker=None, engine="Microsoft Word", read_only=True)
+    assert _get_session(ctx, "k")["readOnly"] is True
+
+
 def test_missing_session_gives_actionable_error():
     """未打开文档就调用其它 Word 模块时，要提示先用「打开/新建Word」"""
     from app.executors.base import ExecutionContext
