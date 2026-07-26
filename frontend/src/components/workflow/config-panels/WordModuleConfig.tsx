@@ -171,6 +171,14 @@ const WORD_FIELD_SCHEMAS: Record<string, FieldDef[]> = {
     { key: 'visible', label: '显示 Word 窗口', type: 'switch', default: true, hint: '关闭后在后台静默操作（更快，且不干扰用户）。本机装 Microsoft Word 或 WPS Office 均可，会自动选择可用的那个。' },
     { key: 'createIfMissing', label: '文件不存在时新建', type: 'switch', default: true },
     { key: 'readOnly', label: '以只读方式打开', type: 'switch', default: false },
+    {
+      key: 'onLocked', label: '文档被占用时', type: 'select', default: 'readonly',
+      options: [
+        { value: 'readonly', label: '自动以只读方式打开（推荐）' },
+        { value: 'fail', label: '直接报错停止' },
+      ],
+      hint: '文档已在 Word/WPS 中打开、或残留了 ~$ 锁文件时，直接打开会弹窗并卡住。默认自动降级为只读，读取类流程可照常运行；需要写入时请选择报错停止。',
+    },
   ],
 
   // ===== 导出 PDF =====

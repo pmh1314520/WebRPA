@@ -2574,6 +2574,13 @@ class WorkflowExecutor:
             await asyncio.to_thread(_dp.cleanup_dp)
         except Exception:
             pass
+        # Word/WPS 会话兜底清理：工作流没执行到「关闭Word」就结束（失败/停止/超时）时，
+        # 残留进程会一直占着文档，导致下次运行「打开Word」被文件占用弹窗挂死。
+        try:
+            from app.executors.word_automation import cleanup_word_sessions
+            await cleanup_word_sessions(self.context)
+        except Exception as e:
+            print(f"[WorkflowExecutor] 清理 Word 会话时出错: {e}")
         try:
             # 检查是否在使用共享的 browser_engine context，如果是则不关闭
             from app.services import browser_engine as _be

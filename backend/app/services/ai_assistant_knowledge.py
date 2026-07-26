@@ -865,7 +865,7 @@ MODULE_CATEGORIES: dict[str, dict[str, str]] = {
         "org_to_html": "Org-mode 转 HTML",
         "universal_doc_convert": "通用文档转换（基于 pandoc，支持几十种格式互转）",
     },
-    "Word自动化": {
+    "Word自动化（Word / WPS COM）": {
         "word_open": "打开/新建 Word 文档（后续所有 word_* 模块的前置步骤，用 docKey 标识文档；自动适配 Microsoft Word 或 WPS 文字，两者装其一即可）",
         "word_read_text": "读取 Word 文本（全文/全部段落/指定段落/当前选区）",
         "word_write_text": "写入文本至 Word（追加文末/光标处插入/覆盖全文，可设字体字号加粗斜体）",
@@ -876,7 +876,8 @@ MODULE_CATEGORIES: dict[str, dict[str, str]] = {
         "word_insert_table": "插入 Word 表格（可用二维数组/字典列表自动填充数据）",
         "word_insert_image": "Word 插入图片（可指定宽高、居中）",
         "word_insert_hyperlink": "Word 插入超链接（地址/显示文字/悬停提示）",
-        "word_to_pdf": "Word 导出 PDF（可导出已打开文档，也可直接转换指定文件）",
+        "word_to_pdf": "Word 导出 PDF（可导出已打开文档，也可直接转换指定文件；"
+                       "注意 WPS 个人免费版可能限制 COM 导出 PDF，此时可改用「保存Word」存 docx 后再用「通用文档转换」转 PDF）",
         "word_save": "保存 Word（原地保存或另存为）",
         "word_close": "关闭 Word（可选是否保存改动、是否关闭全部文档）",
     },

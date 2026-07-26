@@ -3800,6 +3800,10 @@ Object.assign(UI_DICT, {
   'WPS 文字': 'WPS Writer',
   '文件不存在时新建': 'Create the file if it does not exist',
   '以只读方式打开': 'Open as read-only',
+  '文档被占用时': 'When the document is in use',
+  '自动以只读方式打开（推荐）': 'Open as read-only automatically (recommended)',
+  '直接报错停止': 'Fail and stop',
+  '文档已在 Word/WPS 中打开、或残留了 ~$ 锁文件时，直接打开会弹窗并卡住。默认自动降级为只读，读取类流程可照常运行；需要写入时请选择报错停止。': 'If the document is already open in Word/WPS, or a leftover ~$ lock file exists, opening it directly pops up a dialog and hangs. By default it falls back to read-only so read flows keep working; choose "Fail and stop" when you need write access.',
 
   // ---- 导出 PDF ----
   '源 Word 文件（留空则导出已打开的文档）': 'Source Word file (leave blank to export the opened document)',
