@@ -1,6 +1,7 @@
 """工作流API路由"""
 import asyncio
 from datetime import datetime
+from types import SimpleNamespace
 from typing import Optional, Any
 from uuid import uuid4
 from pathlib import Path
@@ -567,55 +568,9 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             raise HTTPException(status_code=400, detail="工作流正在执行中")
     
     # 创建执行器
-    async def on_log(log: LogEntry):
-        # 检查是否有客户端启用了日志接收
-        if not is_log_enabled():
-            return
-        
-        # 判断是否是用户日志（打印日志模块）或系统日志（流程开始/结束）
-        is_user_log = log.details.get('is_user_log', False) if log.details else False
-        is_system_log = log.details.get('is_system_log', False) if log.details else False
-
-        # ⚠️ 性能关键：简洁模式（未开启详细日志）下，前端只显示 用户日志/系统日志/错误/警告，
-        # 其余普通 INFO 节点日志会被前端直接丢弃。若后端仍把它们全部 emit，密集循环工作流
-        # 会产生成千上万条无用日志灌满 WebSocket 发送队列，导致真正要显示的日志被挤到结束
-        # 才送达。这里在源头就按与前端一致的规则过滤，大幅降低 WebSocket 流量，实现实时日志。
-        if not is_verbose_enabled():
-            lvl = log.level.value if hasattr(log.level, 'value') else str(log.level)
-            if not is_user_log and not is_system_log and lvl not in ('error', 'warning'):
-                return
-        
-        # 将日志添加到批处理队列
-        log_data = {
-            'id': log.id,
-            'timestamp': log.timestamp.isoformat(),
-            'level': log.level.value,
-            'nodeId': log.node_id,
-            'message': log.message,
-            'duration': log.duration,
-            'isUserLog': is_user_log,
-            'isSystemLog': is_system_log,
-        }
-        
-        # 使用批量发送机制
-        await batch_emit_log(workflow_id, log_data)
-    
-    async def on_node_start(node_id: str):
-        await sio.emit('execution:node_start', {
-            'workflowId': workflow_id,
-            'nodeId': node_id,
-        })
-    
-    async def on_node_complete(node_id: str, result):
-        await sio.emit('execution:node_complete', {
-            'workflowId': workflow_id,
-            'nodeId': node_id,
-            'success': result.success,
-            'duration': result.duration,
-            'error': result.error,
-            # 注意：不发送 input 和 output，因为数据量可能很大
-        })
-    
+    # 日志 / 节点开始 / 节点完成 / 数据行四个回调走共享推送层
+    # （make_execution_callbacks，与计划任务路径同构，含两道源头过滤与合批通道）。
+    # on_variable_update 是手动路径独有能力（带 200ms 节流），单独定义并显式传入。
     async def on_variable_update(name: str, value):
         # ⚠️ 性能关键：前端并不消费 execution:variable_update 事件（仅执行结束后保存全局变量）。
         # 在密集循环工作流中，每次 set_variable 都 emit 会产生成千上万条无人接收的消息，
@@ -652,23 +607,10 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             'type': var_type,
         })
     
-    async def on_data_row(row: dict):
-        # 批量推送：累积到 DATA_ROW_BATCH_SIZE 条就发一批，避免逐条 emit 灌满 WebSocket。
-        # 不足一批的尾部行会在节点推进/工作流结束时被 flush（见 run_execution）。
-        async with data_row_batch_lock:
-            q = data_row_batch_queue.setdefault(workflow_id, [])
-            q.append(row)
-            should_flush = len(q) >= DATA_ROW_BATCH_SIZE
-        if should_flush:
-            await flush_data_rows(workflow_id)
-    
     executor = WorkflowExecutor(
         workflow=workflow,
-        on_log=on_log,
-        on_node_start=on_node_start,
-        on_node_complete=on_node_complete,
+        **make_execution_callbacks(workflow_id),
         on_variable_update=on_variable_update,
-        on_data_row=on_data_row,
         headless=options.headless,
         browser_config={
             'type': options.browserConfig.type if options.browserConfig else 'msedge',
@@ -721,7 +663,7 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
                 return
         data_flush_task = asyncio.create_task(_periodic_data_flush())
         try:
-            await sio.emit('execution:started', {'workflowId': workflow_id})
+            await emit_execution_started(workflow_id)
             
             print(f"[run_execution] 开始执行工作流: {workflow_id}")
             import time as _t_hist
@@ -783,16 +725,8 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             except Exception:
                 pass
             await flush_data_rows(workflow_id)
-            # completed 仅作兜底同步：前端已通过 data_row_batch 流式收齐全部数据，
-            # 这里附带一份预览（封顶 5000，避免单条 socket 消息过大）；前端若已流式收到
-            # 更多行则不会被它截断（见前端 execution:completed 处理）。完整数据始终可通过
-            # /workflows/{id}/data/full 接口或落盘文件获取。
-            collected_data_to_send = execution_data.get(workflow_id, [])
-            full_total = len(collected_data_to_send)
-            if full_total > 5000:
-                collected_data_to_send = collected_data_to_send[:5000]
 
-            # 选择器自愈记录（供前端询问是否写回工作流）
+            # 选择器自愈记录（供前端询问是否写回工作流，手动路径独有）
             healed_selectors = []
             try:
                 ex = executions_store.get(workflow_id)
@@ -800,18 +734,15 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             except Exception:
                 healed_selectors = []
 
-            await sio.emit('execution:completed', {
-                'workflowId': workflow_id,
-                'result': {
-                    'status': result.status.value,
-                    'executedNodes': result.executed_nodes,
-                    'failedNodes': result.failed_nodes,
-                    'dataFile': result.data_file,
-                },
-                'collectedData': collected_data_to_send,
-                'collectedDataTotal': full_total,
-                'healedSelectors': healed_selectors,
-            })
+            # completed 仅作兜底同步：前端已通过 data_row_batch 流式收齐全部数据，
+            # 共享推送层会附带一份预览（封顶 COMPLETED_DATA_PREVIEW_LIMIT）并报真实总数；
+            # 完整数据始终可通过 /workflows/{id}/data/full 接口或落盘文件获取。
+            await emit_execution_completed(
+                workflow_id,
+                result,
+                collected_data=execution_data.get(workflow_id, []),
+                healed_selectors=healed_selectors,
+            )
             print(f"[run_execution] execution:completed 事件已发送")
             
             # 等待一小段时间确保事件被传输
@@ -845,17 +776,21 @@ async def execute_workflow(workflow_id: str, background_tasks: BackgroundTasks, 
             except Exception as _he:
                 print(f"[run_execution] 记录失败历史/告警失败: {_he}")
 
-            # 即使出现异常，也要发送 execution:completed 事件
-            await sio.emit('execution:completed', {
-                'workflowId': workflow_id,
-                'result': {
-                    'status': 'failed',
-                    'executedNodes': executor.executed_nodes if executor else 0,
-                    'failedNodes': executor.failed_nodes if executor else 1,
-                    'dataFile': None,
-                },
-                'collectedData': [],
-            })
+            # 即使出现异常，也要发送 execution:completed 事件。
+            # 此处 result 通常为 None（异常发生在 executor.execute() 内部），
+            # 但模块数必须照实上报执行器已累计的值，不能被归一成 0，
+            # 因此构造一个轻量结果对象传给共享推送层。
+            # 异常出口不传 healed_selectors：载荷不含 healedSelectors 键（与修复前一致）。
+            await emit_execution_completed(
+                workflow_id,
+                SimpleNamespace(
+                    status='failed',
+                    executed_nodes=(executor.executed_nodes if executor else 0),
+                    failed_nodes=(executor.failed_nodes if executor else 1),
+                    data_file=None,
+                ),
+                collected_data=[],
+            )
             print(f"[run_execution] execution:completed 事件已发送（异常情况）")
         
         finally:

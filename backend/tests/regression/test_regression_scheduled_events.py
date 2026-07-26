@@ -1014,33 +1014,36 @@ class TestReturnedResultDictShape:
         assert sched_env.sio.count("execution:completed") == 1
 
 
-# ===== 任务 7.4：阶段一防回归（run_execution 源码指纹） =====
+# ===== 任务 7.4：run_execution 源码指纹防回归（已随任务 10 更新到阶段二基线） =====
 #
-# 阶段一的硬约束是「手动运行路径的 `run_execution` 函数体零改动」（需求 2.20 / 3.1）：
-# 共享推送层只能是纯新增，先由计划任务单边接入并实机验收，手动路径在阶段二才切换。
+# 这条用例最初为阶段一的硬约束「手动运行路径的 `run_execution` 函数体零改动」
+# （需求 2.20 / 3.1）而写：共享推送层只能是纯新增，先由计划任务单边接入并实机验收。
 # 光靠行为断言守不住这条约束（改错了照样可能全绿），所以这里直接把源码文本本身钉住：
 # 用 `ast` 取出 `run_execution` 节点的源码片段，与下面的基线指纹（字符数 + SHA256）比对。
 #
-# 基线来源与校验方式：基线取自**修复前**的源码，即 git HEAD（提交 17cae48，早于本次 spec
-# 的任何改动）中的 `backend/app/api/workflows.py`。采集时已用
-# `git show HEAD:backend/app/api/workflows.py` 取出 HEAD 版本，按同样的 ast 取法拿到
-# `run_execution` 源码片段，与当前工作区版本逐字节比对确认完全一致（长度均 9362），
-# 才把该指纹写为基线。因此这条基线代表的是"修复前的原样"，而不是"改完之后的现状"。
+# 阶段一的基线取自**修复前**的源码，即 git HEAD（提交 17cae48，早于本次 spec 的任何改动）
+# 中的 `backend/app/api/workflows.py`，长度 9362。
 #
-# 【阶段二注意】任务 10 会把 `run_execution` 切换到共享推送函数，届时本用例**必然失败**，
-# 这是设计意图而非误报。那时需要：
-#   1. 重新采集指纹（运行本文件，失败信息里会直接给出当前的 length / sha256）；
-#   2. 更新下面两个基线常量；
-#   3. 在提交说明中显式标注"阶段二切换手动路径，同步更新 run_execution 源码基线"，
-#      让 review 能看到这次指纹变更是有意为之。
-# 在阶段一（任务 1-8）期间，本用例失败一律视为回归，应还原对 `run_execution` 的改动。
+# 【阶段二已切换】任务 10 已把 `run_execution` 切换到共享推送函数（四个回调改为
+# `**make_execution_callbacks(workflow_id)`，内联 `sio.emit` 改为 `emit_execution_started` /
+# `emit_execution_completed`，completed 显式传 `healed_selectors`），下面的基线常量与语义
+# 锚点已同步更新为**阶段二切换后的新基线**。此后本用例的职责是守住手动路径不再被意外改动：
+# 任何未经 spec 授权的 `run_execution` 变更都会让它失败；确属有意变更时，
+# 按失败信息里给出的 length / sha256 更新基线，并在提交说明中标注。
 
 WORKFLOWS_PY = _BACKEND_DIR / "app" / "api" / "workflows.py"
 
-# 修复前 `run_execution` 源码片段的指纹（换行统一为 \n 后计算）。
-RUN_EXECUTION_BASELINE_LENGTH = 9362
+# `run_execution` 源码片段的指纹（换行统一为 \n 后计算）。
+#
+# 【当前基线 = 阶段二切换后的新基线】任务 10 已把 `run_execution` 切换到共享推送函数
+# （四个回调改为 `**make_execution_callbacks(workflow_id)`，内联 emit 改为
+# `emit_execution_started` / `emit_execution_completed`），因此本基线已从"修复前原样"
+# 更新为"阶段二切换后的现状"。阶段一的原始基线为 length=9362、
+# sha256=c385ce212f5452ba0faa046a8ba182525271854b6a848674b362b439aa80b8f7，仅作历史记录。
+# 从此刻起，本用例的职责由"守住阶段一零改动"转为"守住阶段二切换后的手动路径不再被意外改动"。
+RUN_EXECUTION_BASELINE_LENGTH = 8954
 RUN_EXECUTION_BASELINE_SHA256 = (
-    "c385ce212f5452ba0faa046a8ba182525271854b6a848674b362b439aa80b8f7"
+    "9364ff6c464dd7f529af90b436ab94b501c30ba5dc41052e8d207b39043cfef2"
 )
 
 
@@ -1074,13 +1077,13 @@ def extract_run_execution_source() -> str:
 
 @pytest.mark.regression
 class TestPhaseOneRunExecutionUnchanged:
-    """阶段一防回归：`run_execution` 源码必须与修复前逐字节一致。"""
+    """`run_execution` 源码必须与基线逐字节一致（基线已随任务 10 更新到阶段二切换后）。"""
 
     def test_run_execution_source_matches_pre_fix_baseline(self):
-        """`run_execution` 源码指纹（长度 + SHA256）与修复前基线完全一致。
+        """`run_execution` 源码指纹（长度 + SHA256）与基线完全一致。
 
-        断言失败说明手动运行路径在阶段一被改动了。除任务 10（阶段二切换）之外，
-        任何改动都属于回归，应当还原；确属阶段二切换时，按本节顶部注释更新基线。
+        断言失败说明手动运行路径被改动了。除 spec 明确授权的切换之外，
+        任何改动都属于回归，应当还原；确属有意变更时，按本节顶部注释更新基线。
 
         **Validates: Requirements 2.20, 3.1**
         """
@@ -1112,10 +1115,12 @@ class TestPhaseOneRunExecutionUnchanged:
         """
         segment = extract_run_execution_source()
 
+        # 阶段二切换后，开始/完成事件不再是内联的 sio.emit('execution:...')，
+        # 而是共享推送函数调用；`healedSelectors` 键由 `healed_selectors=` 参数显式传入。
         for anchor in (
-            "execution:started",
-            "execution:completed",
-            "healedSelectors",
+            "emit_execution_started",
+            "emit_execution_completed",
+            "healed_selectors=healed_selectors",
             "flush_data_rows",
             "_periodic_data_flush",
         ):
