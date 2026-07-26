@@ -3717,8 +3717,7 @@ Object.assign(UI_DICT, {
   '获取功能包列表失败': 'Failed to fetch the feature pack list',
   '安装失败': 'Install failed',
   '卸载失败': 'Uninstall failed',
-  // 文件选择器
-  '浏览': 'Browse',
+  // 文件选择器（注：'浏览' 已在前文通用词条中定义，此处不再重复，避免 TS1117 重复 key）
   '打开系统文件选择框，选择功能包 zip': 'Open the system file picker to choose a feature pack zip',
   '点击「浏览」选择，或粘贴功能包 zip 的完整路径': 'Click "Browse" to select, or paste the full path of the feature pack zip',
   '打开文件选择框失败': 'Failed to open the file picker',
@@ -3759,4 +3758,164 @@ Object.assign(PHRASES, {
   '设备扩展': 'Device extensions',
   'AI 能力': 'AI capabilities',
   '网络扩展': 'Network extensions',
+})
+
+// ============================================================
+// Word 自动化 / 工作流串联 / 计划任务修复 相关文案
+// ============================================================
+Object.assign(UI_DICT, {
+  // ---- 侧边栏分类与模块名 ----
+  'Word自动化': 'Word Automation',
+  '打开/新建Word': 'Open/New Word',
+  'Word导出PDF': 'Word to PDF',
+  '读取Word文本': 'Read Word Text',
+  '写入文本至Word': 'Write Text to Word',
+  '定位Word光标': 'Set Word Cursor',
+  '移动Word光标': 'Move Word Cursor',
+  '替换Word文本': 'Replace Word Text',
+  '读取Word表格': 'Read Word Table',
+  '插入Word表格': 'Insert Word Table',
+  'Word插入图片': 'Insert Word Image',
+  'Word插入超链接': 'Insert Word Hyperlink',
+  '保存Word': 'Save Word',
+  '关闭Word': 'Close Word',
+  '运行其它工作流': 'Run Another Workflow',
+
+  // ---- Word 通用字段 ----
+  '文档标识（留空用最近打开的文档）': 'Document key (leave blank to use the most recently opened document)',
+  '同时操作多个 Word 文档时，用这个标识区分；只开一个文档时留空即可。': 'Use this key to distinguish multiple Word documents; leave blank when only one document is open.',
+  '文档标识': 'Document key',
+  '后续 Word 模块用这个标识引用本文档；只处理一个文档时保持默认即可。': 'Later Word modules reference this document by this key; keep the default when handling a single document.',
+  '插入位置': 'Insert position',
+  '光标处': 'At cursor',
+  '文档末尾': 'End of document',
+  '该 Word 模块暂无可配置项': 'This Word module has no configurable options',
+
+  // ---- 打开/新建 Word ----
+  'Word 文件路径': 'Word file path',
+  '如 D:\\报告.docx，支持 {变量名}': 'e.g. D:\\report.docx, supports {variable}',
+  '留空则新建一个未命名空白文档（后续需用「保存Word」指定另存路径）。': 'Leave blank to create an unnamed blank document (then use "Save Word" to specify a path).',
+  '显示 Word 窗口': 'Show the Word window',
+  '关闭后在后台静默操作（更快，且不干扰用户）。本机装 Microsoft Word 或 WPS Office 均可，会自动选择可用的那个。': 'When off, work silently in the background (faster and non-intrusive). Either Microsoft Word or WPS Office works — whichever is available is used automatically.',
+  'WPS 文字': 'WPS Writer',
+  '文件不存在时新建': 'Create the file if it does not exist',
+  '以只读方式打开': 'Open as read-only',
+
+  // ---- 导出 PDF ----
+  '源 Word 文件（留空则导出已打开的文档）': 'Source Word file (leave blank to export the opened document)',
+  '如 D:\\报告.docx': 'e.g. D:\\report.docx',
+  '填了路径就独立转换该文件（无需先打开）；留空则导出当前已打开的文档。': 'With a path it converts that file standalone (no need to open it first); blank exports the currently opened document.',
+  '输出 PDF 路径（留空同名同目录）': 'Output PDF path (blank = same name and folder)',
+  '如 D:\\报告.pdf': 'e.g. D:\\report.pdf',
+  'PDF 路径存储到变量': 'Store the PDF path in a variable',
+
+  // ---- 读取文本 ----（'读取范围' 前文已有，不再重复定义）
+  '全文（字符串）': 'Whole document (string)',
+  '全部段落（列表）': 'All paragraphs (list)',
+  '指定段落': 'A specific paragraph',
+  '当前选区': 'Current selection',
+  '段落序号（从 1 开始）': 'Paragraph index (starting at 1)',
+
+  // ---- 写入文本 ----
+  '写入内容': 'Content to write',
+  '支持 {变量名}，可多行': 'Supports {variable}; multiline allowed',
+  '写入方式': 'Write mode',
+  '追加到文末': 'Append to the end',
+  '在光标处插入': 'Insert at the cursor',
+  '覆盖全文': 'Replace the whole document',
+  '写完另起一段': 'Start a new paragraph afterwards',
+  '字体（留空不改）': 'Font (blank = keep current)',
+  '字号（0 表示不改）': 'Font size (0 = keep current)',
+})
+
+Object.assign(UI_DICT, {
+  // ---- 定位光标 ----
+  '定位到': 'Move cursor to',
+  '文档开头': 'Start of document',
+  '文档结尾': 'End of document',
+  '指定段落开头': 'Start of a specific paragraph',
+  '指定段落结尾': 'End of a specific paragraph',
+  '查找到的文本处': 'A matched text position',
+  '第几处匹配': 'Which occurrence',
+  '选中匹配到的文本': 'Select the matched text',
+  '开启后匹配文本会被选中（便于紧接着覆盖写入）；关闭则光标停在匹配文本之后。': 'When on, the matched text is selected (handy for overwriting it next); when off, the cursor stops right after the match.',
+
+  // ---- 移动光标 ----
+  // 注：'字符' '行' '段落' 前文已有词条，此处不再重复定义
+  '移动单位': 'Move by',
+  '单词': 'Word',
+  '句': 'Sentence',
+  '移动数量': 'Amount to move',
+  '移动方向': 'Direction',
+  '向后（往文末）': 'Forward (towards the end)',
+  '向前（往文首）': 'Backward (towards the start)',
+  '同时选中经过的内容': 'Also select the text passed over',
+
+  // ---- 替换文本 ----
+  '查找内容': 'Find what',
+  '支持 {变量名}，留空表示删除': 'Supports {variable}; leave blank to delete the matches',
+  '替换全部（关闭则只替换第一处）': 'Replace all (off = only the first match)',
+  '全字匹配': 'Match whole word',
+  '使用通配符': 'Use wildcards',
+  '替换次数存储到变量': 'Store the replacement count in a variable',
+
+  // ---- 读取 / 插入表格 ----
+  '表格序号（从 1 开始）': 'Table index (starting at 1)',
+  '首行作为表头（结果为字典列表）': 'Use the first row as headers (result is a list of dicts)',
+  '关闭则返回二维数组；开启则返回 [{列名: 值}] 便于直接写 Excel。': 'When off it returns a 2D array; when on it returns [{column: value}], ready to write into Excel.',
+  '表格数据（二维数组/字典列表/变量名）': 'Table data (2D array / list of dicts / variable name)',
+  '如 [["姓名","年龄"],["张三",20]]，也可直接填变量名': 'e.g. [["Name","Age"],["Alice",20]]; a variable name also works',
+  '填了数据就按数据自动决定行列数并填充；留空则按下面的行数列数插入空表。': 'With data, rows/columns are derived from it and filled in; leave blank to insert an empty table using the row/column counts below.',
+  '行数（无数据时必填）': 'Rows (required when no data is given)',
+  '列数（无数据时必填）': 'Columns (required when no data is given)',
+  '显示边框': 'Show borders',
+  '首行加粗': 'Bold the first row',
+
+  // ---- 插入图片 / 超链接 ----（'图片路径' '链接地址' 前文已有，不再重复定义）
+  '如 D:\\logo.png，支持 {变量名}': 'e.g. D:\\logo.png, supports {variable}',
+  '宽度（磅，0 表示原始尺寸）': 'Width (points, 0 = original size)',
+  '高度（磅，0 表示原始尺寸）': 'Height (points, 0 = original size)',
+  '居中显示': 'Center it',
+  '如 https://www.pmhs.top 或本地文件路径': 'e.g. https://www.pmhs.top or a local file path',
+  '显示文字（留空显示地址本身）': 'Display text (blank = show the address itself)',
+  '如 官网首页': 'e.g. Official site',
+  '悬停提示（可选）': 'Tooltip (optional)',
+  '鼠标悬停时的提示文字': 'Text shown when hovering',
+
+  // ---- 保存 / 关闭 ----
+  '另存为路径（留空则原地保存）': 'Save-as path (blank = save in place)',
+  '如 D:\\报告_已修改.docx': 'e.g. D:\\report_edited.docx',
+  '保存路径存储到变量': 'Store the saved path in a variable',
+  '关闭前保存改动': 'Save changes before closing',
+  '关闭所有已打开的 Word 文档': 'Close all opened Word documents',
+})
+
+Object.assign(UI_DICT, {
+  // ---- 运行其它工作流 ----
+  // 注：'加载工作流列表中…' 前文已有词条，此处不再重复定义
+  '要运行的工作流': 'Workflow to run',
+  '— 从当前工作流文件夹选择 —': '— Pick from the current workflow folder —',
+  '工作流文件名，如 数据采集.json，支持 {变量名}': 'Workflow file name, e.g. scrape.json, supports {variable}',
+  '从「工作流保存文件夹」中读取，可带或不带 .json 后缀，也可填工作流名称或绝对路径。': 'Read from the workflow save folder; the .json suffix is optional, and a workflow name or absolute path also works.',
+  '等待其执行完成': 'Wait for it to finish',
+  '开启（推荐）：本模块会等目标工作流完整跑完再继续，实现「工作流1 跑完自动跑工作流2」。 关闭：只负责发起，立刻继续往下走（并行触发）。': 'On (recommended): this module waits until the target workflow finishes before continuing, giving you "run workflow 2 right after workflow 1". Off: it only fires the run and continues immediately (parallel trigger).',
+  '把当前变量传给它': 'Pass current variables to it',
+  '开启后，目标工作流可以直接用': 'When on, the target workflow can directly use',
+  '引用当前工作流已有的变量。': 'to reference variables from the current workflow.',
+  '回收它产生的变量': 'Collect the variables it produces',
+  '开启后，目标工作流里产生/更新的变量会带回到当前工作流，便于后续模块直接使用。': 'When on, variables created/updated inside the target workflow are brought back to the current workflow for later modules to use.',
+  '它失败时中断当前工作流': 'Abort this workflow if it fails',
+  '关闭则目标工作流失败也继续往下执行（失败信息仍会记入日志与结果变量）。': 'When off, execution continues even if the target workflow fails (the failure is still logged and stored in the result variable).',
+  '执行结果存储到变量': 'Store the execution result in a variable',
+  '结果为字典：': 'The result is a dict: ',
+
+  // ---- 监控页 / 计划任务提示 ----
+  // ---- 补齐残留 ----
+  '区分大小写': 'Match case',
+  '选择功能包 zip 文件': 'Choose a feature pack zip file',
+  '功能包 zip': 'Feature pack zip',
+  '监控页加载工作流失败：未找到「${workflowId}」。': 'Monitor page failed to load the workflow: "${workflowId}" not found.',
+  '请确认该工作流文件存在于当前「工作流保存文件夹」中。': 'Please make sure the workflow file exists in the current workflow save folder.',
+  '用 GET / POST 等任意方法访问以下地址即可触发（body 可选）': 'Trigger it by requesting the address below with any method such as GET or POST (body optional)',
+  '提示：地址中的端口已自动取当前后端实际端口，可直接复制使用； 在 WebRPA 内用「Webhook 请求」模块调用时也填这个完整地址。': 'Note: the port is taken from the actual backend port, so the address can be copied as-is; use this full address in the "Webhook request" module inside WebRPA too.',
 })

@@ -370,6 +370,22 @@ export type ModuleType =
   | 'rst_to_html'
   | 'org_to_html'
   | 'universal_doc_convert'
+  // Word自动化（基于 Word COM，支持光标/选区等真实 Word 语义）
+  | 'word_open'
+  | 'word_to_pdf'
+  | 'word_read_text'
+  | 'word_write_text'
+  | 'word_set_cursor'
+  | 'word_move_cursor'
+  | 'word_replace_text'
+  | 'word_read_table'
+  | 'word_insert_table'
+  | 'word_insert_image'
+  | 'word_insert_hyperlink'
+  | 'word_save'
+  | 'word_close'
+  // 工作流串联：在一条工作流里调用另一条本地工作流
+  | 'run_workflow_file'
   // 其他
   | 'export_log'
   | 'click_text'

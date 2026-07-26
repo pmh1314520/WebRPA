@@ -10,6 +10,7 @@
 export const colorClassMap: Record<string, string> = {
   'bg-blue-500': 'border-blue-500 bg-blue-100 text-blue-900',
   'bg-blue-600': 'border-blue-600 bg-blue-100 text-blue-900',
+  'bg-blue-700': 'border-blue-700 bg-blue-100 text-blue-900',
   'bg-blue-800': 'border-blue-800 bg-blue-100 text-blue-900',
   'bg-indigo-500': 'border-indigo-500 bg-indigo-100 text-indigo-900',
   'bg-indigo-600': 'border-indigo-600 bg-indigo-100 text-indigo-900',
@@ -83,7 +84,7 @@ export const moduleColors: Record<string, string> = buildModuleColors()
 
 // Tailwind 分类色 → 代表性 hex（供 minimap 等需要真实颜色值的场景，确保缩略图颜色与画布模块一致）
 const tailwindHex: Record<string, string> = {
-  'bg-blue-500': '#3b82f6', 'bg-blue-600': '#2563eb', 'bg-blue-800': '#1e40af',
+  'bg-blue-500': '#3b82f6', 'bg-blue-600': '#2563eb', 'bg-blue-700': '#1d4ed8', 'bg-blue-800': '#1e40af',
   'bg-indigo-500': '#6366f1', 'bg-indigo-600': '#4f46e5', 'bg-indigo-700': '#4338ca', 'bg-indigo-800': '#3730a3',
   'bg-purple-500': '#a855f7', 'bg-purple-600': '#9333ea', 'bg-purple-700': '#7e22ce',
   'bg-violet-500': '#8b5cf6', 'bg-violet-600': '#7c3aed', 'bg-violet-700': '#6d28d9',

@@ -262,8 +262,11 @@ def request_input_prompt_sync(variable_name: str, title: str, message: str,
                               min_value: Optional[float] = None, max_value: Optional[float] = None,
                               max_length: Optional[int] = None, required: bool = True,
                               select_options: Optional[list] = None,
-                              timeout: float = 300) -> Optional[str]:
-    """用原生窗口弹出输入框并返回用户输入（取消返回 None）。"""
+                              timeout: float = 0) -> Optional[str]:
+    """用原生窗口弹出输入框并返回用户输入（取消返回 None）。
+
+    timeout <= 0 表示不限制等待时间（与 Web 版口径一致），一直等到用户操作。
+    """
     # 自定义界面模式：主线程已有 Tk root 在跑，弹窗转交主线程（单一 Tcl 解释器，线程安全）
     if _bridge_active() and threading.current_thread() is not threading.main_thread():
         return _request_via_bridge(title, message, default_value, input_mode,

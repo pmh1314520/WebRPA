@@ -144,7 +144,9 @@ export function ScheduledTasksPage({ onClose }: ScheduledTasksPageProps = {}) {
   }
   
   return (
-    <div className="h-full flex flex-col bg-[hsl(var(--background))]">
+    // flex-1 + min-h-0：作为弹窗（max-h 容器）的子项时撑满可用高度并允许内部滚动区收缩；
+    // 原来的 h-full 在 max-h 父容器下解析不出确定高度，会导致下面的 flex-1 overflow-auto 失效、列表无法滚动。
+    <div className="h-full flex-1 min-h-0 flex flex-col bg-[hsl(var(--background))]">
       {/* 头部 */}
       <div className="modern-dialog-header">
         <div className="modern-dialog-header-icon modern-dialog-header-icon-warning">
@@ -188,8 +190,8 @@ export function ScheduledTasksPage({ onClose }: ScheduledTasksPageProps = {}) {
         </div>
       </div>
 
-      {/* 任务列表 */}
-      <div className="flex-1 overflow-auto p-5">
+      {/* 任务列表（min-h-0 保证在 flex 容器内能真正滚动，而不是被内容撑高） */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-5">
         {loading && tasks.length === 0 ? (
           <div className="flex items-center justify-center h-64 flex-col gap-3">
             <div className="spinner spinner-lg" />

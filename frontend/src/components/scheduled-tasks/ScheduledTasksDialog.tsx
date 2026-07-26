@@ -17,7 +17,9 @@ export function ScheduledTasksDialog({ open, onClose }: ScheduledTasksDialogProp
         onClick={onClose}
       >
         <div
-          className="modern-dialog w-full max-w-[1400px] max-h-[92vh] flex flex-col animate-scale-in-bounce"
+          // overflow-hidden + 内部 min-h-0：让 max-h 生效并把滚动交给列表区，
+          // 否则任务多了会整体撑高、超出视口且无法滚动。
+          className="modern-dialog w-full max-w-[1400px] max-h-[92vh] flex flex-col overflow-hidden animate-scale-in-bounce"
           onClick={(e) => e.stopPropagation()}
         >
           <ScheduledTasksPage onClose={onClose} />

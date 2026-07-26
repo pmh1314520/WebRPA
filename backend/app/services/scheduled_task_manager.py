@@ -195,25 +195,78 @@ class ScheduledTaskManager:
     
     # ==================== Webhook触发器 ====================
     
+    @staticmethod
+    def _normalize_webhook_path(path: str) -> str:
+        """把 webhook 路径规范化为统一比较用的 key（忽略首尾斜杠与大小写差异）。
+
+        历史问题：注册端会补前导「/」，而调用端可能带/不带斜杠、或带多余尾部斜杠，
+        导致字典 key 不一致而报「Webhook路径未注册」。统一规范化后即可稳定匹配。
+        """
+        return (path or "").strip().strip("/").lower()
+
     def register_webhook_trigger(self, task_id: str, webhook_path: str):
-        """注册Webhook触发器"""
+        """注册Webhook触发器（同时登记规范化 key，避免斜杠/大小写不一致导致匹配失败）"""
         self.webhook_triggers[webhook_path] = task_id
+        norm = self._normalize_webhook_path(webhook_path)
+        if norm:
+            self.webhook_triggers[norm] = task_id
         print(f"[ScheduledTaskManager] 注册Webhook触发器: {webhook_path} -> {task_id}")
     
     def unregister_webhook_trigger(self, webhook_path: str):
-        """注销Webhook触发器"""
-        if webhook_path in self.webhook_triggers:
-            del self.webhook_triggers[webhook_path]
-            print(f"[ScheduledTaskManager] 注销Webhook触发器: {webhook_path}")
-    
+        """注销Webhook触发器（连带清理规范化 key 与指向同一任务的残留映射）"""
+        task_id = self.webhook_triggers.get(webhook_path) or \
+            self.webhook_triggers.get(self._normalize_webhook_path(webhook_path))
+        for key in list(self.webhook_triggers.keys()):
+            if key == webhook_path or key == self._normalize_webhook_path(webhook_path) or (
+                task_id and self.webhook_triggers.get(key) == task_id
+            ):
+                del self.webhook_triggers[key]
+        print(f"[ScheduledTaskManager] 注销Webhook触发器: {webhook_path}")
+
+    def _resolve_webhook_task_id(self, webhook_path: str) -> Optional[str]:
+        """按路径解析出目标任务 id。
+
+        三级查找，保证「任务确实存在就一定能触发」：
+          1) 精确匹配内存映射
+          2) 规范化匹配内存映射（忽略首尾斜杠/大小写）
+          3) 兜底遍历所有任务的 trigger.webhook_path 比对（覆盖内存映射因
+             启用状态变更、进程重启时序等原因缺失的情况，并顺带补登记）
+        """
+        task_id = self.webhook_triggers.get(webhook_path)
+        if task_id:
+            return task_id
+        norm = self._normalize_webhook_path(webhook_path)
+        task_id = self.webhook_triggers.get(norm)
+        if task_id:
+            return task_id
+        for task in self.tasks.values():
+            trigger = getattr(task, "trigger", None)
+            if not trigger or getattr(trigger, "type", "") != "webhook":
+                continue
+            if self._normalize_webhook_path(getattr(trigger, "webhook_path", "") or "") == norm and norm:
+                # 补登记，后续走快速路径
+                self.register_webhook_trigger(task.id, getattr(trigger, "webhook_path", "") or webhook_path)
+                print(f"[ScheduledTaskManager] Webhook 映射缺失已自动补登记: {webhook_path} -> {task.id}")
+                return task.id
+        return None
+
     async def trigger_webhook(self, webhook_path: str, payload: dict = None) -> dict:
         """触发Webhook任务"""
-        task_id = self.webhook_triggers.get(webhook_path)
+        task_id = self._resolve_webhook_task_id(webhook_path)
         
         if not task_id:
+            known = sorted({
+                (getattr(t.trigger, "webhook_path", "") or "")
+                for t in self.tasks.values()
+                if getattr(getattr(t, "trigger", None), "type", "") == "webhook"
+            } - {""})
             return {
                 'success': False,
-                'error': f'Webhook路径未注册: {webhook_path}'
+                'error': (
+                    f'Webhook路径未注册: {webhook_path}。'
+                    + (f'当前已配置的 Webhook 路径：{", ".join(known)}。' if known
+                       else '当前没有任何 Webhook 类型的计划任务，请先在「计划任务」中创建触发方式为 Webhook 的任务。')
+                )
             }
         
         task = self.tasks.get(task_id)

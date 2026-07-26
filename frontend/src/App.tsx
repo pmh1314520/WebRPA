@@ -215,12 +215,53 @@ function App() {
         (async () => {
           try {
             const { localWorkflowApi } = await import('@/services/api')
-            // 尝试在默认文件夹下加载（filename 兼容带不带 .json）
+            // 尝试在活动文件夹下加载（filename 兼容带不带 .json）
             const filename = workflowId!.endsWith('.json') ? workflowId! : `${workflowId}.json`
             const res = await localWorkflowApi.get(filename) as { success?: boolean; data?: { content?: any }; error?: string }
-            const content = res?.data?.content
+            let content = res?.data?.content
+
+            // 兜底：传进来的可能是工作流 JSON 内部的 id（而非文件名），
+            // 此时按文件名取不到，改为遍历本地工作流列表按内部 id / 名称匹配。
+            if (!content) {
+              try {
+                const listRes = await localWorkflowApi.list() as {
+                  data?: { workflows?: Array<{ filename?: string; name?: string }> }
+                }
+                const items = listRes?.data?.workflows || []
+                // 先按工作流名称 / 去后缀文件名匹配
+                let hit = items.find(
+                  (w) => w.name === workflowId ||
+                    (w.filename || '').replace(/\.json$/i, '') === workflowId
+                )
+                // 再按工作流 JSON 内部 id 匹配（列表接口不返回 id，只能读内容比对，限量避免过多请求）
+                if (!hit) {
+                  for (const w of items.slice(0, 50)) {
+                    if (!w.filename) continue
+                    const probe = await localWorkflowApi.get(w.filename) as { data?: { content?: any } }
+                    if (probe?.data?.content?.id === workflowId) {
+                      hit = w
+                      content = probe.data!.content
+                      break
+                    }
+                  }
+                }
+                if (hit?.filename && !content) {
+                  const res2 = await localWorkflowApi.get(hit.filename) as { data?: { content?: any } }
+                  content = res2?.data?.content
+                }
+              } catch (e2) {
+                console.warn('[AutoLoad] 兜底查找工作流失败:', e2)
+              }
+            }
+
             if (!content) {
               console.error('[AutoLoad] 加载工作流失败:', res?.error || '未找到内容')
+              // 不再静默留白：明确告知用户加载失败与原因，避免"监控页一片空白"无从排查
+              useWorkflowStore.getState().addLog?.({
+                level: 'error',
+                message: `监控页加载工作流失败：未找到「${workflowId}」。` +
+                  '请确认该工作流文件存在于当前「工作流保存文件夹」中。',
+              })
               return
             }
             const store = useWorkflowStore.getState()

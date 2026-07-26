@@ -988,7 +988,10 @@ class WorkflowExecutor:
         # 对于某些模块（如 qq_wait_message），强制使用模块默认超时，忽略节点配置中的 timeout 字段
         # 因为这些模块有自己内部的超时逻辑（如 waitTimeout）
         modules_with_internal_timeout = {'qq_wait_message', 'wechat_wait_message', 'loop', 'foreach', 'scheduled_task', 'subflow', 
-                                          'play_music', 'play_video', 'view_image', 'input_prompt'}
+                                          'play_music', 'play_video', 'view_image', 'input_prompt',
+                                          # 运行其它工作流：耗时由子工作流内部各模块自行控制，
+                                          # 外层不再叠加超时，否则长子流程会被误判超时打断
+                                          'run_workflow_file'}
         
         if node.type in modules_with_internal_timeout:
             # 这些模块强制使用模块默认超时（通常是0，表示无超时限制）

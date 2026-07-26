@@ -21,6 +21,8 @@ import {
   DpRunJsConfig, DpWaitElementConfig, DpScrollConfig, DpCloseConfig,
 } from './config-panels/DrissionPageConfigs'
 import { ExcelModuleConfig } from './config-panels/ExcelModuleConfig'
+import { WordModuleConfig } from './config-panels/WordModuleConfig'
+import { RunWorkflowFileConfig } from './config-panels/RunWorkflowFileConfig'
 import { SimilarSelectorDialog } from './config-panels/SimilarSelectorDialog'
 import { UrlInputDialog } from './config-panels/UrlInputDialog'
 import {
@@ -1189,6 +1191,10 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
     if (mt.startsWith('excel_')) {
       return <ExcelModuleConfig moduleType={mt} data={nodeData} onChange={handleChange} />
     }
+    // Word 自动化模块（Word COM）同样走 schema 驱动的通用配置面板
+    if (mt.startsWith('word_')) {
+      return <WordModuleConfig moduleType={mt} data={nodeData} onChange={handleChange} />
+    }
 
     switch (nodeData.moduleType) {
       case 'open_page':
@@ -1384,6 +1390,8 @@ export function ConfigPanel({ selectedNodeId: propSelectedNodeId }: ConfigPanelP
         return <ScheduledTaskConfig data={nodeData} onChange={handleChange} />
       case 'subflow':
         return <SubflowConfig data={nodeData} onChange={handleChange} />
+      case 'run_workflow_file':
+        return <RunWorkflowFileConfig data={nodeData} onChange={handleChange} />
       case 'break_loop':
         return (
           <p className="text-sm text-muted-foreground">

@@ -572,7 +572,17 @@ async def startup_event():
                             frontend_host = 'localhost' if host == '0.0.0.0' else host
                     
                     # 构造URL并附加 auto_close 参数
-                    monitor_url = f"http://{frontend_host}:{frontend_port}/editor/{workflow.id}?auto_close=true"
+                    # 关键：必须传「本地工作流文件名」而不是工作流 JSON 内部的 id。
+                    # 前端监控页是按 `<传入值>.json` 去本地工作流文件夹读取内容的，
+                    # 传内部 id（随机串）会因为磁盘上不存在 <id>.json 而加载失败 → 画布空白。
+                    # 用 ?workflow= 查询参数传递并做 URL 编码，可兼容中文文件名
+                    # （/editor/<id> 路径形式只支持字母数字，中文名会匹配不到）。
+                    from urllib.parse import quote as _url_quote
+                    _wf_param = _url_quote(str(workflow_filename), safe="")
+                    monitor_url = (
+                        f"http://{frontend_host}:{frontend_port}/"
+                        f"?workflow={_wf_param}&auto_close=true"
+                    )
                     print(f"[ScheduledTask] 正在打开前端监控页面: {monitor_url}")
                     webbrowser.open(monitor_url)
                     
@@ -1083,9 +1093,14 @@ def request_input_prompt_sync(
     max_length: int | None = None,
     required: bool = True,
     select_options: list | None = None,
-    timeout: float = 300
+    timeout: float = 0
 ) -> str | None:
-    """同步请求前端弹出输入框并等待结果（可在工作线程中调用）"""
+    """同步请求前端弹出输入框并等待结果（可在工作线程中调用）
+
+    timeout <= 0 表示**不限制等待时间**，一直等到用户输入或取消。
+    注意：threading.Event.wait(0) 会立即返回，必须显式传 None 才是无限等待，
+    因此这里对 <=0 做归一化，否则"超时设为 0"会退化成"完全不等待"。
+    """
     request_id = str(uuid.uuid4())
     
     # 创建线程安全的等待事件
@@ -1113,8 +1128,9 @@ def request_input_prompt_sync(
         )
     
     try:
-        # 等待用户输入（带超时）
-        if event.wait(timeout=timeout):
+        # 等待用户输入（timeout<=0 → None，表示无限等待）
+        wait_arg = timeout if (timeout and timeout > 0) else None
+        if event.wait(timeout=wait_arg):
             with input_prompt_lock:
                 result = input_prompt_results.get(request_id)
             return result
@@ -1218,8 +1234,8 @@ def request_play_music_sync(audio_url: str, wait_for_end: bool, timeout: float =
         )
     
     try:
-        # 等待播放完成（带超时）
-        if event.wait(timeout=timeout):
+        # 等待播放完成（timeout<=0 → None，表示不限制等待时间）
+        if event.wait(timeout=(timeout if (timeout and timeout > 0) else None)):
             with play_music_lock:
                 result = play_music_results.get(request_id, {'success': False, 'error': '未知错误'})
             return result
@@ -1252,8 +1268,8 @@ def request_play_video_sync(video_url: str, wait_for_end: bool, timeout: float =
         )
     
     try:
-        # 等待播放完成（带超时）
-        if event.wait(timeout=timeout):
+        # 等待播放完成（timeout<=0 → None，表示不限制等待时间）
+        if event.wait(timeout=(timeout if (timeout and timeout > 0) else None)):
             with play_video_lock:
                 result = play_video_results.get(request_id, {'success': False, 'error': '未知错误'})
             return result
@@ -1287,8 +1303,8 @@ def request_view_image_sync(image_url: str, auto_close: bool, display_time: int,
         )
     
     try:
-        # 等待查看完成（带超时）
-        if event.wait(timeout=timeout):
+        # 等待查看完成（timeout<=0 → None，表示不限制等待时间）
+        if event.wait(timeout=(timeout if (timeout and timeout > 0) else None)):
             with view_image_lock:
                 result = view_image_results.get(request_id, {'success': False, 'error': '未知错误'})
             return result

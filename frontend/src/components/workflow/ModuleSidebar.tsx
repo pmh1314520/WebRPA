@@ -336,6 +336,22 @@ const moduleIcons: Record<ModuleType, React.ElementType> = {
   excel_to_pdf: FileOutput,
   excel_run_macro: Terminal,
   excel_refresh_data: RotateCw,
+  // Word自动化
+  word_open: FileText,
+  word_to_pdf: FileOutput,
+  word_read_text: Eye,
+  word_write_text: Pencil,
+  word_set_cursor: MousePointer,
+  word_move_cursor: ArrowLeftRight,
+  word_replace_text: Replace,
+  word_read_table: Table2,
+  word_insert_table: Grid3X3,
+  word_insert_image: Image,
+  word_insert_hyperlink: Link2,
+  word_save: FileDown,
+  word_close: X,
+  // 工作流串联
+  run_workflow_file: Workflow,
   // 数据库操作
   db_connect: Database,
   db_query: DatabaseZap,
@@ -1146,6 +1162,21 @@ const moduleKeywords: Record<ModuleType, string[]> = {
   assert_checkpoint: ['断言', '检查点', '校验', '验证', 'assert', 'checkpoint', '稳定性', '测试', '期望', '检查'],
   scheduled_task: ['定时', '执行', '计划', '任务', 'schedule', 'timer', 'cron', '时间', '延迟'],
   subflow: ['子流程', '复用', '调用', '函数', 'subflow', 'call', '引用', '嵌套', '模块化'],
+  run_workflow_file: ['运行其它工作流', '调用工作流', '工作流串联', '执行完自动执行', '链式', 'chain', 'run workflow', '工作流1', '工作流2', '串起来', '嵌套工作流'],
+  // Word自动化
+  word_open: ['word', '打开word', '新建word', 'docx', '文档', 'open word', '创建文档'],
+  word_to_pdf: ['word', 'pdf', '导出pdf', 'word转pdf', 'word to pdf', '另存为pdf'],
+  word_read_text: ['word', '读取', '文本', '正文', '段落', 'read word', '提取文字'],
+  word_write_text: ['word', '写入', '文本', '输入', '追加', 'write word', '插入文字'],
+  word_set_cursor: ['word', '光标', '定位', '插入点', 'cursor', '跳转', '定位光标'],
+  word_move_cursor: ['word', '光标', '移动', '上下左右', 'move cursor', '选中'],
+  word_replace_text: ['word', '替换', '查找替换', 'replace', '批量替换', '模板填充'],
+  word_read_table: ['word', '表格', '读取表格', 'table', '取表格数据'],
+  word_insert_table: ['word', '表格', '插入表格', 'insert table', '建表'],
+  word_insert_image: ['word', '图片', '插入图片', '插图', 'image', 'picture'],
+  word_insert_hyperlink: ['word', '超链接', '链接', 'hyperlink', 'url', '插入链接'],
+  word_save: ['word', '保存', '另存为', 'save', '存盘'],
+  word_close: ['word', '关闭', '退出', 'close', 'quit'],
   // 触发器
   webhook_trigger: ['webhook', '触发器', 'http', '请求', '回调', 'trigger', 'api', '接口', '钩子'],
   hotkey_trigger: ['热键', '快捷键', '触发器', 'hotkey', 'shortcut', 'trigger', '按键', '组合键', 'ctrl', 'alt', 'shift'],
@@ -1524,7 +1555,7 @@ const moduleCategories = [
   {
     name: '流程控制',
     color: 'bg-orange-500',
-    modules: ['condition', 'loop', 'foreach', 'foreach_dict', 'break_loop', 'continue_loop', 'assert_checkpoint', 'stop_workflow', 'wait', 'scheduled_task', 'subflow', 'input_prompt'] as ModuleType[],
+    modules: ['condition', 'loop', 'foreach', 'foreach_dict', 'break_loop', 'continue_loop', 'assert_checkpoint', 'stop_workflow', 'wait', 'scheduled_task', 'subflow', 'run_workflow_file', 'input_prompt'] as ModuleType[],
   },
   {
     name: '触发器',
@@ -1600,6 +1631,17 @@ const moduleCategories = [
     name: '文件管理',
     color: 'bg-amber-600',
     modules: ['list_files', 'copy_file', 'move_file', 'delete_file', 'rename_file', 'create_folder', 'rename_folder', 'file_exists', 'get_file_info', 'read_text_file', 'write_text_file'] as ModuleType[],
+  },
+  {
+    name: 'Word自动化',
+    color: 'bg-blue-700',
+    modules: [
+      'word_open', 'word_read_text', 'word_write_text',
+      'word_set_cursor', 'word_move_cursor', 'word_replace_text',
+      'word_read_table', 'word_insert_table',
+      'word_insert_image', 'word_insert_hyperlink',
+      'word_to_pdf', 'word_save', 'word_close',
+    ] as ModuleType[],
   },
   {
     name: 'PDF处理',

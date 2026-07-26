@@ -1596,6 +1596,28 @@ if not _closed["v"]:
                 return ModuleResult(success=False, error=f"系统通知失败: {str(e)}")
 
 
+def _resolve_block_timeout(config: dict, context: ExecutionContext, default_seconds: float) -> float:
+    """解析「阻塞型模块」（播放音乐/视频、查看图片、用户输入等）的等待超时（秒）。
+
+    这类模块在执行器外层被登记为"不叠加超时"（由模块自身控制等待），
+    因此必须在这里读取节点配置的 timeout，否则写死的默认值会让用户
+    「把超时设为 0（不限制）」的配置失效——这正是历史上「设了不限超时
+    却仍在若干分钟后自动继续」这类问题的根源。
+
+    约定：
+      - 未配置（None/空）→ 使用模块的 default_seconds
+      - 配置 0 或负数     → 返回 0，表示不限制等待时间
+    """
+    raw = config.get('timeout', None)
+    if raw is None or raw == '':
+        return float(default_seconds)
+    try:
+        value = float(context.resolve_value(raw))
+    except (TypeError, ValueError):
+        return float(default_seconds)
+    return value if value > 0 else 0
+
+
 @register_executor
 class PlayMusicExecutor(ModuleExecutor):
     """播放音乐模块执行器 - 通过前端浏览器播放，支持播放器UI控制"""
@@ -1641,7 +1663,8 @@ class PlayMusicExecutor(ModuleExecutor):
                 lambda: request_play_music_sync(
                     audio_url=url,
                     wait_for_end=wait_for_end,
-                    timeout=600  # 10分钟超时
+                    # 尊重节点配置的超时；未配置则默认 10 分钟，配 0 表示一直等到播放结束
+                    timeout=_resolve_block_timeout(config, context, 600)
                 )
             )
 
@@ -1704,7 +1727,8 @@ class PlayVideoExecutor(ModuleExecutor):
                 lambda: request_play_video_sync(
                     video_url=url,
                     wait_for_end=wait_for_end,
-                    timeout=3600  # 1小时超时
+                    # 尊重节点配置的超时；未配置则默认 1 小时，配 0 表示一直等到播放结束
+                    timeout=_resolve_block_timeout(config, context, 3600)
                 )
             )
 
@@ -1761,7 +1785,8 @@ class ViewImageExecutor(ModuleExecutor):
                     image_url=url,
                     auto_close=auto_close,
                     display_time=display_time,
-                    timeout=300  # 5分钟超时
+                    # 尊重节点配置的超时；未配置则默认 5 分钟，配 0 表示一直等到用户关闭
+                    timeout=_resolve_block_timeout(config, context, 300)
                 )
             )
 
@@ -1848,7 +1873,19 @@ class InputPromptExecutor(ModuleExecutor):
         
         if not variable_name:
             return ModuleResult(success=False, error="变量名不能为空")
-        
+
+        # 等待用户输入的超时（秒）。必须尊重节点配置的 timeout：
+        # 0 / 负数 / 留空 = 不限制，一直等到用户操作为止。
+        # 历史缺陷：这里写死 timeout=300，导致用户把超时设为 0（不限制）后，
+        # 仍会在 5 分钟后被判为"未输入"而继续往下走（表现为"自动选了默认选项"）。
+        _raw_timeout = config.get('timeout', 0)
+        try:
+            wait_timeout = float(context.resolve_value(_raw_timeout) or 0)
+        except (TypeError, ValueError):
+            wait_timeout = 0
+        if wait_timeout <= 0:
+            wait_timeout = 0  # 归一化：0 表示无限等待
+
         try:
             # 使用线程池执行同步等待，避免阻塞事件循环
             loop = asyncio.get_running_loop()
@@ -1865,15 +1902,23 @@ class InputPromptExecutor(ModuleExecutor):
                     max_length=max_length,
                     required=required,
                     select_options=select_options,
-                    timeout=300
+                    timeout=wait_timeout
                 )
             )
             
             if user_input is None:
+                # 区分「用户主动取消」与「等待超时」，避免用户误以为系统自动替他选了默认值
+                if wait_timeout > 0:
+                    msg = (
+                        f"等待用户输入超时（{wait_timeout:g} 秒内未收到输入），"
+                        f"变量 {variable_name} 保持不变。如需一直等待，请把该模块的超时设为 0。"
+                    )
+                else:
+                    msg = f"用户取消输入，变量 {variable_name} 保持不变"
                 return ModuleResult(
                     success=True, 
-                    message=f"用户取消输入，变量 {variable_name} 保持不变",
-                    data={'cancelled': True}
+                    message=msg,
+                    data={'cancelled': True, 'timeout': wait_timeout > 0}
                 )
             
             # 根据输入模式处理结果
@@ -2137,6 +2182,79 @@ class ScreenshotExecutor(ModuleExecutor):
             return ModuleResult(success=False, error=f"截图失败: {str(e)}")
 
 
+def _speak_with_system_tts(text: str, *, rate: float = 1.0, volume: float = 1.0) -> tuple[bool, str]:
+    """用 Windows 系统语音（SAPI）朗读文本，返回 (是否成功, 错误信息)。
+
+    这是「语音播报」模块在前端浏览器 TTS 不可用时的兜底路径：
+    计划任务 / 无头运行 / 编辑器页面已关闭等场景下前端拿不到 Web Speech API，
+    此时改由后端直接调用本机语音引擎，保证语音播报仍然生效。
+
+    实现优先级：
+      1) pywin32 的 SAPI.SpVoice（进程内直接调用，最快）
+      2) PowerShell + System.Speech（无需额外依赖的兜底）
+    文本通过临时文件传递，避免命令行拼接导致的注入与引号转义问题。
+    """
+    if not text:
+        return False, "文本为空"
+
+    # SAPI 的 Rate 取值 -10..10，Volume 取值 0..100
+    sapi_rate = max(-10, min(10, int(round((float(rate) - 1.0) * 5))))
+    sapi_volume = max(0, min(100, int(round(float(volume) * 100))))
+
+    # ---- 方案 1：pywin32 直接调用 SAPI ----
+    try:
+        import pythoncom  # type: ignore
+        import win32com.client  # type: ignore
+        pythoncom.CoInitialize()
+        try:
+            voice = win32com.client.Dispatch("SAPI.SpVoice")
+            voice.Rate = sapi_rate
+            voice.Volume = sapi_volume
+            voice.Speak(text)  # 同步朗读，播完才返回
+            return True, ""
+        finally:
+            try:
+                pythoncom.CoUninitialize()
+            except Exception:
+                pass
+    except Exception as e:
+        sapi_err = str(e)
+
+    # ---- 方案 2：PowerShell + System.Speech ----
+    tmp_path = ""
+    try:
+        import subprocess
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
+            f.write(text)
+            tmp_path = f.name
+        # 文本从文件读入，不参与命令行拼接
+        ps = (
+            "Add-Type -AssemblyName System.Speech; "
+            "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+            f"$s.Rate = {sapi_rate}; $s.Volume = {sapi_volume}; "
+            f"$t = [System.IO.File]::ReadAllText('{tmp_path}', [System.Text.Encoding]::UTF8); "
+            "$s.Speak($t)"
+        )
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps],
+            capture_output=True, text=True, timeout=180,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        if proc.returncode == 0:
+            return True, ""
+        return False, f"SAPI: {sapi_err}; PowerShell: {(proc.stderr or '').strip()[:200]}"
+    except Exception as e2:
+        return False, f"SAPI: {sapi_err}; PowerShell: {e2}"
+    finally:
+        if tmp_path:
+            try:
+                import os as _os
+                _os.unlink(tmp_path)
+            except Exception:
+                pass
+
+
 @register_executor
 class TextToSpeechExecutor(ModuleExecutor):
     """文本朗读模块执行器"""
@@ -2182,8 +2300,27 @@ class TextToSpeechExecutor(ModuleExecutor):
                     message=f"已朗读文本: {text[:50]}{'...' if len(text) > 50 else ''}",
                     data={'text': text, 'lang': lang}
                 )
-            else:
-                return ModuleResult(success=False, error="语音合成超时或失败")
+
+            # 前端 TTS 不可用（编辑器页面未打开/已断开/浏览器不支持）→ 降级为系统本地语音合成。
+            # 计划任务、无头运行等"无前端"场景下这是唯一可用路径，不应直接判失败。
+            local_ok, local_err = await loop.run_in_executor(
+                None, lambda: _speak_with_system_tts(text, rate=rate, volume=volume)
+            )
+            if local_ok:
+                return ModuleResult(
+                    success=True,
+                    message=f"已用系统语音朗读文本（前端语音不可用，已自动降级）: "
+                            f"{text[:50]}{'...' if len(text) > 50 else ''}",
+                    data={'text': text, 'lang': lang, 'engine': 'system'}
+                )
+            return ModuleResult(
+                success=False,
+                error=(
+                    "语音播报失败：浏览器语音不可用（编辑器页面未打开或已断开），"
+                    f"系统本地语音也不可用（{local_err or '未知原因'}）。"
+                    "请确认 WebRPA 编辑器页面处于打开状态，或检查系统语音服务（Windows 设置 → 时间和语言 → 语音）。"
+                )
+            )
         except Exception as e:
             return ModuleResult(success=False, error=f"文本朗读失败: {str(e)}")
 

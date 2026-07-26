@@ -1,5 +1,7 @@
 """计划任务API路由"""
-from fastapi import APIRouter, HTTPException
+import json
+
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional
 
 from app.models.scheduled_task import (
@@ -165,17 +167,47 @@ async def get_statistics_summary():
     }
 
 
+@router.get("/webhook/{path:path}")
 @router.post("/webhook/{path:path}")
-async def trigger_webhook(path: str, payload: dict = None):
-    """Webhook触发端点"""
+@router.put("/webhook/{path:path}")
+@router.patch("/webhook/{path:path}")
+@router.delete("/webhook/{path:path}")
+async def trigger_webhook(path: str, request: Request):
+    """Webhook 触发端点。
+
+    放宽为支持 GET/POST/PUT/PATCH/DELETE 且 body 可选：
+    「Webhook 请求」模块或外部系统用任意方法、带或不带 JSON body 都能触发，
+    不会再因为方法不匹配或 body 解析失败而 422/404。
+    body 非 JSON 时以 {"raw": "..."} 形式传给任务，查询参数一并合并进 payload。
+    """
     # 确保路径以/开头
     webhook_path = f"/{path}" if not path.startswith('/') else path
-    
+
+    payload: dict = {}
+    try:
+        raw = await request.body()
+        if raw:
+            try:
+                parsed = json.loads(raw.decode("utf-8"))
+                payload = parsed if isinstance(parsed, dict) else {"data": parsed}
+            except Exception:
+                payload = {"raw": raw.decode("utf-8", errors="replace")}
+    except Exception:
+        payload = {}
+    # 合并查询参数（GET 触发时常用 ?key=value 传参）
+    try:
+        qp = dict(request.query_params)
+        if qp:
+            payload.setdefault("query", qp)
+    except Exception:
+        pass
+    payload.setdefault("_method", request.method)
+
     result = await scheduled_task_manager.trigger_webhook(webhook_path, payload)
-    
+
     if not result['success']:
         raise HTTPException(status_code=404, detail=result['error'])
-    
+
     return result
 
 

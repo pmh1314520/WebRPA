@@ -38,6 +38,7 @@ _SUBMODULES = [
     'media_image_effect', 'media_qrcode', 'media_recognition', 'media_video_edit',
     'media_watermark', 'blind_watermark',
     'drissionpage', 'advanced_mouse',
+    'workflow_chain', 'word_automation',
 ]
 
 _DIR = _Path(__file__).parent

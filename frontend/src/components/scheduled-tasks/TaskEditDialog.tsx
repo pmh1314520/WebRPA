@@ -9,6 +9,7 @@ import { DatePicker, TimePicker } from '@/components/ui/date-time-picker'
 import { useScheduledTaskStore, type ScheduledTask, type ScheduledTaskTrigger, type NotifyChannel } from '@/store/scheduledTaskStore'
 import { useGlobalConfigStore } from '@/store/globalConfigStore'
 import { localWorkflowApi } from '@/services/api'
+import { getBackendBaseUrl } from '@/services/config'
 import { Clock, Zap, Power, Repeat, X, Play, Square, Webhook } from 'lucide-react'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { DialogPortal } from '@/components/ui/dialog-portal'
@@ -23,6 +24,8 @@ interface TaskEditDialogProps {
 export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
   const { updateTask, executeTask, stopTask, fetchTasks } = useScheduledTaskStore()
   const { confirm, ConfirmDialog } = useConfirm()
+  // Webhook 触发地址前缀：取当前后端真实地址（历史上写死 localhost:8000，与实际端口 5241 不符导致用户按说明调用必失败）
+  const webhookBaseUrl = `${getBackendBaseUrl()}/api/scheduled-tasks/webhook`
   
   // 当前任务状态（用于实时更新）
   const [currentTask, setCurrentTask] = useState(task)
@@ -419,8 +422,8 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
           </Button>
         </div>
         
-        {/* 内容 */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* 内容（min-h-0 保证长表单在 flex 容器内可靠滚动） */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
           {/* 基本信息 */}
           <div className="space-y-2">
             <Label htmlFor="name">任务名称 *</Label>
@@ -706,18 +709,18 @@ export function TaskEditDialog({ task, open, onClose }: TaskEditDialogProps) {
                     <p className="text-sm font-semibold text-green-900 mb-1">使用说明</p>
                     <div className="text-xs text-green-800 space-y-1">
                       <p><strong>1. 路径格式：</strong>必须以 / 开头，只能包含字母、数字、-、_ 和 /</p>
-                      <p><strong>2. 触发方式：</strong>通过POST请求访问以下地址触发任务</p>
+                      <p><strong>2. 触发方式：</strong>用 GET / POST 等任意方法访问以下地址即可触发（body 可选）</p>
                       <div className="mt-2 p-2 bg-gray-100 rounded font-mono text-xs break-all">
-                        {webhookPath ? (
-                          <>http://localhost:8000/api/scheduled-tasks/webhook{webhookPath}</>
-                        ) : (
-                          <>http://localhost:8000/api/scheduled-tasks/webhook/your-path</>
-                        )}
+                        {`${webhookBaseUrl}${webhookPath || '/your-path'}`}
                       </div>
                       <p className="pt-1"><strong>3. 示例：</strong></p>
-                      <div className="mt-1 p-2 bg-gray-100 rounded font-mono text-xs">
-                        curl -X POST http://localhost:8000/api/scheduled-tasks/webhook{webhookPath || '/your-path'}
+                      <div className="mt-1 p-2 bg-gray-100 rounded font-mono text-xs break-all">
+                        curl -X POST {`${webhookBaseUrl}${webhookPath || '/your-path'}`}
                       </div>
+                      <p className="pt-1 text-[11px] text-green-700">
+                        提示：地址中的端口已自动取当前后端实际端口，可直接复制使用；
+                        在 WebRPA 内用「Webhook 请求」模块调用时也填这个完整地址。
+                      </p>
                       <p className="pt-1"><strong>4. 应用场景：</strong></p>
                       <p className="pl-3">• 接收第三方系统的通知并自动执行任务</p>
                       <p className="pl-3">• 与其他自动化工具集成</p>

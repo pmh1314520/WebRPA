@@ -805,6 +805,22 @@ export const moduleTypeLabels: Record<ModuleType, string> = {
   rst_to_html: 'RST转HTML',
   org_to_html: 'Org转HTML',
   universal_doc_convert: '通用文档转换',
+  // Word自动化
+  word_open: '打开/新建Word',
+  word_to_pdf: 'Word导出PDF',
+  word_read_text: '读取Word文本',
+  word_write_text: '写入文本至Word',
+  word_set_cursor: '定位Word光标',
+  word_move_cursor: '移动Word光标',
+  word_replace_text: '替换Word文本',
+  word_read_table: '读取Word表格',
+  word_insert_table: '插入Word表格',
+  word_insert_image: 'Word插入图片',
+  word_insert_hyperlink: 'Word插入超链接',
+  word_save: '保存Word',
+  word_close: '关闭Word',
+  // 工作流串联
+  run_workflow_file: '运行其它工作流',
   // 其他
   export_log: '导出日志',
   click_text: '点击文本',
@@ -1022,7 +1038,9 @@ export const moduleDefaultTimeouts: Partial<Record<ModuleType, number>> = {
   play_music: 600,      // 10分钟，一首歌3-5分钟
   play_video: 7200,     // 2小时，视频可能很长
   view_image: 300,      // 5分钟，查看图片
-  input_prompt: 300,    // 5分钟，等待用户输入
+  // 等待用户输入属于阻塞型交互，默认不限制超时（与后端 MODULE_DEFAULT_TIMEOUTS 一致），
+  // 避免无人值守时"到点自动放弃输入"导致流程按旧变量值继续跑；需要限时可自行填秒数。
+  input_prompt: 0,      // 0 = 不限制，一直等到用户输入或取消
   text_to_speech: 120,  // 2分钟
   js_script: 60,        // 1分钟
   python_script: 60,    // 1分钟
@@ -1096,6 +1114,22 @@ export const moduleDefaultTimeouts: Partial<Record<ModuleType, number>> = {
   pdf_insert_pages: 60,   // 1分钟
   pdf_reorder_pages: 60,  // 1分钟
   pdf_to_word: 300,       // 5分钟
+  // Word自动化（Word COM 首次启动进程较慢，故给足超时）
+  word_open: 120,             // 2分钟，首次拉起 Word 进程可能很慢
+  word_to_pdf: 300,           // 5分钟，大文档转 PDF 耗时
+  word_read_text: 120,        // 2分钟
+  word_write_text: 120,       // 2分钟
+  word_set_cursor: 60,        // 1分钟
+  word_move_cursor: 60,       // 1分钟
+  word_replace_text: 180,     // 3分钟，全文替换可能较慢
+  word_read_table: 180,       // 3分钟，大表格逐单元格读取较慢
+  word_insert_table: 180,     // 3分钟
+  word_insert_image: 120,     // 2分钟
+  word_insert_hyperlink: 60,  // 1分钟
+  word_save: 120,             // 2分钟
+  word_close: 60,             // 1分钟
+  // 工作流串联：子工作流耗时不可预估，设 0 表示不额外限制（由子工作流自身各模块超时控制）
+  run_workflow_file: 0,
   // 其他
   export_log: 60,         // 60秒
   click_text: 60,         // 60秒
