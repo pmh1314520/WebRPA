@@ -88,3 +88,59 @@ describe('workflowStore 快照恢复（回滚 / 自定义模块退出编辑复�
     expect(store.getState().nodes).toHaveLength(1)
   })
 })
+
+describe('workflowStore 日志时间戳与排序', () => {
+  beforeEach(() => {
+    store.setState({ logs: [] })
+  })
+
+  it('addLogBatch 传入 timestamp 时保留原值，不传则按当前时间生成', () => {
+    store.getState().addLogBatch([
+      { level: 'info', message: '带原始时间', timestamp: '2026-07-27T00:55:44.123' },
+      { level: 'info', message: '不带时间' },
+    ])
+    const logs = store.getState().logs
+    // 事后补拉的历史日志必须保留后端记录的时间，否则时间线被压平
+    expect(logs[0].timestamp).toBe('2026-07-27T00:55:44.123')
+    // 未指定时仍按当前时间生成（实时日志沿用此行为）
+    expect(Number.isNaN(new Date(logs[1].timestamp).getTime())).toBe(false)
+    // id 始终由 store 生成且互不相同
+    expect(logs[0].id).toBeTruthy()
+    expect(logs[0].id).not.toBe(logs[1].id)
+  })
+
+  it('sortLogsByTime 让补拉的历史日志按真实时间归位', () => {
+    // 模拟真实场景：实时日志先到，补拉的"固定等待"带更早的时间被追加到尾部
+    store.getState().addLogBatch([
+      { level: 'info', message: '工作流开始执行', timestamp: '2026-07-27T00:55:44.000' },
+      { level: 'success', message: '工作流执行完成', timestamp: '2026-07-27T00:55:49.000' },
+      { level: 'info', message: '[固定等待] 已等待 5.0秒', timestamp: '2026-07-27T00:55:46.000' },
+    ])
+    store.getState().sortLogsByTime()
+    expect(store.getState().logs.map((l) => l.message)).toEqual([
+      '工作流开始执行',
+      '[固定等待] 已等待 5.0秒',
+      '工作流执行完成',
+    ])
+  })
+
+  it('sortLogsByTime 时间相同保持原有先后（稳定排序）', () => {
+    const ts = '2026-07-27T00:55:44.000'
+    store.getState().addLogBatch([
+      { level: 'info', message: '第一条', timestamp: ts },
+      { level: 'info', message: '第二条', timestamp: ts },
+      { level: 'info', message: '第三条', timestamp: ts },
+    ])
+    store.getState().sortLogsByTime()
+    expect(store.getState().logs.map((l) => l.message)).toEqual(['第一条', '第二条', '第三条'])
+  })
+
+  it('sortLogsByTime 遇到无法解析的时间戳不抛错也不丢条目', () => {
+    store.getState().addLogBatch([
+      { level: 'info', message: '正常', timestamp: '2026-07-27T00:55:49.000' },
+      { level: 'info', message: '坏时间', timestamp: '不是时间' },
+    ])
+    expect(() => store.getState().sortLogsByTime()).not.toThrow()
+    expect(store.getState().logs).toHaveLength(2)
+  })
+})

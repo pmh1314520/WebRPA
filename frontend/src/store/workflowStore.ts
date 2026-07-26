@@ -197,6 +197,9 @@ interface WorkflowState {
   // 不传则按当前时间生成，实时日志沿用此行为。
   addLogBatch: (logs: Array<Omit<LogEntry, 'id' | 'timestamp'> & { timestamp?: string }>) => void
   addLogs: (logs: Array<Omit<LogEntry, 'id' | 'timestamp'>>) => void
+  // 按时间戳重排底栏日志。供事后补拉历史日志后归位使用：
+  // 补拉的条目带后端原始时间，直接追加会挂在列表尾部造成时间线错乱。
+  sortLogsByTime: () => void
   clearLogs: () => void
   setVerboseLog: (enabled: boolean) => void
   setMaxLogCount: (count: number) => void
@@ -2691,6 +2694,23 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       ? combinedLogs.slice(combinedLogs.length - maxLogs)
       : combinedLogs
     set({ logs: updatedLogs })
+  },
+
+  // 按时间戳重排底栏日志（稳定排序：时间相同或无法解析时保持原有先后）
+  sortLogsByTime: () => {
+    const logs = get().logs
+    if (logs.length < 2) return
+    const parsed = logs.map((log, index) => {
+      const ms = new Date(log.timestamp).getTime()
+      return { log, index, ms: Number.isNaN(ms) ? null : ms }
+    })
+    parsed.sort((a, b) => {
+      // 时间戳解析不出来的条目不参与比较，靠 index 留在原位附近
+      if (a.ms === null || b.ms === null) return a.index - b.index
+      if (a.ms !== b.ms) return a.ms - b.ms
+      return a.index - b.index
+    })
+    set({ logs: parsed.map((p) => p.log) })
   },
 
   addVariable: (variable) => {

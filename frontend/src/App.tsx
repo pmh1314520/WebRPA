@@ -55,9 +55,13 @@ async function hydrateMonitorPage(taskId: string): Promise<'running' | 'done'> {
     const latest = (res?.data || [])[0]
     if (latest) {
       const logs = latest.workflow_logs || []
-      if (logs.length > 0) {
-        // 去重：监控页开着时这批日志的一部分已经由 socket 实时推送过了
-        // （execution:log_batch），直接整批追加会让同一次执行的日志显示两遍。
+      // 实时通道是主通道（与手动运行同一套推送实现）。它有效时底栏已经逐条滚过一遍，
+      // 这里再整批灌入历史日志就是重复显示，因此补拉只在实时通道没兜住时才逐条补。
+      const gotRealtimeLogs = socketService.hasRealtimeLogsForCurrentRun()
+      if (logs.length > 0 && !gotRealtimeLogs) {
+        // 二道防线：上面的 gotRealtimeLogs 已经挡住了"实时通道有效仍整批补拉"这一主因，
+        // 但监控页刷新、错过 execution:started 等边缘情形下底栏仍可能已有部分同样的日志，
+        // 所以补拉前再按内容比对一次，避免重复显示。
         // 实时通道丢弃了后端的日志 id，无法按 id 比对，因此按
         // (level, message, nodeId, duration) 做**多重集计数**匹配：
         // 每条补拉日志消耗一个同键的已有条目，消耗完才算新增。
@@ -89,6 +93,9 @@ async function hydrateMonitorPage(taskId: string): Promise<'running' | 'done'> {
             // 否则整批会被打上补拉时刻的时间戳，等待类模块的耗时在时间线上消失
             timestamp: l.timestamp ? l.timestamp.replace(' ', 'T') : undefined,
           })))
+          // 补拉的条目带后端原始时间，直接追加会挂在列表尾部（例如"固定等待"排在
+          // "工作流执行完成"之后）。按时间戳重排一次让它们归位。
+          store.sortLogsByTime()
         }
       }
       // 汇总一行，便于一眼看到本次执行结果（即使逐条日志为空也有反馈）。
@@ -103,13 +110,18 @@ async function hydrateMonitorPage(taskId: string): Promise<'running' | 'done'> {
         return 'running'
       }
       const ok = status === 'success'
-      store.addLog({
-        level: ok ? 'success' : 'error',
-        message: `计划任务本次执行：${ok ? '成功' : '失败'}`
-          + `（模块 ${latest.executed_nodes ?? 0} 个，失败 ${latest.failed_nodes ?? 0} 个`
-          + `${latest.start_time ? `，开始于 ${latest.start_time}` : ''}）`
-          + (latest.error ? `\n错误：${latest.error}` : ''),
-      })
+      // 实时通道有效时，socket 的 execution:completed 处理已经写过一行"执行完成，共执行 N 个节点…"，
+      // 这里再加一行同义摘要属于重复。仅在两种情况下补：实时通道没兜住（底栏否则没有任何结果反馈），
+      // 或本次执行失败（需要带出后端记录的错误详情与开始时间，实时那行没有）。
+      if (!gotRealtimeLogs || !ok) {
+        store.addLog({
+          level: ok ? 'success' : 'error',
+          message: `计划任务本次执行：${ok ? '成功' : '失败'}`
+            + `（模块 ${latest.executed_nodes ?? 0} 个，失败 ${latest.failed_nodes ?? 0} 个`
+            + `${latest.start_time ? `，开始于 ${latest.start_time}` : ''}）`
+            + (latest.error ? `\n错误：${latest.error}` : ''),
+        })
+      }
     }
   } catch (e) {
     console.warn('[MonitorPage] 拉取计划任务执行日志失败:', e)

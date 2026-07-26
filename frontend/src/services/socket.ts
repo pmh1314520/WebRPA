@@ -40,6 +40,20 @@ class SocketService {
   private inputPromptCallback: InputPromptCallback | null = null
   private browserBusyCallback: BrowserBusyCallback | null = null
   private browserClosedCallback: BrowserClosedCallback | null = null
+  // 本轮执行经实时通道落进底栏的日志条数（execution:started 时归零）。
+  // 计划任务监控页据此判断实时通道是否有效：有效就不再事后整批补拉历史日志，
+  // 避免同一次执行的日志追加第二遍（见 App.tsx 的 hydrateMonitorPage）。
+  private realtimeLogsSinceStart = 0
+
+  /**
+   * 本轮执行是否已通过实时通道收到过日志。
+   *
+   * 计划任务监控页的事后补拉（hydrateMonitorPage）据此决定是否整批灌入历史日志：
+   * 返回 true 说明底栏已有本次执行的实时日志，再补一遍就是重复显示。
+   */
+  hasRealtimeLogsForCurrentRun(): boolean {
+    return this.realtimeLogsSinceStart > 0
+  }
 
   // 设置输入弹窗回调
   setInputPromptCallback(callback: InputPromptCallback | null) {
@@ -365,6 +379,8 @@ class SocketService {
     this.socket.on('execution:started', (data: { workflowId: string }) => {
       console.log('Execution started:', data.workflowId)
       isExecuting = true
+      // 新一轮执行：实时日志计数归零
+      this.realtimeLogsSinceStart = 0
       const store = useWorkflowStore.getState()
       store.setExecutionStatus('running')
       // 清空节点运行态高亮（开始新一轮执行）
@@ -417,6 +433,7 @@ class SocketService {
       }
       try {
         useWorkflowStore.getState().addLogBatch(batch)
+        this.realtimeLogsSinceStart += batch.length
       } catch (e) {
         console.error('[Socket] flush log buffer failed:', e)
       }
