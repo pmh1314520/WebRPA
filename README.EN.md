@@ -5,7 +5,7 @@
 WebRPA - Web Robotic Process Automation Tool
 </h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.4.0-blue.svg" alt="version">
+  <img src="https://img.shields.io/badge/version-3.1.0-blue.svg" alt="version">
   <img src="https://img.shields.io/badge/modules-558-brightgreen.svg" alt="modules">
   <img src="https://img.shields.io/badge/license-AGPL--3.0%20%2B%20Commercial-green.svg" alt="license">
   <img src="https://img.shields.io/badge/author-QingYun%20Studio%20Peng%20Minghang-orange.svg" alt="author">
@@ -13,6 +13,7 @@ WebRPA - Web Robotic Process Automation Tool
   <img src="https://img.shields.io/badge/React-19-61dafb.svg" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5-3178c6.svg" alt="TypeScript">
 </p>
+
 
 
 <p align="center">
