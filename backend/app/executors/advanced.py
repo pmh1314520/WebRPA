@@ -97,6 +97,13 @@ class ApiRequestExecutor(ModuleExecutor):
             if len(display_content) > 100:
                 display_content = display_content[:100] + '...'
             
+            # 本机地址却拿到网关类状态码：几乎一定是本机代理劫持了回环流量，
+            # 直接把处置建议写进日志，避免用户对着 502 原文无从下手。
+            from app.utils.local_http_diagnostics import gateway_error_hint
+            gw_hint = gateway_error_hint(request_url, response.status_code)
+            if gw_hint:
+                context.add_log(level='warning', message=f"[API请求]{gw_hint}")
+
             return ModuleResult(
                 success=True,
                 message=f"请求成功 ({response.status_code}): {display_content}",
@@ -106,7 +113,11 @@ class ApiRequestExecutor(ModuleExecutor):
         except httpx.TimeoutException:
             return ModuleResult(success=False, error=f"请求超时 ({request_timeout}秒)")
         except httpx.ConnectError:
-            return ModuleResult(success=False, error="无法连接到服务器，请检查网络和URL")
+            from app.utils.local_http_diagnostics import connect_error_hint
+            return ModuleResult(
+                success=False,
+                error="无法连接到服务器，请检查网络和URL" + connect_error_hint(request_url),
+            )
         except Exception as e:
             return ModuleResult(success=False, error=f"API请求失败: {str(e)}")
 

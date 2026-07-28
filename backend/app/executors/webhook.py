@@ -168,10 +168,14 @@ class WebhookExecutor(ModuleExecutor):
                     }
                 )
             else:
+                # 本机地址返回 502/503/504 时附上诊断：本机服务不产生网关状态码，
+                # 通常是本机代理软件的 TUN/透明代理劫持了回环流量。
+                from app.utils.local_http_diagnostics import gateway_error_hint
+                gw_hint = gateway_error_hint(url, response.status_code)
                 return ModuleResult(
                     success=False,
                     message=f"Webhook请求失败，状态码: {response.status_code}",
-                    error=f"HTTP {response.status_code}: {response.text[:200]}",
+                    error=f"HTTP {response.status_code}: {response.text[:200]}" + gw_hint,
                     data={
                         'status_code': response.status_code,
                         'response': response.text
@@ -183,6 +187,13 @@ class WebhookExecutor(ModuleExecutor):
                 success=False,
                 message="Webhook请求超时",
                 error="请求超时"
+            )
+        except httpx.ConnectError as e:
+            from app.utils.local_http_diagnostics import connect_error_hint
+            return ModuleResult(
+                success=False,
+                message="Webhook请求失败：无法连接到目标地址",
+                error=f"{e}" + connect_error_hint(url)
             )
         except Exception as e:
             import traceback

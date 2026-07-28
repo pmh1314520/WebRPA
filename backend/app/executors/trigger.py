@@ -633,6 +633,8 @@ class ApiTriggerExecutor(ModuleExecutor):
 
         start_time = time.time()
         check_count = 0
+        # 诊断提示只发一次：轮询会反复失败，重复长文本会把执行日志刷爆
+        diag_emitted = False
 
         while True:
             check_count += 1
@@ -701,6 +703,20 @@ class ApiTriggerExecutor(ModuleExecutor):
             except Exception as e:
                 context.add_log('warning', f"⚠️ 第{check_count}次检查失败: {str(e)}", None)
                 await context.send_progress(f"⚠️ 第{check_count}次检查失败: {str(e)}", "warning")
+                # 目标是本机地址时，网关错误/连接被拒绝各有明确成因，给一次可执行的处置建议
+                if not diag_emitted:
+                    from app.utils.local_http_diagnostics import (
+                        connect_error_hint, gateway_error_hint,
+                    )
+                    diag = ""
+                    if isinstance(e, httpx.HTTPStatusError):
+                        diag = gateway_error_hint(api_url, e.response.status_code)
+                    elif isinstance(e, httpx.ConnectError):
+                        diag = connect_error_hint(api_url)
+                    if diag:
+                        context.add_log('warning', f"[API触发器]{diag}", None)
+                        await context.send_progress(f"[API触发器]{diag}", "warning")
+                        diag_emitted = True
 
             # 检查超时
             if timeout > 0:
