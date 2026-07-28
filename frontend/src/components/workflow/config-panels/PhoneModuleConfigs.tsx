@@ -11,13 +11,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import React from 'react'
 import { phoneApi } from '@/services/api'
+import { getBackendBaseUrl } from '@/services/config'
 import { RefreshCw } from 'lucide-react'
 
-// 获取后端URL的辅助函数
-const getBackendUrl = () => {
-  const port = sessionStorage.getItem('backendPort') || '5241'
-  return `http://localhost:${port}`
-}
+// 获取后端URL：统一走 config 服务的端口解析链（URL 参数 → 配置文件 → 根配置注入值），
+// 不要在这里写死端口——用户在启动器里改过后端端口时写死值会直接把请求打飞。
+const getBackendUrl = () => getBackendBaseUrl()
 
 // 设备选择器组件
 function DeviceSelector({ value, onChange }: { value: string; onChange: (value: string) => void }) {

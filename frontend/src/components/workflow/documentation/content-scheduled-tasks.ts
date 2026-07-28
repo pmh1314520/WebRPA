@@ -98,11 +98,19 @@ Webhook路径: /webhook/data-sync
 \`\`\`
 
 **调用方式**：
+
+实际地址是 \`/api/scheduled-tasks/webhook\` + 你填的 Webhook 路径。不要手抄下面的端口，
+「编辑计划任务」弹窗里会显示按当前后端端口拼好的完整地址，直接复制即可（在启动器里改过
+后端端口时，那里显示的才是对的）。
+
 \`\`\`bash
-curl -X POST http://localhost:5241/api/webhooks/data-sync \\
+# 5241 是出厂默认后端端口，若你改过端口请换成自己的
+curl -X POST http://localhost:5241/api/scheduled-tasks/webhook/webhook/data-sync \\
   -H "Content-Type: application/json" \\
   -d '{"key": "value"}'
 \`\`\`
+
+支持 GET / POST / PUT / PATCH / DELETE，body 可选；查询参数会一并合并进 payload。
 
 **获取请求数据**：
 \`\`\`

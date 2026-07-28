@@ -94,11 +94,21 @@ Method: POST
 \`\`\`
 
 **How to call**:
+
+The real endpoint is \`/api/scheduled-tasks/webhook\` + the webhook path you configured.
+Do not copy the port below by hand: the "Edit scheduled task" dialog shows the full address
+already built from the current backend port, so just copy it from there (that is the only
+correct one if you changed the backend port in the launcher).
+
 \`\`\`bash
-curl -X POST http://localhost:5241/api/webhooks/data-sync \\
+# 5241 is the factory-default backend port; replace it if you changed it
+curl -X POST http://localhost:5241/api/scheduled-tasks/webhook/webhook/data-sync \\
   -H "Content-Type: application/json" \\
   -d '{"key": "value"}'
 \`\`\`
+
+GET / POST / PUT / PATCH / DELETE are all accepted, the body is optional, and query
+parameters are merged into the payload.
 
 **Get request data**:
 \`\`\`

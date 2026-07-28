@@ -3,6 +3,19 @@
  * 统一管理后端 API 地址和端口配置
  */
 
+// 构建/启动时由 vite.config.ts 从**根目录** WebRPAConfig.json 注入的后端端口。
+// 存在的意义：运行时读取的 /WebRPAConfig.json 是 frontend/public 下的副本，用户直接
+// 手改根配置（README 明确允许）而没经过启动器保存时，副本不会更新。此时若还回落到
+// 写死的 5241，整站请求都会打到没有服务在听的端口上。注入值来自根配置，可信度更高。
+declare const __WEBRPA_BACKEND_PORT__: number | undefined
+const INJECTED_BACKEND_PORT: string =
+  typeof __WEBRPA_BACKEND_PORT__ === 'number' && __WEBRPA_BACKEND_PORT__ > 0
+    ? String(__WEBRPA_BACKEND_PORT__)
+    : ''
+
+/** 端口回落链：注入值（根配置真值）优先，最后才是出厂默认端口 */
+const FALLBACK_BACKEND_PORT = INJECTED_BACKEND_PORT || '5241'
+
 // 配置缓存
 let cachedBackendPort: string | null = null
 let configLoadPromise: Promise<void> | null = null
@@ -57,9 +70,10 @@ async function loadConfigFromFile(): Promise<void> {
     console.error('[Config] 读取配置文件失败:', error)
   }
   
-  // 如果都失败了，使用默认端口
-  cachedBackendPort = '5241'
-  console.log('[Config] 使用默认端口:', cachedBackendPort)
+  // 都失败了：优先用构建时从根配置注入的端口，再退到出厂默认端口
+  cachedBackendPort = FALLBACK_BACKEND_PORT
+  console.log('[Config] fallback backend port:', cachedBackendPort,
+    INJECTED_BACKEND_PORT ? '(injected from root WebRPAConfig.json)' : '(factory default)')
 }
 
 // 确保配置已加载（返回Promise）
@@ -75,7 +89,7 @@ export function getBackendBaseUrl(): string {
   
   // 如果还没有缓存，使用默认值
   // 注意：这里不再触发异步加载，因为应该在App初始化时就已经加载了
-  const backendPort = cachedBackendPort || '5241'
+  const backendPort = cachedBackendPort || FALLBACK_BACKEND_PORT
   
   console.log('[Config] getBackendBaseUrl 被调用 | cachedBackendPort:', cachedBackendPort, '| 使用端口:', backendPort)
   
@@ -89,7 +103,7 @@ export function getBackendBaseUrl(): string {
 
 // 获取后端端口号
 export function getBackendPort(): string {
-  return cachedBackendPort || '5241'
+  return cachedBackendPort || FALLBACK_BACKEND_PORT
 }
 
 // 获取前端端口号

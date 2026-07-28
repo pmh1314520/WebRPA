@@ -203,13 +203,26 @@ class WebhookTriggerExecutor(ModuleExecutor):
         from http.server import BaseHTTPRequestHandler, HTTPServer
         from urllib.parse import urlparse, parse_qs
 
-        # 监听端口：与编辑器一致默认 5241，可被 WEBRPA_WEBHOOK_PORT 覆盖
-        port = 5241
-        try:
-            import os as _os
-            port = int(_os.environ.get('WEBRPA_WEBHOOK_PORT') or 5241)
-        except Exception:
-            port = 5241
+        # 监听端口按优先级取：WEBRPA_WEBHOOK_PORT 环境变量 → WebRPAConfig.json 的后端端口。
+        # 这里过去写死 5241：用户在启动器里改过后端端口后，打包运行的 Webhook 监听仍然
+        # 起在 5241，外部按新端口调用永远打不进来（且可能与真正占用 5241 的服务撞车）。
+        import os as _os
+
+        def _resolve_webhook_port() -> int:
+            raw = (_os.environ.get('WEBRPA_WEBHOOK_PORT') or '').strip()
+            if raw:
+                try:
+                    return int(raw)
+                except ValueError:
+                    context.add_log(
+                        'warning',
+                        f"⚠️ WEBRPA_WEBHOOK_PORT 值无效（{raw}），改用配置文件中的后端端口",
+                        None,
+                    )
+            from app.utils.config import get_backend_port
+            return int(get_backend_port())
+
+        port = _resolve_webhook_port()
 
         expect_path = f"/api/triggers/webhook/{webhook_id}"
         holder = {"data": None}

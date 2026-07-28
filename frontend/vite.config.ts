@@ -13,7 +13,7 @@ function loadConfig() {
     if (fs.existsSync(configPath)) {
       const configContent = fs.readFileSync(configPath, 'utf-8')
       const config = JSON.parse(configContent)
-      return config.frontend || {}
+      return { frontend: config.frontend || {}, backend: config.backend || {} }
     } else {
       console.log('[Config] 配置文件不存在，使用默认配置')
     }
@@ -21,21 +21,32 @@ function loadConfig() {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('[Config] 读取配置文件失败:', errorMessage, '，使用默认配置')
   }
-  
+
   // 返回默认配置
   return {
-    host: '0.0.0.0',
-    port: 5173
+    frontend: { host: '0.0.0.0', port: 5173 },
+    backend: {},
   }
 }
 
 // 加载配置
-const config = loadConfig()
-console.log(`[Config] 前端服务配置: host=${config.host}, port=${config.port}`)
+const rootConfig = loadConfig()
+const config = rootConfig.frontend
+// 后端端口在构建/启动时从**根目录**配置注入。
+// 运行时原本只依赖 public/WebRPAConfig.json 这个副本，用户手改根配置（README 明确
+// 允许）却没经过启动器保存时副本不会更新，前端就会拿旧端口请求后端、整站失败。
+// 这里把根配置的真值编译进产物，作为副本读取失败/过期时的可靠兜底。
+const backendPortFromRoot = Number(rootConfig.backend?.port) || 0
+console.log(`[Config] 前端服务配置: host=${config.host}, port=${config.port}`
+  + `, 注入后端端口=${backendPortFromRoot || '(未配置)'}`)
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    // 根目录 WebRPAConfig.json 里的后端端口（0 表示未配置，运行时按默认值处理）
+    __WEBRPA_BACKEND_PORT__: JSON.stringify(backendPortFromRoot),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

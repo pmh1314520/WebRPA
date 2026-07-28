@@ -111,6 +111,16 @@ function readConfig() {
   }
 }
 
+// 把根目录配置同步到前端 public：前端运行时读的是 /WebRPAConfig.json（即 public 那份），
+// 两者不一致时前端会拿着旧端口去请求后端，表现为整站请求失败。
+// 除了「保存配置」，启动前端前也必须同步一次——用户完全可能按 README 的说法直接手改
+// 根目录配置文件（不经过启动器界面），那条路径下 public 副本永远不会被更新。
+function syncFrontendPublicConfig(json) {
+  const frontendPublic = path.join(appRoot(), 'frontend', 'public', 'WebRPAConfig.json')
+  fs.mkdirSync(path.dirname(frontendPublic), { recursive: true })
+  fs.writeFileSync(frontendPublic, json, 'utf-8')
+}
+
 function saveConfig(config) {
   const root = appRoot()
   const json = JSON.stringify(config, null, 2)
@@ -119,11 +129,8 @@ function saveConfig(config) {
   } catch (e) {
     throw `保存配置文件失败: ${e.message}`
   }
-  // 同步写入前端 public 配置，确保 /WebRPAConfig.json 与启动器配置一致
-  const frontendPublic = path.join(root, 'frontend', 'public', 'WebRPAConfig.json')
   try {
-    fs.mkdirSync(path.dirname(frontendPublic), { recursive: true })
-    fs.writeFileSync(frontendPublic, json, 'utf-8')
+    syncFrontendPublicConfig(json)
   } catch (e) {
     throw `同步前端配置文件失败: ${e.message}`
   }
@@ -216,6 +223,13 @@ async function startFrontend() {
   const config = readConfig()
   if (await isPortInUse(config.frontend.port)) {
     throw `前端服务已在运行（端口${config.frontend.port}已被占用）`
+  }
+  // 启动前先把根目录配置同步给前端：覆盖"用户手改根配置、没经过启动器保存"的情况，
+  // 否则前端会读到 public 里的旧端口，把请求打到没有服务在听的端口上。
+  try {
+    syncFrontendPublicConfig(JSON.stringify(config, null, 2))
+  } catch (e) {
+    throw `同步前端配置文件失败（前端会读到旧端口）: ${e.message}`
   }
   const root = appRoot()
   const frontendDir = path.join(root, 'frontend')
