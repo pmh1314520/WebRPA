@@ -293,10 +293,14 @@ def test_write_lock_probe_on_free_file(tmp_path):
 
 
 class _RecordingDoc:
-    """记录 Close 传入的保存选项"""
+    """记录 Close 传入的保存选项。
 
-    def __init__(self, log):
+    Path 模拟 Word 的语义：已落盘文档返回所在目录，从未保存的新文档返回空串。
+    """
+
+    def __init__(self, log, folder: str = "D:\\docs"):
         self.log = log
+        self.Path = folder
 
     def Close(self, opt):
         self.log.append(("Close", opt))
@@ -310,11 +314,14 @@ class _RecordingApp:
         self.log.append(("Quit",))
 
 
-def _make_session(log, read_only: bool):
+def _make_session(log, read_only: bool, folder: str = "D:\\docs"):
+    """构造一个假会话；folder 为空串表示"从未保存到磁盘的新建文档"。"""
     from app.executors.word_automation import _WordWorker
     return {
-        "app": _RecordingApp(log), "doc": _RecordingDoc(log), "path": "",
+        "app": _RecordingApp(log), "doc": _RecordingDoc(log, folder),
+        "path": (folder + "\\a.docx") if folder else "",
         "worker": _WordWorker(), "engine": "", "readOnly": read_only,
+        "pids": [],
     }
 
 
@@ -383,3 +390,59 @@ def test_missing_session_gives_actionable_error():
     with pytest.raises(WordError) as ei:
         _get_session(ExecutionContext(), "")
     assert "打开" in str(ei.value)
+
+
+def test_cleanup_does_not_save_never_saved_document():
+    """兜底清理：可写但从未落盘的新建文档不能保存，否则会弹「另存为」把收尾卡死"""
+    from app.executors.base import ExecutionContext
+    from app.executors.word_automation import (
+        WD_DO_NOT_SAVE_CHANGES, WD_SAVE_CHANGES, cleanup_word_sessions,
+    )
+
+    ctx = ExecutionContext()
+    log = []
+    setattr(ctx, "_word_docs", {"a": _make_session(log, read_only=False, folder="")})
+    assert asyncio.run(cleanup_word_sessions(ctx)) == 1
+    assert ("Close", WD_DO_NOT_SAVE_CHANGES) in log
+    assert ("Close", WD_SAVE_CHANGES) not in log
+
+
+def test_close_releases_com_refs_inside_session():
+    """收尾必须就地清空会话里的 doc/app 引用：留到别的线程 GC 就是跨套间释放，
+    引擎进程引用计数不归零，Word 会无窗口残留并继续占着文档"""
+    from app.executors.word_automation import _shutdown_session
+
+    log = []
+    session = _make_session(log, read_only=False)
+
+    async def _run():
+        return await _shutdown_session(session, save_changes=True)
+
+    outcome = asyncio.run(_run())
+    assert outcome["error"] == ""
+    assert session["doc"] is None and session["app"] is None
+
+
+def test_stale_lock_file_is_removed(tmp_path):
+    """失效锁文件（文件未被写占用）必须能被清理，否则下次打开会被误判为占用"""
+    from app.executors.word_automation import _detect_lock_file, _remove_stale_lock_file
+
+    doc = tmp_path / "报告.docx"
+    doc.write_bytes(b"")
+    lock = tmp_path / "~$报告.docx"
+    lock.write_bytes(b"")
+
+    removed, reason = _remove_stale_lock_file(str(doc), "~$报告.docx")
+    assert removed is True and reason == ""
+    assert not lock.exists()
+    assert _detect_lock_file(str(doc)) == ""
+
+
+def test_require_writable_blocks_readonly_write():
+    """只读文档上的写入类模块必须快速失败，不能返回"成功"造成误导"""
+    from app.executors.word_automation import _require_writable
+
+    _require_writable({"readOnly": False}, "替换")  # 可写文档不应抛出
+    with pytest.raises(WordError) as ei:
+        _require_writable({"readOnly": True}, "替换")
+    assert "只读" in str(ei.value)

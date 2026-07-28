@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import os
 from typing import Any, Optional
 
@@ -226,17 +227,22 @@ def _sessions(context: ExecutionContext) -> dict:
 
 
 def _put_session(context: ExecutionContext, key: str, app, doc, path: str,
-                 worker=None, engine: str = "", read_only: bool = False) -> None:
+                 worker=None, engine: str = "", read_only: bool = False,
+                 pids=None) -> None:
     """登记文档会话。
 
     engine    记录实际引擎名，供后续模块（如导出 PDF）回显。
     read_only 记录本文档是否以只读方式打开，供工作流收尾的兜底清理决定
               「保存后关闭」还是「不保存关闭」——对只读文档执行保存会弹
               「另存为」对话框把收尾卡住，且用户本就没有写回原文件的意图。
+    pids      本会话启动的引擎进程 PID。关闭时若 app.Quit() 后进程仍残留，
+              据此精确回收；不记录 PID 就只能按进程名批量杀，会误伤用户
+              手工打开的 Word/WPS，绝不可取。
     """
     _sessions(context)[key] = {
         "app": app, "doc": doc, "path": path, "worker": worker,
         "engine": engine, "readOnly": bool(read_only),
+        "pids": list(pids or []),
     }
 
 
@@ -272,6 +278,22 @@ def _get_session(context: ExecutionContext, key: str) -> dict:
         return store[k]
     # 未指定则用最后一个（单文档场景下用户无需关心标识）
     return list(store.values())[-1]
+
+
+def _require_writable(session: dict, action: str) -> None:
+    """写入类模块的前置校验：只读文档上的修改不会落盘，必须快速失败而非静默无效。
+
+    只读文档执行 `Find.Execute(Replace)`、`InsertAfter` 等操作时，Word/WPS 既不报错
+    也不写入，模块却能拿到"成功"的返回值——用户会看到「已替换 N 处」却发现文件没变。
+    这类误导性成功比直接报错危险得多，故在入口处拦住。
+    """
+    if bool(session.get("readOnly")):
+        raise WordError(
+            f"当前文档是以只读方式打开的，{action}不会写入文档，已中止以避免"
+            "「报告成功但文件没变」的误导结果。\n"
+            "处置：若在「打开/新建Word」里勾选了「以只读方式打开」，请取消勾选；"
+            "若是因文档被占用而自动降级为只读，请先关闭正在编辑该文档的 Word / WPS 窗口。"
+        )
 
 
 def _pop_session(context: ExecutionContext, key: str) -> tuple[str, dict]:
@@ -398,6 +420,258 @@ def _detect_lock_file(path: str) -> str:
     return ""
 
 
+def _remove_stale_lock_file(path: str, lock_name: str) -> tuple[bool, str]:
+    """删除已失效的 `~$` 锁文件，返回 (是否删除成功, 失败原因)。
+
+    仅在调用方已确认「文件未被写占用」时使用：此时持有锁的 Word/WPS 进程已经退出，
+    锁文件纯属上次异常退出的垃圾。留着它会让 Word/WPS 在下次打开时弹出
+    「文档已被 xxx 锁定，是否以只读模式打开？」模态框，把 COM 调用挂死；
+    而把文档降级为只读又会让替换/写入/保存类模块全部静默失效——两者都不可接受，
+    正确处置就是清掉这个失效锁文件，按用户原本的可写意图打开。
+
+    锁文件带隐藏属性（不影响删除）、个别情况下带只读属性（需先清除）。
+    """
+    if not lock_name:
+        return False, "未检测到锁文件"
+    lock_path = os.path.join(os.path.dirname(os.path.abspath(path)), lock_name)
+    try:
+        # 清除可能存在的只读属性；本身失败不影响后续删除尝试
+        try:
+            os.chmod(lock_path, 0o666)
+        except OSError:
+            pass
+        os.remove(lock_path)
+        return True, ""
+    except FileNotFoundError:
+        # 期间被别的进程清掉了，结果等价于删除成功
+        return True, ""
+    except OSError as e:
+        return False, str(e)
+
+
+# 文字处理引擎的进程名（小写）。用于「只回收本会话自己启动的引擎进程」：
+# 关闭时按打开阶段记录的 PID 精确匹配，并二次校验进程名仍是引擎，
+# 绝不按进程名批量结束——用户手工打开的 Word/WPS 不能被工作流杀掉。
+_ENGINE_PROCESS_NAMES = ("winword.exe", "wps.exe")
+
+
+def _snapshot_engine_pids() -> set:
+    """当前系统中所有文字处理引擎进程的 PID 集合；psutil 不可用时返回空集合。"""
+    try:
+        import psutil  # type: ignore
+    except ImportError:
+        return set()
+    pids = set()
+    try:
+        for proc in psutil.process_iter(["pid", "name"]):
+            try:
+                name = str(proc.info.get("name") or "").lower()
+                if name in _ENGINE_PROCESS_NAMES:
+                    pids.add(int(proc.info["pid"]))
+            except Exception:
+                continue
+    except Exception:
+        return set()
+    return pids
+
+
+def _alive_engine_pids(pids) -> list:
+    """这些 PID 中仍存活、且进程名仍是引擎的部分（PID 可能已被系统复用给别的进程）。"""
+    if not pids:
+        return []
+    try:
+        import psutil  # type: ignore
+    except ImportError:
+        return []
+    alive = []
+    for pid in pids:
+        try:
+            proc = psutil.Process(int(pid))
+            if str(proc.name() or "").lower() in _ENGINE_PROCESS_NAMES:
+                alive.append(int(pid))
+        except Exception:
+            # NoSuchProcess / AccessDenied 都视为"不需要处理"
+            continue
+    return alive
+
+
+def _terminate_engine_pids(pids, grace: float = 3.0) -> list:
+    """强制结束指定的引擎进程，返回实际被结束的 PID 列表。
+
+    仅用于 app.Quit() 之后进程仍未退出的兜底场景。每个 PID 都会先校验进程名，
+    避免 PID 被系统复用后误杀无关进程。
+    """
+    targets = _alive_engine_pids(pids)
+    if not targets:
+        return []
+    try:
+        import psutil  # type: ignore
+    except ImportError:
+        return []
+    killed = []
+    for pid in targets:
+        try:
+            proc = psutil.Process(pid)
+            if str(proc.name() or "").lower() not in _ENGINE_PROCESS_NAMES:
+                continue
+            proc.terminate()
+            try:
+                proc.wait(timeout=grace)
+            except Exception:
+                proc.kill()
+            killed.append(pid)
+        except Exception:
+            continue
+    return killed
+
+
+def _reap_engine_pids(pids, wait: float = 3.0) -> list:
+    """同步等待引擎进程自然退出，超时未退则强制结束，返回被强制结束的 PID。
+
+    供「自包含的同步 COM 调用」（如独立导出 PDF）在自己的线程里收尾使用；
+    异步会话路径请用 _shutdown_session，它以 await 方式等待，不占用线程。
+    """
+    if not pids:
+        return []
+    import time
+    deadline = time.monotonic() + max(0.0, wait)
+    while time.monotonic() < deadline:
+        if not _alive_engine_pids(pids):
+            return []
+        time.sleep(0.2)
+    return _terminate_engine_pids(pids)
+
+
+def _close_and_release(session: dict, want_save: bool) -> dict:
+    """在会话专用 COM 线程内完成收尾：关闭文档 → 退出引擎 → 释放 COM 引用。
+
+    ⚠️ 必须由 `session["worker"]` 那个线程执行，不可在别的线程调用。
+
+    第三步是本函数存在的核心理由：COM 代理对象是 apartment-bound 的，只有在创建
+    它的 STA 线程内 Release 才有效。若 `doc` / `app` 的 Python 引用漂到会话字典、
+    闭包或调用方局部变量里，等到主线程 GC 时才回收，就是跨套间释放——引擎进程的
+    外部引用计数不归零，Word/WPS 会以无可见窗口的状态残留在系统里，并继续持有
+    文档的 `~$` 锁文件（用户感知为「Word 关不掉」+「文档已被 xxx 锁定」）。
+
+    返回 {"saved": bool, "skipped": str, "errors": [str]}。
+    """
+    doc = session.get("doc")
+    app = session.get("app")
+    result: dict = {"saved": False, "skipped": "", "errors": []}
+
+    save_opt = WD_DO_NOT_SAVE_CHANGES
+    if want_save:
+        # 从未落盘的新文档执行「保存并关闭」会弹出「另存为」模态框把收尾卡到超时
+        try:
+            has_disk_path = bool(str(doc.Path or "").strip()) if doc is not None else False
+        except Exception:
+            fallback = str(session.get("path") or "")
+            has_disk_path = bool(fallback) and os.path.isabs(fallback)
+        if has_disk_path:
+            save_opt = WD_SAVE_CHANGES
+            result["saved"] = True
+        else:
+            result["skipped"] = (
+                "文档从未保存到磁盘，保存会弹出「另存为」对话框阻塞流程，已改为不保存关闭"
+            )
+
+    try:
+        if doc is not None:
+            doc.Close(save_opt)
+    except Exception as e:
+        result["saved"] = False
+        result["errors"].append(f"关闭文档失败: {e}")
+    try:
+        if app is not None:
+            app.Quit()
+    except Exception as e:
+        result["errors"].append(f"退出引擎失败: {e}")
+
+    # 就地清掉所有引用（含会话字典里的），再显式 GC，确保 Release 发生在本线程
+    session["doc"] = None
+    session["app"] = None
+    doc = None
+    app = None
+    gc.collect()
+    try:
+        import pythoncom  # type: ignore
+        pythoncom.CoFreeUnusedLibraries()
+    except Exception:
+        pass
+    return result
+
+
+async def _shutdown_session(session: dict, save_changes: bool,
+                            timeout: float = 25.0) -> dict:
+    """关闭一个文档会话并确保引擎进程与文件锁都被真正释放。
+
+    「关闭Word」模块与工作流兜底清理共用这一条路径，保证两者语义一致。
+
+    步骤：
+      1. 在会话专用 COM 线程内关闭文档、退出引擎、释放 COM 引用（见 _close_and_release）；
+      2. 给引擎自然退出的宽限时间，仍存活则按打开时记录的 PID 精确强制结束；
+      3. 回收专用 COM 线程（放在强杀之后：线程若被模态框卡住，进程一死即可解除阻塞）；
+      4. 被强制结束的情况下补清残留 `~$` 锁文件，避免下次打开被误判为占用。
+
+    返回 {"saved", "readOnly", "killed", "skippedSaveReason", "error"}；
+    error 非空表示收尾未干净完成，调用方必须如实上报，不得静默当成成功。
+    """
+    read_only = bool(session.get("readOnly"))
+    worker = session.get("worker")
+    pids = list(session.get("pids") or [])
+    path = str(session.get("path") or "")
+    # 只读文档一律不保存：对只读文档保存会弹「另存为」，且用户本无写回原文件的意图
+    want_save = bool(save_changes) and not read_only
+
+    outcome: dict = {
+        "saved": False, "readOnly": read_only, "killed": [],
+        "skippedSaveReason": "", "error": "",
+    }
+
+    try:
+        if worker is not None:
+            result = await asyncio.wait_for(
+                worker.run(lambda: _close_and_release(session, want_save)), timeout=timeout
+            )
+        else:
+            result = await asyncio.wait_for(
+                _run_com(lambda: _close_and_release(session, want_save)), timeout=timeout
+            )
+        outcome["saved"] = bool(result.get("saved"))
+        outcome["skippedSaveReason"] = str(result.get("skipped") or "")
+        errors = result.get("errors") or []
+        if errors:
+            outcome["error"] = "；".join(str(e) for e in errors)
+    except asyncio.TimeoutError:
+        outcome["error"] = (
+            f"关闭文档超时（{timeout:.0f} 秒），可能被 Word/WPS 弹出的模态对话框阻塞"
+        )
+    except Exception as e:
+        outcome["error"] = f"关闭文档时出错：{e}"
+
+    # 进程兜底：Quit() 是异步生效的，先给宽限时间自然退出，仍存活才强制结束
+    if pids:
+        remaining = _alive_engine_pids(pids)
+        waited = 0.0
+        while remaining and waited < 3.0:
+            await asyncio.sleep(0.3)
+            waited += 0.3
+            remaining = _alive_engine_pids(pids)
+        if remaining:
+            outcome["killed"] = _terminate_engine_pids(remaining)
+
+    if worker is not None:
+        worker.close()
+
+    # 引擎正常退出会自行删除 ~$ 锁文件；被强制结束时删不掉，这里补清，
+    # 否则下次打开同一文档会因残留锁文件被误判为占用。
+    if outcome["killed"] and path and os.path.isfile(path) and not _is_file_write_locked(path):
+        lock_name = _detect_lock_file(path)
+        if lock_name:
+            _remove_stale_lock_file(path, lock_name)
+    return outcome
+
+
 # ============================================================
 # 1. 打开 / 新建 Word
 # ============================================================
@@ -422,19 +696,38 @@ class WordOpenExecutor(ModuleExecutor):
         try:
             _require_win32()
 
-            # 打开已存在文件前先探测占用：文档被 Word/WPS 持有（或残留 ~$ 锁文件）时，
-            # Documents.Open 会弹出「文件正被使用」模态框并把调用挂死到工作流超时。
-            # 默认不硬失败，而是自动降级为只读打开——读取类流程（最常见用法）由此可
-            # 直接跑通；确实需要可写打开的场景把 onLocked 设为 fail 即可显式报错。
+            # 打开已存在文件前先探测占用：文档被 Word/WPS 持有时，Documents.Open 会弹出
+            # 「文件正被使用 / 已被 xxx 锁定」模态框并把调用挂死到工作流超时。
+            # 处置分两种情况，绝不能混为一谈：
+            #   · 文件真被写占用 → 按 onLocked 处置（默认降级只读，或直接报错）；
+            #   · 只剩失效的 ~$ 锁文件（持锁进程已退出）→ 清掉锁文件，按用户原本的
+            #     可写意图打开。这里若也降级只读，替换/写入/保存类模块会全部静默失效。
             forced_readonly = False
             if file_path and os.path.isfile(file_path) and not read_only:
                 lock_name = _detect_lock_file(file_path)
+                cause = ""
                 if lock_name:
-                    held = _is_file_write_locked(file_path)
-                    cause = (
-                        "文档正在 Word / WPS 中打开" if held
-                        else f"疑似上次异常退出残留的锁文件（可手动删除同目录下的 {lock_name} 以恢复可写打开）"
-                    )
+                    if _is_file_write_locked(file_path):
+                        # 文件确实被别的进程以拒绝写入的方式持有，锁文件是有效的
+                        cause = "文档正在 Word / WPS 中打开（文件已被写占用）"
+                    else:
+                        # 锁文件存在但文件可写 → 持锁进程早已退出，这是上次异常退出的
+                        # 垃圾锁文件。留着它 Word 会弹「已被 xxx 锁定」把调用挂死，
+                        # 降级只读又会让替换/写入/保存全部静默失效，正确处置是清掉它。
+                        removed, fail_reason = _remove_stale_lock_file(file_path, lock_name)
+                        if removed:
+                            context.add_log(
+                                level="info",
+                                message=(
+                                    f"[Word] 已清理上次异常退出残留的锁文件 {lock_name}，"
+                                    "按可写方式打开文档。"
+                                ),
+                            )
+                        else:
+                            cause = (
+                                f"检测到残留锁文件 {lock_name}，但清理失败：{fail_reason}"
+                            )
+                if cause:
                     if on_locked == "fail":
                         return ModuleResult(
                             success=False,
@@ -456,13 +749,21 @@ class WordOpenExecutor(ModuleExecutor):
                         ),
                     )
 
+            # 本会话启动的引擎进程 PID。关闭/收尾时据此精确回收残留进程；
+            # 用可变列表承载，使超时取消路径也能拿到已启动的进程去回收。
+            engine_pids: list = []
+
             def _start_engine():
+                before = _snapshot_engine_pids()
                 app, engine = _create_word_app(visible=visible)
                 # 禁用宏安全提示，避免带宏文档弹框把自动化挂住
                 try:
                     app.AutomationSecurity = 3  # msoAutomationSecurityForceDisable
                 except Exception:
                     pass
+                # 只登记"本次新出现"的引擎进程；复用到已有进程时集合为空，
+                # 收尾便不会去动它——用户手工打开的 Word/WPS 不能被工作流结束掉。
+                engine_pids.extend(sorted(_snapshot_engine_pids() - before))
                 return app, engine
 
             def _open_document(app):
@@ -510,14 +811,25 @@ class WordOpenExecutor(ModuleExecutor):
             except BaseException:
                 # 必须用 BaseException：节点超时会以 asyncio.CancelledError 打断这里，
                 # 只捕获 Exception 会漏掉取消场景，导致专用 COM 线程与 Word 进程泄漏。
+                # 先结束引擎进程再回收线程：线程可能正卡在模态框上，进程一死才解得开。
+                killed = _terminate_engine_pids(engine_pids)
                 worker.close()
+                if killed:
+                    context.add_log(
+                        level="warning",
+                        message=(
+                            f"[Word] 打开文档未完成，已强制结束本次启动的引擎进程 {killed}，"
+                            "避免残留进程占用文档。"
+                        ),
+                    )
                 raise
             actual_path = ""
             try:
                 actual_path = await worker.run(lambda: doc.FullName)
             except Exception:
                 actual_path = file_path
-            _put_session(context, doc_key, app, doc, actual_path, worker, engine, read_only)
+            _put_session(context, doc_key, app, doc, actual_path, worker, engine,
+                         read_only, engine_pids)
 
             action = "已打开" if mode == "opened" else "已新建"
             ro_note = "，只读（文档被占用已自动降级）" if forced_readonly else ""
@@ -565,7 +877,9 @@ class WordToPdfExecutor(ModuleExecutor):
 
                 def _convert():
                     # 自动适配 Microsoft Word / WPS 文字
+                    before = _snapshot_engine_pids()
                     app, engine_used = _create_word_app(visible=False)
+                    own_pids = sorted(_snapshot_engine_pids() - before)
                     doc = None
                     try:
                         doc = app.Documents.Open(os.path.abspath(source_path), ReadOnly=True)
@@ -580,6 +894,11 @@ class WordToPdfExecutor(ModuleExecutor):
                             app.Quit()
                         except Exception:
                             pass
+                        # COM 引用就地释放（本函数与 COM 创建同线程），再确认进程已退出
+                        doc = None
+                        app = None
+                        gc.collect()
+                        _reap_engine_pids(own_pids)
 
                 pdf_path, engine = await _run_com(_convert)
             else:
@@ -698,6 +1017,7 @@ class WordWriteTextExecutor(ModuleExecutor):
         try:
             _require_win32()
             session = _get_session(context, doc_key)
+            _require_writable(session, "写入文本")
             doc = session["doc"]
 
             def _write():
@@ -924,6 +1244,7 @@ class WordReplaceTextExecutor(ModuleExecutor):
         try:
             _require_win32()
             session = _get_session(context, doc_key)
+            _require_writable(session, "替换")
             doc = session["doc"]
 
             def _replace():
@@ -1117,6 +1438,7 @@ class WordInsertTableExecutor(ModuleExecutor):
         try:
             _require_win32()
             session = _get_session(context, doc_key)
+            _require_writable(session, "插入表格")
             doc = session["doc"]
 
             def _insert():
@@ -1188,6 +1510,7 @@ class WordInsertImageExecutor(ModuleExecutor):
         try:
             _require_win32()
             session = _get_session(context, doc_key)
+            _require_writable(session, "插入图片")
             doc = session["doc"]
 
             def _insert():
@@ -1254,6 +1577,7 @@ class WordInsertHyperlinkExecutor(ModuleExecutor):
         try:
             _require_win32()
             session = _get_session(context, doc_key)
+            _require_writable(session, "插入超链接")
             doc = session["doc"]
 
             def _insert():
@@ -1320,18 +1644,24 @@ class WordSaveExecutor(ModuleExecutor):
                         "（若是因文档被占用而自动降级为只读，请先关闭正在占用它的 Word/WPS）。"
                         "如需保存结果，请填写「另存为路径」存为新文件。"
                     )
-                # 原地保存：从未保存过的新文档没有路径，必须要求另存为
+                # 原地保存：从未落盘的新文档没有所在目录，Save() 会弹「另存为」把流程卡住。
+                # 判据用 doc.Path（Word 对未保存文档返回空串）而不是文件扩展名——
+                # 按扩展名判断会把 .rtf / .txt / .wps 等合法已落盘文档误判成"未保存"。
+                try:
+                    folder = str(doc.Path or "").strip()
+                except Exception:
+                    folder = ""
                 try:
                     full = str(doc.FullName or "")
                 except Exception:
                     full = ""
-                if not full or not os.path.isabs(full) or not full.lower().endswith((".doc", ".docx", ".docm")):
+                if not folder:
                     raise WordError(
                         "当前文档尚未保存到磁盘，无法原地保存。请填写「另存为路径」"
                         "（或在「打开/新建Word」模块里指定文件路径）。"
                     )
                 doc.Save()
-                return full
+                return full or folder
 
             path = await _run_in_session(session, _save)
             # 会话里的路径同步更新，后续导出 PDF 等可正确推断
@@ -1375,79 +1705,64 @@ class WordCloseExecutor(ModuleExecutor):
                     return ModuleResult(success=True, message="当前没有已打开的 Word 文档，无需关闭")
                 keys = list(store.keys())
 
-                # 每个文档都必须在它自己的 COM 线程里关闭，关完再回收该线程
+                # 逐个走共享收尾路径（同线程释放 COM + 进程兜底），失败如实汇总上报
+                failures: list[str] = []
+                killed_all: list[int] = []
                 for k in keys:
-                    s = store.get(k) or {}
-
-                    def _close_one(_s=s):
-                        # 只读文档强制不保存：对只读文档保存会弹「另存为」把流程卡死
-                        _save = save_changes and not bool(_s.get("readOnly"))
-                        try:
-                            if _s.get("doc") is not None:
-                                _s["doc"].Close(WD_SAVE_CHANGES if _save else WD_DO_NOT_SAVE_CHANGES)
-                        except Exception:
-                            pass
-                        try:
-                            if _s.get("app") is not None:
-                                _s["app"].Quit()
-                        except Exception:
-                            pass
-                        return True
-
-                    worker = s.get("worker")
-                    try:
-                        if worker is not None:
-                            await worker.run(_close_one)
-                        else:
-                            await _run_com(_close_one)
-                    finally:
-                        if worker is not None:
-                            worker.close()
+                    s = store.pop(k, None) or {}
+                    res = await _shutdown_session(s, save_changes)
+                    killed_all.extend(res.get("killed") or [])
+                    if res.get("error"):
+                        failures.append(f"{k}: {res['error']}")
                 store.clear()
+                if failures:
+                    return ModuleResult(
+                        success=False,
+                        error="部分 Word 文档未能干净关闭：" + "；".join(failures),
+                        data={"closed": keys, "killed": killed_all},
+                    )
+                note = f"（{'已保存改动' if save_changes else '未保存改动'}；只读文档一律不保存）"
+                if killed_all:
+                    note += f"；已强制回收残留引擎进程 {killed_all}"
                 return ModuleResult(
                     success=True,
-                    message=f"已关闭全部 {len(keys)} 个 Word 文档"
-                            f"（{'已保存改动' if save_changes else '未保存改动'}；只读文档一律不保存）",
-                    data={"closed": keys},
+                    message=f"已关闭全部 {len(keys)} 个 Word 文档{note}",
+                    data={"closed": keys, "killed": killed_all},
                 )
 
             key, session = _pop_session(context, doc_key)
-            doc = session.get("doc")
-            app = session.get("app")
-            worker = session.get("worker")
-            # 只读文档强制不保存：对只读文档保存会弹「另存为」对话框把流程卡死
-            doc_read_only = bool(session.get("readOnly"))
-            effective_save = save_changes and not doc_read_only
+            # 关闭、退出、释放 COM 引用、回收线程、进程兜底全部由共享收尾路径完成，
+            # 与工作流兜底清理保持同一套语义（尤其是"COM 引用必须同线程释放"这一条）
+            res = await _shutdown_session(session, save_changes)
+            doc_read_only = bool(res.get("readOnly"))
+            killed = res.get("killed") or []
 
-            def _close():
-                try:
-                    if doc is not None:
-                        doc.Close(WD_SAVE_CHANGES if effective_save else WD_DO_NOT_SAVE_CHANGES)
-                except Exception:
-                    pass
-                try:
-                    if app is not None:
-                        app.Quit()
-                except Exception:
-                    pass
-                return True
+            if res.get("error"):
+                # 收尾没干净完成就必须报失败：静默报成功会让用户以为 Word 已关，
+                # 实际残留进程还占着文档，下次运行照样被锁。
+                hint = f"（已强制回收残留引擎进程 {killed}）" if killed else (
+                    "（未能确认引擎进程已退出，可能需手动结束 WINWORD.EXE / wps.exe）"
+                )
+                return ModuleResult(
+                    success=False,
+                    error=f"关闭 Word 文档「{key}」未干净完成：{res['error']}{hint}",
+                    data={"docKey": key, "killed": killed},
+                )
 
-            try:
-                if worker is not None:
-                    await worker.run(_close)
-                else:
-                    await _run_com(_close)
-            finally:
-                # 关闭完成后回收该文档独占的 COM 线程，避免线程泄漏
-                if worker is not None:
-                    worker.close()
-            saved_note = "已保存改动" if effective_save else "未保存改动"
+            saved_note = "已保存改动" if res.get("saved") else "未保存改动"
             if save_changes and doc_read_only:
                 saved_note += "（文档为只读打开，已忽略保存）"
+            elif res.get("skippedSaveReason"):
+                saved_note += f"（{res['skippedSaveReason']}）"
+            if killed:
+                saved_note += f"；已强制回收残留引擎进程 {killed}"
             return ModuleResult(
                 success=True,
                 message=f"已关闭 Word 文档（标识: {key}，{saved_note}）",
-                data={"docKey": key, "saved": effective_save, "readOnly": doc_read_only},
+                data={
+                    "docKey": key, "saved": bool(res.get("saved")),
+                    "readOnly": doc_read_only, "killed": killed,
+                },
             )
         except WordError as e:
             return ModuleResult(success=False, error=str(e))
@@ -1467,11 +1782,12 @@ async def cleanup_word_sessions(context: ExecutionContext) -> int:
     残留的 Word/WPS 进程会一直占着文档文件，使下一次运行「打开/新建Word」
     因文件被占用而弹出模态框、把调用挂死到超时。这里做兜底收尾。
 
-    保存策略按文档打开方式区分，不能一律保存：
-      - 可写打开 → 保存后关闭，避免用户已写入的内容因流程异常而白做；
-      - 只读打开 → **不保存**关闭。只读文档本就没有写回原文件的意图，
-        且对只读文档执行"保存并关闭"会弹出「另存为」对话框，把收尾卡到超时
-        （「文档被占用时自动降级只读」上线后，只读打开已是常见路径）。
+    保存策略按文档状态区分，不能一律保存：
+      - 可写且已落盘 → 保存后关闭，避免用户已写入的内容因流程异常而白做；
+      - 只读打开     → **不保存**关闭。只读文档本就没有写回原文件的意图，
+        且对只读文档执行"保存并关闭"会弹出「另存为」对话框，把收尾卡到超时；
+      - 可写但从未落盘（新建未保存）→ **不保存**关闭。这类文档保存同样会弹
+        「另存为」，收尾阶段没有人能去点那个对话框。
     """
     store = getattr(context, "_word_docs", None)
     if not store:
@@ -1481,38 +1797,22 @@ async def cleanup_word_sessions(context: ExecutionContext) -> int:
     cleaned = 0
     for key in keys:
         session = store.pop(key, None) or {}
-        doc = session.get("doc")
-        app = session.get("app")
-        worker = session.get("worker")
-        # 只读文档不保存（否则会弹「另存为」把收尾卡死，且违背只读意图）
-        read_only = bool(session.get("readOnly"))
-        save_opt = WD_DO_NOT_SAVE_CHANGES if read_only else WD_SAVE_CHANGES
-
-        def _close_one():
-            try:
-                if doc is not None:
-                    doc.Close(save_opt)
-            except Exception:
-                pass
-            try:
-                if app is not None:
-                    app.Quit()
-            except Exception:
-                pass
-            return True
-
-        try:
-            if worker is not None:
-                # 加超时：COM 线程可能已被弹窗卡死，不能让收尾无限等待
-                await asyncio.wait_for(worker.run(_close_one), timeout=20)
-            else:
-                await asyncio.wait_for(_run_com(_close_one), timeout=20)
-            cleaned += 1
-            print(f"[Word] 工作流结束，已自动关闭遗留文档: {key}"
-                  f"（{'未保存改动·只读打开' if read_only else '已保存改动'}）")
-        except Exception as e:
-            print(f"[Word] 自动关闭遗留文档 {key} 失败（可能需手动结束 WINWORD.EXE/wps.exe）: {e}")
-        finally:
-            if worker is not None:
-                worker.close()
+        # 与「关闭Word」模块共用同一条收尾路径：同线程释放 COM 引用 → 确认/强制回收
+        # 引擎进程 → 补清残留锁文件。收尾默认保存（只读文档与未落盘新文档除外）。
+        res = await _shutdown_session(session, save_changes=True)
+        killed = res.get("killed") or []
+        if res.get("error"):
+            print(f"[Word] 自动关闭遗留文档 {key} 未干净完成: {res['error']}"
+                  + (f"（已强制回收引擎进程 {killed}）" if killed
+                     else "（可能需手动结束 WINWORD.EXE / wps.exe）"))
+            continue
+        cleaned += 1
+        detail = "已保存改动" if res.get("saved") else "未保存改动"
+        if res.get("readOnly"):
+            detail += "·只读打开"
+        elif res.get("skippedSaveReason"):
+            detail += f"·{res['skippedSaveReason']}"
+        if killed:
+            detail += f"·已强制回收引擎进程 {killed}"
+        print(f"[Word] 工作流结束，已自动关闭遗留文档: {key}（{detail}）")
     return cleaned

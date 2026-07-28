@@ -3803,7 +3803,7 @@ Object.assign(UI_DICT, {
   '文档被占用时': 'When the document is in use',
   '自动以只读方式打开（推荐）': 'Open as read-only automatically (recommended)',
   '直接报错停止': 'Fail and stop',
-  '文档已在 Word/WPS 中打开、或残留了 ~$ 锁文件时，直接打开会弹窗并卡住。默认自动降级为只读，读取类流程可照常运行；需要写入时请选择报错停止。': 'If the document is already open in Word/WPS, or a leftover ~$ lock file exists, opening it directly pops up a dialog and hangs. By default it falls back to read-only so read flows keep working; choose "Fail and stop" when you need write access.',
+  '仅在文档确实被其它 Word/WPS 窗口占用时生效：默认降级为只读打开（读取类流程可照常运行，写入类模块会明确报错），选「直接报错停止」则立即失败。上次异常退出残留的 ~$ 锁文件会被自动清理并按可写方式打开，不受此项影响。': 'Applies only when the document is genuinely held by another Word/WPS window: by default it falls back to read-only (read flows keep working, while write modules fail with a clear error), or choose "Fail and stop" to fail immediately. Stale ~$ lock files left by a previous crash are cleaned up automatically and the document is opened for writing, regardless of this setting.',
 
   // ---- 导出 PDF ----
   '源 Word 文件（留空则导出已打开的文档）': 'Source Word file (leave blank to export the opened document)',
