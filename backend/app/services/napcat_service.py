@@ -408,10 +408,13 @@ class NapCatService:
                 # 方法3: 调用 OneBot API 检测登录状态（需要用户已配置 HTTP 服务）
                 if not login_notified:
                     try:
+                        # trust_env=False：本机回环请求必须直连。httpx 不看 Windows
+                        # 代理的 bypass 列表，开着系统代理时会把它发给代理并拿到 502。
                         response = httpx.post(
                             'http://127.0.0.1:3000/get_login_info',
                             json={},
-                            timeout=2
+                            timeout=2,
+                            trust_env=False
                         )
                         result = response.json()
                         if result.get('status') == 'ok' and result.get('data', {}).get('user_id'):
@@ -587,10 +590,13 @@ class NapCatService:
         detected_qq_number = None
         
         try:
+            # trust_env=False：本机回环请求必须直连（httpx 会无视 Windows 代理的
+            # bypass 列表，开着系统代理时这里会拿到 502 而误判 OneBot 不可用）
             response = httpx.post(
                 'http://127.0.0.1:3000/get_login_info',
                 json={},
-                timeout=2
+                timeout=2,
+                trust_env=False
             )
             result = response.json()
             onebot_available = True

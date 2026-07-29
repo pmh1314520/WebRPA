@@ -30,7 +30,10 @@ class OneBotClient:
     async def call_api(self, endpoint: str, data: dict = None) -> dict:
         """调用 OneBot API"""
         url = f"{self.api_url}/{endpoint}"
-        async with httpx.AsyncClient(timeout=30) as client:
+        # NapCat/OneBot 默认跑在 127.0.0.1:3000。httpx 不看 Windows 代理的 bypass
+        # 列表，开着系统代理时会把本机请求也发给代理，导致机器人接口直接 502。
+        from app.utils.http_client import trust_env_for
+        async with httpx.AsyncClient(timeout=30, trust_env=trust_env_for(url)) as client:
             response = await client.post(url, json=data or {}, headers=self.headers)
             response.raise_for_status()
             result = response.json()

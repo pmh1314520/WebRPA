@@ -49,7 +49,7 @@ def test_gateway_hint_for_local_gateway_errors(code):
     hint = gateway_error_hint("http://localhost:5241/api/x", code)
     assert hint
     assert str(code) in hint
-    assert "TUN" in hint          # 点明最常见成因
+    assert "直连" in hint          # 点明处置方向：把本机地址设为直连
     assert "59999" in hint        # 附带可直接执行的自测命令
 
 
@@ -69,7 +69,7 @@ def test_connect_hint_mentions_port_and_launcher():
     hint = connect_error_hint("http://localhost:5241/api/x")
     assert "5241" in hint
     assert "后端端口" in hint
-    assert "TUN" not in hint      # 不能与代理劫持的结论混淆
+    assert "代理" not in hint     # 不能与代理相关的结论混淆
 
 
 def test_connect_hint_skipped_for_remote_host():

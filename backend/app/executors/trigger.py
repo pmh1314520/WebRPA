@@ -641,7 +641,10 @@ class ApiTriggerExecutor(ModuleExecutor):
 
             try:
                 # 发送API请求
-                async with httpx.AsyncClient() as client:
+                # trust_env 按目标地址决定：httpx 不看 Windows 代理的 bypass 列表，
+                # 默认会把 localhost 也塞给系统代理，轮询本机地址会一直拿到 502。
+                from app.utils.http_client import trust_env_for
+                async with httpx.AsyncClient(trust_env=trust_env_for(api_url)) as client:
                     if method == 'POST':
                         response = await client.post(api_url, headers=headers, json=body, timeout=30)
                     else:

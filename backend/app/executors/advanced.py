@@ -75,7 +75,12 @@ class ApiRequestExecutor(ModuleExecutor):
                     if not cookies:
                         cookies = None
             
-            async with httpx.AsyncClient(timeout=request_timeout) as client:
+            # trust_env 按目标地址决定：httpx 不看 Windows 代理的 bypass 列表，
+            # 默认会把 localhost 也塞给系统代理，导致请求本机服务直接 502。
+            from app.utils.http_client import trust_env_for
+            async with httpx.AsyncClient(
+                timeout=request_timeout, trust_env=trust_env_for(request_url)
+            ) as client:
                 response = await client.request(
                     method=request_method,
                     url=request_url,

@@ -61,10 +61,11 @@ def gateway_error_hint(url: str, status_code: int) -> str:
     host = extract_host(url) or "localhost"
     return (
         f"\n\n【诊断提示】目标是本机地址（{host}），但返回了 HTTP {status_code} 网关错误。"
-        f"本机服务不会产生这类状态码，说明请求在到达目标前被中间层接管了。"
-        f"\n最常见原因：本机代理软件（Clash / V2Ray / Surge 等）开启了 TUN 或透明代理，"
-        f"把回环流量也一并劫持，代理连不上目标便返回 {status_code}。"
-        f"\n处置：在代理软件里把 127.0.0.1、localhost 加入直连规则（或关闭 TUN 模式）。"
+        f"本机服务不会产生这类状态码，说明请求在到达目标前被代理接管了。"
+        f"\n成因：本机开着系统代理（Clash / V2Ray / Surge 等）时，请求被转发给代理，"
+        f"代理连不上本机目标就回 {status_code}。"
+        f"\n处置：在代理软件里把 127.0.0.1、localhost 加入直连规则；"
+        f"或检查 http_proxy / all_proxy 等环境变量是否把本机地址也代理了。"
         f"\n自测命令（把端口换成任意未使用的端口，正常应报「连接被拒绝」而不是 {status_code}）："
         f"\n  {_PROBE_CMD}"
     )

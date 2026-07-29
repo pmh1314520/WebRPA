@@ -117,11 +117,15 @@ class WebhookExecutor(ModuleExecutor):
                     request_content = raw_body.encode('utf-8') if isinstance(raw_body, str) else raw_body
             
             # 发送请求
+            # trust_env 按目标地址决定：httpx 不看 Windows 代理的 bypass 列表，
+            # 默认会把 localhost 也塞给系统代理，导致请求本机服务直接 502。
+            from app.utils.http_client import trust_env_for
             async with httpx.AsyncClient(
                 timeout=timeout_ms,
                 follow_redirects=follow_redirects,
                 verify=verify_ssl,
                 cookies=resolved_cookies if resolved_cookies else None,
+                trust_env=trust_env_for(url),
             ) as client:
                 response = await client.request(
                     method=method,
