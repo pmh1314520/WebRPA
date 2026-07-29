@@ -5676,3 +5676,174 @@ DRISSIONPAGE_SCHEMAS: dict = {
 }
 
 _ALL_SCHEMAS.update(DRISSIONPAGE_SCHEMAS)
+
+
+# ============================================================
+# Word 自动化（基于 Word COM，兼容 Microsoft Word / WPS 文字）
+# ============================================================
+# 会话式模块：必须先「打开/新建Word」建立会话，后续模块用 docKey 引用同一文档，
+# 最后用「关闭Word」收尾。docKey 留空表示沿用最近打开的文档。
+WORD_SCHEMAS: dict[str, dict] = {
+    "word_open": {
+        "required": [],
+        "optional": ["filePath", "docKey", "visible", "createIfMissing", "readOnly", "onLocked"],
+        "defaults": {"docKey": "default", "visible": True, "createIfMissing": True,
+                     "readOnly": False, "onLocked": "readonly"},
+        "desc": {
+            "filePath": "Word 文件路径；留空则新建未命名空白文档（之后需用「保存Word」另存）",
+            "docKey": "文档标识，后续 Word 模块用它引用本文档；单文档场景保持 default",
+            "visible": "是否显示 Word 窗口，关闭则后台静默操作",
+            "createIfMissing": "文件不存在时是否新建",
+            "readOnly": "以只读方式打开（只读时写入类模块会直接报错）",
+            "onLocked": "文档被其它 Word/WPS 窗口占用时：readonly=降级只读，fail=报错停止；"
+                        "上次异常退出残留的 ~$ 锁文件会自动清理并按可写打开",
+        },
+        "example": {"filePath": "D:\\\\报告.docx", "docKey": "default"},
+        "combo": "Word 流程的起点，必须先执行它才能使用其它 Word 模块",
+    },
+    "word_read_text": {
+        "required": [],
+        "optional": ["docKey", "readRange", "paragraphIndex", "resultVariable"],
+        "defaults": {"readRange": "all", "paragraphIndex": 1, "resultVariable": "word_text"},
+        "desc": {"readRange": "all=全文 / paragraphs=全部段落(列表) / paragraph=指定段落 / selection=当前选区",
+                 "paragraphIndex": "段落序号，从 1 开始，readRange=paragraph 时生效",
+                 "resultVariable": "存储读取结果的变量名"},
+        "example": {"readRange": "all", "resultVariable": "word_text"},
+        "combo": "打开/新建Word → 读取Word文本",
+    },
+    "word_write_text": {
+        "required": ["text"],
+        "optional": ["docKey", "writeMode", "newParagraph", "fontName", "fontSize", "bold", "italic"],
+        "defaults": {"writeMode": "append", "newParagraph": True, "fontSize": 0,
+                     "bold": False, "italic": False},
+        "desc": {"text": "要写入的内容，支持 {变量名}",
+                 "writeMode": "append=追加到文末 / cursor=光标处插入 / replace_all=覆盖全文",
+                 "newParagraph": "写完是否另起一段", "fontSize": "字号，0 表示不改"},
+        "example": {"text": "第一行内容", "writeMode": "append"},
+        "combo": "打开/新建Word → 写入文本至Word → 保存Word",
+    },
+    "word_set_cursor": {
+        "required": [],
+        "optional": ["docKey", "target", "paragraphIndex", "findText", "occurrence", "selectFound"],
+        "defaults": {"target": "doc_start", "paragraphIndex": 1, "occurrence": 1, "selectFound": False},
+        "desc": {"target": "doc_start=文档开头 / doc_end=结尾 / paragraph_start / paragraph_end / find_text=查找到的文本处",
+                 "findText": "target=find_text 时必填", "occurrence": "第几处匹配",
+                 "selectFound": "是否选中匹配到的文本（便于紧接着覆盖写入）"},
+        "example": {"target": "find_text", "findText": "签名处", "selectFound": True},
+        "combo": "定位Word光标 → 写入文本至Word（在光标处插入）",
+    },
+    "word_move_cursor": {
+        "required": [],
+        "optional": ["docKey", "unit", "count", "direction", "extendSelection"],
+        "defaults": {"unit": "character", "count": 1, "direction": "forward", "extendSelection": False},
+        "desc": {"unit": "character/word/sentence/line/paragraph",
+                 "direction": "forward=向文末 / backward=向文首",
+                 "extendSelection": "是否同时选中经过的内容"},
+        "example": {"unit": "paragraph", "count": 2, "direction": "forward"},
+        "combo": "",
+    },
+    "word_replace_text": {
+        "required": ["findText"],
+        "optional": ["docKey", "replaceText", "replaceAll", "matchCase", "matchWholeWord",
+                     "useWildcards", "resultVariable"],
+        "defaults": {"replaceAll": True, "matchCase": False, "matchWholeWord": False,
+                     "useWildcards": False},
+        "desc": {"findText": "查找内容", "replaceText": "替换为，留空表示删除",
+                 "replaceAll": "关闭则只替换第一处", "resultVariable": "存储替换处数的变量名"},
+        "example": {"findText": "{{客户名}}", "replaceText": "张三", "replaceAll": True},
+        "combo": "模板填充：打开/新建Word → 替换Word文本 → 保存Word(另存为) → 关闭Word。"
+                 "注意只读打开的文档无法替换，会直接报错",
+    },
+    "word_read_table": {
+        "required": [],
+        "optional": ["docKey", "tableIndex", "firstRowAsHeader", "resultVariable"],
+        "defaults": {"tableIndex": 1, "firstRowAsHeader": False, "resultVariable": "word_table"},
+        "desc": {"tableIndex": "表格序号，从 1 开始",
+                 "firstRowAsHeader": "开启则返回 [{列名: 值}] 便于直接写 Excel，关闭返回二维数组"},
+        "example": {"tableIndex": 1, "firstRowAsHeader": True, "resultVariable": "word_table"},
+        "combo": "读取Word表格 → 写入Excel（数据搬运）",
+    },
+    "word_insert_table": {
+        "required": [],
+        "optional": ["docKey", "tableData", "rows", "cols", "position", "withBorder", "headerBold"],
+        "defaults": {"rows": 3, "cols": 3, "position": "cursor", "withBorder": True, "headerBold": True},
+        "desc": {"tableData": "二维数组/字典列表/变量名；填了就按数据自动决定行列并填充",
+                 "rows": "无数据时的行数", "cols": "无数据时的列数",
+                 "position": "cursor=光标处 / end=文档末尾"},
+        "example": {"tableData": '[["姓名","年龄"],["张三",20]]', "position": "end"},
+        "combo": "",
+    },
+    "word_insert_image": {
+        "required": ["imagePath"],
+        "optional": ["docKey", "position", "width", "height", "center"],
+        "defaults": {"position": "cursor", "width": 0, "height": 0, "center": False},
+        "desc": {"imagePath": "图片本地路径", "width": "宽度(磅)，0=原始尺寸",
+                 "height": "高度(磅)，0=原始尺寸", "center": "是否居中"},
+        "example": {"imagePath": "D:\\\\logo.png", "position": "end", "center": True},
+        "combo": "",
+    },
+    "word_insert_hyperlink": {
+        "required": ["address"],
+        "optional": ["docKey", "displayText", "screenTip", "position"],
+        "defaults": {"position": "cursor"},
+        "desc": {"address": "链接地址或本地文件路径", "displayText": "显示文字，留空显示地址本身",
+                 "screenTip": "鼠标悬停提示"},
+        "example": {"address": "https://www.pmhs.top", "displayText": "官网", "position": "end"},
+        "combo": "",
+    },
+    "word_save": {
+        "required": [],
+        "optional": ["docKey", "saveAsPath", "resultVariable"],
+        "defaults": {},
+        "desc": {"saveAsPath": "另存为路径；留空则原地保存（未落盘的新文档必须填）",
+                 "resultVariable": "存储保存路径的变量名"},
+        "example": {"saveAsPath": "D:\\\\报告_已修改.docx"},
+        "combo": "批量生成时用另存为输出到新文件，模板本身不被改动",
+    },
+    "word_to_pdf": {
+        "required": [],
+        "optional": ["docKey", "filePath", "outputPath", "resultVariable"],
+        "defaults": {},
+        "desc": {"filePath": "源 Word 文件；填了就独立转换该文件（无需先打开），留空则导出当前已打开的文档",
+                 "outputPath": "输出 PDF 路径，留空则同名同目录",
+                 "resultVariable": "存储 PDF 路径的变量名"},
+        "example": {"filePath": "D:\\\\报告.docx", "outputPath": "D:\\\\报告.pdf"},
+        "combo": "WPS 个人免费版可能限制 COM 导出 PDF，可改用「通用文档转换」",
+    },
+    "word_close": {
+        "required": [],
+        "optional": ["docKey", "saveChanges", "closeAll"],
+        "defaults": {"saveChanges": True, "closeAll": False},
+        "desc": {"saveChanges": "关闭前是否保存改动（只读文档与未落盘新文档一律不保存）",
+                 "closeAll": "关闭所有已打开的 Word 文档"},
+        "example": {"saveChanges": True},
+        "combo": "Word 流程的收尾。循环里每轮都要关闭，否则会累积会话与 Word 进程",
+    },
+}
+
+_ALL_SCHEMAS.update(WORD_SCHEMAS)
+
+
+# ============================================================
+# 运行其它工作流（工作流串联）
+# ============================================================
+RUN_WORKFLOW_SCHEMAS: dict[str, dict] = {
+    "run_workflow_file": {
+        "required": [],
+        "optional": ["workflowId", "workflowPath", "waitComplete", "collectVariables",
+                     "passVariables", "timeout"],
+        "defaults": {"waitComplete": True, "collectVariables": True},
+        "desc": {
+            "workflowId": "要运行的工作流 id（在下拉里选择）",
+            "workflowPath": "工作流文件路径（用文件方式指定时填）",
+            "waitComplete": "是否等待它执行完再继续",
+            "collectVariables": "是否回收它产生的变量到当前工作流",
+            "passVariables": "是否把当前变量传给它",
+            "timeout": "超时秒数",
+        },
+        "example": {"workflowId": "", "waitComplete": True, "collectVariables": True},
+        "combo": "把长流程拆成多个工作流后用它串联；配合「回收它产生的变量」实现数据传递",
+    },
+}
+
+_ALL_SCHEMAS.update(RUN_WORKFLOW_SCHEMAS)

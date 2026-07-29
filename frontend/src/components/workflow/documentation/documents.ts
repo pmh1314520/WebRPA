@@ -85,6 +85,12 @@ export const documents: DocumentItem[] = [
     description: 'Excel读写、openpyxl全套自动化、WPS操作',
   },
   {
+    id: 'word-guide',
+    title: 'Word 自动化',
+    icon: FileText,
+    description: 'Word文档读写、查找替换、表格插图、导出PDF',
+  },
+  {
     id: 'database-guide',
     title: '数据库操作',
     icon: Server,

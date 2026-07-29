@@ -26,6 +26,7 @@ const FILE_TO_DOC_ID: Record<string, string> = {
   'content-data': 'data-processing',
   'content-math-flow': 'math-flow-guide',
   'content-excel': 'excel-guide',
+  'content-word': 'word-guide',
   'content-database': 'database-guide',
   'content-network': 'network-guide',
   'content-triggers': 'triggers-guide',

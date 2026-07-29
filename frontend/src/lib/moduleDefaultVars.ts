@@ -280,17 +280,24 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   redis_hget: { variableName: 'redis_hash_value' },
 
   // ==================== SSH ====================
-  ssh_execute_command: { errorVariable: 'ssh_error', outputVariable: 'ssh_output' },
+  ssh_execute_command: {
+    errorVariable: 'ssh_error', outputVariable: 'ssh_output',
+    exitCodeVariable: 'ssh_exit_code',
+  },
 
   // ==================== SAP ====================
-  sap_get_field_value: { saveToVariable: 'sap_value' },
-  sap_get_status_message: { saveToVariable: 'sap_status_message' },
-  sap_get_title: { saveToVariable: 'sap_title' },
-  sap_read_gridview: { saveToVariable: 'sap_table_data' },
-  sap_export_gridview_excel: { resultVariable: 'export_path' },
+  // 这些模块除了输出变量，还通过 sessionVariable 读取 sap_login 建立的会话句柄
+  sap_get_field_value: { sessionVariable: 'sap_session', saveToVariable: 'sap_value' },
+  sap_get_status_message: { sessionVariable: 'sap_session', saveToVariable: 'sap_status_message' },
+  sap_get_title: { sessionVariable: 'sap_session', saveToVariable: 'sap_title' },
+  sap_read_gridview: { sessionVariable: 'sap_session', saveToVariable: 'sap_table_data' },
+  sap_export_gridview_excel: { sessionVariable: 'sap_session', resultVariable: 'export_path' },
 
   // ==================== Webhook 请求 ====================
-  webhook_request: { responseVariable: 'webhook_response', statusVariable: 'webhook_status' },
+  webhook_request: {
+    responseVariable: 'webhook_response', statusVariable: 'webhook_status',
+    headersVariable: 'webhook_headers', cookiesVariable: 'webhook_cookies',
+  },
 
   // ==================== 飞书 ====================
   feishu_bitable_read: { variableName: 'feishu_data' },
@@ -355,6 +362,31 @@ export const MODULE_DEFAULT_VARS: Record<string, Record<string, string>> = {
   page_load_complete: { saveToVariable: 'page_loaded' },
   sap_login: { saveToVariable: 'sap_session' },
   wps_bitable_read: { variableName: 'wps_data' },
+
+  // ==================== 补登记：Word 自动化 ====================
+  // 后端 word_read_text / word_read_table 的 resultVariable 带非空默认值，
+  // 即「创建即内置变量」，必须登记进来，否则补全列表看不到它们。
+  word_read_text: { resultVariable: 'word_text' },
+  word_read_table: { resultVariable: 'word_table' },
+
+  // ==================== 补登记：桌面应用（应用/控件句柄变量）====================
+  desktop_app_start: { connectionVariable: 'desktop_app' },
+  desktop_wait_control: { appVariable: 'desktop_app', saveToVariable: 'desktop_control' },
+
+  // ==================== 补登记：SAP 会话句柄变量 ====================
+  // 这一批模块都通过 sessionVariable 读取由 sap_login 建立的会话句柄，
+  // 默认值统一为 sap_session，属于「创建即内置」的变量。
+  sap_click_button: { sessionVariable: 'sap_session' },
+  sap_close_warning: { sessionVariable: 'sap_session' },
+  sap_logout: { sessionVariable: 'sap_session' },
+  sap_maximize_window: { sessionVariable: 'sap_session' },
+  sap_run_tcode: { sessionVariable: 'sap_session' },
+  sap_select_combobox: { sessionVariable: 'sap_session' },
+  sap_select_tab: { sessionVariable: 'sap_session' },
+  sap_send_vkey: { sessionVariable: 'sap_session' },
+  sap_set_checkbox: { sessionVariable: 'sap_session' },
+  sap_set_field_value: { sessionVariable: 'sap_session' },
+  sap_set_focus: { sessionVariable: 'sap_session' },
 }
 
 /**
@@ -393,7 +425,11 @@ export const VARIABLE_NAME_FIELDS: string[] = [
   'imageVariable', 'textVariable', 'urlVariable', 'fileVariable', 'sourceVariable',
   'responseVariable', 'cookieVariable', 'headerVariable', 'bodyVariable', 'statusVariable',
   'errorVariable', 'countVariable', 'sumVariable', 'avgVariable', 'maxVariable', 'minVariable',
-  'connectionVariable', 'shareVariable',
+  'connectionVariable', 'shareVariable', 'sessionVariable',
+  // 注意单复数：后端实际用的是 headersVariable / cookiesVariable（复数），
+  // 上面的 headerVariable / cookieVariable（单数）是历史写法，两者都要收，
+  // 否则用户在这些字段改填自定义变量名后补全与变量追踪会漏掉。
+  'headersVariable', 'cookiesVariable', 'exitCodeVariable',
   // Python 脚本
   'stdoutVariable', 'stderrVariable', 'returnCodeVariable',
   // 桌面自动化

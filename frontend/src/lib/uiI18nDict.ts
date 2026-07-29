@@ -1986,6 +1986,7 @@ Object.assign(UI_DICT, {
   '数据处理指南': 'Data Processing', '变量、列表、字典、字符串操作': 'Variables, lists, dicts and string operations',
   '数学统计与CSV': 'Math, Stats & CSV', '数学运算、统计分析、CSV处理、概率触发器': 'Math, statistics, CSV processing, probability triggers',
   'Excel与数据表格': 'Excel & Tables', 'Excel读写、openpyxl全套自动化、WPS操作': 'Excel read/write, full openpyxl automation, WPS operations',
+  'Word 自动化': 'Word Automation', 'Word文档读写、查找替换、表格插图、导出PDF': 'Word read/write, find & replace, tables, images, PDF export',
   '数据库操作': 'Databases', 'MySQL/PostgreSQL/SQLite/Redis 等数据库': 'MySQL/PostgreSQL/SQLite/Redis and more',
   '网络请求与抓包': 'Network & Capture', 'HTTP请求、发送邮件、Webhook、网络抓包': 'HTTP requests, email, webhooks, network capture',
   '触发器使用指南': 'Triggers Guide', 'Webhook、热键、文件监控、邮件、API触发': 'Webhook, hotkey, file watch, email and API triggers',

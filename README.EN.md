@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
     <img src="png/logo.png" width="100" alt="WebRPA Logo"/>
 </div>
 <h1 align="center">
@@ -6,7 +6,7 @@ WebRPA - Web Robotic Process Automation Tool
 </h1>
 <p align="center">
   <img src="https://img.shields.io/badge/version-3.1.0-blue.svg" alt="version">
-  <img src="https://img.shields.io/badge/modules-558-brightgreen.svg" alt="modules">
+  <img src="https://img.shields.io/badge/modules-569-brightgreen.svg" alt="modules">
   <img src="https://img.shields.io/badge/license-AGPL--3.0%20%2B%20Commercial-green.svg" alt="license">
   <img src="https://img.shields.io/badge/author-QingYun%20Studio%20Peng%20Minghang-orange.svg" alt="author">
   <img src="https://img.shields.io/badge/Python-3.13-blue.svg" alt="Python">
@@ -32,7 +32,7 @@ WebRPA - Web Robotic Process Automation Tool
 
 WebRPA is a fully open-source, offline-capable visual Robotic Process Automation (RPA) tool. Built around a drag-and-drop workflow editor, it lets you compose web, desktop and mobile automation flows without writing a single line of code — covering data scraping, form filling, file processing, office automation and system integration.
 
-The project ships with 558 built-in modules and a self-healing AI assistant: describe what you need in one sentence and the AI builds, debugs and re-runs the workflow for you. Every runtime (Python 3.13, Node.js, the browser engine, and the media/document tools) is bundled — extract, double-click the launcher, and go. No internet and no extra installation required, which makes it a natural fit for intranet and LAN deployments.
+The project ships with 569 built-in modules and a self-healing AI assistant: describe what you need in one sentence and the AI builds, debugs and re-runs the workflow for you. Every runtime (Python 3.13, Node.js, the browser engine, and the media/document tools) is bundled — extract, double-click the launcher, and go. No internet and no extra installation required, which makes it a natural fit for intranet and LAN deployments.
 
 - **Who it's for**: operations, QA, data, office and development staff who want to offload repetitive work — with or without a coding background.
 - **What it is**: a zero-code, visual, ready-to-use and fully offline all-in-one automation platform.
@@ -46,7 +46,7 @@ The project ships with 558 built-in modules and a self-healing AI assistant: des
 
 - **Zero-code development**: Visual drag-and-drop, no programming background required
 - **Ready to use**: Bundled Python and Node.js runtimes, one-click start
-- **Rich modules**: 558 functional modules covering 95% of automation scenarios (including DrissionPage-based anti-detection web automation modules)
+- **Rich modules**: 569 functional modules covering 95% of automation scenarios (including DrissionPage-based anti-detection web automation modules)
 - **AI Assistant**: A built-in AI assistant that understands intent in chat, auto-builds/troubleshoots workflows, and has **self-healing** ability (on failure it diagnoses → fixes → re-runs). OpenAI-compatible protocol, supporting OpenAI / Zhipu / DeepSeek / Ollama and more. Three **permission levels** (Per-action confirm / Smart auto / Full access), and one-click **AI Diagnosis** when the editor errors out
 - **Never goes blank**: A global error boundary catches everything — any module exception shows an error card (with details and AI Diagnosis) instead of letting the editor white-screen
 - **Visual debugging**: Breakpoints, single-step execution, and **run from any node** (hover a node and click ▶ to start from it and skip its upstream — no need to re-run from the top every time you debug)
@@ -67,7 +67,7 @@ The project ships with 558 built-in modules and a self-healing AI assistant: des
 
 ### Key module capabilities
 
-Backed by 558 built-in modules (organized by scenario, drag onto the canvas to use), WebRPA covers the following key capabilities:
+Backed by 569 built-in modules (organized by scenario, drag onto the canvas to use), WebRPA covers the following key capabilities:
 
 - **Web automation**: page navigation, element interaction and query, data scraping, network capture, plus DrissionPage-based anti-detection automation
 - **Desktop automation**: real mouse/keyboard simulation, image-recognition clicking, screen recording, desktop control operations, system operations
@@ -197,7 +197,7 @@ WebRPA/
 ├── backend/                 # Backend service (Python FastAPI)
 │   ├── app/
 │   │   ├── api/            # API routes (browser, system, triggers, etc.)
-│   │   ├── executors/      # Module executors (core logic of 558 modules)
+│   │   ├── executors/      # Module executors (core logic of 569 modules)
 │   │   ├── models/         # Data models (workflows, variables, config, etc.)
 │   │   └── services/       # Core services (browser management, task scheduling, etc.)
 │   ├── data/               # Data files (AI models, config, etc.)
@@ -261,7 +261,7 @@ The project ships with complete tutorials — click the "Tutorials" button in th
 
 ### Documentation features
 
-- **Detailed tutorials** covering all 558 modules
+- **Detailed tutorials** covering all 569 modules
 - **Third-level heading search**: results are pinpointed to third-level headings (###) for fast navigation
 - **Keyword highlighting**: search keywords are automatically highlighted in the docs
 - **Persistent search state**: search and highlighting are kept when switching docs, for easy comparison
