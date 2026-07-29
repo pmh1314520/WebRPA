@@ -160,6 +160,53 @@ def _create_word_app(visible: bool = True):
     )
 
 
+def _find_execute(rng, find_text: str, match_case: bool = False,
+                  match_whole_word: bool = False, use_wildcards: bool = False,
+                  replace_with: Optional[str] = None,
+                  replace_mode: int = 0, forward: bool = True) -> bool:
+    """在 Range 上执行一次查找/替换，返回是否命中。
+
+    ⚠️ 必须把 FindText / ReplaceWith / Replace 直接作为 Execute 的参数传入，
+    绝不能改成「先设 find.Text、find.Replacement.Text 属性，再调用 Execute(Replace=2)」
+    那种写法：在 pywin32 的后期绑定（late binding）下，那样调用 Execute 会返回 True
+    却一处都不替换，模块因此报告「已替换 N 处」而文件一字未动（已实测复现）。
+    查找（不替换）用属性式是有效的，但为了只保留一条正确路径，这里统一走参数式。
+
+    replace_mode: 0=wdReplaceNone（只查找）, 1=wdReplaceOne, 2=wdReplaceAll
+    """
+    finder = rng.Find
+    try:
+        finder.ClearFormatting()
+        finder.Replacement.ClearFormatting()
+    except Exception:
+        # 个别 WPS 版本不提供 ClearFormatting，忽略即可（不影响查找语义）
+        pass
+
+    kwargs = dict(
+        FindText=str(find_text),
+        MatchCase=bool(match_case),
+        MatchWholeWord=bool(match_whole_word),
+        MatchWildcards=bool(use_wildcards),
+        MatchSoundsLike=False,
+        MatchAllWordForms=False,
+        Forward=bool(forward),
+        Wrap=0,  # wdFindStop：限定在本 Range 内，避免绕回开头造成重复替换
+        Format=False,
+        ReplaceWith=str(replace_with) if replace_with is not None else "",
+        Replace=int(replace_mode),
+    )
+    try:
+        return bool(finder.Execute(**kwargs))
+    except TypeError:
+        # 个别 WPS 版本不支持全部命名参数，退化为位置参数（顺序与 Word 对象模型一致）
+        return bool(finder.Execute(
+            kwargs["FindText"], kwargs["MatchCase"], kwargs["MatchWholeWord"],
+            kwargs["MatchWildcards"], kwargs["MatchSoundsLike"],
+            kwargs["MatchAllWordForms"], kwargs["Forward"], kwargs["Wrap"],
+            kwargs["Format"], kwargs["ReplaceWith"], kwargs["Replace"],
+        ))
+
+
 def _save_doc_as(doc, path: str, file_format=None) -> None:
     """另存文档，兼容 WPS：SaveAs2 是 Word 2010+ 新增，WPS 常只提供 SaveAs。"""
     abs_path = os.path.abspath(path)
@@ -581,16 +628,22 @@ def _close_and_release(session: dict, want_save: bool) -> dict:
     except Exception as e:
         result["saved"] = False
         result["errors"].append(f"关闭文档失败: {e}")
+
+    # 先释放文档代理、再退出引擎：此时 Word 进程还活着，Release 能正常完成。
+    # 若等到 Quit() 之后才释放，调用会打到已退出的进程上，产生
+    # RPC_S_SERVER_UNAVAILABLE(0x800706ba) 一类的失败释放。
+    session["doc"] = None
+    doc = None
+    gc.collect()
+
     try:
         if app is not None:
             app.Quit()
     except Exception as e:
         result["errors"].append(f"退出引擎失败: {e}")
 
-    # 就地清掉所有引用（含会话字典里的），再显式 GC，确保 Release 发生在本线程
-    session["doc"] = None
+    # 引擎代理同样必须在本线程销毁（跨套间释放会让进程引用计数不归零）
     session["app"] = None
-    doc = None
     app = None
     gc.collect()
     try:
@@ -890,12 +943,14 @@ class WordToPdfExecutor(ModuleExecutor):
                                 doc.Close(WD_DO_NOT_SAVE_CHANGES)
                         except Exception:
                             pass
+                        # 先释放文档代理再退出引擎：Quit() 之后再 Release 会打到
+                        # 已退出的进程上，产生 RPC 失败释放
+                        doc = None
+                        gc.collect()
                         try:
                             app.Quit()
                         except Exception:
                             pass
-                        # COM 引用就地释放（本函数与 COM 创建同线程），再确认进程已退出
-                        doc = None
                         app = None
                         gc.collect()
                         _reap_engine_pids(own_pids)
@@ -1250,17 +1305,9 @@ class WordReplaceTextExecutor(ModuleExecutor):
             def _replace():
                 # 先统计出现次数（Find 会消耗 Range，故用独立 Range 计数）
                 count_rng = doc.Content
-                finder = count_rng.Find
-                finder.ClearFormatting()
-                finder.Replacement.ClearFormatting()
-                finder.Text = find_text
-                finder.Forward = True
-                finder.Wrap = 0  # wdFindStop
-                finder.MatchCase = bool(match_case)
-                finder.MatchWholeWord = bool(match_whole_word)
-                finder.MatchWildcards = bool(use_wildcards)
                 occurrences = 0
-                while finder.Execute():
+                while _find_execute(count_rng, find_text, match_case,
+                                   match_whole_word, use_wildcards):
                     occurrences += 1
                     if occurrences > 100000:  # 安全阀
                         break
@@ -1270,17 +1317,21 @@ class WordReplaceTextExecutor(ModuleExecutor):
 
                 # 执行替换：2=wdReplaceAll, 1=wdReplaceOne
                 rep_rng = doc.Content
-                f2 = rep_rng.Find
-                f2.ClearFormatting()
-                f2.Replacement.ClearFormatting()
-                f2.Text = find_text
-                f2.Replacement.Text = replace_text
-                f2.Forward = True
-                f2.Wrap = 0
-                f2.MatchCase = bool(match_case)
-                f2.MatchWholeWord = bool(match_whole_word)
-                f2.MatchWildcards = bool(use_wildcards)
-                f2.Execute(Replace=2 if replace_all else 1)
+                _find_execute(rep_rng, find_text, match_case, match_whole_word,
+                              use_wildcards, replace_with=replace_text,
+                              replace_mode=2 if replace_all else 1)
+
+                # 替换后校验：Execute 即便什么都没改也会返回 True，只有回头再查一次
+                # 才能确认真的落到文档上。少了这一步就会出现「报告已替换 N 处、文件
+                # 却一字未动」的假成功（这正是本模块此前的缺陷表现）。
+                # 替换文本本身含查找文本时（如"世界"→"新世界"）跳过校验，否则必然误判。
+                if replace_all and find_text not in replace_text:
+                    if _find_execute(doc.Content, find_text, match_case,
+                                     match_whole_word, use_wildcards):
+                        raise WordError(
+                            f"替换未生效：文档中仍能找到「{find_text}」。"
+                            "请确认文档不是以只读方式打开，且内容未被保护（审阅 → 限制编辑）。"
+                        )
                 return occurrences if replace_all else min(1, occurrences)
 
             replaced = await _run_in_session(session, _replace)
