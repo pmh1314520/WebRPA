@@ -5,7 +5,7 @@
 WebRPA - Web Robotic Process Automation Tool
 </h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.1.0-blue.svg" alt="version">
+  <img src="https://img.shields.io/badge/version-3.2.0-blue.svg" alt="version">
   <img src="https://img.shields.io/badge/modules-571-brightgreen.svg" alt="modules">
   <img src="https://img.shields.io/badge/license-AGPL--3.0%20%2B%20Commercial-green.svg" alt="license">
   <img src="https://img.shields.io/badge/author-QingYun%20Studio%20Peng%20Minghang-orange.svg" alt="author">
@@ -37,6 +37,18 @@ The project ships with 571 built-in modules and a self-healing AI assistant: des
 - **Who it's for**: operations, QA, data, office and development staff who want to offload repetitive work — with or without a coding background.
 - **What it is**: a zero-code, visual, ready-to-use and fully offline all-in-one automation platform.
 - **Licensing**: free for personal and non-commercial use (AGPL-3.0); commercial licenses are available for business use.
+
+---
+
+<p align="center">
+  <a href="https://apinebula.ai/ref/MdtprCNE">
+    <img src="png/APINebula.png" width="100%" alt="APINebula AI Aggregation Platform" />
+  </a>
+</p>
+
+[APINEBULA](https://apinebula.ai/ref/MdtprCNE) is an enterprise-grade AI aggregation platform under Yinhe Video Bureau. It provides stable and cost-effective large model API access services for developers, teams, and enterprise users. The platform aggregates mainstream full-featured models such as Claude, GPT, and Gemini. One interface to access the world's top AI large models, with prices as low as 10% off, supporting enterprise-level high concurrency, formal contracts, corporate payment, and invoicing services. Suitable for AI programming, Agent development, business system integration, and many other scenarios!
+
+Register and fill in the **"RPA"** discount code when recharging to enjoy a 10% discount!
 
 ---
 

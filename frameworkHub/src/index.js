@@ -101,10 +101,10 @@ app.get('/health', (req, res) => {
 // 获取最新版本号
 app.get('/api/version', (req, res) => {
   res.json({
-    version: '3.1.0',
-    releaseDate: '2026-07-27',
+    version: '3.2.0',
+    releaseDate: '2026-08-30',
     downloadUrl: 'https://github.com/pmh1314520/WebRPA/releases',
-    changelog: '2.0.0 大版本：全面强化 AI 能力——新增 AI 小助手（对话式搭建/排查工作流，支持运行失败自动诊断与自愈重跑）、AI 数据处理模块（信息抽取/分类/摘要/翻译/情感/数据规整/语义去重/智能路由）、完整 Excel 自动化模块（基于 openpyxl + COM）；数据表格全量虚拟滚动、日志实时推送等大量体验优化。详见 GitHub Releases。'
+    changelog: '3.2.0 版本：新增子工作流执行可视化监控窗口；建立模块元信息一致性校验网并补齐清单缺口；修复桌面自动化整组模块崩溃、Excel 读取结果类型异常、全局变量接口被路由遮蔽、执行器孤立节点被误当起始节点、媒体播放阻塞与播放器误弹、Word 替换文本无效等问题；计划任务尊重自动关闭浏览器开关，缺功能包提示改为可安装引导。详见 GitHub Releases。'
   })
 })
 

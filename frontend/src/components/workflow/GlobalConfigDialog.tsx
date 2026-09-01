@@ -925,6 +925,26 @@ export function GlobalConfigDialog({ isOpen, onClose }: GlobalConfigDialogProps)
                   </div>
                 </div>
               </div>
+                <div className="mb-3 p-3 rounded-md bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200/50">
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center mt-0.5">
+                      <span className="text-purple-600 text-xs font-bold">✨</span>
+                    </div>
+                    <div className="flex-1 text-xs leading-relaxed">
+                      <p className="text-gray-700 mb-1.5">
+                        <strong className="text-purple-700">APINEBULA</strong> 是银河录像局旗下的企业级 AI 聚合平台，聚合 Claude、GPT、Gemini 等主流满血模型，
+                        一个接口接入全球顶尖 AI 大模型，各大模型价格低至 1 折起，支持企业级高并发、正式合同、对公打款与开票服务，
+                        适合 AI 编程、Agent 开发、业务系统集成等多种场景！
+                      </p>
+                      <p className="text-gray-600">
+                        <a href="https://apinebula.ai/ref/MdtprCNE" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-700 font-medium underline">
+                          点击此处注册
+                        </a>
+                        {" "}并在充值时填写 <span className="font-semibold text-purple-700">"RPA"</span> 优惠码可享九折优惠！
+                      </p>
+                    </div>
+                  </div>
+                </div>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-gray-700">API地址</Label>

@@ -38,6 +38,18 @@ WebRPA 是一款完全开源、可离线运行的可视化机器人流程自动�
 
 ---
 
+
+<p align="center">
+  <a href="https://apinebula.ai/ref/MdtprCNE">
+    <img src="png/APINebula.png" width="100%" alt="APINebula AI 聚合平台" />
+  </a>
+</p>
+
+[APINEBULA](https://apinebula.ai/ref/MdtprCNE) 是银河录像局旗下的企业级 AI 聚合平台，背靠大平台资源，面向开发者、团队与企业用户提供稳定、高性价比的大模型 API 接入服务。平台聚合 Claude、GPT、Gemini 等主流满血模型，一个接口，接入全球顶尖 AI 大模型，各大模型价格低至 1 折起，支持企业级高并发、正式合同、对公打款与开票服务，适合 AI 编程、Agent 开发、业务系统集成等多种场景！
+
+注册并在充值时填写 **"RPA"** 优惠码可享九折优惠！
+
+---
 <p align="center">
   <a href="https://www.ipwo.net/?ref=GitHubWebRPA">
     <img src="png/IPWO.png" width="100%" alt="IPWO 住宅代理" />
