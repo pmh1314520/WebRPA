@@ -50,6 +50,19 @@ WebRPA 是一款完全开源、可离线运行的可视化机器人流程自动�
 注册并在充值时填写 **"RPA"** 优惠码可享九折优惠！
 
 ---
+
+<p align="center">
+  <a href="https://helodata.com?ref=webrpa">
+    <img src="png/Helodata_CN.png" width="100%" alt="Helodata 全球代理基础设施" />
+  </a>
+</p>
+
+[Helodata](https://helodata.com?ref=webrpa) 为AI、Web Scraping与自动化应用提供全球代理基础设施，覆盖195+ 国家和地区，提供住宅代理、静态住宅代理、不限量住宅代理、移动代理及数据中心代理，涵盖8000万+ 合规授权住宅IP、130万+ ASN 静态住宅IP以及3G/4G/5G移动IP，满足从日常自动化到大流量数据采集的不同需求。
+
+[注册使用优惠码 WebRPA，可享专属九折！](https://helodata.com?ref=webrpa)
+
+---
+
 <p align="center">
   <a href="https://www.ipwo.net/?ref=GitHubWebRPA">
     <img src="png/IPWO.png" width="100%" alt="IPWO 住宅代理" />
@@ -701,6 +714,10 @@ WebRPA/
 | 100  |          *健           | 2026-07-30 14:00:18 |  20.00   |
 | 101  |        氢锂迢迢        | 2026-07-30 19:30:53 |  10.00   |
 | 102  |          *呆           | 2026-08-08 10:58:06 |  20.00   |
+| 103  |          小言          | 2026-09-02 18:26:06 |  30.00   |
+| 104  |        家彩网络        | 2026-09-07 15:44:21 |  200.00  |
+| 105  |       619001446        | 2026-09-09 09:01:14 |  100.00  |
+| 106  |       ♡养樂多ヾ        | 2026-09-10 17:47:22 |  50.00   |
 
 ---
 

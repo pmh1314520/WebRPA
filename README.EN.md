@@ -52,6 +52,18 @@ Register and fill in the **"RPA"** discount code when recharging to enjoy a 10% 
 
 ---
 
+<p align="center">
+  <a href="https://helodata.com?ref=webrpa">
+    <img src="png/Helodata_EN.png" width="100%" alt="Helodata Global Proxy Infrastructure" />
+  </a>
+</p>
+
+[Helodata](https://helodata.com?ref=webrpa) provides global proxy infrastructure for AI, web scraping, and automation, covering 195+ countries and offering Residential, Static Residential, Unlimited Residential, Mobile, and Datacenter proxies. Its network includes 80M+ ethically sourced residential IPs, 1.3M+ high-quality ASN static residential IPs, and 3G/4G/5G mobile IPs, supporting use cases from everyday automation to high-volume data collection.
+
+[Sign up using the promo code WebRPA to enjoy an exclusive 10% discount!](https://helodata.com?ref=webrpa)
+
+---
+
 ## Features
 
 ### Core advantages
