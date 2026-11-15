@@ -51,24 +51,6 @@ WebRPA 是一款完全开源、可离线运行的可视化机器人流程自动�
 
 ---
 
-<p align="center">
-  <a href="https://www.rapidproxy.io/?ref=WebRPA">
-    <img src="png/Rapidproxy.png" width="100%" alt="RapidProxy 代理网络" />
-  </a>
-</p>
-
-**[RapidProxy｜为 RPA 自动化提供可靠的代理网络](https://www.rapidproxy.io/?ref=WebRPA)**
-
-网页采集、批量任务、跨地区访问，让自动化工作流拥有更灵活的网络出口。
-
-**7000万+ 住宅 IP · 智能轮换 · 粘性会话**
-
-支持 HTTP(S)/SOCKS5，适配 Playwright、Python 自动化任务，流量永久有效。
-
-**动态$0.55/GB 起｜免费试用｜静态$5/IP/月｜RAPID10 享 9 折**
-
----
-
 ## 功能特性
 
 ### 核心优势
